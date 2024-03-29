@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>10d6f7d6-5588-4b13-b317-37ab34182920</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>NetBlox</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GameManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUI.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIElement.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIFrame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIText.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Camera.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Character.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Player.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\PVInstance.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\BaseScript.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\LocalScript.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\LuaSourceContainer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\ModuleScript.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\Script.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Players.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ReplicatedFirst.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ReplicatedStorage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Math.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NetworkUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PlayManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaRuntime.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\ReplicatedAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SerializationManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\ServerIdentity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\SurfaceType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\UDim2.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Tools\ConsoleTool.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)content\fonts\arialbd.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_bk.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_dn.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_ft.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_lf.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_rt.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_up.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\testcloud_bk.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\testcloud_dn.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\testcloud_ft.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\testcloud_lf.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\testcloud_rt.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\skybox\testcloud_up.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\textures\stud.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

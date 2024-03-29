@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33723.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsClient", "WindowsClient\WindowsClient.csproj", "{92021FFD-F528-43F5-9453-052F8E6F269B}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox", "NetBlox\NetBlox.shproj", "{10D6F7D6-5588-4B13-B317-37AB34182920}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Some Solution Items", "Some Solution Items", "{CBE329B1-EE72-4952-B990-AB64225CA299}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{92021FFD-F528-43F5-9453-052F8E6F269B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92021FFD-F528-43F5-9453-052F8E6F269B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92021FFD-F528-43F5-9453-052F8E6F269B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92021FFD-F528-43F5-9453-052F8E6F269B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {241DE33A-F8D5-4F77-BA8E-FC6319E0F607}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		NetBlox\NetBlox.projitems*{10d6f7d6-5588-4b13-b317-37ab34182920}*SharedItemsImports = 13
+		NetBlox\NetBlox.projitems*{92021ffd-f528-43f5-9453-052f8e6f269b}*SharedItemsImports = 5
+	EndGlobalSection
+EndGlobal

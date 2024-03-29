@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <UseWindowsForms>False</UseWindowsForms>
+	  <AssemblyName>NetBlox.Client</AssemblyName>
+  </PropertyGroup>
+
+  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
+
+  <ItemGroup>
+    <PackageReference Include="MoonSharp" Version="2.0.0" />
+    <PackageReference Include="Raylib-cs" Version="6.0.0" />
+    <PackageReference Include="rlImgui-cs" Version="2.0.3" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.3" />
+  </ItemGroup>
+
+</Project>
