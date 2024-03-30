@@ -9,6 +9,9 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox", "NetBlox\NetBlox.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Some Solution Items", "Some Solution Items", "{CBE329B1-EE72-4952-B990-AB64225CA299}"
 	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 	EndProjectSection
 EndProject
