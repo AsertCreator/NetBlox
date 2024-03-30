@@ -12,11 +12,7 @@ namespace NetBlox.Instances.Scripts
 	{
 		public override void Process()
 		{
-			if (!HadExecuted && AppManager.IsServer && Enabled)
-			{
-				LuaRuntime.RunScript(Source, true, this, 2, false);
-				HadExecuted = true;
-			}
+			// we dont do THAT
 		}
 		public DynValue Modulate()
 		{

@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Runtime;
 
 namespace NetBlox.Instances
 {
@@ -31,6 +32,7 @@ namespace NetBlox.Instances
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
 		public List<Instance> Children = new();
+		public Table? LuaTable;
 		private readonly List<string> tags = new();
 		private Instance? parent;
 

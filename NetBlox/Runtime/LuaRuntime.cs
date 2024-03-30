@@ -2,104 +2,95 @@
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
+using System.ComponentModel;
 using System.Reflection;
 using System.Runtime;
 using Script = MoonSharp.Interpreter.Script;
 
 namespace NetBlox.Runtime
 {
+	public class LuaThread
+	{
+		public int Level;
+		public DynValue? MsThread;
+		public Coroutine? Coroutine;
+		public Table? Global;
+		public Script? Script;
+		public BaseScript? ScrInst;
+		public DateTime WaitUntil;
+		public string Name = string.Empty;
+	}
     public static class LuaRuntime
 	{
-		public static Dictionary<ModuleScript, Table> LoadedModules;
+		public static LinkedListNode<LuaThread>? CurrentThread;
+		public static LinkedList<LuaThread> Threads = new();
 		public static int ScriptExecutionTimeout = 7;
 
-		public static void RunScript(string code, bool roblox, Instance? container, int security, bool wait)
+		public static void Setup(DataModel dm)
 		{
-			try
+			var works = GameManager.GetService<Workspace>();
+
+			dm.MainEnv = new Script(
+				CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 |
+				CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling |
+				CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
+			dm.MainEnv.Globals["game"] = MakeInstanceTable(GameManager.CurrentRoot, dm.MainEnv);
+
+			if (works != null)
+				dm.MainEnv.Globals["workspace"] = MakeInstanceTable(works, dm.MainEnv);
+
+			dm.MainEnv.Globals["wait"] = DynValue.NewCallback((x, y) =>
 			{
-				CancellationTokenSource s = new();
-
-				// maybe i shouldn't put this on a plain sight
-				var t = Task.Run(() =>
-				{
-#pragma warning disable SYSLIB0046 // Type or member is obsolete
-					ControlledExecution.Run(() =>
-					{
-						var scr = new Script(
-							CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 |
-							CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling |
-							CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
-
-						if (roblox)
-						{
-							var works = GameManager.GetService<Workspace>();
-
-							scr.Globals["game"] = MakeInstanceTable(GameManager.CurrentRoot, scr);
-
-							if (works != null)
-								scr.Globals["workspace"] = MakeInstanceTable(works, scr);
-
-							if (container != null)
-								scr.Globals["script"] = MakeInstanceTable(container, scr);
-
-							scr.Globals["wait"] = DynValue.NewCallback((x, y) =>
-							{
-								Thread.Sleep((int)(y[0].Number * 1000));
-								return DynValue.Void;
-							});
-							scr.Globals["require"] = DynValue.NewCallback((x, y) =>
-							{
-								var table = y[0];
-								var inst = SerializationManager.LuaDeserialize<Instance>(table, x.OwnerScript);
-
-								throw new NotImplementedException();
-							});
-							scr.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
-							{
-								PrintOut("Current identity is " + security);
-								return DynValue.Void;
-							});
-							scr.Globals["print"] = DynValue.NewCallback((x, y) =>
-							{
-								PrintOut(y[0].ToString());
-								return DynValue.Void;
-							});
-							scr.Globals["warn"] = DynValue.NewCallback((x, y) =>
-							{
-								PrintWarn(y[0].ToString());
-								return DynValue.Void;
-							});
-							scr.Globals["error"] = DynValue.NewCallback((x, y) =>
-							{
-								PrintError(y[0].ToString());
-								throw new Exception(y[0].ToString());
-							});
-							scr.Globals[""] = DynValue.NewCallback((x, y) =>
-							{
-								PrintError(y[0].ToString());
-								throw new Exception(y[0].ToString());
-							});
-						}
-
-						scr.DoString(code);
-					}, s.Token);
-#pragma warning restore SYSLIB0046 // Type or member is obsolete
-				});
-				if (wait)
-				{
-					t.Wait(ScriptExecutionTimeout * 1000);
-					if (!t.IsCompleted) // drop the nuclear bomb
-					{
-						s.Cancel();
-						LogManager.LogError("Exhausted maximum script execution time");
-					}
-				}
-			}
-			catch (Exception e)
+				var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
+				GetThreadFor(x.GetCallingCoroutine()).WaitUntil = wa;
+				return DynValue.NewYieldReq(y.GetArray());
+			});
+			dm.MainEnv.Globals["require"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintError(e.Message);
-				LogManager.LogError("Script error: " + e.Message);
-			}
+				var table = y[0];
+				var inst = SerializationManager.LuaDeserialize<Instance>(table, x.OwnerScript);
+
+				throw new NotImplementedException();
+			});
+			dm.MainEnv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
+			{
+				PrintOut("Current identity is " + GetThreadFor(x.GetCallingCoroutine()).Level);
+				return DynValue.Void;
+			});
+			dm.MainEnv.Globals["print"] = DynValue.NewCallback((x, y) =>
+			{
+				PrintOut(y[0].ToString());
+				return DynValue.Void;
+			});
+			dm.MainEnv.Globals["warn"] = DynValue.NewCallback((x, y) =>
+			{
+				PrintWarn(y[0].ToString());
+				return DynValue.Void;
+			});
+			dm.MainEnv.Globals["error"] = DynValue.NewCallback((x, y) =>
+			{
+				PrintError(y[0].ToString());
+				throw new Exception(y[0].ToString());
+			});
+		}
+		public static LuaThread GetThreadFor(Coroutine c)
+		{
+			return (from x in Threads where x.Coroutine == c select x).First();
+		}
+		public static void Execute(string code, int sl, BaseScript? bs, DataModel dm)
+		{
+			var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
+			var lt = new LuaThread();
+
+			lt.Script = dm.MainEnv;
+			lt.ScrInst = bs;
+			lt.WaitUntil = default;
+			lt.Coroutine = d.Coroutine;
+			lt.Level = sl;
+			if (bs != null)
+				lt.Name = bs.GetFullName();
+			lt.MsThread = d;
+			Threads.AddLast(lt);
 		}
 		public static void PrintOut(string msg)
 		{

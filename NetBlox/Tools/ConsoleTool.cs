@@ -53,7 +53,7 @@ namespace NetBlox.Tools
 								RenderManager.AutomaticThrowup = new Exception(cmd.Result[8..^0]);
 								break;
 							case "lua":
-								LuaRuntime.RunScript(cmd.Result[4..^0], true, null, SecurityLevel, true);
+								LuaRuntime.Execute(cmd.Result[4..^0], 8, null, GameManager.CurrentRoot);
 								break;
 							default:
 								Console.WriteLine("No such command!");

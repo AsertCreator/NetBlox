@@ -6,7 +6,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	  <UseWindowsForms>False</UseWindowsForms>
-	  <AssemblyName>NetBlox.Client</AssemblyName>
+	  <AssemblyName>NetBloxClient</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />

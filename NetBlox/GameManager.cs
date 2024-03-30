@@ -12,13 +12,14 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml;
+using System.Runtime;
 
 namespace NetBlox
 {
     public static class GameManager
 	{
 		public static List<Instance> AllInstances = new();
-		public static Instance CurrentRoot = null!;
+		public static DataModel CurrentRoot = null!;
 		public static ServerIdentity? CurrentIdentity;
 		public static TcpClient? CurrentNetworkClient;
 		public static bool IsRunning = false;
@@ -40,14 +41,15 @@ namespace NetBlox
 			CurrentIdentity = null;
 			CurrentGameplayPhase = GameplayPhase.Loading;
 
+			IsRunning = false;
+			LuaRuntime.Threads.Clear();
+
 			// if (CurrentRoot != null)
 			// {
 			// 	CurrentRoot.Destroy();
 			// }
 
 			// we wont switch DataModel as of now, because we may or may not lose connection to the server during the process
-
-			LuaRuntime.RunScript(string.Empty, false, null, 0, false); // we will run nothing to initialize lua
 
 			Task.Run(() => // thats not a connection to server but who cares
 			{
@@ -89,6 +91,9 @@ namespace NetBlox
 				pl.LocalPlayer = player;
 				player.LoadCharacter();
 
+				LuaRuntime.Setup(CurrentRoot);
+				LuaRuntime.Execute(string.Empty, 0, null, CurrentRoot); // we will run nothing to initialize lua
+
 				IsRunning = true;
 			});
 		}
@@ -124,7 +129,50 @@ namespace NetBlox
 								case MessageType.Timer:
 									time++;
 									if (CurrentRoot != null && IsRunning)
+									{
 										ProcessInstance(CurrentRoot);
+										if (LuaRuntime.CurrentThread != null) 
+										{
+											if (LuaRuntime.CurrentThread.Value.Coroutine == null)
+												LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+											else if (DateTime.Now >= LuaRuntime.CurrentThread.Value.WaitUntil &&
+												LuaRuntime.CurrentThread.Value.Coroutine.State != MoonSharp.Interpreter.CoroutineState.Dead)
+											{
+												var cst = new CancellationTokenSource();
+												var tsk = Task.Run(() =>
+												{
+#pragma warning disable SYSLIB0046 // Type or member is obsolete
+													ControlledExecution.Run(() =>
+													{
+														var res = LuaRuntime.CurrentThread.Value.Coroutine.Resume();
+														if (res.Type == MoonSharp.Interpreter.DataType.YieldRequest)
+															return;
+														else
+														{
+															LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+														}
+													}, cst.Token);
+#pragma warning restore SYSLIB0046 // Type or member is obsolete
+												});
+												if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
+												{
+													LuaRuntime.PrintError("Exhausted maximum script execution time!");
+													cst.Cancel();
+												}
+											}
+											else
+												LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+
+											if (LuaRuntime.Threads.Count > 0)
+												LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
+											else
+												LuaRuntime.CurrentThread = null;
+										}
+										else
+										{
+											LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+										}
+									}
 									break;
 								case MessageType.Shutdown:
 									if (Shutdown != null)

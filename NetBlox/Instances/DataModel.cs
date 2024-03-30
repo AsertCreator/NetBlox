@@ -1,4 +1,5 @@
-﻿using NetBlox.Instances.Services;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 
 namespace NetBlox.Instances
@@ -10,6 +11,8 @@ namespace NetBlox.Instances
 		public string TestString { get; set; } = "Test";
 		[Lua]
 		public int PreferredFPS { get => GameManager.PreferredFPS; set => GameManager.SetPreferredFPS(value); }
+		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
+		public Script MainEnv;
 
 		[Lua]
 		public bool IsLoaded()

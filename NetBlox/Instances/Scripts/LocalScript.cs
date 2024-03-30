@@ -8,7 +8,7 @@ namespace NetBlox.Instances.Scripts
         {
             if (!HadExecuted && !AppManager.IsServer && Enabled)
             {
-                LuaRuntime.RunScript(Source, true, this, 2, false);
+                LuaRuntime.Execute(Source, 2, this, GameManager.CurrentRoot);
                 HadExecuted = true;
             }
         }

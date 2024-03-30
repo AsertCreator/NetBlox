@@ -45,6 +45,7 @@ namespace NetBlox
 
 					Raylib.BeginDrawing();
 					Raylib.ClearBackground(new Color(102, 191, 255, 255));
+
 					Raylib.BeginMode3D(MainCamera);
 
 					int a = Raylib.GetKeyPressed();
@@ -156,7 +157,7 @@ namespace NetBlox
 				ImGui.InputTextMultiline("code", ref LECode, 256 * 1024, new Vector2(400 - 10, 300 - 50));
 				if (ImGui.Button("Execute"))
 				{
-					LuaRuntime.RunScript(LECode, true, null, 8, true);
+					LuaRuntime.Execute(LECode, 8, null, GameManager.CurrentRoot);
 				}
 				ImGui.End();
 			}
