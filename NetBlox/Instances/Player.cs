@@ -37,7 +37,7 @@ namespace NetBlox.Instances
 		{
 			if (IsLocalPlayer)
 			{
-				PlayManager.ShowKickMessage(msg);
+				RenderManager.ShowKickMessage(msg);
 				// why not call lua api lol
 				GameManager.GetService<RunService>().Pause();
 			}

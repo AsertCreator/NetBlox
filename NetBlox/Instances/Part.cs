@@ -18,9 +18,7 @@ namespace NetBlox.Instances
 				case Shape.Ball:
 					break;
 				case Shape.Block:
-					var border = new Color(Color.R / 2, Color.G / 2, Color.B / 2, Color.A);
-
-					RenderManager.DrawCubeTextureRec(RenderManager.StudTexture, Position, Size.X, Size.Y, Size.Z, Color, Faces.All, true);
+					RenderUtils.DrawCubeTextureRec(RenderManager.StudTexture, Position, Size.X, Size.Y, Size.Z, Color, Faces.All, true);
 					break;
 				case Shape.Cylinder:
 					break;

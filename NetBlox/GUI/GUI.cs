@@ -5,7 +5,6 @@ namespace NetBlox.GUI
 {
 	public class GUI
 	{
-		public GameplayPhase CorrespondingPhase;
 		public List<GUIElement> Elements = new();
 	}
 }

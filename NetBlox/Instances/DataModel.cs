@@ -10,9 +10,9 @@ namespace NetBlox.Instances
 		[Replicated]
 		public string TestString { get; set; } = "Test";
 		[Lua]
-		public int PreferredFPS { get => GameManager.PreferredFPS; set => GameManager.SetPreferredFPS(value); }
+		public int PreferredFPS { get => RenderManager.PreferredFPS; set => RenderManager.SetPreferredFPS(value); }
 		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
-		public Script MainEnv;
+		public Script MainEnv = null!;
 
 		[Lua]
 		public bool IsLoaded()

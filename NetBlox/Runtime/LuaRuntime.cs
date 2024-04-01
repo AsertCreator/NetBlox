@@ -20,7 +20,7 @@ namespace NetBlox.Runtime
 		public DateTime WaitUntil;
 		public string Name = string.Empty;
 	}
-    public static class LuaRuntime
+	public static class LuaRuntime
 	{
 		public static LinkedListNode<LuaThread>? CurrentThread;
 		public static LinkedList<LuaThread> Threads = new();
@@ -108,7 +108,7 @@ namespace NetBlox.Runtime
 		{
 			// i want to bulge out my eyes
 
-			var excs = AppManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
+			var excs = GameManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
 			var type = inst.GetType();
 
 			var tbl = new Table(scr);
@@ -135,14 +135,14 @@ namespace NetBlox.Runtime
 					if (prop.GetValue(inst) == null)
 						return DynValue.Nil;
 
-					if (!SerializationManager.LuaSerializers.TryGetValue(prop.PropertyType.FullName!, out var ls)) 
+					if (!SerializationManager.LuaSerializers.TryGetValue(prop.PropertyType.FullName!, out var ls))
 						return DynValue.Nil;
 
 					var val = prop.GetValue(inst);
-					
+
 					if (val != null)
 						return ls(val, scr);
-					else 
+					else
 						return DynValue.Nil;
 				}
 				else

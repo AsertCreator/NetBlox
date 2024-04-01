@@ -9,7 +9,6 @@
     <Import_RootNamespace>NetBlox</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GameManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GUI\GUI.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIButton.cs" />
@@ -38,8 +37,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Math.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkUtils.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)PlayManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaRuntime.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
@@ -48,6 +47,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\ServerIdentity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)structs\Skybox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\SurfaceType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\UDim2.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Tools\ConsoleTool.cs" />

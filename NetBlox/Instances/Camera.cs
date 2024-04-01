@@ -22,12 +22,7 @@ namespace NetBlox.Instances
 			}
 			else
 			{
-				var subject = CameraSubject as BasePart;
-
-				if (subject == null)
-				{
-					throw new Exception("vs please stfu");
-				}
+				var subject = CameraSubject as BasePart ?? throw new Exception("CameraSubject is not BasePart");
 
 				// Camera rotation
 				if (Raylib.IsKeyDown(KeyboardKey.Down)) Raylib.CameraPitch(ref RenderManager.MainCamera, 0.03f, true, true, false);

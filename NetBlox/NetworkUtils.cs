@@ -16,16 +16,17 @@ namespace NetBlox
 
         public static NetworkPacket Packet(byte type, long num = 0, string? str = null, byte[]? bytes = null)
         {
-            NetworkPacket packet = new();
+			NetworkPacket packet = new()
+			{
+				PacketType = type,
+				PacketStorage = (byte)((num == 0 ? 1 : 0) | (str == null ? 2 : 0) | (bytes == null ? 4 : 0)),
 
-            packet.PacketType = type;
-            packet.PacketStorage = (byte)((num == 0 ? 1 : 0) | (str == null ? 2 : 0) | (bytes == null ? 4 : 0));
+				AuxNumber = num,
+				AuxString = str ?? string.Empty,
+				AuxBytes = bytes ?? Array.Empty<byte>()
+			};
 
-            packet.AuxNumber = num;
-            packet.AuxString = str == null ? string.Empty : str;
-            packet.AuxBytes = bytes == null ? Array.Empty<byte>() : bytes;
-
-            return packet;
+			return packet;
         }
 
         public static bool WaitForData(NetworkStream ns, int timeout = 1000)

@@ -13,5 +13,17 @@ namespace NetBlox.Instances.Services
 			if (nameof(Players) == classname) return true;
 			return base.IsA(classname);
 		}
+		[Lua]
+		public Player CreateNewPlayer(string name, bool local)
+		{
+			Player player = new()
+			{
+				Name = name,
+				Parent = this,
+				IsLocalPlayer = local
+			};
+
+			return player;
+		}
 	}
 }

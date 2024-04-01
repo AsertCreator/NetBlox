@@ -1,45 +1,120 @@
 ﻿global using Color = Raylib_cs.Color;
-using Raylib_cs;
 using NetBlox.GUI;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using NetBlox.Tools;
 using System.Net;
 using System.Net.Sockets;
-using System.Numerics;
-using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Xml;
 using System.Runtime;
 
 namespace NetBlox
 {
-    public static class GameManager
+	public static class GameManager
 	{
+		public static Dictionary<string, bool> FastFlags = new();
+		public static Dictionary<string, string> FastStrings = new();
+		public static Dictionary<string, int> FastNumbers = new();
+		public static Dictionary<char, Action> Verbs = new();
 		public static List<Instance> AllInstances = new();
-		public static DataModel CurrentRoot = null!;
 		public static ServerIdentity? CurrentIdentity;
 		public static TcpClient? CurrentNetworkClient;
+		public static DataModel CurrentRoot = null!;
+		public static bool IsServer = false;
 		public static bool IsRunning = false;
-		public static int PreferredFPS = 60;
-		public static Vector3 Acceleration = new Vector3(0, 0.001f, 0);
+		public static string ContentFolder = "content/";
 		public static string? UserName = "DevDevDev" + Random.Shared.Next(1000, 9999);
-		public const ushort GamePort = 2556;
 		public static event EventHandler? Shutdown;
-		internal static bool ShuttingDown = false;
-		internal static Queue<Message> MessageQueue = new();
-		internal static GameplayPhase CurrentGameplayPhase = GameplayPhase.Black;
+		public const ushort GamePort = 2556;
+		public const int VersionMajor = 1;
+		public const int VersionMinor = 2;
+		public const int VersionPatch = 0;
+		public static Queue<Message> MessageQueue = new();
+		public static bool ShuttingDown = false;
 
+		public static void Start(bool client, string[] args)
+		{
+			IsServer = !client;
+			ulong pid = ulong.MaxValue;
+			LogManager.LogInfo("Initializing NetBlox...");
+
+			// common thingies
+			for (int i = 0; i < args.Length; i++)
+			{
+				switch (args[i])
+				{
+					case "--fast-flag":
+						{
+							var key = args[++i];
+							var bo = int.Parse(args[++i]) == 1;
+
+							FastFlags[key] = bo;
+							LogManager.LogInfo($"Setting fast flag {key} to {bo}");
+							break;
+						}
+					case "--fast-string":
+						{
+							var key = args[++i];
+							var st = args[++i];
+
+							FastStrings[key] = st;
+							LogManager.LogInfo($"Setting fast stirng {key} to \"{st}\"");
+							break;
+						}
+					case "--fast-number":
+						{
+							var key = args[++i];
+							var nu = int.Parse(args[++i]);
+
+							FastNumbers[key] = nu;
+							LogManager.LogInfo($"Setting fast number {key} to {nu}");
+							break;
+						}
+					case "--debug-console":
+						{
+							LogManager.LogWarn("Starting debug console... (the security level is " + ConsoleTool.SecurityLevel + ")");
+							ConsoleTool.Run();
+							break;
+						}
+					case "--place-id":
+						{
+							pid = ulong.Parse(args[++i]);
+							break;
+						}
+				}
+			}
+
+			LogManager.LogInfo("Initializing RenderManager...");
+			RenderManager.Initialize();
+
+			LogManager.LogInfo("Initializing SerializationManager...");
+			SerializationManager.Initialize();
+
+			TeleportToPlace(pid);
+			StartProcessing();
+		}
+		public static void TeleportToPlace(ulong pid)
+		{
+			Task.Run(() =>
+			{
+				LogManager.LogInfo($"Teleporting to the place ({pid})...");
+				// no actual servers as of now, so just hardcoded values
+				string pname = "Testing Place";
+				ulong pauth = 1;
+				LogManager.LogInfo($"Place has name ({pname}) and author ({pauth})...");
+				TeleportToServer(null!);
+			});
+		}
 		public static void TeleportToServer(IPAddress? ipa)
 		{
-			if (AppManager.IsServer)
+			RenderManager.ShowTeleportGui();
+
+			if (IsServer)
 				throw new NotSupportedException("Cannot teleport in server");
 
 			LogManager.LogInfo($"Teleporting into server: {ipa}...");
 			CurrentIdentity = null;
-			CurrentGameplayPhase = GameplayPhase.Loading;
 
 			IsRunning = false;
 			LuaRuntime.Threads.Clear();
@@ -61,19 +136,22 @@ namespace NetBlox
 				Players pl = new();
 				Camera cm = new();
 
+				Thread.Sleep(4000); // make it look like im doing smth
+
 				ws.MainCamera = cm;
 
 				ws.Parent = dm;
 				dm.Name = "Baseplate";
 
-				Part part = new Part();
-
-				part.Parent = ws;
-				part.Color = Color.DarkGreen;
-				part.Position = new(0, -5, 0);
-				part.Size = new(50, 2, 20);
-				part.TopSurface = SurfaceType.Studs;
-				part.Anchored = true;
+				Part part = new()
+				{
+					Parent = ws,
+					Color = Color.DarkGreen,
+					Position = new(0, -5, 0),
+					Size = new(50, 2, 20),
+					TopSurface = SurfaceType.Studs,
+					Anchored = true
+				};
 
 				cm.Parent = part.Parent;
 				rs.Parent = dm;
@@ -83,11 +161,10 @@ namespace NetBlox
 
 				// i think we connected altough we didn't
 
-				if (CurrentRoot != null)
-					CurrentRoot.Destroy();
+				CurrentRoot?.Destroy();
 				CurrentRoot = dm;
 
-				var player = CreateNewPlayer(pl, "DevDevDev", true);
+				var player = pl.CreateNewPlayer("DevDevDev", true);
 				pl.LocalPlayer = player;
 				player.LoadCharacter();
 
@@ -95,17 +172,9 @@ namespace NetBlox
 				LuaRuntime.Execute(string.Empty, 0, null, CurrentRoot); // we will run nothing to initialize lua
 
 				IsRunning = true;
+
+				RenderManager.HideTeleportGui();
 			});
-		}
-		public static Player CreateNewPlayer(Players pl, string name, bool local)
-		{
-			Player player = new Player();
-
-			player.Name = name;
-			player.Parent = pl;
-			player.IsLocalPlayer = local;
-
-			return player;
 		}
 		public static void StartProcessing()
 		{
@@ -131,7 +200,7 @@ namespace NetBlox
 									if (CurrentRoot != null && IsRunning)
 									{
 										ProcessInstance(CurrentRoot);
-										if (LuaRuntime.CurrentThread != null) 
+										if (LuaRuntime.CurrentThread != null)
 										{
 											if (LuaRuntime.CurrentThread.Value.Coroutine == null)
 												LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
@@ -175,8 +244,7 @@ namespace NetBlox
 									}
 									break;
 								case MessageType.Shutdown:
-									if (Shutdown != null)
-										Shutdown(new(), new());
+									Shutdown?.Invoke(new(), new());
 									ShuttingDown = true;
 									running = false;
 									break;
@@ -195,10 +263,9 @@ namespace NetBlox
 
 						RenderManager.ScreenGUI.Add(new GUI.GUI()
 						{
-							CorrespondingPhase = CurrentGameplayPhase,
 							Elements = {
 								new GUIFrame(new UDim2(0.25f, 0.175f), new UDim2(0.5f, 0.5f), Color.Red),
-								new GUIText("Engine internal error: " + ex.GetType().Name + ", " + ex.Message + ".\nPlease consider restarting NetBlox", new UDim2(0.5f, 0.5f))
+								new GUIText("Engine public error: " + ex.GetType().Name + ", " + ex.Message + ".\nPlease consider restarting NetBlox", new UDim2(0.5f, 0.5f))
 							}
 						});
 					}
@@ -209,11 +276,6 @@ namespace NetBlox
 				LogManager.LogError("Game processor had failed!");
 				Environment.Exit(1);
 			}
-		}
-		public static void SetPreferredFPS(int fps)
-		{
-			PreferredFPS = fps;
-			Raylib.SetTargetFPS(fps);
 		}
 		public static Instance? GetInstance(Guid id)
 		{
@@ -236,8 +298,8 @@ namespace NetBlox
 		public static T? GetService<T>() where T : Instance
 		{
 			foreach (var inst in CurrentRoot.Children)
-				if (inst is T) 
-					return (T)inst;
+				if (inst is T t)
+					return t;
 			return null;
 		}
 	}
@@ -248,10 +310,6 @@ namespace NetBlox
 		public string? Text;
 		public long Number;
 		public float Float;
-	}
-	public enum GameplayPhase
-	{
-		Gameplay, Loading, Disconnect, Black
 	}
 	public enum MessageType
 	{

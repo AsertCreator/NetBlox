@@ -11,9 +11,9 @@ namespace NetBlox.Structs
     {
         public Vector3 Position { get; set; }
 
-        public static CFrame operator +(CFrame a, CFrame b) => new CFrame() { Position = a.Position + b.Position };
-        public static CFrame operator -(CFrame a, CFrame b) => new CFrame() { Position = a.Position - b.Position };
-        public static CFrame operator *(CFrame a, CFrame b) => new CFrame() { Position = a.Position * b.Position };
-        public static CFrame operator /(CFrame a, CFrame b) => new CFrame() { Position = a.Position / b.Position };
+        public static CFrame operator +(CFrame a, CFrame b) => new () { Position = a.Position + b.Position };
+        public static CFrame operator -(CFrame a, CFrame b) => new () { Position = a.Position - b.Position };
+        public static CFrame operator *(CFrame a, CFrame b) => new () { Position = a.Position * b.Position };
+        public static CFrame operator /(CFrame a, CFrame b) => new () { Position = a.Position / b.Position };
     }
 }

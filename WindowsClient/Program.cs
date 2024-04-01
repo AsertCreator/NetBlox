@@ -1,13 +1,11 @@
-﻿using NetBlox;
-
-namespace NetBlox.Client
+﻿namespace NetBlox.Client
 {
-	internal static class Program
+	public static class Program
 	{
-		internal static void Main(string[] args)
+		public static void Main(string[] args)
 		{
-			LogManager.LogInfo($"NetBlox ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
-			AppManager.Start(true, "WindowsClient", args);
+			LogManager.LogInfo($"NetBlox ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
+			GameManager.Start(true, args);
 		}
 	}
 }

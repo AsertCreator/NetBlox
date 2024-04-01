@@ -12,7 +12,7 @@ namespace NetBlox.Tools
 		{
 			ConsoleThread = new Thread(() =>
 			{
-				Console.WriteLine($"NetBlox Console, version {AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}");
+				Console.WriteLine($"NetBlox Console, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}");
 
 				while (true)
 				{

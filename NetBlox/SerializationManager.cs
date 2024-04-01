@@ -4,6 +4,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Globalization;
 using System.Numerics;
+using System.Reflection.Metadata;
 
 namespace NetBlox
 {
@@ -27,6 +28,21 @@ namespace NetBlox
 			var name = type.FullName;
 
 			return (T)LuaDeserializers[name](dv, sc);
+		}
+		public static object LuaDeserialize(Type type, DynValue dv, Script sc)
+		{
+			var name = type.FullName;
+
+			return LuaDeserializers[name](dv, sc);
+		}
+		public static object[] LuaDeserializeArray(Type et, DynValue dv, Script sc)
+		{
+			List<object> l = new();
+			for (int i = 0; i < dv.Table.Length; i++)
+			{
+				l.Add(LuaDeserialize(et, dv.Table.Get(i), sc));
+			}
+			return l.ToArray();
 		}
 		public static void Initialize()
 		{
