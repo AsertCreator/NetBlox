@@ -80,16 +80,19 @@ namespace NetBlox.Runtime
 		public static void Execute(string code, int sl, BaseScript? bs, DataModel dm)
 		{
 			var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
-			var lt = new LuaThread();
+			var lt = new LuaThread
+			{
+				Script = dm.MainEnv,
+				ScrInst = bs,
+				WaitUntil = default,
+				Coroutine = d.Coroutine,
+				Level = sl,
+				MsThread = d
+			};
 
-			lt.Script = dm.MainEnv;
-			lt.ScrInst = bs;
-			lt.WaitUntil = default;
-			lt.Coroutine = d.Coroutine;
-			lt.Level = sl;
 			if (bs != null)
 				lt.Name = bs.GetFullName();
-			lt.MsThread = d;
+
 			Threads.AddLast(lt);
 		}
 		public static void PrintOut(string msg)
@@ -111,8 +114,10 @@ namespace NetBlox.Runtime
 			var excs = GameManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
 			var type = inst.GetType();
 
-			var tbl = new Table(scr);
-			tbl.MetaTable = new Table(scr);
+			var tbl = new Table(scr)
+			{
+				MetaTable = new Table(scr)
+			};
 
 			var props = (IEnumerable<PropertyInfo?>)type.GetProperties();
 			var meths = (IEnumerable<MethodInfo?>)type.GetMethods();

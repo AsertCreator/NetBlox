@@ -18,7 +18,7 @@ namespace NetBlox.Instances.Services
 		[Lua]
 		public void Run() => GameManager.IsRunning = true;
 		[Lua]
-		public void Stop() => GameManager.MessageQueue.Enqueue(new Message() { Type = MessageType.Shutdown });
+		public void Stop() => GameManager.Shutdown();
 		[Lua]
 		public bool IsClient() => GameManager.CurrentIdentity != null;
 		[Lua]

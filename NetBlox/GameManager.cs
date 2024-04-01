@@ -22,15 +22,14 @@ namespace NetBlox
 		public static DataModel CurrentRoot = null!;
 		public static bool IsServer = false;
 		public static bool IsRunning = false;
+		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
 		public static string? UserName = "DevDevDev" + Random.Shared.Next(1000, 9999);
-		public static event EventHandler? Shutdown;
+		public static event EventHandler? ShutdownEvent;
 		public const ushort GamePort = 2556;
 		public const int VersionMajor = 1;
-		public const int VersionMinor = 2;
+		public const int VersionMinor = 3;
 		public const int VersionPatch = 0;
-		public static Queue<Message> MessageQueue = new();
-		public static bool ShuttingDown = false;
 
 		public static void Start(bool client, string[] args)
 		{
@@ -78,6 +77,9 @@ namespace NetBlox
 				}
 			}
 
+			LogManager.LogInfo("Initializing verbs...");
+			Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
+
 			LogManager.LogInfo("Initializing RenderManager...");
 			RenderManager.Initialize();
 
@@ -85,7 +87,8 @@ namespace NetBlox
 			SerializationManager.Initialize();
 
 			TeleportToPlace(pid);
-			StartProcessing();
+
+			while (!GameManager.ShuttingDown) ;
 		}
 		public static void TeleportToPlace(ulong pid)
 		{
@@ -121,6 +124,9 @@ namespace NetBlox
 
 			Task.Run(() => // thats not a connection to server but who cares
 			{
+				// no return point
+				AllInstances.Clear();
+
 				DataModel dm = new();
 				Workspace ws = new();
 				ReplicatedStorage rs = new();
@@ -169,105 +175,53 @@ namespace NetBlox
 				RenderManager.HideTeleportGui();
 			});
 		}
-		public static void StartProcessing()
+		public static void Shutdown()
 		{
-			try
+			ShuttingDown = true;
+			ShutdownEvent?.Invoke(new(), new());
+		}
+		public static void Schedule()
+		{
+			if (LuaRuntime.CurrentThread != null)
 			{
-				var time = 0L;
-				var running = true;
-
-				LogManager.LogInfo("Starting game processing...");
-
-				while (running)
+				if (LuaRuntime.CurrentThread.Value.Coroutine == null)
+					LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+				else if (DateTime.Now >= LuaRuntime.CurrentThread.Value.WaitUntil &&
+					LuaRuntime.CurrentThread.Value.Coroutine.State != MoonSharp.Interpreter.CoroutineState.Dead)
 				{
-					try
+					var cst = new CancellationTokenSource();
+					var tsk = Task.Run(() =>
 					{
-						if (MessageQueue.Count > 0)
-						{
-							var msg = MessageQueue.Dequeue();
-
-							switch (msg.Type)
-							{
-								case MessageType.Timer:
-									time++;
-									if (CurrentRoot != null && IsRunning)
-									{
-										ProcessInstance(CurrentRoot);
-										if (LuaRuntime.CurrentThread != null)
-										{
-											if (LuaRuntime.CurrentThread.Value.Coroutine == null)
-												LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-											else if (DateTime.Now >= LuaRuntime.CurrentThread.Value.WaitUntil &&
-												LuaRuntime.CurrentThread.Value.Coroutine.State != MoonSharp.Interpreter.CoroutineState.Dead)
-											{
-												var cst = new CancellationTokenSource();
-												var tsk = Task.Run(() =>
-												{
 #pragma warning disable SYSLIB0046 // Type or member is obsolete
-													ControlledExecution.Run(() =>
-													{
-														var res = LuaRuntime.CurrentThread.Value.Coroutine.Resume();
-														if (res.Type == MoonSharp.Interpreter.DataType.YieldRequest)
-															return;
-														else
-														{
-															LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-														}
-													}, cst.Token);
+						ControlledExecution.Run(() =>
+						{
+							var res = LuaRuntime.CurrentThread.Value.Coroutine.Resume();
+							if (res.Type == MoonSharp.Interpreter.DataType.YieldRequest)
+								return;
+							else
+							{
+								LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+							}
+						}, cst.Token);
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
-												});
-												if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
-												{
-													LuaRuntime.PrintError("Exhausted maximum script execution time!");
-													cst.Cancel();
-												}
-											}
-											else
-												LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-
-											if (LuaRuntime.Threads.Count > 0)
-												LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
-											else
-												LuaRuntime.CurrentThread = null;
-										}
-										else
-										{
-											LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-										}
-									}
-									break;
-								case MessageType.Shutdown:
-									Shutdown?.Invoke(new(), new());
-									ShuttingDown = true;
-									running = false;
-									break;
-								default:
-									break;
-							}
-						}
-					}
-					catch (Exception ex)
+					});
+					if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
 					{
-						if (CurrentRoot != null)
-						{
-							CurrentRoot.Destroy();
-							CurrentRoot = null!;
-						}
-
-						RenderManager.ScreenGUI.Add(new GUI.GUI()
-						{
-							Elements = {
-								new GUIFrame(new UDim2(0.25f, 0.175f), new UDim2(0.5f, 0.5f), Color.Red),
-								new GUIText("Engine public error: " + ex.GetType().Name + ", " + ex.Message + ".\nPlease consider restarting NetBlox", new UDim2(0.5f, 0.5f))
-							}
-						});
+						LuaRuntime.PrintError("Exhausted maximum script execution time!");
+						cst.Cancel();
 					}
 				}
+				else
+					LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+
+				if (LuaRuntime.Threads.Count > 0)
+					LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
+				else
+					LuaRuntime.CurrentThread = null;
 			}
-			catch
+			else
 			{
-				LogManager.LogError("Game processor had failed!");
-				Environment.Exit(1);
+				LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
 			}
 		}
 		public static Instance? GetInstance(Guid id)
@@ -295,17 +249,5 @@ namespace NetBlox
 					return t;
 			return null;
 		}
-	}
-	public struct Message
-	{
-		public MessageType Type;
-		public NetworkPacket? Packet;
-		public string? Text;
-		public long Number;
-		public float Float;
-	}
-	public enum MessageType
-	{
-		Timer, Replicate, Reparent, PropertyChange, Shutdown
 	}
 }

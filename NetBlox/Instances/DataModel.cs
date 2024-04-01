@@ -22,10 +22,7 @@ namespace NetBlox.Instances
 		[Lua]
 		public void Shutdown()
 		{
-			GameManager.MessageQueue.Enqueue(new Message()
-			{
-				Type = MessageType.Shutdown
-			});
+			GameManager.Shutdown();
 		}
 		[Lua]
 		public override bool IsA(string classname)

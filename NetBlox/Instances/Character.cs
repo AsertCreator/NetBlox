@@ -75,8 +75,8 @@ namespace NetBlox.Instances
 		{
 			var cam = RenderManager.MainCamera;
 			var pos = Raylib.GetWorldToScreen(Position + new Vector3(0, Size.Y / 2 + 1f, 0), cam);
-
 			var siz = Raylib.MeasureTextEx(RenderManager.MainFont, Name, 14, 1.4f);
+
 			Raylib.DrawTextEx(RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
 		}
 		[Lua]

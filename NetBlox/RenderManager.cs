@@ -18,6 +18,7 @@ namespace NetBlox
 		public static int PreferredFPS = 60;
 		public static int ScreenSizeX = 1600;
 		public static int ScreenSizeY = 900;
+		public static bool DisableAllGuis = false;
 		public static Thread? RenderThread;
 		public static Skybox? CurrentSkybox;
 		public static Camera3D MainCamera;
@@ -47,75 +48,81 @@ namespace NetBlox
 				{
 					Framecount++;
 
+					// render world
 					Raylib.BeginDrawing();
-					Raylib.ClearBackground(new Color(102, 191, 255, 255));
-
-					Raylib.BeginMode3D(MainCamera);
-
-					int a = Raylib.GetKeyPressed();
-					while (a != 0)
 					{
-						if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
-							act();
-						a = Raylib.GetKeyPressed();
-					}
+						Raylib.ClearBackground(new Color(102, 191, 255, 255));
 
-					try
-					{
-						RenderWorld();
-
-						if (AutomaticThrowup != null)
+						try
 						{
-							var t = AutomaticThrowup;
-							AutomaticThrowup = null;
-							throw t;
+							Raylib.BeginMode3D(MainCamera);
+
+							int a = Raylib.GetKeyPressed();
+							while (a != 0)
+							{
+								if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
+									act();
+								a = Raylib.GetKeyPressed();
+							}
+
+							RenderWorld();
+
+							if (AutomaticThrowup != null)
+							{
+								var t = AutomaticThrowup;
+								AutomaticThrowup = null;
+								throw t;
+							}
+						}
+						catch (Exception ex)
+						{
+							ScreenGUI.Add(new GUI.GUI()
+							{
+								Elements = {
+									new GUIFrame(new UDim2(0.25f, 0.175f), new UDim2(0.5f, 0.5f), Color.Red),
+									new GUIText("Render error: " + ex.GetType().Name + ", " + ex.Message, new UDim2(0.5f, 0.5f))
+								}
+							});
+						}
+						finally
+						{
+							Raylib.EndMode3D();
+						}
+
+						// render all guis
+						if (!DisableAllGuis)
+						{
+							if (GameManager.CurrentRoot != null)
+								RenderInstanceUI(GameManager.CurrentRoot);
+							RenderGUIs();
+
+							Raylib.DrawTextEx(MainFont, $"NetBlox, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
+								new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
+							Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
+								new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
+
+							DebugView();
 						}
 					}
-					catch (Exception ex)
-					{
-						ScreenGUI.Add(new GUI.GUI()
-						{
-							Elements = {
-								new GUIFrame(new UDim2(0.25f, 0.175f), new UDim2(0.5f, 0.5f), Color.Red),
-								new GUIText("Render error: " + ex.GetType().Name + ", " + ex.Message, new UDim2(0.5f, 0.5f))
-							}
-						});
-					}
-					finally
-					{
-						Raylib.EndMode3D();
-					}
-
-					if (GameManager.CurrentRoot != null)
-						RenderInstanceUI(GameManager.CurrentRoot);
-					RenderGUIs();
-
-					Raylib.DrawTextEx(MainFont, $"NetBlox, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
-						new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
-					Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
-						new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
-
-					DebugView();
-
 					Raylib.EndDrawing();
 
-					GameManager.MessageQueue.Enqueue(new Message()
+					// perform processing
+					if (GameManager.CurrentRoot != null && GameManager.IsRunning)
 					{
-						Type = MessageType.Timer,
-						Number = Framecount
-					});
+						GameManager.ProcessInstance(GameManager.CurrentRoot);
+						GameManager.Schedule();
+					}
 
+					// run coroutines
 					for (int i = 0; i < Coroutines.Count; i++)
 					{
 						Func<int> cor = Coroutines[i];
 						if (cor() == -1) Coroutines.RemoveAt(i--);
 					}
 
-					if (Raylib.WindowShouldClose())
-						GameManager.MessageQueue.Enqueue(new Message()
-						{
-							Type = MessageType.Shutdown
-						});
+					// die
+					if (Raylib.WindowShouldClose()) 
+						GameManager.Shutdown();
 				}
 
 				Raylib.CloseWindow();
@@ -140,11 +147,8 @@ namespace NetBlox
 				if (ImGui.MenuItem("Teleport to default place"))
 					GameManager.TeleportToPlace(unchecked((ulong)-1));
 				if (ImGui.MenuItem("Teleport to server")) { }
-				if (ImGui.MenuItem("Exit"))
-					GameManager.MessageQueue.Enqueue(new Message()
-					{
-						Type = MessageType.Shutdown
-					});
+				if (ImGui.MenuItem("Exit")) 
+					GameManager.Shutdown();
 				ImGui.EndMenu();
 			}
 			if (ImGui.BeginMenu("View"))
@@ -215,8 +219,8 @@ namespace NetBlox
 		}
 		public static void RenderInstance(Instance instance)
 		{
-			if (instance.IsA(nameof(BasePart)))
-				((BasePart)instance).Render();
+			if (instance is BasePart)
+				(instance as BasePart)!.Render();
 			for (int i = 0; i < instance.GetChildren().Length; i++)
 				RenderInstance(instance.GetChildren()[i]!);
 		}
