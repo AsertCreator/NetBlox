@@ -4,7 +4,6 @@ using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using NetBlox.Tools;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime;
@@ -69,12 +68,6 @@ namespace NetBlox
 
 							FastNumbers[key] = nu;
 							LogManager.LogInfo($"Setting fast number {key} to {nu}");
-							break;
-						}
-					case "--debug-console":
-						{
-							LogManager.LogWarn("Starting debug console... (the security level is " + ConsoleTool.SecurityLevel + ")");
-							ConsoleTool.Run();
 							break;
 						}
 					case "--place-id":

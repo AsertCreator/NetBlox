@@ -50,7 +50,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)structs\Skybox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\SurfaceType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\UDim2.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Tools\ConsoleTool.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)content\fonts\arialbd.ttf">
