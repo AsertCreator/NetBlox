@@ -6,6 +6,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 using rlImGui_cs;
+using System.Net;
 using System.Numerics;
 
 namespace NetBlox
@@ -18,6 +19,7 @@ namespace NetBlox
 		public static int PreferredFPS = 60;
 		public static int ScreenSizeX = 1600;
 		public static int ScreenSizeY = 900;
+		public static string Status = string.Empty;
 		public static bool DisableAllGuis = false;
 		public static Thread? RenderThread;
 		public static Skybox? CurrentSkybox;
@@ -25,7 +27,6 @@ namespace NetBlox
 		public static Texture2D StudTexture;
 		public static Font MainFont;
 		public static long Framecount;
-		public static Exception? AutomaticThrowup;
 
 		public static void Initialize()
 		{
@@ -47,14 +48,13 @@ namespace NetBlox
 				while (!GameManager.ShuttingDown)
 				{
 					Framecount++;
-
-					// render world
-					Raylib.BeginDrawing();
+					try
 					{
-						Raylib.ClearBackground(new Color(102, 191, 255, 255));
-
-						try
+						// render world
+						Raylib.BeginDrawing();
 						{
+							Raylib.ClearBackground(new Color(102, 191, 255, 255));
+
 							Raylib.BeginMode3D(MainCamera);
 
 							int a = Raylib.GetKeyPressed();
@@ -66,63 +66,51 @@ namespace NetBlox
 							}
 
 							RenderWorld();
-
-							if (AutomaticThrowup != null)
-							{
-								var t = AutomaticThrowup;
-								AutomaticThrowup = null;
-								throw t;
-							}
-						}
-						catch (Exception ex)
-						{
-							ScreenGUI.Add(new GUI.GUI()
-							{
-								Elements = {
-									new GUIFrame(new UDim2(0.25f, 0.175f), new UDim2(0.5f, 0.5f), Color.Red),
-									new GUIText("Render error: " + ex.GetType().Name + ", " + ex.Message, new UDim2(0.5f, 0.5f))
-								}
-							});
-						}
-						finally
-						{
+						
 							Raylib.EndMode3D();
+
+							// render all guis
+							if (!DisableAllGuis)
+							{
+								if (GameManager.CurrentRoot != null)
+									RenderInstanceUI(GameManager.CurrentRoot);
+								RenderGUIs();
+
+								Raylib.DrawTextEx(MainFont, $"NetBlox, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
+									new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
+								Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
+									new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
+								Raylib.DrawTextEx(MainFont, Status,
+									new Vector2(5, 5 + 16 * 3), 16, 0, Color.White);
+
+								DebugView();
+							}
+
+							Raylib.EndDrawing();
 						}
 
-						// render all guis
-						if (!DisableAllGuis)
+						// perform processing
+						if (GameManager.CurrentRoot != null && GameManager.IsRunning)
 						{
-							if (GameManager.CurrentRoot != null)
-								RenderInstanceUI(GameManager.CurrentRoot);
-							RenderGUIs();
-
-							Raylib.DrawTextEx(MainFont, $"NetBlox, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
-								new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
-							Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
-								new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
-
-							DebugView();
+							GameManager.ProcessInstance(GameManager.CurrentRoot);
+							GameManager.Schedule();
 						}
-					}
-					Raylib.EndDrawing();
 
-					// perform processing
-					if (GameManager.CurrentRoot != null && GameManager.IsRunning)
+						// run coroutines
+						for (int i = 0; i < Coroutines.Count; i++)
+						{
+							Func<int> cor = Coroutines[i];
+							if (cor() == -1) Coroutines.RemoveAt(i--);
+						}
+
+						// die
+						if (Raylib.WindowShouldClose()) 
+							GameManager.Shutdown();
+					}
+					catch (Exception ex)
 					{
-						GameManager.ProcessInstance(GameManager.CurrentRoot);
-						GameManager.Schedule();
+						Status = "Render error: " + ex.GetType().Name + ", " + ex.Message;
 					}
-
-					// run coroutines
-					for (int i = 0; i < Coroutines.Count; i++)
-					{
-						Func<int> cor = Coroutines[i];
-						if (cor() == -1) Coroutines.RemoveAt(i--);
-					}
-
-					// die
-					if (Raylib.WindowShouldClose()) 
-						GameManager.Shutdown();
 				}
 
 				Raylib.CloseWindow();
@@ -133,8 +121,13 @@ namespace NetBlox
 
 			RenderThread.Start();
 		}
-		public static bool ShowLua;
-		public static string LECode = string.Empty;
+		public static class DebugViewInfo
+		{
+			public static bool ShowLua;
+			public static bool ShowSC;
+			public static string LECode = string.Empty;
+			public static string SCAddress = string.Empty;
+		}
 		public static void DebugView()
 		{
 			rlImGui.Begin();
@@ -142,11 +135,12 @@ namespace NetBlox
 			ImGui.BeginMainMenuBar();
 			if (ImGui.BeginMenu("NetBlox"))
 			{
-				if (ImGui.MenuItem(ShowLua ? "Close Lua executor" : "Open Lua executor"))
-					ShowLua = !ShowLua;
+				if (ImGui.MenuItem(DebugViewInfo.ShowLua ? "Close Lua executor" : "Open Lua executor"))
+					DebugViewInfo.ShowLua = !DebugViewInfo.ShowLua;
 				if (ImGui.MenuItem("Teleport to default place"))
 					GameManager.TeleportToPlace(unchecked((ulong)-1));
-				if (ImGui.MenuItem("Teleport to server")) { }
+				if (ImGui.MenuItem("Teleport to server"))
+					DebugViewInfo.ShowSC = !DebugViewInfo.ShowSC;
 				if (ImGui.MenuItem("Exit")) 
 					GameManager.Shutdown();
 				ImGui.EndMenu();
@@ -161,14 +155,24 @@ namespace NetBlox
 			}
 			ImGui.EndMainMenuBar();
 
-			if (ShowLua)
+			if (DebugViewInfo.ShowLua)
 			{
 				ImGui.Begin("Lua executor");
 				ImGui.SetWindowSize(new Vector2(400, 300));
-				ImGui.InputTextMultiline("code", ref LECode, 256 * 1024, new Vector2(400 - 10, 300 - 50));
+				ImGui.InputTextMultiline("", ref DebugViewInfo.LECode, 256 * 1024, new Vector2(400 - 12, 300 - 55));
 				if (ImGui.Button("Execute"))
 				{
-					LuaRuntime.Execute(LECode, 8, null, GameManager.CurrentRoot);
+					LuaRuntime.Execute(DebugViewInfo.LECode, 8, null, GameManager.CurrentRoot);
+				}
+				ImGui.End();
+			}
+			if (DebugViewInfo.ShowSC)
+			{
+				ImGui.Begin("Teleport to server");
+				ImGui.InputText("Address", ref DebugViewInfo.SCAddress, 256);
+				if (ImGui.Button("Connect"))
+				{
+					GameManager.TeleportToServer(IPAddress.Parse(DebugViewInfo.SCAddress));
 				}
 				ImGui.End();
 			}
@@ -240,6 +244,8 @@ namespace NetBlox
 
 		public static void ShowTeleportGui()
 		{
+			if (CurrentTeleportGUI != null) return;
+
 			var guitext = new GUIText("Loading place...", new UDim2(0.5f, 0.5f))
 			{
 				Color = Color.White,
@@ -260,6 +266,8 @@ namespace NetBlox
 		}
 		public static void HideTeleportGui()
 		{
+			if (CurrentTeleportGUI == null) return;
+
 			var fc = Framecount;
 
 			Coroutines.Add(() =>
@@ -278,13 +286,7 @@ namespace NetBlox
 		}
 		public static void ShowKickMessage(string msg)
 		{
-			ScreenGUI.Add(new GUI.GUI()
-			{
-				Elements = {
-					new GUIFrame(new UDim2(0.25f, 0.175f), new UDim2(0.5f, 0.5f), Color.Red),
-					new GUIText("You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.", new UDim2(0.5f, 0.5f))
-				}
-			});
+			Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
 		}
 	}
 	[Flags]

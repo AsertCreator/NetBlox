@@ -1,26 +1,62 @@
-﻿global using Color = Raylib_cs.Color;
+﻿#define DISABLE_EME
+
+global using Color = Raylib_cs.Color;
 using NetBlox.GUI;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime;
+using System.Xml;
 
 namespace NetBlox
 {
+	public enum NetworkGameState
+	{
+		BothServerClient, Server, Client, None
+	}
+	public class NetworkIdentity
+	{
+		public bool IsServer;
+		public bool IsClient;
+		public static TcpClient? NetworkClient;
+		public static TcpListener? NetworkServer;
+		public string PlaceName = string.Empty;
+		public string UniverseName = string.Empty;
+		public string Author = string.Empty;
+		public ulong PlaceID;
+		public ulong UniverseID;
+		public uint MaxPlayerCount;
+		public XmlDocument? PlaceXMLData;
+
+		public void Reset()
+		{
+			if (IsClient)
+				NetworkClient = new();
+			if (IsServer)
+				NetworkServer = new(IPAddress.Any, GameManager.GamePort);
+
+			PlaceName = string.Empty;
+			UniverseName = string.Empty;
+			Author = string.Empty;
+			PlaceID = 0;
+			UniverseID = 0;
+			MaxPlayerCount = 0;
+			PlaceXMLData = null;
+		}
+	}
 	public static class GameManager
 	{
-		public static Dictionary<string, bool> FastFlags = new();
-		public static Dictionary<string, string> FastStrings = new();
-		public static Dictionary<string, int> FastNumbers = new();
-		public static Dictionary<char, Action> Verbs = new();
-		public static List<Instance> AllInstances = new();
-		public static ServerIdentity? CurrentIdentity;
-		public static TcpClient? CurrentNetworkClient;
+		public static Dictionary<string, bool> FastFlags = [];
+		public static Dictionary<string, string> FastStrings = [];
+		public static Dictionary<string, int> FastNumbers = [];
+		public static Dictionary<char, Action> Verbs = [];
+		public static List<Instance> AllInstances = [];
+		public static NetworkIdentity CurrentIdentity = new();
 		public static DataModel CurrentRoot = null!;
-		public static bool IsServer = false;
 		public static bool IsRunning = false;
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
@@ -31,11 +67,14 @@ namespace NetBlox
 		public const int VersionMinor = 3;
 		public const int VersionPatch = 0;
 
-		public static void Start(bool client, string[] args)
+		public static void Start(bool client, bool server, string[] args)
 		{
-			IsServer = !client;
 			ulong pid = ulong.MaxValue;
 			LogManager.LogInfo("Initializing NetBlox...");
+
+			CurrentIdentity.IsClient = client;
+			CurrentIdentity.IsServer = server;
+			CurrentIdentity.Reset();
 
 			// common thingies
 			for (int i = 0; i < args.Length; i++)
@@ -74,6 +113,11 @@ namespace NetBlox
 							pid = ulong.Parse(args[++i]);
 							break;
 						}
+					default:
+						{
+							LogManager.LogError($"Unknown console argument: {args[i]}");
+							break;
+						}
 				}
 			}
 
@@ -86,45 +130,45 @@ namespace NetBlox
 			LogManager.LogInfo("Initializing SerializationManager...");
 			SerializationManager.Initialize();
 
-			TeleportToPlace(pid);
+			if (CurrentIdentity.IsClient)
+			{
+				RenderManager.ShowTeleportGui();
+				RenderManager.DebugViewInfo.ShowSC = true;
+			}
+			if (CurrentIdentity.IsServer)
+			{
+				// LoadServer();
+			}
 
-			while (!GameManager.ShuttingDown) ;
+			while (!ShuttingDown) ;
 		}
 		public static void TeleportToPlace(ulong pid)
 		{
-			Task.Run(() =>
-			{
-				LogManager.LogInfo($"Teleporting to the place ({pid})...");
-				// no actual servers as of now, so just hardcoded values
-				string pname = "Testing Place";
-				ulong pauth = 1;
-				LogManager.LogInfo($"Place has name ({pname}) and author ({pauth})...");
-				TeleportToServer(null!);
-			});
+			if (CurrentIdentity.IsServer)
+				throw new NotSupportedException("Cannot teleport in server");
+
+			LogManager.LogInfo($"Teleporting to the place ({pid})...");
+			// no actual servers as of now, so just hardcoded values
+			string pname = "Testing Place";
+			ulong pauth = 1;
+			LogManager.LogInfo($"Place has name ({pname}) and author ({pauth})...");
+			TeleportToServer(null!);
 		}
 		public static void TeleportToServer(IPAddress? ipa)
 		{
-			RenderManager.ShowTeleportGui();
-
-			if (IsServer)
+			if (CurrentIdentity.IsServer)
 				throw new NotSupportedException("Cannot teleport in server");
 
-			LogManager.LogInfo($"Teleporting into server: {ipa}...");
-			CurrentIdentity = null;
-
-			IsRunning = false;
-			LuaRuntime.Threads.Clear();
-
-			// if (CurrentRoot != null)
-			// {
-			// 	CurrentRoot.Destroy();
-			// }
-
-			// we wont switch DataModel as of now, because we may or may not lose connection to the server during the process
-
-			Task.Run(() => // thats not a connection to server but who cares
+			Task.Run(() =>
 			{
-				// no return point
+				RenderManager.ShowTeleportGui();
+
+				LogManager.LogInfo($"Teleporting into server: {ipa}...");
+				CurrentIdentity.Reset();
+
+				IsRunning = false;
+
+				LuaRuntime.Threads.Clear();
 				AllInstances.Clear();
 
 				DataModel dm = new();
@@ -177,6 +221,7 @@ namespace NetBlox
 		}
 		public static void Shutdown()
 		{
+			LogManager.LogInfo("Shutting down...");
 			ShuttingDown = true;
 			ShutdownEvent?.Invoke(new(), new());
 		}
@@ -192,17 +237,40 @@ namespace NetBlox
 					var cst = new CancellationTokenSource();
 					var tsk = Task.Run(() =>
 					{
+#if !DISABLE_EME
 #pragma warning disable SYSLIB0046 // Type or member is obsolete
 						ControlledExecution.Run(() =>
 						{
-							var res = LuaRuntime.CurrentThread.Value.Coroutine.Resume();
-							if (res.Type == MoonSharp.Interpreter.DataType.YieldRequest)
-								return;
-							else
+#endif
+							try
 							{
-								LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+								if (LuaRuntime.CurrentThread == null)
+								{
+									if (LuaRuntime.Threads.Count > 0)
+										LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+									else
+										return;
+								}
+
+								var res = LuaRuntime.CurrentThread.Value.Coroutine.Resume();
+								if (res.Type == MoonSharp.Interpreter.DataType.YieldRequest)
+								{
+									return;
+								}
+								else
+								{
+									if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
+										LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+								}
 							}
+							catch
+							{
+								LogManager.LogError("Scheduler fault! Deleting faulty thread...");
+								if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
+									LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+						}
 						}, cst.Token);
+#if !DISABLE_EME
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
 					});
 					if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
@@ -210,9 +278,13 @@ namespace NetBlox
 						LuaRuntime.PrintError("Exhausted maximum script execution time!");
 						cst.Cancel();
 					}
+#endif
 				}
 				else
-					LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+				{
+					if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
+						LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+				}
 
 				if (LuaRuntime.Threads.Count > 0)
 					LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;

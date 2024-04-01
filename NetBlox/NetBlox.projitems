@@ -45,7 +45,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\ReplicatedAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SerializationManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structs\ServerIdentity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)structs\Skybox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\SurfaceType.cs" />

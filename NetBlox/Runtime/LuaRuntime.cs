@@ -24,6 +24,7 @@ namespace NetBlox.Runtime
 	{
 		public static LinkedListNode<LuaThread>? CurrentThread;
 		public static LinkedList<LuaThread> Threads = new();
+		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 7;
 
 		public static void Setup(DataModel dm)
@@ -79,21 +80,32 @@ namespace NetBlox.Runtime
 		}
 		public static void Execute(string code, int sl, BaseScript? bs, DataModel dm)
 		{
-			var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
-			var lt = new LuaThread
+			if (dm == null)
+				throw new Exception("DataModel must be present in order to execute scripts!");
+
+			try
 			{
-				Script = dm.MainEnv,
-				ScrInst = bs,
-				WaitUntil = default,
-				Coroutine = d.Coroutine,
-				Level = sl,
-				MsThread = d
-			};
+				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
+				var lt = new LuaThread
+				{
+					Script = dm.MainEnv,
+					ScrInst = bs,
+					WaitUntil = default,
+					Coroutine = d.Coroutine,
+					Level = sl,
+					MsThread = d
+				};
 
-			if (bs != null)
-				lt.Name = bs.GetFullName();
+				if (bs != null)
+					lt.Name = bs.GetFullName();
 
-			Threads.AddLast(lt);
+				Threads.AddLast(lt);
+			}
+			catch (Exception ex)
+			{
+				LastException = ex; // for the sake of overcomplification
+				throw;
+			}
 		}
 		public static void PrintOut(string msg)
 		{
@@ -111,7 +123,7 @@ namespace NetBlox.Runtime
 		{
 			// i want to bulge out my eyes
 
-			var excs = GameManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
+			var excs = GameManager.CurrentIdentity.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
 			var type = inst.GetType();
 
 			var tbl = new Table(scr)
@@ -166,10 +178,10 @@ namespace NetBlox.Runtime
 									var info = parms[i];
 									var t = info.ParameterType;
 
-									if (!SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName, out var ld))
+									if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName, out var ld))
 										return DynValue.Nil;
 
-									if (b[i] == DynValue.Nil)
+									if (b[i + 1] == DynValue.Nil)
 										args.Add(null);
 									else
 										args.Add(ld(b[i], scr));
