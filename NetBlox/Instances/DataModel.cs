@@ -7,7 +7,6 @@ namespace NetBlox.Instances
 	public class DataModel : Instance
 	{
 		[Lua]
-		[Replicated]
 		public string TestString { get; set; } = "Test";
 		[Lua]
 		public int PreferredFPS { get => RenderManager.PreferredFPS; set => RenderManager.SetPreferredFPS(value); }

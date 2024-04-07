@@ -2,11 +2,12 @@
 
 namespace NetBlox.Instances.Scripts
 {
-    public class LocalScript : BaseScript
+	[Creatable]
+	public class LocalScript : BaseScript
     {
         public override void Process()
         {
-            if (!HadExecuted && !GameManager.CurrentIdentity.IsClient && Enabled)
+            if (!HadExecuted && !NetworkManager.IsClient && Enabled)
             {
                 LuaRuntime.Execute(Source, 2, this, GameManager.CurrentRoot);
                 HadExecuted = true;

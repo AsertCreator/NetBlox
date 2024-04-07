@@ -20,6 +20,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Character.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Player.cs" />
@@ -36,15 +37,17 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Math.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)NetworkUtils.cs" />
+    <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\CreatableAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaRuntime.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\ReplicatedAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SerializationManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkIdentity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)structs\Skybox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\SurfaceType.cs" />

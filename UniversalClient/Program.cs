@@ -4,7 +4,7 @@
 	{
 		public static void Main(string[] args)
 		{
-			LogManager.LogInfo($"NetBlox ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
+			LogManager.LogInfo($"NetBlox Client ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
 			GameManager.Start(true, false, args);
 		}
 	}

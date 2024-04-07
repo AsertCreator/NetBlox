@@ -32,7 +32,7 @@ namespace NetBlox.Runtime
 			var works = GameManager.GetService<Workspace>();
 
 			dm.MainEnv = new Script(
-				CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 |
+				CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
 				CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling |
 				CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
 			dm.MainEnv.Globals["game"] = MakeInstanceTable(GameManager.CurrentRoot, dm.MainEnv);
@@ -60,17 +60,17 @@ namespace NetBlox.Runtime
 			});
 			dm.MainEnv.Globals["print"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintOut(y[0].ToString());
+				PrintOut(y.AsStringUsingMeta(x, 0, "print"));
 				return DynValue.Void;
 			});
 			dm.MainEnv.Globals["warn"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintWarn(y[0].ToString());
+				PrintWarn(y.AsStringUsingMeta(x, 0, "warn"));
 				return DynValue.Void;
 			});
 			dm.MainEnv.Globals["error"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintError(y[0].ToString());
+				PrintError(y.AsStringUsingMeta(x, 0, "error"));
 				throw new Exception(y[0].ToString());
 			});
 		}
@@ -85,7 +85,7 @@ namespace NetBlox.Runtime
 
 			try
 			{
-				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
+				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.DoString("return function() " + code + " end")); // ummm thats weird
 				var lt = new LuaThread
 				{
 					Script = dm.MainEnv,
@@ -122,11 +122,12 @@ namespace NetBlox.Runtime
 		public static Table MakeInstanceTable(Instance inst, Script scr)
 		{
 			// i want to bulge out my eyes
+			if (inst.LuaTable != null) return inst.LuaTable;
 
-			var excs = GameManager.CurrentIdentity.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
+			var excs = NetworkManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
 			var type = inst.GetType();
 
-			var tbl = new Table(scr)
+			inst.LuaTable = new Table(scr)
 			{
 				MetaTable = new Table(scr)
 			};
@@ -141,7 +142,7 @@ namespace NetBlox.Runtime
 
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
-			tbl.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
+			inst.LuaTable.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
 			{
 				var key = y[1].String;
 				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
@@ -215,7 +216,7 @@ namespace NetBlox.Runtime
 					}
 				}
 			});
-			tbl.MetaTable["__newindex"] = DynValue.NewCallback((x, y) =>
+			inst.LuaTable.MetaTable["__newindex"] = DynValue.NewCallback((x, y) =>
 			{
 				var key = y[1].String;
 				var val = y[2];
@@ -250,11 +251,11 @@ namespace NetBlox.Runtime
 				}
 				return DynValue.Nil;
 			});
-			tbl.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.ClassName));
-			tbl.MetaTable["__handle"] = inst.UniqueID.ToString();
-			tbl.MetaTable["__handleType"] = 0;
+			inst.LuaTable.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.ClassName));
+			inst.LuaTable.MetaTable["__handle"] = inst.UniqueID.ToString();
+			inst.LuaTable.MetaTable["__handleType"] = 0;
 
-			return tbl;
+			return inst.LuaTable;
 		}
 	}
 }

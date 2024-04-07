@@ -2,6 +2,7 @@
 
 namespace NetBlox.Instances
 {
+	[Creatable]
 	public class Model : PVInstance
 	{
 		[Lua]

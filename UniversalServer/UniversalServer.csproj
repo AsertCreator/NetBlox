@@ -5,9 +5,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>NetBlox.Client</RootNamespace>
-    <AssemblyName>NetBloxClient</AssemblyName>
+    <AssemblyName>NetBloxServer</AssemblyName>
+    <RootNamespace>NetBlox.Server</RootNamespace>
   </PropertyGroup>
+
+  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
 
   <ItemGroup>
     <PackageReference Include="MoonSharp" Version="2.0.0" />
@@ -16,7 +18,5 @@
     <PackageReference Include="rlImgui-cs" Version="2.0.3" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
-
-  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
 
 </Project>

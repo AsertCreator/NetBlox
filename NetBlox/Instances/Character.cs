@@ -3,13 +3,15 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using NetBlox.Instances;
 using System.Numerics;
+using System.Text.Json.Serialization;
 
 namespace NetBlox.Instances
 {
+	[Creatable]
 	public class Character : Part
 	{
 		[Lua]
-		[Replicated]
+		[JsonIgnore]
 		public bool IsLocalPlayer { get; set; }
 
 		public Character() : base()
@@ -17,7 +19,6 @@ namespace NetBlox.Instances
 			Color = Color.White;
 			Anchored = false;
 			Size = new Vector3(1, 1, 1);
-			IsLocalPlayer = true;
 		}
 
 		public override void Render()
@@ -33,7 +34,7 @@ namespace NetBlox.Instances
 					prt.Size = Vector3.One;
 					prt.TopSurface = SurfaceType.Studs;
 					prt.Color = Color.DarkPurple;
-					prt.Parent = Parent;
+					prt.Parent = this;
 				}
 				if (Raylib.IsKeyPressed(KeyboardKey.R))
 				{
@@ -52,21 +53,33 @@ namespace NetBlox.Instances
 			var y2 = cam.Target.Z;
 			var angle = MathF.Atan2(y2 - y1, x2 - x1);
 
-			if (Raylib.IsKeyDown(KeyboardKey.W)) 
+			if (IsLocalPlayer && (NetworkManager.IsClient && !NetworkManager.IsServer))
 			{
-				Position = Position + new Vector3(0.2f * MathF.Cos(angle), 0, 0.2f * MathF.Sin(angle));
-			}
-			if (Raylib.IsKeyDown(KeyboardKey.A))
-			{
-				Position = Position + new Vector3(0.2f * MathF.Cos(angle - 1.5708f), 0, 0.2f * MathF.Sin(angle - 1.5708f));
-			}
-			if (Raylib.IsKeyDown(KeyboardKey.S))
-			{
-				Position = Position + new Vector3(-0.2f * MathF.Cos(angle), 0, -0.2f * MathF.Sin(angle));
-			}
-			if (Raylib.IsKeyDown(KeyboardKey.D))
-			{
-				Position = Position + new Vector3(-0.2f * MathF.Cos(angle - 1.5708f), 0, -0.2f * MathF.Sin(angle - 1.5708f));
+				bool dot = false;
+
+				if (Raylib.IsKeyDown(KeyboardKey.W))
+				{
+					Position = Position + new Vector3(0.2f * MathF.Cos(angle), 0, 0.2f * MathF.Sin(angle));
+					dot = true;
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.A))
+				{
+					Position = Position + new Vector3(0.2f * MathF.Cos(angle - 1.5708f), 0, 0.2f * MathF.Sin(angle - 1.5708f));
+					dot = true;
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.S))
+				{
+					Position = Position + new Vector3(-0.2f * MathF.Cos(angle), 0, -0.2f * MathF.Sin(angle));
+					dot = true;
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.D))
+				{
+					Position = Position + new Vector3(-0.2f * MathF.Cos(angle - 1.5708f), 0, -0.2f * MathF.Sin(angle - 1.5708f));
+					dot = true;
+				}
+
+				if (dot)
+					ReplicateProps();
 			}
 
 			base.Process();

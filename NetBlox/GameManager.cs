@@ -1,53 +1,15 @@
 ﻿#define DISABLE_EME
 
 global using Color = Raylib_cs.Color;
-using NetBlox.GUI;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Runtime;
-using System.Xml;
 
 namespace NetBlox
 {
-	public enum NetworkGameState
-	{
-		BothServerClient, Server, Client, None
-	}
-	public class NetworkIdentity
-	{
-		public bool IsServer;
-		public bool IsClient;
-		public static TcpClient? NetworkClient;
-		public static TcpListener? NetworkServer;
-		public string PlaceName = string.Empty;
-		public string UniverseName = string.Empty;
-		public string Author = string.Empty;
-		public ulong PlaceID;
-		public ulong UniverseID;
-		public uint MaxPlayerCount;
-		public XmlDocument? PlaceXMLData;
-
-		public void Reset()
-		{
-			if (IsClient)
-				NetworkClient = new();
-			if (IsServer)
-				NetworkServer = new(IPAddress.Any, GameManager.GamePort);
-
-			PlaceName = string.Empty;
-			UniverseName = string.Empty;
-			Author = string.Empty;
-			PlaceID = 0;
-			UniverseID = 0;
-			MaxPlayerCount = 0;
-			PlaceXMLData = null;
-		}
-	}
+	public delegate void InstanceEventHandler(Instance inst);
 	public static class GameManager
 	{
 		public static Dictionary<string, bool> FastFlags = [];
@@ -55,25 +17,30 @@ namespace NetBlox
 		public static Dictionary<string, int> FastNumbers = [];
 		public static Dictionary<char, Action> Verbs = [];
 		public static List<Instance> AllInstances = [];
+		public static List<NetworkClient> AllClients = [];
 		public static NetworkIdentity CurrentIdentity = new();
 		public static DataModel CurrentRoot = null!;
 		public static bool IsRunning = false;
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
-		public static string? UserName = "DevDevDev" + Random.Shared.Next(1000, 9999);
+		public static string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
 		public static event EventHandler? ShutdownEvent;
-		public const ushort GamePort = 2556;
-		public const int VersionMajor = 1;
-		public const int VersionMinor = 3;
-		public const int VersionPatch = 0;
+		public static event InstanceEventHandler AddedInstance;
+		public const int VersionMajor = 2;
+		public const int VersionMinor = 0;
+		public const int VersionPatch = 1;
 
+		public static void InvokeAddedEvent(Instance inst)
+		{
+			if (AddedInstance != null)
+				AddedInstance(inst);
+		}
 		public static void Start(bool client, bool server, string[] args)
 		{
 			ulong pid = ulong.MaxValue;
 			LogManager.LogInfo("Initializing NetBlox...");
 
-			CurrentIdentity.IsClient = client;
-			CurrentIdentity.IsServer = server;
+			NetworkManager.Initialize(server, client);
 			CurrentIdentity.Reset();
 
 			// common thingies
@@ -130,21 +97,73 @@ namespace NetBlox
 			LogManager.LogInfo("Initializing SerializationManager...");
 			SerializationManager.Initialize();
 
-			if (CurrentIdentity.IsClient)
+			if (NetworkManager.IsClient)
 			{
 				RenderManager.ShowTeleportGui();
 				RenderManager.DebugViewInfo.ShowSC = true;
+				AddedInstance += (x) =>
+				{
+					NetworkManager.ToReplicate.Enqueue(new()
+					{
+						What = x
+					});
+				};
 			}
-			if (CurrentIdentity.IsServer)
+			if (NetworkManager.IsServer)
 			{
-				// LoadServer();
+				LoadServer();
 			}
 
 			while (!ShuttingDown) ;
 		}
+		public static void LoadServer()
+		{
+			DataModel dm = new();
+			Workspace ws = new();
+			ReplicatedStorage rs = new();
+			ReplicatedFirst ri = new();
+			RunService ru = new();
+			Players pl = new();
+
+			ws.ZoomToExtents();
+			ws.Parent = dm;
+			dm.Name = "Baseplate";
+
+			Part part = new()
+			{
+				Parent = ws,
+				Color = Color.DarkGreen,
+				Position = new(0, -5, 0),
+				Size = new(50, 2, 20),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
+
+			rs.Parent = dm;
+			ri.Parent = dm;
+			pl.Parent = dm;
+			ru.Parent = dm;
+
+			CurrentIdentity.MaxPlayerCount = 8;
+			CurrentIdentity.PlaceName = "Default Place";
+			CurrentIdentity.UniverseName = "NetBlox Defaults";
+			CurrentIdentity.Author = "The Lord";
+			CurrentIdentity.PlaceID = 47384;
+			CurrentIdentity.UniverseID = 47384;
+
+			CurrentRoot?.Destroy();
+			CurrentRoot = dm;
+
+			LuaRuntime.Setup(CurrentRoot);
+			LuaRuntime.Execute(string.Empty, 0, null, CurrentRoot); // we will run nothing to initialize lua
+
+			NetworkManager.StartServer();
+
+			IsRunning = true;
+		}
 		public static void TeleportToPlace(ulong pid)
 		{
-			if (CurrentIdentity.IsServer)
+			if (NetworkManager.IsServer)
 				throw new NotSupportedException("Cannot teleport in server");
 
 			LogManager.LogInfo($"Teleporting to the place ({pid})...");
@@ -152,72 +171,7 @@ namespace NetBlox
 			string pname = "Testing Place";
 			ulong pauth = 1;
 			LogManager.LogInfo($"Place has name ({pname}) and author ({pauth})...");
-			TeleportToServer(null!);
-		}
-		public static void TeleportToServer(IPAddress? ipa)
-		{
-			if (CurrentIdentity.IsServer)
-				throw new NotSupportedException("Cannot teleport in server");
-
-			Task.Run(() =>
-			{
-				RenderManager.ShowTeleportGui();
-
-				LogManager.LogInfo($"Teleporting into server: {ipa}...");
-				CurrentIdentity.Reset();
-
-				IsRunning = false;
-
-				LuaRuntime.Threads.Clear();
-				AllInstances.Clear();
-
-				DataModel dm = new();
-				Workspace ws = new();
-				ReplicatedStorage rs = new();
-				ReplicatedFirst ri = new();
-				RunService ru = new();
-				Players pl = new();
-				Camera cm = new();
-
-				Thread.Sleep(4000); // make it look like im doing smth
-
-				ws.MainCamera = cm;
-
-				ws.Parent = dm;
-				dm.Name = "Baseplate";
-
-				Part part = new()
-				{
-					Parent = ws,
-					Color = Color.DarkGreen,
-					Position = new(0, -5, 0),
-					Size = new(50, 2, 20),
-					TopSurface = SurfaceType.Studs,
-					Anchored = true
-				};
-
-				cm.Parent = part.Parent;
-				rs.Parent = dm;
-				ri.Parent = dm;
-				pl.Parent = dm;
-				ru.Parent = dm;
-
-				// i think we connected altough we didn't
-
-				CurrentRoot?.Destroy();
-				CurrentRoot = dm;
-
-				var player = pl.CreateNewPlayer("DevDevDev", true);
-				pl.LocalPlayer = player;
-				player.LoadCharacter();
-
-				LuaRuntime.Setup(CurrentRoot);
-				LuaRuntime.Execute(string.Empty, 0, null, CurrentRoot); // we will run nothing to initialize lua
-
-				IsRunning = true;
-
-				RenderManager.HideTeleportGui();
-			});
+			NetworkManager.ConnectToServer(null!);
 		}
 		public static void Shutdown()
 		{
@@ -235,10 +189,10 @@ namespace NetBlox
 					LuaRuntime.CurrentThread.Value.Coroutine.State != MoonSharp.Interpreter.CoroutineState.Dead)
 				{
 					var cst = new CancellationTokenSource();
-					var tsk = Task.Run(() =>
-					{
 #if !DISABLE_EME
 #pragma warning disable SYSLIB0046 // Type or member is obsolete
+					var tsk = Task.Run(() =>
+					{
 						ControlledExecution.Run(() =>
 						{
 #endif
@@ -253,7 +207,8 @@ namespace NetBlox
 								}
 
 								var res = LuaRuntime.CurrentThread.Value.Coroutine.Resume();
-								if (res.Type == MoonSharp.Interpreter.DataType.YieldRequest)
+								if (LuaRuntime.CurrentThread.Value.Coroutine.State != MoonSharp.Interpreter.CoroutineState.Dead ||
+									res == null)
 								{
 									return;
 								}
@@ -268,10 +223,10 @@ namespace NetBlox
 								LogManager.LogError("Scheduler fault! Deleting faulty thread...");
 								if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
 									LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-						}
-						}, cst.Token);
+							}
 #if !DISABLE_EME
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
+						}, cst.Token);
 					});
 					if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
 					{
@@ -279,11 +234,6 @@ namespace NetBlox
 						cst.Cancel();
 					}
 #endif
-				}
-				else
-				{
-					if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
-						LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 				}
 
 				if (LuaRuntime.Threads.Count > 0)

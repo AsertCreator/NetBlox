@@ -11,16 +11,37 @@ namespace NetBlox
 	public static class SerializationManager
 	{
 		public static Dictionary<string, Func<string, object>> Deserializers = new();
+		public static Dictionary<string, Func<object, string>> Serializers = new();
 		public static Dictionary<string, Func<object, Script, DynValue>> LuaSerializers = new();
 		public static Dictionary<string, Func<DynValue, Script, object>> LuaDeserializers = new();
 		public static Dictionary<string, DataType> LuaDataTypes = new();
 
+		public static object Deserialize(Type type, string data)
+		{
+			var name = type.FullName;
+
+			return Deserializers[name](data);
+		}
 		public static T Deserialize<T>(string data)
 		{
 			var type = typeof(T);
 			var name = type.FullName;
+			var val = Deserializers[name](data);
+			return (T)val;
+		}
+		public static string Serialize(object data)
+		{
+			var type = data.GetType();
+			var name = type.FullName;
 
-			return (T)Deserializers[name](data);
+			return Serializers[name](data);
+		}
+		public static string Serialize<T>(T data)
+		{
+			var type = typeof(T);
+			var name = type.FullName;
+
+			return Serializers[name](data);
 		}
 		public static T LuaDeserialize<T>(DynValue dv, Script sc)
 		{
@@ -59,11 +80,32 @@ namespace NetBlox
 			Deserializers.Add("System.Double", x => Double.Parse(x, CultureInfo.InvariantCulture));
 			Deserializers.Add("System.String", x => x);
 			Deserializers.Add("System.Char", x => x[0]);
-			Deserializers.Add("System.Numerics.Vector2", x => new Vector2(Deserialize<float>(x.Split()[0]), Deserialize<float>(x.Split()[1])));
-			Deserializers.Add("System.Numerics.Vector3", x => new Vector3(Deserialize<float>(x.Split()[0]), Deserialize<float>(x.Split()[1]), Deserialize<float>(x.Split()[2])));
-			Deserializers.Add("Raylib_cs.Color", x => new Color(Deserialize<byte>(x.Split()[0]), Deserialize<byte>(x.Split()[1]), Deserialize<byte>(x.Split()[2]), Deserialize<byte>(x.Split()[3])));
-			Deserializers.Add("NetBlox.Structs.Shape", x => Enum.Parse(typeof(Shape), x));
-			Deserializers.Add("NetBlox.Structs.SurfaceType", x => Enum.Parse(typeof(SurfaceType), x));
+			Deserializers.Add("System.Guid", x => Guid.Parse(x));
+			Deserializers.Add("System.Numerics.Vector2", x => new Vector2(Deserialize<float>(x.Split(' ')[0]), Deserialize<float>(x.Split(' ')[1])));
+			Deserializers.Add("System.Numerics.Vector3", x => new Vector3(Deserialize<float>(x.Split(' ')[0]), Deserialize<float>(x.Split(' ')[1]), Deserialize<float>(x.Split(' ')[2])));
+			Deserializers.Add("Raylib_cs.Color", x => new Color(Deserialize<byte>(x.Split(' ')[0]), Deserialize<byte>(x.Split(' ')[1]), Deserialize<byte>(x.Split(' ')[2]), Deserialize<byte>(x.Split(' ')[3])));
+			Deserializers.Add("NetBlox.Structs.Shape", x => (Shape)Deserialize<int>(x));
+			Deserializers.Add("NetBlox.Structs.SurfaceType", x => (SurfaceType)Deserialize<int>(x));
+
+			Serializers.Add("System.Byte", x => ((byte)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.Int16", x => ((Int16)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.Int32", x => ((Int32)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.Int64", x => ((Int64)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.SByte", x => ((SByte)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.UInt16", x => ((UInt16)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.UInt32", x => ((UInt32)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.UInt64", x => ((UInt64)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.Boolean", x => ((Boolean)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.Single", x => ((Single)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.Double", x => ((Double)x).ToString(CultureInfo.InvariantCulture));
+			Serializers.Add("System.String", x => (string)x);
+			Serializers.Add("System.Char", x => ((char)x).ToString());
+			Serializers.Add("System.Guid", x => x.ToString());
+			Serializers.Add("System.Numerics.Vector2", x => $"{Serialize(((Vector2)x).X)} {Serialize(((Vector2)x).Y)}");
+			Serializers.Add("System.Numerics.Vector3", x => $"{Serialize(((Vector3)x).X)} {Serialize(((Vector3)x).Y)} {Serialize(((Vector3)x).Z)}");
+			Serializers.Add("Raylib_cs.Color", x => $"{Serialize(((Color)x).R)} {Serialize(((Color)x).G)} {Serialize(((Color)x).B)} {Serialize(((Color)x).A)}");
+			Serializers.Add("NetBlox.Structs.Shape", x => (int)(Shape)x + "");
+			Serializers.Add("NetBlox.Structs.SurfaceType", x => (int)(SurfaceType)x + "");
 
 			LuaSerializers.Add("System.Byte", (x, y) => DynValue.NewNumber((double)(Byte)x));
 			LuaSerializers.Add("System.Int16", (x, y) => DynValue.NewNumber((double)(Int16)x));

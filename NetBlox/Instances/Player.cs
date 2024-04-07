@@ -1,20 +1,27 @@
 ﻿using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Instances;
+using System.Text.Json.Serialization;
 
 namespace NetBlox.Instances
 {
+	[Creatable]
 	public class Player : Instance
 	{
 		[Lua]
+		[JsonIgnore]
 		public Instance? Character { get; set; }
+		[JsonIgnore]
 		public bool IsLocalPlayer;
 
 		[Lua]
 		public void LoadCharacter()
 		{
 			var ch = new Character();
-			var workspace = (GameManager.CurrentRoot! as DataModel)!.FindFirstChild("Workspace");
+			var workspace = GameManager.CurrentRoot!.FindFirstChild("Workspace");
+
+			if (Character != null)
+				Character.Destroy();
 
 			if (workspace == null)
 			{
@@ -41,7 +48,7 @@ namespace NetBlox.Instances
 				// why not call lua api lol
 				GameManager.GetService<RunService>().Pause();
 			}
-			else if (GameManager.CurrentIdentity != null)
+			else if (NetworkManager.IsServer)
 			{
 				// do smth
 			}

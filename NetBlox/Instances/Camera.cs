@@ -1,15 +1,13 @@
-﻿using Raylib_cs;
-using NetBlox;
-using NetBlox.Instances;
-using NetBlox.Runtime;
+﻿using NetBlox.Runtime;
+using Raylib_cs;
 using System.Numerics;
 
 namespace NetBlox.Instances
 {
+	[Creatable]
 	public class Camera : Instance
 	{
 		[Lua]
-		[Replicated]
 		public Instance? CameraSubject { get; set; }
 		public static Vector2 LastMousePosition;
 

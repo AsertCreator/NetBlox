@@ -35,9 +35,11 @@ namespace NetBlox
 			RenderThread = new(() =>
 			{
 				Raylib.SetTraceLogLevel(TraceLogLevel.None);
+				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
 				Raylib.SetTargetFPS(PreferredFPS);
-				Raylib.SetExitKey(KeyboardKey.Null);
+				Raylib.SetExitKey(KeyboardKey.Null); 
 
 				MainFont = Raylib.LoadFont(GameManager.ContentFolder + "fonts/arialbd.ttf");
 				StudTexture = Raylib.LoadTexture(GameManager.ContentFolder + "textures/stud.png");
@@ -50,6 +52,21 @@ namespace NetBlox
 					Framecount++;
 					try
 					{
+						if (NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
+						{
+							Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+							if (Raylib.IsKeyDown(KeyboardKey.Space))
+							{
+								MainCamera.Target.Y += 0.1f;
+								MainCamera.Position.Y += 0.1f;
+							}
+							if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+							{
+								MainCamera.Target.Y -= 0.1f;
+								MainCamera.Position.Y -= 0.1f;
+							}
+						}
+
 						// render world
 						Raylib.BeginDrawing();
 						{
@@ -76,7 +93,7 @@ namespace NetBlox
 									RenderInstanceUI(GameManager.CurrentRoot);
 								RenderGUIs();
 
-								Raylib.DrawTextEx(MainFont, $"NetBlox, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
+								Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
 									new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
 								Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
 									new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
@@ -126,11 +143,14 @@ namespace NetBlox
 			public static bool ShowLua;
 			public static bool ShowSC;
 			public static string LECode = string.Empty;
-			public static string SCAddress = string.Empty;
+			public static string SCAddress = "127.0.0.1";
 		}
 		public static void DebugView()
 		{
 			rlImGui.Begin();
+
+			var v = ImGui.GetMainViewport();
+			ImGui.DockSpace(v.ID);
 
 			ImGui.BeginMainMenuBar();
 			if (ImGui.BeginMenu("NetBlox"))
@@ -155,6 +175,26 @@ namespace NetBlox
 			}
 			ImGui.EndMainMenuBar();
 
+			{
+				ImGui.Begin("Instance tree viewer");
+				void Node(Instance ins)
+				{
+					string msg = ins.Name + " - " + ins.ClassName;
+					if (ImGui.TreeNode(msg))
+					{
+						for (int i = 0; i < ins.Children.Count; i++)
+						{
+							Node(ins.Children[i]);
+						}
+						ImGui.TreePop();
+					}
+				}
+				if (GameManager.CurrentRoot != null)
+					Node(GameManager.CurrentRoot);
+				else
+					ImGui.TreeNode("No DataModel is loaded at the moment!");
+				ImGui.End();
+			}
 			if (DebugViewInfo.ShowLua)
 			{
 				ImGui.Begin("Lua executor");
@@ -170,9 +210,10 @@ namespace NetBlox
 			{
 				ImGui.Begin("Teleport to server");
 				ImGui.InputText("Address", ref DebugViewInfo.SCAddress, 256);
+				ImGui.InputText("Username", ref GameManager.Username, 256);
 				if (ImGui.Button("Connect"))
 				{
-					GameManager.TeleportToServer(IPAddress.Parse(DebugViewInfo.SCAddress));
+					NetworkManager.ConnectToServer(IPAddress.Parse(DebugViewInfo.SCAddress));
 				}
 				ImGui.End();
 			}

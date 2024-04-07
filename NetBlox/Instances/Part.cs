@@ -5,10 +5,11 @@ using System.Numerics;
 
 namespace NetBlox.Instances
 {
+	[Creatable]
 	public class Part : BasePart
 	{
 		[Lua]
-		[Replicated]
+		
 		public Shape Shape { get; set; } = Shape.Block;
 
 		public override void Render()

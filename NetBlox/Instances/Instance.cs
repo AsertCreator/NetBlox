@@ -1,18 +1,19 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
+using System.Text.Json.Serialization;
 
 namespace NetBlox.Instances
 {
 	public class Instance
 	{
 		[Lua]
-		[Replicated]
 		public bool Archivable { get; set; }
 		[Lua]
 		public string ClassName => GetType().Name;
 		[Lua]
 		public string Name { get; set; }
 		[Lua]
+		[JsonIgnore]
 		public Instance? Parent
 		{
 			get => parent;
@@ -23,17 +24,30 @@ namespace NetBlox.Instances
 				if (parent != null)
 					parent.Children.Remove(this);
 				if (value != null)
+				{
+					parent = value;
+					ParentID = parent.UniqueID;
 					value.Children.Add(this);
-
-				parent = value;
+				}
+				else
+				{
+					parent = null;
+					ParentID = Guid.Empty;
+				}
 			}
 		}
-		public Guid UniqueID;
+		[JsonIgnore]
+		public List<string> Tags { get; set; } = new();
+		public Guid ParentID { get; set; }
+		public Guid UniqueID { get; set; }
+		[JsonIgnore]
 		public bool WasDestroyed = false;
+		[JsonIgnore]
 		public bool WasReplicated = false;
+		[JsonIgnore]
 		public List<Instance> Children = new();
+		[JsonIgnore]
 		public Table? LuaTable;
-		private readonly List<string> tags = new();
 		private Instance? parent;
 
 		public Instance()
@@ -41,6 +55,7 @@ namespace NetBlox.Instances
 			Name = ClassName;
 			UniqueID = Guid.NewGuid();
 
+			GameManager.InvokeAddedEvent(this);
 			GameManager.AllInstances.Add(this);
 		}
 		public Instance(Guid guid)
@@ -49,6 +64,7 @@ namespace NetBlox.Instances
 			UniqueID = guid;
 			WasReplicated = true;
 
+			GameManager.InvokeAddedEvent(this);
 			GameManager.AllInstances.Add(this);
 		}
 
@@ -63,8 +79,8 @@ namespace NetBlox.Instances
 		[Lua]
 		public virtual void AddTag(string tag)
 		{
-			if (!tags.Contains(tag))
-				tags.Add(tag);
+			if (!Tags.Contains(tag))
+				Tags.Add(tag);
 		}
 		[Lua]
 		public virtual Instance Clone()
@@ -216,12 +232,17 @@ namespace NetBlox.Instances
 		[Lua]
 		public virtual bool IsAncestorOf(Instance instance) => GetDescendants().Contains(instance);
 		[Lua]
-		public virtual string[] GetTags() => tags.ToArray();
+		public virtual string[] GetTags() => Tags.ToArray();
 		[Lua]
-		public virtual bool HasTag(string tag) => tags.Contains(tag);
+		public virtual bool HasTag(string tag) => Tags.Contains(tag);
 		[Lua]
-		public virtual void RemoveTag(string tag) => tags.Remove(tag);
+		public virtual void RemoveTag(string tag) => Tags.Remove(tag);
 		[Lua]
 		public virtual bool IsA(string classname) => nameof(Instance) == classname;
+		public void ReplicateProps()
+		{
+			if (NetworkManager.ServerConnection != null)
+				NetworkManager.SeqReplicateInstance(NetworkManager.ServerConnection, this, false);
+		}
 	}
 }

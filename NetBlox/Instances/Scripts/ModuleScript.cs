@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace NetBlox.Instances.Scripts
 {
+	[Creatable]
 	public class ModuleScript : BaseScript
 	{
 		public override void Process()
