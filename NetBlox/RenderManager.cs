@@ -45,7 +45,7 @@ namespace NetBlox
 				StudTexture = Raylib.LoadTexture(GameManager.ContentFolder + "textures/stud.png");
 				CurrentSkybox = Skybox.LoadSkybox("bluecloud");
 
-				rlImGui.Setup();
+				rlImGui.Setup(true, true);
 
 				while (!GameManager.ShuttingDown)
 				{

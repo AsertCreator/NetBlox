@@ -2,6 +2,7 @@
 
 global using Color = Raylib_cs.Color;
 using NetBlox.Instances;
+using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -101,6 +102,9 @@ namespace NetBlox
 			{
 				RenderManager.ShowTeleportGui();
 				RenderManager.DebugViewInfo.ShowSC = true;
+			}
+			if (NetworkManager.IsServer)
+			{
 				AddedInstance += (x) =>
 				{
 					NetworkManager.ToReplicate.Enqueue(new()
@@ -108,9 +112,6 @@ namespace NetBlox
 						What = x
 					});
 				};
-			}
-			if (NetworkManager.IsServer)
-			{
 				LoadServer();
 			}
 
@@ -124,6 +125,7 @@ namespace NetBlox
 			ReplicatedFirst ri = new();
 			RunService ru = new();
 			Players pl = new();
+			LocalScript ls = new();
 
 			ws.ZoomToExtents();
 			ws.Parent = dm;
@@ -138,6 +140,9 @@ namespace NetBlox
 				TopSurface = SurfaceType.Studs,
 				Anchored = true
 			};
+
+			ls.Parent = ri;
+			ls.Source = "print(\"HIIIIII\")";
 
 			rs.Parent = dm;
 			ri.Parent = dm;
@@ -218,9 +223,9 @@ namespace NetBlox
 										LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 								}
 							}
-							catch
+							catch (Exception ex)
 							{
-								LogManager.LogError("Scheduler fault! Deleting faulty thread...");
+								LogManager.LogError(ex.Message);
 								if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
 									LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 							}

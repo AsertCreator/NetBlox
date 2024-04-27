@@ -10,7 +10,7 @@ namespace NetBlox.Instances.Scripts
     public class BaseScript : LuaSourceContainer
     {
         [Lua]
-        public bool Enabled { get; set; }
+        public bool Enabled { get; set; } = true;
         protected bool HadExecuted = false;
 
         [Lua]

@@ -73,6 +73,20 @@ namespace NetBlox.Runtime
 				PrintError(y.AsStringUsingMeta(x, 0, "error"));
 				throw new Exception(y[0].ToString());
 			});
+			var it = new Table(dm.MainEnv);
+			dm.MainEnv.Globals["Instance"] = DynValue.NewTable(it);
+			it["new"] = DynValue.NewCallback((x, y) =>
+			{
+				try
+				{
+					var inst = InstanceCreator.CreateAccessibleInstance(y[0].String);
+					return DynValue.NewTable(MakeInstanceTable(inst, dm.MainEnv));
+				}
+				catch
+				{
+					return DynValue.Void;
+				}
+			});
 		}
 		public static LuaThread GetThreadFor(Coroutine c)
 		{
@@ -232,17 +246,46 @@ namespace NetBlox.Runtime
 							prop.SetValue(inst!, null);
 						else
 						{
-							if (!SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName, out var ld))
-								return DynValue.Nil;
+							if (prop.Name == "Parent")
+							{
+								if (val.Type != DataType.Table)
+									throw new ScriptRuntimeException($"Property \"Parent\" of \"{type.Name}\" only accepts Instance");
+								if (val.Table.MetaTable == null)
+									throw new ScriptRuntimeException($"Property \"Parent\" of \"{type.Name}\" only accepts Instance");
+								if (val.Table.MetaTable["__handle"] == null)
+									throw new ScriptRuntimeException($"Property \"Parent\" of \"{type.Name}\" only accepts Instance");
+
+								if (Guid.TryParse(val.Table.MetaTable["__handle"].ToString(), out Guid uid))
+								{
+									prop.SetValue(inst!, GameManager.AllInstances.Find(x => x.UniqueID == uid));
+									if (NetworkManager.IsServer)
+										for (int i = 0; i < GameManager.AllClients.Count; i++)
+										{
+											NetworkManager.SeqReparentInstance(GameManager.AllClients[i].Connection, inst);
+										}
+								}
+								else
+									throw new ScriptRuntimeException($"Attempted to assign Instance's parent to foreign Instance");
+							}
 							else
 							{
-								var ret = ld(val, scr);
-								var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName];
+								if (!SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName, out var ld))
+									return DynValue.Nil;
+								else
+								{
+									var ret = ld(val, scr);
+									var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName];
 
-								if (val.Type != exc)
-									throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");
+									if (val.Type != exc)
+										throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");
 
-								prop.SetValue(inst!, ret);
+									prop.SetValue(inst!, ret);
+									if (NetworkManager.IsServer)
+										NetworkManager.ToReplicate.Enqueue(new NetworkManager.Replication()
+										{
+											What = inst
+										});
+								}
 							}
 						}
 					}

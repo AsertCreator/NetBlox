@@ -7,7 +7,7 @@ namespace NetBlox.Instances.Scripts
     {
         public override void Process()
         {
-            if (!HadExecuted && !NetworkManager.IsClient && Enabled)
+            if (!HadExecuted && NetworkManager.IsClient && Enabled)
             {
                 LuaRuntime.Execute(Source, 2, this, GameManager.CurrentRoot);
                 HadExecuted = true;

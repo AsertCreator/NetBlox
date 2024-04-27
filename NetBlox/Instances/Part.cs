@@ -9,7 +9,6 @@ namespace NetBlox.Instances
 	public class Part : BasePart
 	{
 		[Lua]
-		
 		public Shape Shape { get; set; } = Shape.Block;
 
 		public override void Render()

@@ -3,22 +3,13 @@ using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Network;
-using Network.Enums;
 using Network.Extensions;
-using Raylib_cs;
-using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace NetBlox
 {
@@ -221,14 +212,31 @@ namespace NetBlox
 							ch.VersionMinor = GameManager.VersionMinor;
 							ch.VersionPatch = GameManager.VersionPatch;
 
-							Thread.Sleep(50); // wait for server to do things
+							Thread.Sleep(5); // wait for server to do things
 
+							con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
+							{
+								var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
+								var ins = GameManager.GetInstance(Guid.Parse(dss["Instance"]));
+								var par = GameManager.GetInstance(Guid.Parse(dss["Parent"]));
+
+								if (ins == null || par == null)
+								{
+									LogManager.LogError("Failed to reparent instance, because new parent does not exist");
+									return;
+								}
+								else
+								{
+									ins.Parent = par;
+								}
+							});
 							con.RegisterRawDataHandler("nb.inc-inst", (x, y) =>
 							{
 								var ins = SeqReceiveInstance(y, x.ToUTF8String());
 								if (ins.UniqueID == sh.DataModelInstance)
 								{
 									GameManager.CurrentRoot = (DataModel)ins;
+									LuaRuntime.Setup(GameManager.CurrentRoot);
 									GameManager.IsRunning = true;
 								}
 								if (ins.UniqueID == sh.PlayerInstance)
@@ -301,6 +309,20 @@ namespace NetBlox
 		public static string SerializeJson<T>(T obj) => JsonSerializer.Serialize(obj, DefaultJSON);
 		public static T? DeserializeJsonBytes<T>(byte[] d) => DeserializeJson<T>(Encoding.UTF8.GetString(d));
 		public static T? DeserializeJson<T>(string d) => JsonSerializer.Deserialize<T>(d, DefaultJSON);
+		public static void SeqReparentInstance(Connection c, Instance ins)
+		{
+			try
+			{
+				var dss = new Dictionary<string, string>();
+				dss["Instance"] = ins.UniqueID.ToString();
+				dss["Parent"] = ins.ParentID.ToString();
+				c.SendRawData("nb.repar-inst", SerializeJsonBytes(dss));
+			}
+			catch
+			{
+				LogManager.LogError($"Failed to perform network instance reparent ({ins.UniqueID}->{ins.ParentID})!");
+			}
+		}
 		public static void SeqReplicateInstance(Connection c, Instance ins, bool repchildren)
 		{
 			try
@@ -332,7 +354,7 @@ namespace NetBlox
 			}
 			catch
 			{
-				// we've failed a little bit
+				LogManager.LogError($"Failed to replicate instance ({ins.UniqueID})!");
 			}
 		}
 		public static Instance SeqReceiveInstance(Connection c, string tag)

@@ -34,6 +34,12 @@ namespace NetBlox.Instances
 					parent = null;
 					ParentID = Guid.Empty;
 				}
+
+				if (NetworkManager.IsServer)
+					for (int i = 0; i < GameManager.AllClients.Count; i++)
+					{
+						NetworkManager.SeqReparentInstance(GameManager.AllClients[i].Connection, this);
+					}
 			}
 		}
 		[JsonIgnore]
@@ -55,8 +61,8 @@ namespace NetBlox.Instances
 			Name = ClassName;
 			UniqueID = Guid.NewGuid();
 
-			GameManager.InvokeAddedEvent(this);
 			GameManager.AllInstances.Add(this);
+			GameManager.InvokeAddedEvent(this);
 		}
 		public Instance(Guid guid)
 		{
@@ -64,8 +70,8 @@ namespace NetBlox.Instances
 			UniqueID = guid;
 			WasReplicated = true;
 
-			GameManager.InvokeAddedEvent(this);
 			GameManager.AllInstances.Add(this);
+			GameManager.InvokeAddedEvent(this);
 		}
 
 		public virtual void Process()

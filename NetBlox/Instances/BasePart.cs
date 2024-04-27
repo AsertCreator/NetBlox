@@ -27,7 +27,7 @@ namespace NetBlox.Instances
 		[Lua]
 		public Vector3 Position { get => Origin.Position; set => Origin.Position = value; }
 		[Lua]
-		public Vector3 Size { get; set; }
+		public Vector3 Size { get; set; } = new Vector3(4, 1, 2);
 		[Lua]
 		public bool CanCollide { get; set; } = true;
 		[Lua]

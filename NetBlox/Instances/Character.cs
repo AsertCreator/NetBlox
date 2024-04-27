@@ -23,7 +23,7 @@ namespace NetBlox.Instances
 
 		public override void Render()
 		{
-			if (IsLocalPlayer)
+			if (IsLocalPlayer && (NetworkManager.IsClient && !NetworkManager.IsServer))
 			{
 				if (Raylib.IsKeyPressed(KeyboardKey.G))
 				{
@@ -35,10 +35,6 @@ namespace NetBlox.Instances
 					prt.TopSurface = SurfaceType.Studs;
 					prt.Color = Color.DarkPurple;
 					prt.Parent = this;
-				}
-				if (Raylib.IsKeyPressed(KeyboardKey.R))
-				{
-					Destroy();
 				}
 			}
 
