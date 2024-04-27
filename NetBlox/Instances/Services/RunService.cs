@@ -20,9 +20,9 @@ namespace NetBlox.Instances.Services
 		[Lua]
 		public void Stop() => GameManager.Shutdown();
 		[Lua]
-		public bool IsClient() => GameManager.CurrentIdentity != null;
+		public bool IsClient() => NetworkManager.IsClient;
 		[Lua]
-		public bool IsServer() => GameManager.CurrentIdentity != null;
+		public bool IsServer() => NetworkManager.IsServer;
 		[Lua]
 		public override bool IsA(string classname)
 		{

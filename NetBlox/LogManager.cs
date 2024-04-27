@@ -4,7 +4,7 @@ namespace NetBlox
 {
 	public static class LogManager
 	{
-		public static StringBuilder Log => new();
+		public static StringBuilder Log = new();
 
 		public static void LogInfo(string message)
 		{

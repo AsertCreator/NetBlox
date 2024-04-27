@@ -44,6 +44,7 @@ namespace NetBlox.Instances
 		{
 			if (IsLocalPlayer)
 			{
+				NetworkManager.ServerConnection.Close(Network.Enums.CloseReason.ClientClosed);
 				RenderManager.ShowKickMessage(msg);
 				// why not call lua api lol
 				GameManager.GetService<RunService>().Pause();

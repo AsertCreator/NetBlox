@@ -94,10 +94,6 @@ namespace NetBlox
 			scc.ConnectionEstablished += (_x, _y) =>
 			{
 				LogManager.LogInfo($"Connection established with {_x.IPRemoteEndPoint.Address}!");
-				_x.RegisterRawDataHandler("nb.init-rep-req", (x, y) =>
-				{
-					SeqReplicateInstance(y, GameManager.CurrentRoot, true);
-				});
 				_x.RegisterRawDataHandler("nb.handshake", (x, y) =>
 				{
 					ServerHandshake sh = new ServerHandshake();
@@ -143,6 +139,16 @@ namespace NetBlox
 								What = ins
 							});
 					});
+					_x.RegisterRawDataHandler("nb.req-int-rep", (x, y) =>
+					{
+						ToReplicate.Enqueue(new Replication()
+						{
+							To = [nc],
+							What = GameManager.CurrentRoot
+						});
+					});
+
+					GameManager.AllowReplication = true;
 				});
 			};
 			Task.Run(() =>
@@ -157,7 +163,7 @@ namespace NetBlox
 						var to = tr.To;
 
 						for (int i = 0; i < to.Count; i++) 
-							SeqReplicateInstance(to[i].Connection!, ins!, false);
+							SeqReplicateInstance(to[i].Connection!, ins!, true);
 					}
 					catch
 					{
@@ -275,9 +281,9 @@ namespace NetBlox
 								GameManager.CurrentIdentity.UniquePlayerID = sh.UniquePlayerID;
 								GameManager.CurrentIdentity.MaxPlayerCount = sh.MaxPlayerCount;
 
-								con.SendRawData("nb.init-rep-req", []); // we request server to download game into us
-
 								RenderManager.HideTeleportGui();
+
+								y.SendRawData("nb.req-int-rep", []);
 							});
 
 							con.SendRawData("nb.handshake", SerializeJsonBytes(ch));

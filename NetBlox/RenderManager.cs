@@ -49,6 +49,9 @@ namespace NetBlox
 
 				while (!GameManager.ShuttingDown)
 				{
+					ScreenSizeX = Raylib.GetScreenWidth();
+					ScreenSizeY = Raylib.GetScreenHeight();
+
 					Framecount++;
 					try
 					{
@@ -140,8 +143,9 @@ namespace NetBlox
 		}
 		public static class DebugViewInfo
 		{
-			public static bool ShowLua;
-			public static bool ShowSC;
+			public static bool ShowLua = true;
+			public static bool ShowSC = true;
+			public static bool ShowOutput = true;
 			public static string LECode = string.Empty;
 			public static string SCAddress = "127.0.0.1";
 		}
@@ -150,8 +154,22 @@ namespace NetBlox
 			rlImGui.Begin();
 
 			var v = ImGui.GetMainViewport();
-			ImGui.DockSpace(v.ID);
+			var flags = ImGuiWindowFlags.NoBringToFrontOnFocus |
+				ImGuiWindowFlags.NoNavFocus |
+				ImGuiWindowFlags.NoDocking |
+				ImGuiWindowFlags.NoTitleBar |
+				ImGuiWindowFlags.NoResize |
+				ImGuiWindowFlags.NoMove |
+				ImGuiWindowFlags.NoCollapse |
+				ImGuiWindowFlags.MenuBar |
+				ImGuiWindowFlags.NoBackground;
+			var pv = ImGui.GetStyle().WindowPadding;
 
+			ImGui.Begin("#root", flags);
+			ImGui.SetWindowPos(-pv);
+			ImGui.SetWindowSize(new Vector2(ScreenSizeX, ScreenSizeY) + pv * 2);
+
+			ImGui.DockSpace(v.ID, new(0.0f, 0.0f), ImGuiDockNodeFlags.PassthruCentralNode);
 			ImGui.BeginMainMenuBar();
 			if (ImGui.BeginMenu("NetBlox"))
 			{
@@ -175,6 +193,7 @@ namespace NetBlox
 			}
 			ImGui.EndMainMenuBar();
 
+			ImGui.End();
 			{
 				ImGui.Begin("Instance tree viewer");
 				void Node(Instance ins)
@@ -215,6 +234,13 @@ namespace NetBlox
 				{
 					NetworkManager.ConnectToServer(IPAddress.Parse(DebugViewInfo.SCAddress));
 				}
+				ImGui.End();
+			}
+			if (DebugViewInfo.ShowOutput)
+			{
+				string log = LogManager.Log.ToString();
+				ImGui.Begin("Output");
+				ImGui.InputTextMultiline("", ref log, (uint)(log.Length + 50), ImGui.GetWindowSize(), ImGuiInputTextFlags.ReadOnly);
 				ImGui.End();
 			}
 

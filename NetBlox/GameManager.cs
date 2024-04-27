@@ -26,14 +26,15 @@ namespace NetBlox
 		public static string ContentFolder = "content/";
 		public static string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
 		public static event EventHandler? ShutdownEvent;
-		public static event InstanceEventHandler AddedInstance;
+		public static event InstanceEventHandler? AddedInstance;
+		public static bool AllowReplication = false;
 		public const int VersionMajor = 2;
 		public const int VersionMinor = 0;
-		public const int VersionPatch = 1;
+		public const int VersionPatch = 2;
 
 		public static void InvokeAddedEvent(Instance inst)
 		{
-			if (AddedInstance != null)
+			if (AddedInstance != null && AllowReplication)
 				AddedInstance(inst);
 		}
 		public static void Start(bool client, bool server, string[] args)
