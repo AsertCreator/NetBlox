@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "WindowsClient": {
-      "commandName": "Project",
-      "nativeDebugging": false
-    }
-  }
-}
