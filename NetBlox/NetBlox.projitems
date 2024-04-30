@@ -10,17 +10,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GameManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUI.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIButton.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIElement.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIFrame.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GUI\GUIText.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Camera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Character.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Instances\InstanceCreator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Player.cs" />
@@ -36,7 +31,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Math.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
@@ -55,6 +50,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)content\fonts\arialbd.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\init.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_bk.png">
@@ -96,5 +94,6 @@
     <None Include="$(MSBuildThisFileDirectory)content\textures\stud.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Compile Include="$(MSBuildThisFileDirectory)instances\CoreGui.cs" />
   </ItemGroup>
 </Project>

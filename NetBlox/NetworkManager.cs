@@ -54,8 +54,9 @@ namespace NetBlox
 		public static TcpListener NetworkServer = null!;
 		public static bool IsServer { get; private set; }
 		public static bool IsClient { get; private set; }
-		public static int MainPort { get; private set; } = 2556;
-		public static Queue<Replication> ToReplicate = new();
+		public static int ServerPort { get; private set; } = 2556;
+        public static int ClientPort { get; private set; } = 6552;
+        public static Queue<Replication> ToReplicate = new();
 		public static Connection? ServerConnection;
 		private static uint NextPID = 0;
 		private static bool init;
@@ -89,8 +90,8 @@ namespace NetBlox
 			if (!IsServer)
 				throw new NotSupportedException("Cannot start server in non-server configuration!");
 
-			LogManager.LogInfo($"Starting listening for server connections at {MainPort}...");
-			ServerConnectionContainer scc = ConnectionFactory.CreateServerConnectionContainer(MainPort);
+			LogManager.LogInfo($"Starting listening for server connections at {ServerPort}...");
+			ServerConnectionContainer scc = ConnectionFactory.CreateServerConnectionContainer(ServerPort);
 			scc.ConnectionEstablished += (_x, _y) =>
 			{
 				LogManager.LogInfo($"Connection established with {_x.IPRemoteEndPoint.Address}!");
@@ -99,7 +100,7 @@ namespace NetBlox
 					ServerHandshake sh = new ServerHandshake();
 					ClientHandshake ch = DeserializeJsonBytes<ClientHandshake>(x.Data);
 					NetworkClient nc = new NetworkClient();
-					Players pls = GameManager.GetService<Players>()!;
+					Players pls = GameManager.CurrentRoot.GetService<Players>()!;
 					Player plr = new Player();
 
 					nc.Username = ch.Username;
@@ -180,7 +181,6 @@ namespace NetBlox
 			Task.Run(() =>
 			{
 				RenderManager.Status = string.Empty;
-				RenderManager.ShowTeleportGui();
 
 				try
 				{
@@ -197,7 +197,7 @@ namespace NetBlox
 						LogManager.LogInfo("Starting client network thread...");
 
 						var res = ConnectionResult.TCPConnectionNotAlive;
-						var con = ConnectionFactory.CreateTcpConnection(ipa.ToString(), MainPort, out res);
+						var con = ConnectionFactory.CreateTcpConnection(ipa.ToString(), ServerPort, out res);
 
 						ServerConnection = con;
 						con.EnableLogging = true;
@@ -208,7 +208,7 @@ namespace NetBlox
 							con.ConnectionClosed += (x, y) => 
 							{ 
 								LogManager.LogInfo($"Disconnected from server due to " + x);
-								(GameManager.GetService<Players>().LocalPlayer as Player).Kick($"Disconnected from server due to " + x);
+								(GameManager.CurrentRoot.GetService<Players>().LocalPlayer as Player).Kick($"Disconnected from server due to " + x);
 							};
 
 							ServerHandshake sh = default;
@@ -242,13 +242,18 @@ namespace NetBlox
 								if (ins.UniqueID == sh.DataModelInstance)
 								{
 									GameManager.CurrentRoot = (DataModel)ins;
-									LuaRuntime.Setup(GameManager.CurrentRoot);
+									LuaRuntime.Setup(GameManager.CurrentRoot, false);
+
+                                    for (int i = 0; i < GameManager.CrossDataModelInstances.Count; i++)
+                                        GameManager.CrossDataModelInstances[i].Parent = GameManager.CurrentRoot;
+
+                                    GameManager.GetSpecialService<CoreGui>().HideTeleportGui();
 									GameManager.IsRunning = true;
-								}
+                                }
 								if (ins.UniqueID == sh.PlayerInstance)
 								{
 									var plr = (Player)ins;
-									var pls = GameManager.GetService<Players>();
+									var pls = GameManager.CurrentRoot.GetService<Players>();
 									plr.IsLocalPlayer = true;
 									pls.LocalPlayer = plr;
 								}
@@ -257,7 +262,7 @@ namespace NetBlox
 									var chr = (Character)ins;
 									chr.IsLocalPlayer = true;
 									var cam = new Camera();
-									cam.Parent = GameManager.GetService<Workspace>();
+									cam.Parent = GameManager.CurrentRoot.GetService<Workspace>();
 									cam.CameraSubject = chr;
 								}
 							});
@@ -281,9 +286,9 @@ namespace NetBlox
 								GameManager.CurrentIdentity.UniquePlayerID = sh.UniquePlayerID;
 								GameManager.CurrentIdentity.MaxPlayerCount = sh.MaxPlayerCount;
 
-								RenderManager.HideTeleportGui();
+                                GameManager.GetSpecialService<CoreGui>().ShowTeleportGui(sh.PlaceName, sh.Author, (int)sh.PlaceID, 0);
 
-								y.SendRawData("nb.req-int-rep", []);
+                                y.SendRawData("nb.req-int-rep", []);
 							});
 
 							con.SendRawData("nb.handshake", SerializeJsonBytes(ch));
@@ -292,7 +297,7 @@ namespace NetBlox
 					catch (Exception ex)
 					{
 						var msg = $"Could not connect to the server! {ex.GetType().Name} - {ex.Message}";
-						var pls = GameManager.GetService<Players>();
+						var pls = GameManager.CurrentRoot.GetService<Players>();
 						if (pls == null) return;
 						var plr = pls.LocalPlayer as Player;
 
@@ -336,6 +341,9 @@ namespace NetBlox
 				var dss = new Dictionary<string, string>();
 				var typ = ins.GetType();
 				var prs = typ.GetProperties();
+
+				if (typ.GetCustomAttribute<NotReplicatedAttribute>() != null) // we dont do THAT
+					return;
 
 				for (int i = 0; i < prs.Length; i++)
 				{

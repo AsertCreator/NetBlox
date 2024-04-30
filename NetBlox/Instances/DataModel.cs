@@ -13,7 +13,14 @@ namespace NetBlox.Instances
 		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
 		public Script MainEnv = null!;
 
-		[Lua]
+        public T? GetService<T>() where T : Instance
+        {
+            foreach (var inst in Children)
+                if (inst is T t)
+                    return t;
+            return null;
+        }
+        [Lua]
 		public bool IsLoaded()
 		{
 			return true;
@@ -22,8 +29,13 @@ namespace NetBlox.Instances
 		public void Shutdown()
 		{
 			GameManager.Shutdown();
-		}
-		[Lua]
+        }
+        [Lua]
+        public void AddCrossDataModelInstance(Instance ins)
+        {
+			GameManager.CrossDataModelInstances.Add(ins);
+        }
+        [Lua]
 		public override bool IsA(string classname)
 		{
 			if (nameof(DataModel) == classname) return true;

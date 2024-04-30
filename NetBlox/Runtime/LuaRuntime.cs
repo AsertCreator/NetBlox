@@ -18,7 +18,8 @@ namespace NetBlox.Runtime
 		public Script? Script;
 		public BaseScript? ScrInst;
 		public DateTime WaitUntil;
-		public string Name = string.Empty;
+		public Action? FinishCallback;
+        public string Name = string.Empty;
 	}
 	public static class LuaRuntime
 	{
@@ -26,18 +27,27 @@ namespace NetBlox.Runtime
 		public static LinkedList<LuaThread> Threads = new();
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 7;
+		private static Type dvt = typeof(DynValue);
 
-		public static void Setup(DataModel dm)
+		public static void Setup(DataModel dm, bool core)
 		{
-			var works = GameManager.GetService<Workspace>();
+			var works = dm.GetService<Workspace>();
 
-			dm.MainEnv = new Script(
-				CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
-				CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling |
-				CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
-			dm.MainEnv.Globals["game"] = MakeInstanceTable(GameManager.CurrentRoot, dm.MainEnv);
+			if (!core)
+				dm.MainEnv = new Script(
+					CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
+					CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling |
+					CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
+            else
+                dm.MainEnv = new Script(
+                    CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
+                    CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling | CoreModules.LoadMethods |
+					CoreModules.Debug | CoreModules.Json |
+                    CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
 
-			if (works != null)
+            dm.MainEnv.Globals["game"] = MakeInstanceTable(dm, dm.MainEnv);
+
+			if (works != null && !core)
 				dm.MainEnv.Globals["workspace"] = MakeInstanceTable(works, dm.MainEnv);
 
 			dm.MainEnv.Globals["wait"] = DynValue.NewCallback((x, y) =>
@@ -92,14 +102,14 @@ namespace NetBlox.Runtime
 		{
 			return (from x in Threads where x.Coroutine == c select x).First();
 		}
-		public static void Execute(string code, int sl, BaseScript? bs, DataModel dm)
+		public static void Execute(string code, int sl, BaseScript? bs, DataModel dm, Action? fc = null)
 		{
 			if (dm == null)
 				throw new Exception("DataModel must be present in order to execute scripts!");
 
 			try
 			{
-				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.DoString("return function() " + code + " end")); // ummm thats weird
+				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
 				var lt = new LuaThread
 				{
 					Script = dm.MainEnv,
@@ -107,7 +117,8 @@ namespace NetBlox.Runtime
 					WaitUntil = default,
 					Coroutine = d.Coroutine,
 					Level = sl,
-					MsThread = d
+					MsThread = d,
+					FinishCallback = fc
 				};
 
 				if (bs != null)
@@ -133,15 +144,15 @@ namespace NetBlox.Runtime
 		{
 			LogManager.LogError(msg);
 		}
-		public static Table MakeInstanceTable(Instance inst, Script scr)
+		public static Table MakeInstanceTable(Instance inst, Script scr, bool forcenew = false)
 		{
 			// i want to bulge out my eyes
-			if (inst.LuaTable != null) return inst.LuaTable;
+			if (inst.LuaTable != null && !forcenew) return inst.LuaTable;
 
 			var excs = NetworkManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
 			var type = inst.GetType();
 
-			inst.LuaTable = new Table(scr)
+			var table = new Table(scr)
 			{
 				MetaTable = new Table(scr)
 			};
@@ -156,7 +167,7 @@ namespace NetBlox.Runtime
 
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
-			inst.LuaTable.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
+            table.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
 			{
 				var key = y[1].String;
 				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
@@ -193,13 +204,18 @@ namespace NetBlox.Runtime
 									var info = parms[i];
 									var t = info.ParameterType;
 
-									if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName, out var ld))
-										return DynValue.Nil;
+									if (t != dvt)
+									{
+										if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName, out var ld))
+											return DynValue.Nil;
 
-									if (b[i + 1] == DynValue.Nil)
-										args.Add(null);
+										if (b[i + 1] == DynValue.Nil)
+											args.Add(null);
+										else
+											args.Add(ld(b[i + 1], scr));
+									}
 									else
-										args.Add(ld(b[i], scr));
+										args.Add(b[i + 1]);
 								}
 
 								var ret = meth!.Invoke(inst, args.ToArray());
@@ -230,7 +246,7 @@ namespace NetBlox.Runtime
 					}
 				}
 			});
-			inst.LuaTable.MetaTable["__newindex"] = DynValue.NewCallback((x, y) =>
+			table.MetaTable["__newindex"] = DynValue.NewCallback((x, y) =>
 			{
 				var key = y[1].String;
 				var val = y[2];
@@ -294,11 +310,14 @@ namespace NetBlox.Runtime
 				}
 				return DynValue.Nil;
 			});
-			inst.LuaTable.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.ClassName));
-			inst.LuaTable.MetaTable["__handle"] = inst.UniqueID.ToString();
-			inst.LuaTable.MetaTable["__handleType"] = 0;
+            table.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.ClassName));
+			table.MetaTable["__handle"] = inst.UniqueID.ToString();
+			table.MetaTable["__handleType"] = 0;
 
-			return inst.LuaTable;
+			if (!forcenew)
+				inst.LuaTable = table;
+
+            return table;
 		}
 	}
 }

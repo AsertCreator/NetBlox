@@ -1,6 +1,5 @@
 ﻿global using Font = Raylib_cs.Font;
 using ImGuiNET;
-using NetBlox.GUI;
 using NetBlox.Instances;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -13,9 +12,7 @@ namespace NetBlox
 {
 	public static class RenderManager
 	{
-		public static List<GUI.GUI> ScreenGUI = new();
 		public static List<Func<int>> Coroutines = new();
-		public static GUI.GUI? CurrentTeleportGUI;
 		public static int PreferredFPS = 60;
 		public static int ScreenSizeX = 1600;
 		public static int ScreenSizeY = 900;
@@ -94,7 +91,6 @@ namespace NetBlox
 							{
 								if (GameManager.CurrentRoot != null)
 									RenderInstanceUI(GameManager.CurrentRoot);
-								RenderGUIs();
 
 								Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
 									new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
@@ -111,13 +107,17 @@ namespace NetBlox
 
 						// perform processing
 						if (GameManager.CurrentRoot != null && GameManager.IsRunning)
-						{
 							GameManager.ProcessInstance(GameManager.CurrentRoot);
-							GameManager.Schedule();
-						}
 
-						// run coroutines
-						for (int i = 0; i < Coroutines.Count; i++)
+                        if (GameManager.SpecialRoot != null && GameManager.IsRunning)
+                            GameManager.ProcessInstance(GameManager.SpecialRoot);
+
+						if ((GameManager.SpecialRoot != null) ||
+							(GameManager.CurrentRoot != null && GameManager.IsRunning))
+                            GameManager.Schedule();
+
+                        // run coroutines
+                        for (int i = 0; i < Coroutines.Count; i++)
 						{
 							Func<int> cor = Coroutines[i];
 							if (cor() == -1) Coroutines.RemoveAt(i--);
@@ -206,13 +206,14 @@ namespace NetBlox
 							Node(ins.Children[i]);
 						}
 						ImGui.TreePop();
-					}
-				}
+                    }
+                }
 				if (GameManager.CurrentRoot != null)
 					Node(GameManager.CurrentRoot);
-				else
-					ImGui.TreeNode("No DataModel is loaded at the moment!");
-				ImGui.End();
+                if (GameManager.SpecialRoot != null)
+                    Node(GameManager.SpecialRoot);
+
+                ImGui.End();
 			}
 			if (DebugViewInfo.ShowLua)
 			{
@@ -295,61 +296,10 @@ namespace NetBlox
 			for (int i = 0; i < instance.GetChildren().Length; i++)
 				RenderInstance(instance.GetChildren()[i]!);
 		}
-		public static void RenderGUIs()
-		{
-			for (int i = 0; i < ScreenGUI.Count; i++)
-			{
-				for (int j = 0; j < ScreenGUI[i].Elements.Count; j++)
-					ScreenGUI[i].Elements[j].Render(ScreenSizeX, ScreenSizeY);
-			}
-		}
 		public static void SetPreferredFPS(int fps)
 		{
 			PreferredFPS = fps;
 			Raylib.SetTargetFPS(fps);
-		}
-
-		public static void ShowTeleportGui()
-		{
-			if (CurrentTeleportGUI != null) return;
-
-			var guitext = new GUIText("Loading place...", new UDim2(0.5f, 0.5f))
-			{
-				Color = Color.White,
-				FontSize = 24
-			};
-			var guiframe = new GUIFrame(new UDim2(1, 1), new UDim2(0.5f, 0.5f), Color.DarkBlue);
-
-			CurrentTeleportGUI = new GUI.GUI()
-			{
-				Elements = new()
-				{
-					guiframe,
-					guitext
-				}
-			};
-
-			ScreenGUI.Add(CurrentTeleportGUI);
-		}
-		public static void HideTeleportGui()
-		{
-			if (CurrentTeleportGUI == null) return;
-
-			var fc = Framecount;
-
-			Coroutines.Add(() =>
-			{
-				(CurrentTeleportGUI!.Elements[0] as GUIFrame)!.Color.A -= 255 / 20; // very very very fucky hacky
-
-				if (Framecount - fc == 20)
-				{
-					ScreenGUI.Remove(CurrentTeleportGUI);
-					CurrentTeleportGUI = null;
-					return -1;
-				}
-
-				return 0;
-			});
 		}
 		public static void ShowKickMessage(string msg)
 		{
