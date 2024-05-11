@@ -6,33 +6,35 @@ namespace NetBlox.Instances
 {
 	public class BasePart : PVInstance
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public bool Anchored { get; set; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public bool Locked { get; set; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public SurfaceType FrontSurface { get; set; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public SurfaceType BackSurface { get; set; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public SurfaceType TopSurface { get; set; } = SurfaceType.Studs;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public SurfaceType BottomSurface { get; set; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public SurfaceType LeftSurface { get; set; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public SurfaceType RightSurface { get; set; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public Color Color { get; set; } = Color.Gray;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public Vector3 Position { get => Origin.Position; set => Origin.Position = value; }
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public Vector3 Size { get; set; } = new Vector3(4, 1, 2);
-		[Lua]
+        [Lua([Security.Capability.None])]
+        public Vector3 size { get => Size; set => Size = value; }
+        [Lua([Security.Capability.None])]
 		public bool CanCollide { get; set; } = true;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public bool CanTouch { get; set; } = true;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public Vector3 Velocity { get; set; }
 		public bool IsGrounded = false;
 

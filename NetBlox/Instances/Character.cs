@@ -10,7 +10,7 @@ namespace NetBlox.Instances
 	[Creatable]
 	public class Character : Part
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		[JsonIgnore]
 		public bool IsLocalPlayer { get; set; }
 
@@ -88,7 +88,7 @@ namespace NetBlox.Instances
 
 			Raylib.DrawTextEx(RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Character) == classname) return true;

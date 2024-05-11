@@ -19,7 +19,7 @@ namespace NetBlox.Instances.Scripts
 		{
 			throw new NotImplementedException();
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Script) == classname) return true;

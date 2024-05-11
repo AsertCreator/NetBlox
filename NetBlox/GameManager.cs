@@ -1,4 +1,5 @@
 ﻿global using Color = Raylib_cs.Color;
+using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
@@ -22,8 +23,8 @@ namespace NetBlox
 		public static List<Instance> CrossDataModelInstances = [];
 		public static NetworkIdentity CurrentIdentity = new();
 		public static DataModel CurrentRoot = null!;
-        public static DataModel SpecialRoot = null!;
-        public static bool IsRunning = false;
+		public static DataModel SpecialRoot = null!;
+		public static bool IsRunning = false;
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
 		public static string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
@@ -48,14 +49,15 @@ namespace NetBlox
 				string cont = File.ReadAllText(files[i]);
 				cs.Source = cont;
 				cs.IsServerOnly = cont.Contains("-- [serveronly]\n");
-                cs.IsClientOnly = cont.Contains("-- [clientonly]\n");
-                cs.IsAsync = cont.Contains("-- [async]\n");
+				cs.IsClientOnly = cont.Contains("-- [clientonly]\n");
+				cs.IsAsync = cont.Contains("-- [async]\n");
 				CoreScripts.Add(cs);
-            }
+			}
 		}
-		public static void Start(bool client, bool server, string[] args)
+		public static void Start(bool client, bool server, bool render, string[] args, Action<string> servercallback)
 		{
 			ulong pid = ulong.MaxValue;
+			string rbxlinit = "";
 			LogManager.LogInfo("Initializing NetBlox...");
 
 			NetworkManager.Initialize(server, client);
@@ -93,9 +95,24 @@ namespace NetBlox
 							LogManager.LogInfo($"Setting fast number {key} to {nu}");
 							break;
 						}
-					case "--place-id":
+					case "--placeor":
 						{
-							pid = ulong.Parse(args[++i]);
+							CurrentIdentity.PlaceName = args[++i];
+							break;
+						}
+					case "--univor":
+						{
+							CurrentIdentity.UniverseName = args[++i];
+							break;
+						}
+					case "--maxplayers":
+						{
+							CurrentIdentity.MaxPlayerCount = uint.Parse(args[++i]);
+							break;
+						}
+					case "--rbxl":
+						{
+							rbxlinit = args[++i];
 							break;
 						}
 					default:
@@ -110,12 +127,12 @@ namespace NetBlox
 			Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
 
 			LogManager.LogInfo("Initializing RenderManager...");
-			RenderManager.Initialize();
+			RenderManager.Initialize(render);
 
 			LogManager.LogInfo("Initializing SerializationManager...");
 			SerializationManager.Initialize();
 
-            LogManager.LogInfo("Initializing internal scripts...");
+			LogManager.LogInfo("Initializing internal scripts...");
 			SpecialRoot = new();
 			SpecialRoot.Name = "csdm";
 			LuaRuntime.Setup(SpecialRoot, true);
@@ -123,7 +140,7 @@ namespace NetBlox
 
 			CoreScripts.Clear();
 
-            if (NetworkManager.IsClient)
+			if (NetworkManager.IsClient)
 			{
 				RenderManager.DebugViewInfo.ShowSC = true;
 				GetSpecialService<CoreGui>().ShowTeleportGui("", "", -1, -1);
@@ -137,82 +154,33 @@ namespace NetBlox
 						What = x
 					});
 				};
-				LoadServer();
+				servercallback(rbxlinit);
 			}
 
 			while (!ShuttingDown) ;
 		}
 		public static void ExecuteCoreScripts()
-        {
-            LoadAllCoreScripts();
+		{
+			LoadAllCoreScripts();
 
-            for (int i = 0; i < CoreScripts.Count; i++)
-            {
-                var cs = CoreScripts[i];
-                var wait = true;
+			for (int i = 0; i < CoreScripts.Count; i++)
+			{
+				var cs = CoreScripts[i];
+				var wait = true;
 
-                LuaRuntime.Execute(cs.Source, 8, null, SpecialRoot, () => wait = false);
+				LuaRuntime.Execute(cs.Source, 3, null, SpecialRoot, () => wait = false);
 
-                while (wait) ;
-            }
-        }
+				while (wait) ;
+			}
+		}
 		public static void SetupCrossDataModelInstances(DataModel target)
-        {
+		{
 			for (int i = 0; i < CrossDataModelInstances.Count; i++)
 			{
 				var ins = CrossDataModelInstances[i];
 				ins.Parent = target;
-				ins.LuaTable = LuaRuntime.MakeInstanceTable(ins, target.MainEnv, true);
+				ins.Tables[target.MainEnv] = LuaRuntime.MakeInstanceTable(ins, target.MainEnv);
 			}
-        }
-		public static void LoadServer()
-		{
-			DataModel dm = new();
-			Workspace ws = new();
-			ReplicatedStorage rs = new();
-			ReplicatedFirst ri = new();
-			RunService ru = new();
-			Players pl = new();
-			LocalScript ls = new();
-
-			ws.ZoomToExtents();
-			ws.Parent = dm;
-			dm.Name = "Baseplate";
-
-			Part part = new()
-			{
-				Parent = ws,
-				Color = Color.DarkGreen,
-				Position = new(0, -5, 0),
-				Size = new(50, 2, 20),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
-			};
-
-			ls.Parent = ri;
-			ls.Source = "print(\"HIIIIII\")";
-
-			rs.Parent = dm;
-			ri.Parent = dm;
-			pl.Parent = dm;
-			ru.Parent = dm;
-
-			CurrentIdentity.MaxPlayerCount = 8;
-			CurrentIdentity.PlaceName = "Default Place";
-			CurrentIdentity.UniverseName = "NetBlox Defaults";
-			CurrentIdentity.Author = "The Lord";
-			CurrentIdentity.PlaceID = 47384;
-			CurrentIdentity.UniverseID = 47384;
-
-			CurrentRoot?.Destroy();
-			CurrentRoot = dm;
-
-			LuaRuntime.Setup(CurrentRoot, false);
-			LuaRuntime.Execute(string.Empty, 0, null, CurrentRoot); // we will run nothing to initialize lua
-
-			NetworkManager.StartServer();
-
-			IsRunning = true;
 		}
 		public static void TeleportToPlace(ulong pid)
 		{
@@ -271,13 +239,16 @@ namespace NetBlox
 									{
 										var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
 										if (ac != null) ac();
-                                        LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+										LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 									}
 								}
 							}
-							catch (Exception ex)
+							catch (ScriptRuntimeException ex)
 							{
 								LogManager.LogError(ex.Message);
+								for (int i = 0; i < ex.CallStack.Count; i++)
+									LogManager.LogError($"    at {ex.CallStack[i]}");
+
 								if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
 									LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 							}
@@ -288,9 +259,9 @@ namespace NetBlox
 					if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
 					{
 						LuaRuntime.PrintError("Exhausted maximum script execution time!");
-                        var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
-                        if (ac != null) ac();
-                        cst.Cancel();
+						var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
+						if (ac != null) ac();
+						cst.Cancel();
 					}
 #endif
 				}

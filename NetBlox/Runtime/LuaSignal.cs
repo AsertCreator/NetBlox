@@ -7,12 +7,12 @@ namespace NetBlox.Runtime
 		public List<DynValue> Attached = new();
 		public bool HasFired = false;
 
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void Connect(DynValue dv)
 		{
 			Attached.Add(dv);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void Wait()
 		{
 			while (!HasFired) ;

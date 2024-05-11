@@ -4,10 +4,10 @@ namespace NetBlox.Instances.Scripts
 {
     public class LuaSourceContainer : Instance
     {
-        [Lua]
+        [Lua([Security.Capability.None])]
         public string Source { get; set; } = string.Empty;
 
-        [Lua]
+        [Lua([Security.Capability.None])]
         public override bool IsA(string classname)
         {
             if (nameof(LuaSourceContainer) == classname) return true;

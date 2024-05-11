@@ -7,7 +7,7 @@ namespace NetBlox.Instances
 	[Creatable]
 	public class Camera : Instance
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public Instance? CameraSubject { get; set; }
 		public static Vector2 LastMousePosition;
 
@@ -48,7 +48,7 @@ namespace NetBlox.Instances
 				RenderManager.MainCamera.Target = subject.Position;
 			}
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Camera) == classname) return true;

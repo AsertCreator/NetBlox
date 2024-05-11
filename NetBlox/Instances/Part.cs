@@ -8,7 +8,7 @@ namespace NetBlox.Instances
 	[Creatable]
 	public class Part : BasePart
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public Shape Shape { get; set; } = Shape.Block;
 
 		public override void Render()
@@ -30,7 +30,7 @@ namespace NetBlox.Instances
 
 			base.Render();
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Part) == classname) return true;

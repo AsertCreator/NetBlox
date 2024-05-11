@@ -13,17 +13,17 @@ namespace NetBlox.Instances.Services
 		{
 			Name = "Run Service";
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void Pause() => GameManager.IsRunning = false;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void Run() => GameManager.IsRunning = true;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void Stop() => GameManager.Shutdown();
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public bool IsClient() => NetworkManager.IsClient;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public bool IsServer() => NetworkManager.IsServer;
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(RunService) == classname) return true;

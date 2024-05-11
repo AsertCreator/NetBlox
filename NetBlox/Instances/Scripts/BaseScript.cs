@@ -9,11 +9,11 @@ namespace NetBlox.Instances.Scripts
 {
     public class BaseScript : LuaSourceContainer
     {
-        [Lua]
+        [Lua([Security.Capability.None])]
         public bool Enabled { get; set; } = true;
         protected bool HadExecuted = false;
 
-        [Lua]
+        [Lua([Security.Capability.None])]
         public override bool IsA(string classname)
         {
             if (nameof(BaseScript) == classname) return true;

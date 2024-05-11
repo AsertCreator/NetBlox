@@ -4,6 +4,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Globalization;
 using System.Numerics;
+using System.Reflection;
 using System.Reflection.Metadata;
 
 namespace NetBlox
@@ -16,6 +17,32 @@ namespace NetBlox
 		public static Dictionary<string, Func<DynValue, Script, object>> LuaDeserializers = new();
 		public static Dictionary<string, DataType> LuaDataTypes = new();
 
+        public static void SetProperty(object obj, string name, object data)
+        {
+            var type = obj.GetType();
+            var fi = type.GetRuntimeProperty(name);
+			if (fi != null)
+				fi.SetValue(obj, data);
+        }
+        public static void SetProperty(Type type, object obj, string name, object data)
+        {
+            var fi = type.GetRuntimeProperty(name);
+            if (fi != null)
+                fi.SetValue(obj, data);
+        }
+        public static void SetField(object obj, string field, object data)
+        {
+			var type = obj.GetType();
+            var fi = type.GetRuntimeField(field);
+            if (fi != null)
+                fi.SetValue(obj, data);
+        }
+        public static void SetField(Type type, object obj, string field, object data)
+		{
+			var fi = type.GetRuntimeField(field);
+            if (fi != null)
+                fi.SetValue(obj, data);
+        }
 		public static object Deserialize(Type type, string data)
 		{
 			var name = type.FullName;

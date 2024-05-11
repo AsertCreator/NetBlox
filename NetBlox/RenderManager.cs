@@ -25,85 +25,97 @@ namespace NetBlox
 		public static Font MainFont;
 		public static long Framecount;
 
-		public static void Initialize()
+		public static void Initialize(bool render)
 		{
 			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
 
 			RenderThread = new(() =>
 			{
-				Raylib.SetTraceLogLevel(TraceLogLevel.None);
-				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+				if (render)
+				{
+					Raylib.SetTraceLogLevel(TraceLogLevel.None);
+					Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
 
-				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
-				Raylib.SetTargetFPS(PreferredFPS);
-				Raylib.SetExitKey(KeyboardKey.Null); 
+					Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
+					Raylib.SetTargetFPS(PreferredFPS);
+					Raylib.SetExitKey(KeyboardKey.Null);
 
-				MainFont = Raylib.LoadFont(GameManager.ContentFolder + "fonts/arialbd.ttf");
-				StudTexture = Raylib.LoadTexture(GameManager.ContentFolder + "textures/stud.png");
-				CurrentSkybox = Skybox.LoadSkybox("bluecloud");
+					MainFont = Raylib.LoadFont(GameManager.ContentFolder + "fonts/arialbd.ttf");
+					StudTexture = Raylib.LoadTexture(GameManager.ContentFolder + "textures/stud.png");
+					CurrentSkybox = Skybox.LoadSkybox("bluecloud");
 
-				rlImGui.Setup(true, true);
+					rlImGui.Setup(true, true);
+				}
 
 				while (!GameManager.ShuttingDown)
 				{
-					ScreenSizeX = Raylib.GetScreenWidth();
-					ScreenSizeY = Raylib.GetScreenHeight();
+					if (render)
+					{
+						ScreenSizeX = Raylib.GetScreenWidth();
+						ScreenSizeY = Raylib.GetScreenHeight();
+					}
 
 					Framecount++;
 					try
 					{
-						if (NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
+						if (render)
 						{
-							Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
-							if (Raylib.IsKeyDown(KeyboardKey.Space))
+							if (NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
 							{
-								MainCamera.Target.Y += 0.1f;
-								MainCamera.Position.Y += 0.1f;
-							}
-							if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
-							{
-								MainCamera.Target.Y -= 0.1f;
-								MainCamera.Position.Y -= 0.1f;
-							}
-						}
-
-						// render world
-						Raylib.BeginDrawing();
-						{
-							Raylib.ClearBackground(new Color(102, 191, 255, 255));
-
-							Raylib.BeginMode3D(MainCamera);
-
-							int a = Raylib.GetKeyPressed();
-							while (a != 0)
-							{
-								if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
-									act();
-								a = Raylib.GetKeyPressed();
+								Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+								if (Raylib.IsKeyDown(KeyboardKey.Space))
+								{
+									MainCamera.Target.Y += 0.1f;
+									MainCamera.Position.Y += 0.1f;
+								}
+								if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+								{
+									MainCamera.Target.Y -= 0.1f;
+									MainCamera.Position.Y -= 0.1f;
+								}
 							}
 
-							RenderWorld();
-						
-							Raylib.EndMode3D();
-
-							// render all guis
-							if (!DisableAllGuis)
+							// render world
+							Raylib.BeginDrawing();
 							{
-								if (GameManager.CurrentRoot != null)
-									RenderInstanceUI(GameManager.CurrentRoot);
+								Raylib.ClearBackground(new Color(102, 191, 255, 255));
 
-								Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
-									new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
-								Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
-									new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
-								Raylib.DrawTextEx(MainFont, Status,
-									new Vector2(5, 5 + 16 * 3), 16, 0, Color.White);
+								Raylib.BeginMode3D(MainCamera);
 
-								DebugView();
-							}
+								int a = Raylib.GetKeyPressed();
+								while (a != 0)
+								{
+									if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
+										act();
+									a = Raylib.GetKeyPressed();
+								}
 
-							Raylib.EndDrawing();
-						}
+								RenderWorld();
+
+								Raylib.EndMode3D();
+
+								// render all guis
+								if (!DisableAllGuis)
+								{
+									if (GameManager.CurrentRoot != null)
+										RenderInstanceUI(GameManager.CurrentRoot);
+
+									Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
+										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
+									Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
+										new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
+									Raylib.DrawTextEx(MainFont, Status,
+										new Vector2(5, 5 + 16 * 3), 16, 0, Color.White);
+
+									DebugView();
+								}
+
+								Raylib.EndDrawing();
+                            }
+
+                            if (Raylib.WindowShouldClose())
+                                GameManager.Shutdown();
+                        }
 
 						// perform processing
 						if (GameManager.CurrentRoot != null && GameManager.IsRunning)
@@ -122,10 +134,6 @@ namespace NetBlox
 							Func<int> cor = Coroutines[i];
 							if (cor() == -1) Coroutines.RemoveAt(i--);
 						}
-
-						// die
-						if (Raylib.WindowShouldClose()) 
-							GameManager.Shutdown();
 					}
 					catch (Exception ex)
 					{
@@ -133,10 +141,13 @@ namespace NetBlox
 					}
 				}
 
-				Raylib.CloseWindow();
-				rlImGui.Shutdown();
+				if (render)
+				{
+					Raylib.CloseWindow();
+					rlImGui.Shutdown();
 
-				CurrentSkybox.Unload();
+					CurrentSkybox.Unload();
+				}
 			});
 
 			RenderThread.Start();

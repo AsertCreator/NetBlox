@@ -4,16 +4,16 @@ namespace NetBlox.Instances.Services
 {
 	public class Players : Instance
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public Instance? LocalPlayer { get; set; }
 
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Players) == classname) return true;
 			return base.IsA(classname);
 		}
-		[Lua]
+		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public Player CreateNewPlayer(string name, bool local)
 		{
 			Player player = new()

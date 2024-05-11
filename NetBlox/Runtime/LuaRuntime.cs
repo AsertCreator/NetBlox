@@ -3,6 +3,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using System.ComponentModel;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime;
 using Script = MoonSharp.Interpreter.Script;
@@ -28,6 +29,7 @@ namespace NetBlox.Runtime
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 7;
 		private static Type dvt = typeof(DynValue);
+        private static bool init = false;
 
 		public static void Setup(DataModel dm, bool core)
 		{
@@ -97,7 +99,9 @@ namespace NetBlox.Runtime
 					return DynValue.Void;
 				}
 			});
-		}
+
+            Execute(string.Empty, 0, null, dm); // we will run nothing to initialize lua
+        }
 		public static LuaThread GetThreadFor(Coroutine c)
 		{
 			return (from x in Threads where x.Coroutine == c select x).First();
@@ -144,10 +148,10 @@ namespace NetBlox.Runtime
 		{
 			LogManager.LogError(msg);
 		}
-		public static Table MakeInstanceTable(Instance inst, Script scr, bool forcenew = false)
+		public static Table MakeInstanceTable(Instance inst, Script scr)
 		{
 			// i want to bulge out my eyes
-			if (inst.LuaTable != null && !forcenew) return inst.LuaTable;
+			if (inst.Tables.TryGetValue(scr, out Table t)) return t;
 
 			var excs = NetworkManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
 			var type = inst.GetType();
@@ -192,47 +196,70 @@ namespace NetBlox.Runtime
 				{
 					if (meth != null)
 					{
-						return DynValue.NewCallback((a, b) =>
-						{
-							try
+						var sec = meth.GetCustomAttribute<LuaAttribute>();
+
+						if (Security.IsCompatible(CurrentThread.Value.Level, sec.Capabilities))
+							return DynValue.NewCallback((a, b) =>
 							{
-								var args = new List<object?>();
-								var parms = meth.GetParameters();
-
-								for (int i = 0; i < parms.Length; i++)
+								try
 								{
-									var info = parms[i];
-									var t = info.ParameterType;
+									var args = new List<object?>();
+									var parms = meth.GetParameters();
 
-									if (t != dvt)
+									for (int i = 0; i < parms.Length; i++)
 									{
-										if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName, out var ld))
+										var info = parms[i];
+										var t = info.ParameterType;
+
+										if (t != dvt)
+										{
+											if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName, out var ld))
+												return DynValue.Nil;
+
+											if (b[i + 1] == DynValue.Nil)
+												args.Add(null);
+											else
+												args.Add(ld(b[i + 1], scr));
+										}
+										else
+											args.Add(b[i + 1]);
+									}
+
+									var ret = meth!.Invoke(inst, args.ToArray());
+
+									if (!meth.ReturnType.IsArray)
+									{
+										if (!SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.FullName, out var ls))
 											return DynValue.Nil;
 
-										if (b[i + 1] == DynValue.Nil)
-											args.Add(null);
+										if (ret != null)
+											return ls(ret, scr);
 										else
-											args.Add(ld(b[i + 1], scr));
+											return DynValue.Nil;
 									}
 									else
-										args.Add(b[i + 1]);
+									{
+										Table res = new(scr);
+										Array arr = (ret as Array)!;
+
+										for (int i = 0; i < arr.Length; i++)
+										{
+											if (SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.FullName, out var ls))
+												res[i] = ls(arr.GetValue(i)!, scr);
+											else
+												res[i] = DynValue.Nil;
+										}
+
+										return DynValue.NewTable(res);
+									}
 								}
-
-								var ret = meth!.Invoke(inst, args.ToArray());
-
-								if (!SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.FullName, out var ls))
-									return DynValue.Nil;
-
-								if (ret != null)
-									return ls(ret, scr);
-								else
-									return DynValue.Nil;
-							}
-							catch (TargetInvocationException)
-							{
-								throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
-							}
-						});
+								catch (TargetInvocationException ex)
+								{
+									throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
+								}
+							});
+						else
+							throw new Exception($"\"{meth.Name}\" is not accessible");
 					}
 					else
 					{
@@ -314,8 +341,7 @@ namespace NetBlox.Runtime
 			table.MetaTable["__handle"] = inst.UniqueID.ToString();
 			table.MetaTable["__handleType"] = 0;
 
-			if (!forcenew)
-				inst.LuaTable = table;
+			inst.Tables[scr] = table;
 
             return table;
 		}

@@ -8,17 +8,17 @@ namespace NetBlox.Instances
 		protected CFrame Origin;
 		protected CFrame PivotOffset;
 
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public CFrame GetPivot()
 		{
 			return PivotOffset + Origin;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void SetPivot(CFrame pivot)
 		{
 			Origin = pivot;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(PVInstance) == classname) return true;

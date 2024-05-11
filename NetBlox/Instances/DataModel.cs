@@ -6,36 +6,40 @@ namespace NetBlox.Instances
 {
 	public class DataModel : Instance
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public string TestString { get; set; } = "Test";
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public int PreferredFPS { get => RenderManager.PreferredFPS; set => RenderManager.SetPreferredFPS(value); }
 		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
 		public Script MainEnv = null!;
 
-        public T? GetService<T>() where T : Instance
+        public T GetService<T>() where T : Instance, new()
         {
-            foreach (var inst in Children)
-                if (inst is T t)
-                    return t;
-            return null;
+            for (int i = 0; i < Children.Count; i++)
+            {
+                if (Children[i] is T)
+                    return (T)Children[i];
+            }
+            var serv = new T();
+            serv.Parent = this;
+            return serv;
         }
-        [Lua]
+        [Lua([Security.Capability.None])]
 		public bool IsLoaded()
 		{
 			return true;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void Shutdown()
 		{
 			GameManager.Shutdown();
         }
-        [Lua]
+        [Lua([Security.Capability.CoreSecurity])]
         public void AddCrossDataModelInstance(Instance ins)
         {
 			GameManager.CrossDataModelInstances.Add(ins);
         }
-        [Lua]
+        [Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(DataModel) == classname) return true;

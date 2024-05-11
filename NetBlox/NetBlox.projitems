@@ -15,6 +15,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Character.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
@@ -31,7 +32,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaYield.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />

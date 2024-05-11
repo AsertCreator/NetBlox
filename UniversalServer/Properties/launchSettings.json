@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "UniversalServer": {
+      "commandName": "Project",
+      "commandLineArgs": "--rbxl ./Crossroads.rbxl"
+    }
+  }
+}

@@ -15,7 +15,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Some Solution Items", "Some
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalClient", "UniversalClient\UniversalClient.csproj", "{0B7472C1-325A-411E-AF72-8EFBFCA64940}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniversalServer", "UniversalServer\UniversalServer.csproj", "{BC56B34A-8200-4966-B065-94A593B0072F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalServer", "UniversalServer\UniversalServer.csproj", "{BC56B34A-8200-4966-B065-94A593B0072F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsNBServerManager", "WindowsNBServerManager\WindowsNBServerManager.csproj", "{9E72F3F5-07FC-4AC3-9D56-733622A42D70}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BC56B34A-8200-4966-B065-94A593B0072F} = {BC56B34A-8200-4966-B065-94A593B0072F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +36,10 @@ Global
 		{BC56B34A-8200-4966-B065-94A593B0072F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC56B34A-8200-4966-B065-94A593B0072F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC56B34A-8200-4966-B065-94A593B0072F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E72F3F5-07FC-4AC3-9D56-733622A42D70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E72F3F5-07FC-4AC3-9D56-733622A42D70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E72F3F5-07FC-4AC3-9D56-733622A42D70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E72F3F5-07FC-4AC3-9D56-733622A42D70}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

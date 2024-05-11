@@ -13,7 +13,7 @@ namespace NetBlox.Instances.Scripts
                 HadExecuted = true;
             }
         }
-        [Lua]
+        [Lua([Security.Capability.None])]
         public override bool IsA(string classname)
         {
             if (nameof(LocalScript) == classname) return true;

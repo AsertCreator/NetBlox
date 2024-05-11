@@ -6,16 +6,16 @@ namespace NetBlox.Instances.Services
 {
     public class Workspace : Instance
     {
-        [Lua]
+        [Lua([Security.Capability.None])]
 		public Instance? MainCamera { get; set; }
 
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Workspace) == classname) return true;
 			return base.IsA(classname);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void ZoomToExtents()
 		{
 			RenderManager.MainCamera.Position = new Vector3(50, 40, 0);

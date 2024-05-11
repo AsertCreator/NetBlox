@@ -4,7 +4,7 @@ namespace NetBlox.Instances.Services
 {
     public class ReplicatedStorage : Instance
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(ReplicatedStorage) == classname) return true;

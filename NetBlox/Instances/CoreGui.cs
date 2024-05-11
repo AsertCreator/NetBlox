@@ -10,23 +10,23 @@ namespace NetBlox.Instances
 		private DynValue? showTeleportGui;
         private DynValue? hideTeleportGui;
 
-        [Lua]
+        [Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(CoreGui) == classname) return true;
 			return base.IsA(classname);
         }
-        [Lua]
+        [Lua([Security.Capability.CoreSecurity])]
         public void SetShowTeleportGuiCallback(DynValue dv) => showTeleportGui = dv;
-        [Lua]
+        [Lua([Security.Capability.CoreSecurity])]
         public void SetHideTeleportGuiCallback(DynValue dv) => hideTeleportGui = dv;
-        [Lua]
+        [Lua([Security.Capability.CoreSecurity])]
 		public void ShowTeleportGui(string placename, string authorname, int pid, int uid)
 		{
 			if (showTeleportGui != null && showTeleportGui.Type == DataType.Function)
 				showTeleportGui.Function.Call(placename, authorname, pid, uid);
         }
-        [Lua]
+        [Lua([Security.Capability.CoreSecurity])]
         public void HideTeleportGui()
         {
             if (hideTeleportGui != null && hideTeleportGui.Type == DataType.Function)

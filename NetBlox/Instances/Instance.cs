@@ -6,14 +6,14 @@ namespace NetBlox.Instances
 {
 	public class Instance
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public bool Archivable { get; set; }
-		[Lua]
-		public string ClassName => GetType().Name;
-		[Lua]
-		public string Name { get; set; }
-		[Lua]
-		[JsonIgnore]
+        [Lua([Security.Capability.None])]
+        public string ClassName => GetType().Name;
+        [Lua([Security.Capability.None])]
+        public string Name { get; set; }
+        [Lua([Security.Capability.None])]
+        [JsonIgnore]
 		public Instance? Parent
 		{
 			get => parent;
@@ -53,7 +53,7 @@ namespace NetBlox.Instances
 		[JsonIgnore]
 		public List<Instance> Children = new();
 		[JsonIgnore]
-		public Table? LuaTable;
+		public Dictionary<Script, Table> Tables = new();
 		private Instance? parent;
 
 		public Instance()
@@ -82,13 +82,13 @@ namespace NetBlox.Instances
 		{
 			// render nothing
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual void AddTag(string tag)
 		{
 			if (!Tags.Contains(tag))
 				Tags.Add(tag);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance Clone()
 		{
 			var clone = new Instance()
@@ -104,13 +104,13 @@ namespace NetBlox.Instances
 
 			return clone;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual void ClearAllChildren()
 		{
 			for (int i = 0; i < Children.Count; i++) Children[i].Destroy();
 			Children.Clear();
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual void Destroy()
 		{
 			if (!WasDestroyed)
@@ -122,28 +122,28 @@ namespace NetBlox.Instances
 				WasDestroyed = true;
 			}
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstAncestor(string name)
 		{
 			if (Parent == null) return null;
 			if (Parent.Name == name) return Parent;
 			else return Parent.FindFirstAncestor(name);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstAncestorOfClass(string cl)
 		{
 			if (Parent == null) return null;
 			if (Parent.ClassName == cl) return Parent;
 			else return Parent.FindFirstAncestorOfClass(cl);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstAncestorWhichIsA(string cl)
 		{
 			if (Parent == null) return null;
 			if (Parent.IsA(cl)) return Parent;
 			else return Parent.FindFirstAncestorWhichIsA(cl);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChild(string name)
 		{
 			for (int i = 0; i < Children.Count; i++)
@@ -152,7 +152,7 @@ namespace NetBlox.Instances
 
 			return null;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChildOfClass(string cl)
 		{
 			for (int i = 0; i < Children.Count; i++)
@@ -161,7 +161,7 @@ namespace NetBlox.Instances
 
 			return null;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChildWhichIsA(string cl)
 		{
 			for (int i = 0; i < Children.Count; i++)
@@ -170,7 +170,7 @@ namespace NetBlox.Instances
 
 			return null;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstDescendant(string name)
 		{
 			for (int i = 0; i < Children.Count; i++)
@@ -186,9 +186,9 @@ namespace NetBlox.Instances
 
 			return null;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetChildren() => Children.ToArray();
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetDescendants()
 		{
 			var list = new List<Instance>(Children);
@@ -198,7 +198,7 @@ namespace NetBlox.Instances
 
 			return list.ToArray();
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetAncestors()
 		{
 			if (Parent == null) return null!;
@@ -214,7 +214,7 @@ namespace NetBlox.Instances
 
 			return list.ToArray();
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual string GetFullName()
 		{
 			if (parent == null) return Name;
@@ -233,18 +233,37 @@ namespace NetBlox.Instances
 			strings.Reverse();
 			return string.Join('.', strings);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual bool IsDescendantOf(Instance instance) => GetAncestors().Contains(instance);
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual bool IsAncestorOf(Instance instance) => GetDescendants().Contains(instance);
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual string[] GetTags() => Tags.ToArray();
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual bool HasTag(string tag) => Tags.Contains(tag);
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual void RemoveTag(string tag) => Tags.Remove(tag);
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public virtual bool IsA(string classname) => nameof(Instance) == classname;
+		[Lua([Security.Capability.None])]
+		public LuaYield<Instance> WaitForChild(string name)
+		{
+			var n = new LuaYield<Instance>();
+
+			for (int i = 0; i < Children.Count; i++)
+			{
+				if (name == Children[i].Name)
+				{
+					n.HasResult = true;
+					n.Result = Children[i];
+					return n;
+				}
+			}
+
+			n.HasResult = false;
+			n.Result = null;
+			return n;
+		}
 		public void ReplicateProps()
 		{
 			if (NetworkManager.ServerConnection != null)

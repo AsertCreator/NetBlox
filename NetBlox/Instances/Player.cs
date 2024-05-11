@@ -8,13 +8,13 @@ namespace NetBlox.Instances
 	[Creatable]
 	public class Player : Instance
 	{
-		[Lua]
+		[Lua([Security.Capability.None])]
 		[JsonIgnore]
 		public Instance? Character { get; set; }
 		[JsonIgnore]
 		public bool IsLocalPlayer;
 
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void LoadCharacter()
 		{
 			var ch = new Character();
@@ -39,7 +39,7 @@ namespace NetBlox.Instances
 
 			Character = ch;
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public void Kick(string msg)
 		{
 			if (IsLocalPlayer)
@@ -59,13 +59,13 @@ namespace NetBlox.Instances
 				throw new Exception("Cannot kick non-local player from client");
 			}
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Player) == classname) return true;
 			return base.IsA(classname);
 		}
-		[Lua]
+		[Lua([Security.Capability.None])]
 		public override void Destroy() // also destroy character
 		{
 			base.Destroy();
