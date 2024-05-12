@@ -38,6 +38,7 @@ namespace NetBlox.Instances
 				}
 			}
 
+			RenderManager.SetLight(0, 1, Position, Vector3.Zero, Color);
 			base.Render();
 		}
 		public override void Process()

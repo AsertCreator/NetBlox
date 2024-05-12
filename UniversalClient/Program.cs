@@ -1,14 +1,26 @@
 ﻿using NetBlox.Instances.Services;
 using NetBlox.Runtime;
+using Raylib_cs;
 using System.Net;
+using System.Runtime.InteropServices;
 
 namespace NetBlox.Client
 {
 	public static class Program
-	{
-		public static void Main(string[] args)
+    {
+        public static int Main(string[] args)
 		{
-			var xo = "";
+			Raylib.SetTraceLogLevel(TraceLogLevel.None);
+
+            var xo = "";
+			var v = Rlgl.GetVersion();
+
+            if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
+			{
+				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
+				return 1;
+			}
+
 			LogManager.LogInfo($"NetBlox Client ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
 			PlatformService.QueuedTeleport = () =>
 			{
@@ -25,6 +37,8 @@ namespace NetBlox.Client
                 });
 			};
 			GameManager.Start(true, false, true, args, x => xo = x);
+
+			return 0;
 		}
 	}
 }

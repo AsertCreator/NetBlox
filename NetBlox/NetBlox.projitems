@@ -71,6 +71,12 @@
     <None Include="$(MSBuildThisFileDirectory)content\scripts\init.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Content Include="$(MSBuildThisFileDirectory)content\shaders\lighting.fss">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Include="$(MSBuildThisFileDirectory)content\shaders\lighting.vs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_bk.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

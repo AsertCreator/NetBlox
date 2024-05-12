@@ -15,7 +15,8 @@ namespace NetBlox
 	public static class RenderManager
 	{
 		public static List<Func<int>> Coroutines = new();
-		public static int PreferredFPS = 60;
+        public static List<Shader> Shaders = new();
+        public static int PreferredFPS = 60;
 		public static int ScreenSizeX = 1600;
 		public static int ScreenSizeY = 900;
 		public static string Status = string.Empty;
@@ -24,10 +25,11 @@ namespace NetBlox
 		public static Skybox? CurrentSkybox;
 		public static Camera3D MainCamera;
 		public static Texture2D StudTexture;
+		public static Shader LightingShader;
 		public static Font MainFont;
 		public static long Framecount;
 
-		public static void Initialize(bool render)
+		public unsafe static void Initialize(bool render)
 		{
 			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
 
@@ -45,8 +47,13 @@ namespace NetBlox
 					MainFont = Raylib.LoadFont(GameManager.ContentFolder + "fonts/arialbd.ttf");
 					StudTexture = Raylib.LoadTexture(GameManager.ContentFolder + "textures/stud.png");
 					CurrentSkybox = Skybox.LoadSkybox("bluecloud");
+					LightingShader = LoadShader(GameManager.ResolveUrl("rbxasset://shaders/lighting"));
 
-					rlImGui.Setup(true, true);
+                    int ambientLoc = Raylib.GetShaderLocation(LightingShader, "ambient");
+                    LightingShader.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(LightingShader, "viewPos");
+                    Raylib.SetShaderValue(LightingShader, ambientLoc, new float[] { 0.1f, 0.1f, 0.1f, 1.0f }, ShaderUniformDataType.Vec4);
+
+				    rlImGui.Setup(true, true);
 				}
 
 				while (!GameManager.ShuttingDown)
@@ -77,14 +84,18 @@ namespace NetBlox
 								}
 							}
 
-							// render world
-							Raylib.BeginDrawing();
+                            float[] cameraPos = [MainCamera.Position.X, MainCamera.Position.Y, MainCamera.Position.Z];
+                            Raylib.SetShaderValue(LightingShader, LightingShader.Locs[(int)ShaderLocationIndex.VectorView], cameraPos, ShaderUniformDataType.Vec3);
+
+                            // render world
+                            Raylib.BeginDrawing();
 							{
-								Raylib.ClearBackground(Color.Black);
+								Raylib.ClearBackground(Color.SkyBlue);
 
 								Raylib.BeginMode3D(MainCamera);
+                                Raylib.BeginShaderMode(LightingShader);
 
-								int a = Raylib.GetKeyPressed();
+                                int a = Raylib.GetKeyPressed();
 								while (a != 0)
 								{
 									if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
@@ -94,7 +105,8 @@ namespace NetBlox
 
 								RenderWorld();
 
-								Raylib.EndMode3D();
+                                Raylib.EndShaderMode();
+                                Raylib.EndMode3D();
 
 								// render all guis
 								if (!DisableAllGuis)
@@ -149,11 +161,62 @@ namespace NetBlox
 					rlImGui.Shutdown();
 
 					CurrentSkybox.Unload();
-				}
+
+                    foreach (var shader in Shaders)
+						Raylib.UnloadShader(shader);
+                }
 			});
 
 			RenderThread.Start();
 		}
+        private struct Light
+        {
+            public int type;
+            public bool enabled;
+            public Vector3 position;
+            public Vector3 target;
+            public Color color;
+            public float attenuation;
+
+            // Shader locations
+            public int enabledLoc;
+            public int typeLoc;
+            public int positionLoc;
+            public int targetLoc;
+            public int colorLoc;
+            public int attenuationLoc;
+        }
+		public static unsafe void SetLight(int i, int type, Vector3 position, Vector3 target, Color color)
+		{
+			Light light = new();
+
+            light.enabled = true;
+            light.type = type;
+            light.position = position;
+            light.target = target;
+            light.color = color;
+            light.enabledLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].enabled");
+            light.typeLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].type");
+            light.positionLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].position");
+            light.targetLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].target");
+            light.colorLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + " ].color");
+
+            // Send to shader light enabled state and type
+            Raylib.SetShaderValue(LightingShader, light.enabledLoc, &light.enabled, ShaderUniformDataType.Int);
+            Raylib.SetShaderValue(LightingShader, light.typeLoc, &light.type, ShaderUniformDataType.Int);
+
+            // Send to shader light position values
+            float[] pf = { light.position.X, light.position.Y, light.position.Z };
+            Raylib.SetShaderValue(LightingShader, light.positionLoc, pf, ShaderUniformDataType.Vec3);
+
+			// Send to shader light target position values
+			float[] tf = { light.position.X, light.position.Y, light.position.Z };
+            Raylib.SetShaderValue(LightingShader, light.targetLoc, tf, ShaderUniformDataType.Vec3);
+
+            // Send to shader light color values
+            float[] cf = { light.color.R/255f, light.color.G/255f, light.color.B/255f, light.color.A/255f };
+            Raylib.SetShaderValue(LightingShader, light.colorLoc, cf, ShaderUniformDataType.Vec4);
+        }
 		public static class DebugViewInfo
 		{
 			public static bool EnableDebugView = false;
@@ -358,8 +421,8 @@ namespace NetBlox
 			var skypos = MainCamera.Position;
 			var works = GameManager.CurrentRoot.FindFirstChild("Workspace");
 
-			if (works != null)
-				RenderSkybox();
+			// if (works != null)
+			// 	RenderSkybox();
 
 			if (CurrentSkybox != null && CurrentSkybox.SkyboxWires)
 				Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Color.Blue);
@@ -373,6 +436,12 @@ namespace NetBlox
 				(instance as BasePart)!.Render();
 			for (int i = 0; i < instance.GetChildren().Length; i++)
 				RenderInstance(instance.GetChildren()[i]!);
+		}
+		public static Shader LoadShader(string f)
+		{
+			var s = Raylib.LoadShader(f + ".vs", f + ".fss");
+			Shaders.Add(s);
+			return s;
 		}
 		public static void SetPreferredFPS(int fps)
 		{

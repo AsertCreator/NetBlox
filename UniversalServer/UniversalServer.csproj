@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>NetBloxServer</AssemblyName>
     <RootNamespace>NetBlox.Server</RootNamespace>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
