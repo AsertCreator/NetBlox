@@ -33,7 +33,7 @@ namespace NetBlox.Runtime
 
 		public static void Setup(DataModel dm, bool core)
 		{
-			var works = dm.GetService<Workspace>();
+			var works = dm.GetService<Workspace>(true);
 
 			if (!core)
 				dm.MainEnv = new Script(

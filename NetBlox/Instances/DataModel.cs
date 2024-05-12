@@ -13,16 +13,20 @@ namespace NetBlox.Instances
 		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
 		public Script MainEnv = null!;
 
-        public T GetService<T>() where T : Instance, new()
+        public T GetService<T>(bool allownull = false) where T : Instance, new()
         {
             for (int i = 0; i < Children.Count; i++)
             {
                 if (Children[i] is T)
                     return (T)Children[i];
             }
-            var serv = new T();
-            serv.Parent = this;
-            return serv;
+			if (!allownull)
+			{
+				var serv = new T();
+				serv.Parent = this;
+				return serv;
+			}
+			return null!;
         }
         [Lua([Security.Capability.None])]
 		public bool IsLoaded()

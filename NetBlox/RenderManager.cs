@@ -98,7 +98,7 @@ namespace NetBlox
 								if (!DisableAllGuis)
 								{
 									if (GameManager.CurrentRoot != null)
-										RenderInstanceUI(GameManager.CurrentRoot);
+										RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
 
 									Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
 										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
@@ -258,8 +258,9 @@ namespace NetBlox
 
 			rlImGui.End();
 		}
-		public static void RenderInstanceUI(Instance inst)
+		public static void RenderInstanceUI(Instance? inst)
 		{
+			if (inst == null) return;
 			var children = inst.GetChildren();
 
 			inst.RenderUI();

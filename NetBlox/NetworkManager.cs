@@ -78,11 +78,10 @@ namespace NetBlox
 			nc.IsDisconnecting = true;
 			if (nc.Player != null)
 			{
-				if (nc.Player.Character != null)
-					nc.Player.Character.Destroy();
+				nc.Player.Character?.Destroy();
 				nc.Player.Destroy();
 			}
-			Console.WriteLine($"{nc.Username} had disconnected!");
+			LogManager.LogInfo($"{nc.Username} had disconnected!");
 			GameManager.AllClients.Remove(nc);
 		}
 		public static void StartServer()
@@ -303,8 +302,7 @@ namespace NetBlox
 
 						LogManager.LogError(msg);
 
-						if (plr != null)
-							plr.Kick(msg);
+						plr?.Kick(msg);
 
 						return;
 					}
@@ -400,6 +398,7 @@ namespace NetBlox
 					}
 				}
 
+				LogManager.LogWarn(ins.ToString());
 				ins.Parent = (from x in GameManager.AllInstances where x.UniqueID == ins.ParentID select x).FirstOrDefault();
 
 				return ins;

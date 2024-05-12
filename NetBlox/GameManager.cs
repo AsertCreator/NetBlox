@@ -287,7 +287,9 @@ namespace NetBlox
 		}
 		public static void ProcessInstance(Instance inst)
 		{
-			inst.Process();
+			if (inst != null) // f.y. system
+				inst.Process();
+
 			var ch = inst.GetChildren();
 			for (int i = 0; i < ch.Length; i++)
 			{
