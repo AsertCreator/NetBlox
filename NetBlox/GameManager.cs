@@ -135,7 +135,12 @@ namespace NetBlox
 			LogManager.LogInfo("Initializing internal scripts...");
 			SpecialRoot = new();
 			SpecialRoot.Name = "csdm";
-			LuaRuntime.Setup(SpecialRoot, true);
+
+			var rs = new RunService();
+			rs.Parent = SpecialRoot;
+			CrossDataModelInstances.Add(rs);
+
+            LuaRuntime.Setup(SpecialRoot, true);
 			ExecuteCoreScripts();
 
 			CoreScripts.Clear();
@@ -207,7 +212,7 @@ namespace NetBlox
 				if (LuaRuntime.CurrentThread.Value.Coroutine == null)
 					LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 				else if (DateTime.Now >= LuaRuntime.CurrentThread.Value.WaitUntil &&
-					LuaRuntime.CurrentThread.Value.Coroutine.State != MoonSharp.Interpreter.CoroutineState.Dead)
+					LuaRuntime.CurrentThread.Value.Coroutine.State != CoroutineState.Dead)
 				{
 					var cst = new CancellationTokenSource();
 #if !DISABLE_EME
@@ -287,13 +292,15 @@ namespace NetBlox
 		}
 		public static void ProcessInstance(Instance inst)
 		{
-			if (inst != null) // f.y. system
+			if (inst != null)
+			{ // i was outsmarted
 				inst.Process();
 
-			var ch = inst.GetChildren();
-			for (int i = 0; i < ch.Length; i++)
-			{
-				ProcessInstance(ch[i]);
+				var ch = inst.GetChildren();
+				for (int i = 0; i < ch.Length; i++)
+				{
+					ProcessInstance(ch[i]);
+				}
 			}
 		}
 		public static T GetSpecialService<T>() where T : Instance

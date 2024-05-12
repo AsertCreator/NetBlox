@@ -32,7 +32,6 @@ namespace NetBlox.Client
                 Workspace ws = new();
                 ReplicatedStorage rs = new();
                 ReplicatedFirst ri = new();
-                RunService ru = new();
                 Players pl = new();
                 LocalScript ls = new();
 
@@ -56,7 +55,6 @@ namespace NetBlox.Client
                 rs.Parent = dm;
                 ri.Parent = dm;
                 pl.Parent = dm;
-                ru.Parent = dm;
 
                 GameManager.CurrentIdentity.MaxPlayerCount = 8;
                 GameManager.CurrentIdentity.PlaceName = "Default Place";

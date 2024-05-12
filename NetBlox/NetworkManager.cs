@@ -45,6 +45,7 @@ namespace NetBlox
 		{
 			public List<NetworkClient> To = GameManager.AllClients;
 			public Instance? What;
+			public bool RepChildren = true;
 		}
 		private static readonly JsonSerializerOptions DefaultJSON = new()
 		{
@@ -144,33 +145,55 @@ namespace NetBlox
 						ToReplicate.Enqueue(new Replication()
 						{
 							To = [nc],
-							What = GameManager.CurrentRoot
+							What = GameManager.CurrentRoot,
+							RepChildren = false
 						});
-					});
+                        ToReplicate.Enqueue(new Replication()
+                        {
+                            To = [nc],
+                            What = GameManager.CurrentRoot.GetService<ReplicatedFirst>()
+                        });
+                        ToReplicate.Enqueue(new Replication()
+                        {
+                            To = [nc],
+                            What = GameManager.CurrentRoot.GetService<Players>()
+                        });
+                        ToReplicate.Enqueue(new Replication()
+                        {
+                            To = [nc],
+                            What = GameManager.CurrentRoot.GetService<Workspace>()
+                        });
+                        ToReplicate.Enqueue(new Replication()
+                        {
+                            To = [nc],
+                            What = GameManager.CurrentRoot.GetService<ReplicatedStorage>()
+                        });
+                    });
 
-					GameManager.AllowReplication = true;
+                    Task.Run(() =>
+                    {
+                        while (!GameManager.ShuttingDown)
+                        {
+                            try
+                            {
+                                while (ToReplicate.Count == 0) ;
+                                var tr = ToReplicate.Dequeue();
+                                var ins = tr.What;
+                                var to = tr.To;
+
+                                for (int i = 0; i < to.Count; i++)
+                                    SeqReplicateInstance(to[i].Connection!, ins!, tr.RepChildren);
+                            }
+                            catch
+                            {
+                                LogManager.LogError($"Could not replicate queued instance, well i dont care!");
+                            }
+                        }
+                    });
+
+                    GameManager.AllowReplication = true;
 				});
 			};
-			Task.Run(() =>
-			{
-				while (!GameManager.ShuttingDown)
-				{
-					try
-					{
-						while (ToReplicate.Count == 0) ;
-						var tr = ToReplicate.Dequeue();
-						var ins = tr.What;
-						var to = tr.To;
-
-						for (int i = 0; i < to.Count; i++) 
-							SeqReplicateInstance(to[i].Connection!, ins!, true);
-					}
-					catch
-					{
-						LogManager.LogError($"Could not replicate queued instance, well i dont care!");
-					}
-				}
-			});
 		}
 		public static void ConnectToServer(IPAddress ipa)
 		{
@@ -219,22 +242,6 @@ namespace NetBlox
 
 							Thread.Sleep(5); // wait for server to do things
 
-							con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
-							{
-								var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
-								var ins = GameManager.GetInstance(Guid.Parse(dss["Instance"]));
-								var par = GameManager.GetInstance(Guid.Parse(dss["Parent"]));
-
-								if (ins == null || par == null)
-								{
-									LogManager.LogError("Failed to reparent instance, because new parent does not exist");
-									return;
-								}
-								else
-								{
-									ins.Parent = par;
-								}
-							});
 							con.RegisterRawDataHandler("nb.inc-inst", (x, y) =>
 							{
 								var ins = SeqReceiveInstance(y, x.ToUTF8String());
@@ -248,6 +255,23 @@ namespace NetBlox
 
                                     GameManager.GetSpecialService<CoreGui>().HideTeleportGui();
 									GameManager.IsRunning = true;
+
+                                    con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
+                                    {
+                                        var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
+                                        var ins = GameManager.GetInstance(Guid.Parse(dss["Instance"]));
+                                        var par = GameManager.GetInstance(Guid.Parse(dss["Parent"]));
+
+                                        if (ins == null || par == null)
+                                        {
+                                            LogManager.LogError("Failed to reparent instance, because new parent does not exist");
+                                            return;
+                                        }
+                                        else
+                                        {
+                                            ins.Parent = par;
+                                        }
+                                    });
                                 }
 								if (ins.UniqueID == sh.PlayerInstance)
 								{
@@ -351,18 +375,22 @@ namespace NetBlox
 					if (val == null) continue;
 
 					dss[prop.Name] = SerializationManager.Serialize(val);
-				}
+                }
 
-				c.SendRawData("nb.inc-inst", SerializeJsonBytes(dss));
+				var key = "nb." + ins.UniqueID;
 
-				Thread.Sleep(5); // give it some rest c'mon
+                c.RegisterRawDataHandler(key, (x, y) =>
+                {
+					y.UnRegisterRawDataHandler(key);
+                    if (repchildren)
+                    {
+                        var ch = ins.GetChildren();
+                        for (int i = 0; i < ch.Length; i++)
+                            SeqReplicateInstance(c, ch[i], true);
+                    }
+                });
 
-				if (repchildren)
-				{
-					var ch = ins.GetChildren();
-					for (int i = 0; i < ch.Length; i++)
-						SeqReplicateInstance(c, ch[i], true);
-				}
+                c.SendRawData("nb.inc-inst", SerializeJsonBytes(dss));
 			}
 			catch
 			{
@@ -398,8 +426,11 @@ namespace NetBlox
 					}
 				}
 
-				LogManager.LogWarn(ins.ToString());
 				ins.Parent = (from x in GameManager.AllInstances where x.UniqueID == ins.ParentID select x).FirstOrDefault();
+
+                var key = "nb." + ins.UniqueID;
+
+				c.SendRawData(key, []);
 
 				return ins;
 			}
@@ -426,6 +457,6 @@ namespace NetBlox
 
 				return pre;
 			}
-		}
-	}
+        }
+    }
 }
