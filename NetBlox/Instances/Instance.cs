@@ -13,7 +13,7 @@ namespace NetBlox.Instances
         [Lua([Security.Capability.None])]
         public string Name { get; set; }
         [Lua([Security.Capability.None])]
-        [JsonIgnore]
+        [NotReplicated]
 		public Instance? Parent
 		{
 			get => parent;
@@ -22,13 +22,19 @@ namespace NetBlox.Instances
 				if (WasDestroyed) return;
 
 				if (parent != null)
+				{
 					parent.Children.Remove(this);
+                    if (GameManager.CurrentRoot.MainEnv != null)
+                        parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager.CurrentRoot.MainEnv)));
+                }
 				if (value != null)
 				{
 					parent = value;
 					ParentID = parent.UniqueID;
 					value.Children.Add(this);
-				}
+					if (GameManager.CurrentRoot.MainEnv != null)
+						value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager.CurrentRoot.MainEnv)));
+                }
 				else
 				{
 					parent = null;
@@ -42,17 +48,22 @@ namespace NetBlox.Instances
 					}
 			}
 		}
-		[JsonIgnore]
+		[NotReplicated]
 		public List<string> Tags { get; set; } = new();
 		public Guid ParentID { get; set; }
 		public Guid UniqueID { get; set; }
-		[JsonIgnore]
-		public bool WasDestroyed = false;
-		[JsonIgnore]
+		[Lua([Security.Capability.None])]
+        [NotReplicated]
+        public LuaSignal ChildAdded { get; set; } = new();
+        [Lua([Security.Capability.None])]
+        [NotReplicated]
+        public LuaSignal ChildRemoved { get; set; } = new();
+        [Lua([Security.Capability.None])]
+        [NotReplicated]
+        public LuaSignal Destroying { get; set; } = new();
+        public bool WasDestroyed = false;
 		public bool WasReplicated = false;
-		[JsonIgnore]
 		public List<Instance> Children = new();
-		[JsonIgnore]
 		public Dictionary<Script, Table> Tables = new();
 		private Instance? parent;
 
@@ -115,7 +126,9 @@ namespace NetBlox.Instances
 		{
 			if (!WasDestroyed)
 			{
-				Parent = null;
+				Destroying.Fire();
+
+                Parent = null;
 				ClearAllChildren();
 				GameManager.AllInstances.Remove(this);
 
@@ -267,7 +280,7 @@ namespace NetBlox.Instances
 		public void ReplicateProps()
 		{
 			if (NetworkManager.ServerConnection != null)
-				NetworkManager.SeqReplicateInstance(NetworkManager.ServerConnection, this, false);
+				NetworkManager.SeqReplicateInstance(NetworkManager.ServerConnection, this, false, false);
 		}
 	}
 }

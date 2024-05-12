@@ -9,9 +9,8 @@ namespace NetBlox.Instances
 	public class Player : Instance
 	{
 		[Lua([Security.Capability.None])]
-		[JsonIgnore]
+		[NotReplicated]
 		public Instance? Character { get; set; }
-		[JsonIgnore]
 		public bool IsLocalPlayer;
 
 		[Lua([Security.Capability.None])]
@@ -69,7 +68,7 @@ namespace NetBlox.Instances
 		public override void Destroy() // also destroy character
 		{
 			base.Destroy();
-			Character.Destroy();
+			Character?.Destroy();
 			Kick("Player has been removed from this DataModel");
 		}
 	}

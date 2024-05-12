@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NetBlox.Runtime
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property)]
     public class NotReplicatedAttribute : Attribute
     {
     }

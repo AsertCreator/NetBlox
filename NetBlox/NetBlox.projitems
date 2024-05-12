@@ -10,12 +10,23 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GameManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Backpack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Camera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Character.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\Frame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)instances\guis\Image.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ScreenGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\HopperBin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterPack.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
@@ -58,6 +69,9 @@
     <None Include="$(MSBuildThisFileDirectory)content\scripts\init.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\nbui.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_bk.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -98,5 +112,10 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <Compile Include="$(MSBuildThisFileDirectory)instances\CoreGui.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\somethingidontlike.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

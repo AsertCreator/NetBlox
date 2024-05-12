@@ -1,6 +1,8 @@
 ﻿global using Font = Raylib_cs.Font;
 using ImGuiNET;
 using NetBlox.Instances;
+using NetBlox.Instances.Scripts;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
@@ -33,7 +35,7 @@ namespace NetBlox
 			{
 				if (render)
 				{
-					Raylib.SetTraceLogLevel(TraceLogLevel.None);
+					Raylib.SetTraceLogLevel(TraceLogLevel.All);
 					Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
 
 					Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
@@ -98,7 +100,10 @@ namespace NetBlox
 								if (!DisableAllGuis)
 								{
 									if (GameManager.CurrentRoot != null)
-										RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
+                                    {
+                                        RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
+                                        RenderInstanceUI(GameManager.CurrentRoot.GetService<CoreGui>());
+                                    }
 
 									Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
 										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
@@ -121,11 +126,7 @@ namespace NetBlox
 						if (GameManager.CurrentRoot != null && GameManager.IsRunning)
 							GameManager.ProcessInstance(GameManager.CurrentRoot);
 
-                        if (GameManager.SpecialRoot != null && GameManager.IsRunning)
-                            GameManager.ProcessInstance(GameManager.SpecialRoot);
-
-						if ((GameManager.SpecialRoot != null) ||
-							(GameManager.CurrentRoot != null && GameManager.IsRunning))
+						if (GameManager.CurrentRoot != null && GameManager.IsRunning)
                             GameManager.Schedule();
 
                         // run coroutines
@@ -154,9 +155,11 @@ namespace NetBlox
 		}
 		public static class DebugViewInfo
 		{
-			public static bool ShowLua = true;
-			public static bool ShowSC = true;
-			public static bool ShowOutput = true;
+			public static bool ShowLua = false;
+            public static bool ShowITS = false;
+            public static bool ShowSC = false;
+			public static bool ShowOutput = false;
+			public static Dictionary<BaseScript, bool> ShowScriptSource = new();
 			public static string LECode = string.Empty;
 			public static string SCAddress = "127.0.0.1";
 		}
@@ -190,7 +193,24 @@ namespace NetBlox
 					GameManager.TeleportToPlace(unchecked((ulong)-1));
 				if (ImGui.MenuItem("Teleport to server"))
 					DebugViewInfo.ShowSC = !DebugViewInfo.ShowSC;
-				if (ImGui.MenuItem("Exit")) 
+                if (ImGui.MenuItem("Show output"))
+                    DebugViewInfo.ShowOutput = !DebugViewInfo.ShowOutput;
+                if (ImGui.MenuItem("Show instance tree viewer"))
+                    DebugViewInfo.ShowITS = !DebugViewInfo.ShowITS;
+                if (ImGui.MenuItem("Give yourself build tools"))
+				{
+					for (int i = 0; i < 5; i++)
+					{
+						HopperBin hb = new();
+						hb.BinType = i;
+						hb.Parent = GameManager.CurrentRoot.GetService<Players>().LocalPlayer.FindFirstChild("Backpack");
+					}
+				}
+                if (ImGui.MenuItem("Kill the entire thing"))
+                {
+					Environment.FailFast("NetBlox had died, lol");
+                }
+                if (ImGui.MenuItem("Exit")) 
 					GameManager.Shutdown();
 				ImGui.EndMenu();
 			}
@@ -205,12 +225,35 @@ namespace NetBlox
 			ImGui.EndMainMenuBar();
 
 			ImGui.End();
+			if (DebugViewInfo.ShowITS)
 			{
 				ImGui.Begin("Instance tree viewer");
 				void Node(Instance ins)
 				{
 					string msg = ins.Name + " - " + ins.ClassName;
-					if (ImGui.TreeNode(msg))
+					bool open = ImGui.TreeNode(msg);
+                    if (ImGui.BeginPopupContextItem())
+                    {
+						if (ImGui.MenuItem("Destroy"))
+						{
+							ins.Destroy();
+                        }
+                        if (ins is BaseScript && ImGui.MenuItem("Show script's source code"))
+                        {
+							var bs = ins as BaseScript;
+							if (DebugViewInfo.ShowScriptSource.ContainsKey(bs!))
+								DebugViewInfo.ShowScriptSource[bs!] = !DebugViewInfo.ShowScriptSource[bs!];
+							else
+								DebugViewInfo.ShowScriptSource[bs!] = true;
+                        }
+                        if (ins is BaseScript && ImGui.MenuItem("Re-execute"))
+                        {
+                            var bs = ins as BaseScript;
+							bs.HadExecuted = false;
+                        }
+                        ImGui.EndPopup();
+                    }
+                    if (open)
 					{
 						for (int i = 0; i < ins.Children.Count; i++)
 						{
@@ -221,11 +264,20 @@ namespace NetBlox
                 }
 				if (GameManager.CurrentRoot != null)
 					Node(GameManager.CurrentRoot);
-                if (GameManager.SpecialRoot != null)
-                    Node(GameManager.SpecialRoot);
 
                 ImGui.End();
 			}
+			foreach (var kvp in DebugViewInfo.ShowScriptSource)
+			{
+                if (kvp.Value)
+                {
+                    var sou = kvp.Key.Source;
+					ImGui.SetWindowSize(new(400, 500));
+                    ImGui.Begin("Script Viewer - " + kvp.Key.GetFullName());
+                    ImGui.InputTextMultiline("", ref sou, (uint)kvp.Key.Source.Length, ImGui.GetWindowSize(), ImGuiInputTextFlags.ReadOnly);
+                    ImGui.End();
+                }
+            }
 			if (DebugViewInfo.ShowLua)
 			{
 				ImGui.Begin("Lua executor");

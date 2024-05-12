@@ -28,6 +28,19 @@ namespace NetBlox.Instances
 			}
 			return null!;
         }
+
+        [Lua([Security.Capability.None])]
+        public Instance GetService(string sn)
+        {
+            for (int i = 0; i < Children.Count; i++)
+            {
+                if (Children[i].ClassName == sn)
+                    return Children[i];
+            }
+			var serv = InstanceCreator.CreateInstance(sn);
+            serv.Parent = this;
+            return serv;
+        }
         [Lua([Security.Capability.None])]
 		public bool IsLoaded()
 		{
@@ -37,11 +50,6 @@ namespace NetBlox.Instances
 		public void Shutdown()
 		{
 			GameManager.Shutdown();
-        }
-        [Lua([Security.Capability.CoreSecurity])]
-        public void AddCrossDataModelInstance(Instance ins)
-        {
-			GameManager.CrossDataModelInstances.Add(ins);
         }
         [Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

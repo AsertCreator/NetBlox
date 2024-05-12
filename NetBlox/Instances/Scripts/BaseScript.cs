@@ -11,7 +11,7 @@ namespace NetBlox.Instances.Scripts
     {
         [Lua([Security.Capability.None])]
         public bool Enabled { get; set; } = true;
-        protected bool HadExecuted = false;
+        public bool HadExecuted = false;
 
         [Lua([Security.Capability.None])]
         public override bool IsA(string classname)

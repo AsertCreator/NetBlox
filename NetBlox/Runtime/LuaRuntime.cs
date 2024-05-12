@@ -2,6 +2,7 @@
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
+using NetBlox.Structs;
 using System.ComponentModel;
 using System.Numerics;
 using System.Reflection;
@@ -13,14 +14,24 @@ namespace NetBlox.Runtime
 	public class LuaThread
 	{
 		public int Level;
-		public DynValue? MsThread;
-		public Coroutine? Coroutine;
-		public Table? Global;
-		public Script? Script;
+		public DynValue MsThread;
+		public Coroutine Coroutine;
+		public Script Script;
 		public BaseScript? ScrInst;
 		public DateTime WaitUntil;
 		public Action? FinishCallback;
-        public string Name = string.Empty;
+		public string Name = string.Empty;
+
+		public LuaThread(DataModel dm, BaseScript? bs, DynValue d, int sl, Action? fc)
+		{
+			Script = dm.MainEnv;
+			ScrInst = bs;
+			WaitUntil = default;
+			Coroutine = d.Coroutine;
+			Level = sl;
+			MsThread = d;
+			FinishCallback = fc;
+		}
 	}
 	public static class LuaRuntime
 	{
@@ -29,7 +40,7 @@ namespace NetBlox.Runtime
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 7;
 		private static Type dvt = typeof(DynValue);
-        private static bool init = false;
+		private static bool init = false;
 
 		public static void Setup(DataModel dm, bool core)
 		{
@@ -40,14 +51,14 @@ namespace NetBlox.Runtime
 					CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
 					CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling |
 					CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
-            else
-                dm.MainEnv = new Script(
-                    CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
-                    CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling | CoreModules.LoadMethods |
+			else
+				dm.MainEnv = new Script(
+					CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
+					CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling | CoreModules.LoadMethods |
 					CoreModules.Debug | CoreModules.Json |
-                    CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
+					CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
 
-            dm.MainEnv.Globals["game"] = MakeInstanceTable(dm, dm.MainEnv);
+			dm.MainEnv.Globals["game"] = MakeInstanceTable(dm, dm.MainEnv);
 
 			if (works != null && !core)
 				dm.MainEnv.Globals["workspace"] = MakeInstanceTable(works, dm.MainEnv);
@@ -85,9 +96,8 @@ namespace NetBlox.Runtime
 				PrintError(y.AsStringUsingMeta(x, 0, "error"));
 				throw new Exception(y[0].ToString());
 			});
-			var it = new Table(dm.MainEnv);
-			dm.MainEnv.Globals["Instance"] = DynValue.NewTable(it);
-			it["new"] = DynValue.NewCallback((x, y) =>
+
+			MakeDataType(dm, "Instance", (x, y) =>
 			{
 				try
 				{
@@ -99,8 +109,30 @@ namespace NetBlox.Runtime
 					return DynValue.Void;
 				}
 			});
+            MakeDataType(dm, "UDim2", (x, y) =>
+            {
+                try
+                {
+                    return SerializationManager.LuaSerializers["NetBlox.Structs.UDim2"]
+						(new UDim2(
+							Convert.ToSingle(y[0].Number), 
+							Convert.ToSingle(y[1].Number), 
+							Convert.ToSingle(y[2].Number), 
+							Convert.ToSingle(y[3].Number)), dm.MainEnv);
+                }
+                catch
+                {
+                    return DynValue.Void;
+                }
+            });
 
             Execute(string.Empty, 0, null, dm); // we will run nothing to initialize lua
+		}
+		public static void MakeDataType(DataModel dm, string name, Func<ScriptExecutionContext, CallbackArguments, DynValue> func)
+        {
+            var it = new Table(dm.MainEnv);
+            it["new"] = DynValue.NewCallback(func);
+            dm.MainEnv.Globals[name] = DynValue.NewTable(it);
         }
 		public static LuaThread GetThreadFor(Coroutine c)
 		{
@@ -114,18 +146,9 @@ namespace NetBlox.Runtime
 			try
 			{
 				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
-				var lt = new LuaThread
-				{
-					Script = dm.MainEnv,
-					ScrInst = bs,
-					WaitUntil = default,
-					Coroutine = d.Coroutine,
-					Level = sl,
-					MsThread = d,
-					FinishCallback = fc
-				};
+				var lt = new LuaThread(dm, bs, d, sl, fc);
 
-				if (bs != null)
+                if (bs != null)
 					lt.Name = bs.GetFullName();
 
 				Threads.AddLast(lt);
@@ -171,9 +194,9 @@ namespace NetBlox.Runtime
 
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
-            table.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
-			{
-				var key = y[1].String;
+			table.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
+            {
+                var key = y[1].String;
 				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
 				var meth = (from z in meths where z.Name == key select z).FirstOrDefault();
 
@@ -198,10 +221,10 @@ namespace NetBlox.Runtime
 					{
 						var sec = meth.GetCustomAttribute<LuaAttribute>();
 
-						if (Security.IsCompatible(CurrentThread.Value.Level, sec.Capabilities))
+                        if (Security.IsCompatible(CurrentThread.Value.Level, sec.Capabilities))
 							return DynValue.NewCallback((a, b) =>
-							{
-								try
+                            {
+                                try
 								{
 									var args = new List<object?>();
 									var parms = meth.GetParameters();
@@ -274,8 +297,8 @@ namespace NetBlox.Runtime
 				}
 			});
 			table.MetaTable["__newindex"] = DynValue.NewCallback((x, y) =>
-			{
-				var key = y[1].String;
+            {
+                var key = y[1].String;
 				var val = y[2];
 				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
 
@@ -337,13 +360,13 @@ namespace NetBlox.Runtime
 				}
 				return DynValue.Nil;
 			});
-            table.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.ClassName));
+			table.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.ClassName));
 			table.MetaTable["__handle"] = inst.UniqueID.ToString();
 			table.MetaTable["__handleType"] = 0;
 
 			inst.Tables[scr] = table;
 
-            return table;
+			return table;
 		}
 	}
 }

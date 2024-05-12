@@ -24,6 +24,16 @@ namespace NetBlox.Instances.Services
         [Lua([Security.Capability.CoreSecurity])]
         public bool IsServer() => NetworkManager.IsServer;
         [Lua([Security.Capability.CoreSecurity])]
+        public void ConnectToServer(string addr)
+        {
+            NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
+        }
+        [Lua([Security.Capability.CoreSecurity])]
+        public void Disconnect(string addr)
+        {
+            NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
+        }
+        [Lua([Security.Capability.CoreSecurity])]
         public void EnableStatusPipe()
         {
             if (!NetworkManager.IsServer)

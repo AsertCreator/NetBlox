@@ -1,5 +1,5 @@
-local CoreGui = Instance.new("CoreGui")
-local PlatformService = Instance.new("PlatformService")
+local PlatformService = game:GetService("PlatformService")
+local CoreGui = game:GetService("CoreGui")
 
 local function stgc()
 	print("we cum")
@@ -16,11 +16,7 @@ end
 
 printidentity();
 
-CoreGui.Parent = game
 CoreGui:SetShowTeleportGuiCallback(stgc);
 CoreGui:SetHideTeleportGuiCallback(htgc);
-
-game:AddCrossDataModelInstance(CoreGui)
-game:AddCrossDataModelInstance(PlatformService)
 
 print("Platform initialized")

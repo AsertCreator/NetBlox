@@ -11,7 +11,7 @@ namespace NetBlox.Instances
 	public class Character : Part
 	{
 		[Lua([Security.Capability.None])]
-		[JsonIgnore]
+		[NotReplicated]
 		public bool IsLocalPlayer { get; set; }
 
 		public Character() : base()

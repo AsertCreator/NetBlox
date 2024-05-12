@@ -28,7 +28,6 @@ namespace NetBlox.Client
             return;*/
             GameManager.Start(false, true, false, args, x =>
 			{
-                DataModel dm = new();
                 Workspace ws = new();
                 ReplicatedStorage rs = new();
                 ReplicatedFirst ri = new();
@@ -36,8 +35,8 @@ namespace NetBlox.Client
                 LocalScript ls = new();
 
                 ws.ZoomToExtents();
-                ws.Parent = dm;
-                dm.Name = "Baseplate";
+                ws.Parent = GameManager.CurrentRoot;
+                GameManager.CurrentRoot.Name = "Baseplate";
 
                 Part part = new()
                 {
@@ -52,9 +51,9 @@ namespace NetBlox.Client
                 ls.Parent = ri;
                 ls.Source = "print(\"HIIIIII\"); printidentity();";
 
-                rs.Parent = dm;
-                ri.Parent = dm;
-                pl.Parent = dm;
+                rs.Parent = GameManager.CurrentRoot;
+                ri.Parent = GameManager.CurrentRoot;
+                pl.Parent = GameManager.CurrentRoot;
 
                 GameManager.CurrentIdentity.MaxPlayerCount = 8;
                 GameManager.CurrentIdentity.PlaceName = "Default Place";
@@ -63,14 +62,7 @@ namespace NetBlox.Client
                 GameManager.CurrentIdentity.PlaceID = 47384;
                 GameManager.CurrentIdentity.UniverseID = 47384;
 
-                GameManager.CurrentRoot?.Destroy();
-                GameManager.CurrentRoot = dm;
-
-                LuaRuntime.Setup(GameManager.CurrentRoot, false);
-
                 NetworkManager.StartServer();
-
-                GameManager.IsRunning = true;
             });
 		}
 	}

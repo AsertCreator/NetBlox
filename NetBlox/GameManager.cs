@@ -17,14 +17,11 @@ namespace NetBlox
 		public static Dictionary<string, string> FastStrings = [];
 		public static Dictionary<string, int> FastNumbers = [];
 		public static Dictionary<char, Action> Verbs = [];
-		public static List<CoreScript> CoreScripts = new();
 		public static List<Instance> AllInstances = [];
 		public static List<NetworkClient> AllClients = [];
-		public static List<Instance> CrossDataModelInstances = [];
 		public static NetworkIdentity CurrentIdentity = new();
 		public static DataModel CurrentRoot = null!;
-		public static DataModel SpecialRoot = null!;
-		public static bool IsRunning = false;
+		public static bool IsRunning = true;
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
 		public static string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
@@ -32,8 +29,8 @@ namespace NetBlox
 		public static event InstanceEventHandler? AddedInstance;
 		public static bool AllowReplication = false;
 		public const int VersionMajor = 2;
-		public const int VersionMinor = 0;
-		public const int VersionPatch = 3;
+		public const int VersionMinor = 1;
+		public const int VersionPatch = 0;
 
 		public static void InvokeAddedEvent(Instance inst)
 		{
@@ -48,10 +45,8 @@ namespace NetBlox
 				CoreScript cs = new();
 				string cont = File.ReadAllText(files[i]);
 				cs.Source = cont;
-				cs.IsServerOnly = cont.Contains("-- [serveronly]\n");
-				cs.IsClientOnly = cont.Contains("-- [clientonly]\n");
-				cs.IsAsync = cont.Contains("-- [async]\n");
-				CoreScripts.Add(cs);
+				cs.Name = Path.GetFileName(files[i]);
+				cs.Parent = CurrentRoot.GetService<CoreGui>();
 			}
 		}
 		public static void Start(bool client, bool server, bool render, string[] args, Action<string> servercallback)
@@ -133,59 +128,37 @@ namespace NetBlox
 			SerializationManager.Initialize();
 
 			LogManager.LogInfo("Initializing internal scripts...");
-			SpecialRoot = new();
-			SpecialRoot.Name = "csdm";
+			CurrentRoot = new DataModel();
 
 			var rs = new RunService();
-			rs.Parent = SpecialRoot;
-			CrossDataModelInstances.Add(rs);
+            var cg = new CoreGui();
+            rs.Parent = CurrentRoot;
+            cg.Parent = CurrentRoot;
 
-            LuaRuntime.Setup(SpecialRoot, true);
-			ExecuteCoreScripts();
-
-			CoreScripts.Clear();
+            LuaRuntime.Setup(CurrentRoot, true);
+			LoadAllCoreScripts();
 
 			if (NetworkManager.IsClient)
 			{
-				RenderManager.DebugViewInfo.ShowSC = true;
-				GetSpecialService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-			}
+                CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
+                servercallback(rbxlinit);
+            }
 			if (NetworkManager.IsServer)
 			{
 				AddedInstance += (x) =>
-				{
-					NetworkManager.ToReplicate.Enqueue(new()
+                {
+					lock (NetworkManager.ToReplicate)
 					{
-						What = x
-					});
+						NetworkManager.ToReplicate.Enqueue(new()
+						{
+							What = x
+						});
+					}
 				};
 				servercallback(rbxlinit);
 			}
 
 			while (!ShuttingDown) ;
-		}
-		public static void ExecuteCoreScripts()
-		{
-			LoadAllCoreScripts();
-
-			for (int i = 0; i < CoreScripts.Count; i++)
-			{
-				var cs = CoreScripts[i];
-				var wait = true;
-
-				LuaRuntime.Execute(cs.Source, 3, null, SpecialRoot, () => wait = false);
-
-				while (wait) ;
-			}
-		}
-		public static void SetupCrossDataModelInstances(DataModel target)
-		{
-			for (int i = 0; i < CrossDataModelInstances.Count; i++)
-			{
-				var ins = CrossDataModelInstances[i];
-				ins.Parent = target;
-				ins.Tables[target.MainEnv] = LuaRuntime.MakeInstanceTable(ins, target.MainEnv);
-			}
 		}
 		public static void TeleportToPlace(ulong pid)
 		{
@@ -232,17 +205,21 @@ namespace NetBlox
 										return;
 								}
 
-								var res = LuaRuntime.CurrentThread.Value.Coroutine.Resume();
-								if (LuaRuntime.CurrentThread.Value.Coroutine.State != MoonSharp.Interpreter.CoroutineState.Dead ||
-									res == null)
-								{
+								var thread = LuaRuntime.CurrentThread.Value;
+
+								if (thread.ScrInst != null)
+									thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.Script);
+								else
+									thread.Script.Globals["script"] = DynValue.Nil;
+
+                                var res = thread.Coroutine.Resume();
+								if (thread.Coroutine.State != CoroutineState.Dead || res == null)
 									return;
-								}
 								else
 								{
-									if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
+									if (LuaRuntime.Threads.Contains(thread))
 									{
-										var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
+										var ac = thread.FinishCallback;
 										if (ac != null) ac();
 										LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 									}
@@ -303,19 +280,9 @@ namespace NetBlox
 				}
 			}
 		}
-		public static T GetSpecialService<T>() where T : Instance
+		public static string ResolveUrl(string url)
 		{
-			for (int i = 0; i < CrossDataModelInstances.Count; i++)
-				if (CrossDataModelInstances[i] is T)
-					return (T)CrossDataModelInstances[i];
-			return null!;
+			return GameManager.ContentFolder + url.Split("//")[1];
 		}
 	}
-	public class CoreScript
-	{
-		public string Source = "";
-		public bool IsAsync;
-		public bool IsServerOnly;
-        public bool IsClientOnly;
-    }
 }
