@@ -125,6 +125,22 @@ namespace NetBlox.Runtime
                     return DynValue.Void;
                 }
             });
+            MakeDataType(dm, "Color3", (x, y) =>
+            {
+                try
+                {
+                    return SerializationManager.LuaSerializers["Raylib_cs.Color"]
+                        (new Color(
+                            Convert.ToInt32(y[0].Number * 255),
+                            Convert.ToInt32(y[1].Number * 255),
+                            Convert.ToInt32(y[2].Number * 255),
+                            255), dm.MainEnv);
+                }
+                catch
+                {
+                    return DynValue.Void;
+                }
+            });
 
             Execute(string.Empty, 0, null, dm); // we will run nothing to initialize lua
 		}
@@ -158,8 +174,25 @@ namespace NetBlox.Runtime
 				LastException = ex; // for the sake of overcomplification
 				throw;
 			}
+        }
+		public static void ReportedExecute(Action ac, bool remthread)
+		{
+			try
+			{
+				ac();
+            }
+			catch (ScriptRuntimeException ex)
+			{
+				LogManager.LogError(ex.Message);
+				for (int i = 0; i<ex.CallStack.Count; i++)
+					LogManager.LogError($"    at {ex.CallStack[i]}");
+
+				if (remthread)
+					if (Threads.Contains(CurrentThread.Value))
+						Threads.Remove(CurrentThread);
+			}
 		}
-		public static void PrintOut(string msg)
+        public static void PrintOut(string msg)
 		{
 			LogManager.LogInfo(msg);
 		}

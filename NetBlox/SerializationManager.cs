@@ -230,9 +230,9 @@ namespace NetBlox
 				(float)x.Table["Y"], 
 				(float)x.Table["Z"]));
             LuaDeserializers.Add("Raylib_cs.Color", (x, y) => new Color(
-				(int)((float)x.Table["R"] * 255), 
-				(int)((float)x.Table["G"] * 255), 
-				(int)((float)x.Table["B"] * 255), 
+				(int)(Convert.ToSingle(x.Table["R"]) * 255), 
+				(int)(Convert.ToSingle(x.Table["G"]) * 255), 
+				(int)(Convert.ToSingle(x.Table["B"]) * 255), 
 				255));
             LuaDeserializers.Add("NetBlox.Structs.UDim2", (x, y) => new UDim2(
                 Convert.ToSingle(x.Table["X"]),

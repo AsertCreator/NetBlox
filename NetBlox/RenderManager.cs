@@ -35,7 +35,7 @@ namespace NetBlox
 			{
 				if (render)
 				{
-					Raylib.SetTraceLogLevel(TraceLogLevel.All);
+					Raylib.SetTraceLogLevel(TraceLogLevel.None);
 					Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
 
 					Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
@@ -80,7 +80,7 @@ namespace NetBlox
 							// render world
 							Raylib.BeginDrawing();
 							{
-								Raylib.ClearBackground(new Color(102, 191, 255, 255));
+								Raylib.ClearBackground(Color.Black);
 
 								Raylib.BeginMode3D(MainCamera);
 
@@ -102,17 +102,18 @@ namespace NetBlox
 									if (GameManager.CurrentRoot != null)
                                     {
                                         RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
-                                        RenderInstanceUI(GameManager.CurrentRoot.GetService<CoreGui>());
+                                        RenderUI(GameManager.CurrentRoot.GetService<CoreGui>());
                                     }
 
 									Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
-										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
+										new Vector2(5, 5 + 16 * 0), 16, 0, Color.White);
 									Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
-										new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
+										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
 									Raylib.DrawTextEx(MainFont, Status,
-										new Vector2(5, 5 + 16 * 3), 16, 0, Color.White);
+										new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
 
-									DebugView();
+                                    if (DebugViewInfo.EnableDebugView)
+                                        DebugView();
 								}
 
 								Raylib.EndDrawing();
@@ -155,6 +156,7 @@ namespace NetBlox
 		}
 		public static class DebugViewInfo
 		{
+			public static bool EnableDebugView = false;
 			public static bool ShowLua = false;
             public static bool ShowITS = false;
             public static bool ShowSC = false;
@@ -322,8 +324,19 @@ namespace NetBlox
 				var child = children[i];
 				RenderInstanceUI(child);
 			}
-		}
-		public static void RenderSkybox()
+        }
+        public static void RenderUI(Instance? inst)
+        {
+            if (inst == null) return;
+            var children = inst.GetChildren();
+
+            for (int i = 0; i < children.Length; i++)
+            {
+                var child = children[i];
+                child.RenderUI();
+            }
+        }
+        public static void RenderSkybox()
 		{
 			if (CurrentSkybox == null) return;
 
@@ -345,7 +358,8 @@ namespace NetBlox
 			var skypos = MainCamera.Position;
 			var works = GameManager.CurrentRoot.FindFirstChild("Workspace");
 
-			RenderSkybox();
+			if (works != null)
+				RenderSkybox();
 
 			if (CurrentSkybox != null && CurrentSkybox.SkyboxWires)
 				Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Color.Blue);

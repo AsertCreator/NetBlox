@@ -258,7 +258,17 @@ namespace NetBlox.Instances
 		public virtual void RemoveTag(string tag) => Tags.Remove(tag);
 		[Lua([Security.Capability.None])]
 		public virtual bool IsA(string classname) => nameof(Instance) == classname;
-		[Lua([Security.Capability.None])]
+        public int CountDescendants()
+        {
+            lock (Children)
+            {
+                int sum = Children.Count;
+                for (int i = 0; i < Children.Count; i++)
+                    sum += Children[i].CountDescendants();
+                return sum;
+            }
+        }
+        [Lua([Security.Capability.None])]
 		public LuaYield<Instance> WaitForChild(string name)
 		{
 			var n = new LuaYield<Instance>();

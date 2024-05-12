@@ -17,8 +17,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\Frame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\GuiObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)instances\guis\Image.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ScreenGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\HopperBin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
@@ -67,9 +69,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\init.lua">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="$(MSBuildThisFileDirectory)content\scripts\nbui.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_bk.png">

@@ -48,6 +48,7 @@ namespace NetBlox
 			public Instance? What;
 			public bool RepChildren = true;
             public bool AsService = false;
+			public Action? Callback;
         }
 		private static readonly JsonSerializerOptions DefaultJSON = new()
 		{
@@ -63,6 +64,7 @@ namespace NetBlox
 		public static Connection? ServerConnection;
 		private static uint NextPID = 0;
 		private static bool init;
+		private static int loaded = 0;
 
 		public static void Initialize(bool server, bool client)
 		{
@@ -138,14 +140,26 @@ namespace NetBlox
 					plr.Parent = pls;
 					plr.LoadCharacter();
 
-					sh.PlayerInstance = plr.UniqueID;
+					sh.PlaceName = GameManager.CurrentIdentity.PlaceName;
+                    sh.UniverseName = GameManager.CurrentIdentity.UniverseName;
+                    sh.Author = GameManager.CurrentIdentity.Author;
+                    sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
+                    sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
+                    sh.UniquePlayerID = nc.UniquePlayerID;
+                    sh.PlayerInstance = plr.UniqueID;
 					sh.CharacterInstance = plr.Character.UniqueID;
 					sh.DataModelInstance = GameManager.CurrentRoot.UniqueID;
-					sh.InstanceCount = GameManager.AllInstances.Count;
+					sh.InstanceCount = 
+						GameManager.CurrentRoot.GetService<ReplicatedFirst>().CountDescendants() +
+                        GameManager.CurrentRoot.GetService<Players>().CountDescendants() +
+                        GameManager.CurrentRoot.GetService<Workspace>().CountDescendants() +
+                        GameManager.CurrentRoot.GetService<ReplicatedStorage>().CountDescendants();
 
 					y.SendRawData("nb.placeinfo", SerializeJsonBytes(sh));
 
 					LogManager.LogInfo($"Successfully performed handshake with {ch.Username}!");
+
+					Thread.Sleep(4000);
 
 					_x.ConnectionClosed += (f, g) =>
 					{
@@ -220,6 +234,9 @@ namespace NetBlox
 
 									for (int i = 0; i < to.Count; i++)
 										SeqReplicateInstance(to[i].Connection!, ins!, tr.RepChildren, tr.AsService);
+
+									if (tr.Callback != null)
+										tr.Callback();
 								}
                             }
                             catch
@@ -273,16 +290,12 @@ namespace NetBlox
 							ch.VersionMinor = GameManager.VersionMinor;
 							ch.VersionPatch = GameManager.VersionPatch;
 
-							Thread.Sleep(5); // wait for server to do things
-
 							con.RegisterRawDataHandler("nb.inc-inst", (x, y) =>
 							{
 								var ins = SeqReceiveInstance(y, x.ToUTF8String());
 								if (ins.UniqueID == sh.DataModelInstance)
 								{
 									GameManager.CurrentRoot.Name = (ins as DataModel)!.Name;
-                                    GameManager.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
-
                                     GameManager.IsRunning = true;
 
                                     con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
@@ -317,6 +330,10 @@ namespace NetBlox
 									cam.Parent = GameManager.CurrentRoot.GetService<Workspace>();
 									cam.CameraSubject = chr;
 								}
+								if (loaded++ == sh.InstanceCount)
+                                {
+                                    GameManager.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
+                                }
 							});
                             con.RegisterRawDataHandler("nb.inc-service", (x, y) =>
                             {
@@ -415,7 +432,7 @@ namespace NetBlox
 
                 c.RegisterRawDataHandler(key, (x, y) =>
                 {
-					y.UnRegisterRawDataHandler(key);
+                    y.UnRegisterRawDataHandler(key);
                     if (repchildren)
                     {
                         var ch = ins.GetChildren();

@@ -8,7 +8,7 @@ using System.Text;
 namespace NetBlox.Instances.GUIs
 {
     [Creatable]
-    public class Image : Instance
+    public class Image : GuiObject
     {
         [Lua([Security.Capability.None])]
         public UDim2 Position { get; set; }
@@ -32,9 +32,9 @@ namespace NetBlox.Instances.GUIs
         }
         public override void RenderUI()
         {
-            base.RenderUI();
             var p = Position.Calculate();
             Raylib.DrawTexture(handle, (int)p.X, (int)p.Y, Color.White);
+            base.RenderUI();
         }
     }
 }

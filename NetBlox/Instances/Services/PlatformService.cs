@@ -7,6 +7,10 @@ namespace NetBlox.Instances.Services
     [Creatable]
     public class PlatformService : Instance
     {
+        public static Action QueuedTeleport = () => { throw new Exception("NetBlox died!"); };
+
+        [Lua([Security.Capability.CoreSecurity])]
+        public void BeginQueuedTeleport() => QueuedTeleport();
         [Lua([Security.Capability.CoreSecurity])]
         public string[] GetConsoleArguments() => Environment.GetCommandLineArgs();
         [Lua([Security.Capability.CoreSecurity])]
@@ -29,7 +33,7 @@ namespace NetBlox.Instances.Services
             NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
         }
         [Lua([Security.Capability.CoreSecurity])]
-        public void Disconnect(string addr)
+        public void Disconnect()
         {
             NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
         }

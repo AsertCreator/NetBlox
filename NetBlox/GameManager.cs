@@ -29,7 +29,7 @@ namespace NetBlox
 		public static event InstanceEventHandler? AddedInstance;
 		public static bool AllowReplication = false;
 		public const int VersionMajor = 2;
-		public const int VersionMinor = 1;
+		public const int VersionMinor = 2;
 		public const int VersionPatch = 0;
 
 		public static void InvokeAddedEvent(Instance inst)
@@ -195,45 +195,36 @@ namespace NetBlox
 						ControlledExecution.Run(() =>
 						{
 #endif
-							try
-							{
-								if (LuaRuntime.CurrentThread == null)
-								{
-									if (LuaRuntime.Threads.Count > 0)
-										LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-									else
-										return;
-								}
+							LuaRuntime.ReportedExecute(() =>
+                            {
+                                if (LuaRuntime.CurrentThread == null)
+                                {
+                                    if (LuaRuntime.Threads.Count > 0)
+                                        LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+                                    else
+                                        return;
+                                }
 
-								var thread = LuaRuntime.CurrentThread.Value;
+                                var thread = LuaRuntime.CurrentThread.Value;
 
-								if (thread.ScrInst != null)
-									thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.Script);
-								else
-									thread.Script.Globals["script"] = DynValue.Nil;
+                                if (thread.ScrInst != null)
+                                    thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.Script);
+                                else
+                                    thread.Script.Globals["script"] = DynValue.Nil;
 
                                 var res = thread.Coroutine.Resume();
-								if (thread.Coroutine.State != CoroutineState.Dead || res == null)
-									return;
-								else
-								{
-									if (LuaRuntime.Threads.Contains(thread))
-									{
-										var ac = thread.FinishCallback;
-										if (ac != null) ac();
-										LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-									}
-								}
-							}
-							catch (ScriptRuntimeException ex)
-							{
-								LogManager.LogError(ex.Message);
-								for (int i = 0; i < ex.CallStack.Count; i++)
-									LogManager.LogError($"    at {ex.CallStack[i]}");
-
-								if (LuaRuntime.Threads.Contains(LuaRuntime.CurrentThread.Value))
-									LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-							}
+                                if (thread.Coroutine.State != CoroutineState.Dead || res == null)
+                                    return;
+                                else
+                                {
+                                    if (LuaRuntime.Threads.Contains(thread))
+                                    {
+                                        var ac = thread.FinishCallback;
+                                        if (ac != null) ac();
+                                        LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+                                    }
+                                }
+                            }, true);
 #if !DISABLE_EME
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
 						}, cst.Token);
@@ -282,7 +273,7 @@ namespace NetBlox
 		}
 		public static string ResolveUrl(string url)
 		{
-			return GameManager.ContentFolder + url.Split("//")[1];
+			return ContentFolder + url.Split("//")[1];
 		}
 	}
 }

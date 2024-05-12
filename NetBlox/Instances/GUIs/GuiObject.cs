@@ -5,26 +5,19 @@ using System.Text;
 
 namespace NetBlox.Instances.GUIs
 {
-    [Creatable]
-    public class ScreenGui : GuiObject
+    public class GuiObject : Instance
     {
-        [Lua([Security.Capability.None])]
-        public bool Enabled { get; set; } = true;
-
         [Lua([Security.Capability.None])]
         public override bool IsA(string classname)
         {
-            if (nameof(ScreenGui) == classname) return true;
+            if (nameof(GuiObject) == classname) return true;
             return base.IsA(classname);
         }
         public override void RenderUI()
         {
-            if (Enabled)
+            for (int i = 0; i < Children.Count; i++)
             {
-                for (int i = 0; i < Children.Count; i++)
-                {
-                    Children[i].RenderUI();
-                }
+                Children[i].RenderUI();
             }
         }
     }

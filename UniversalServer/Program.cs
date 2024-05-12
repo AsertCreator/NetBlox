@@ -36,7 +36,6 @@ namespace NetBlox.Client
 
                 ws.ZoomToExtents();
                 ws.Parent = GameManager.CurrentRoot;
-                GameManager.CurrentRoot.Name = "Baseplate";
 
                 Part part = new()
                 {
@@ -61,6 +60,8 @@ namespace NetBlox.Client
                 GameManager.CurrentIdentity.Author = "The Lord";
                 GameManager.CurrentIdentity.PlaceID = 47384;
                 GameManager.CurrentIdentity.UniverseID = 47384;
+
+                GameManager.CurrentRoot.Name = GameManager.CurrentIdentity.PlaceName;
 
                 NetworkManager.StartServer();
             });
