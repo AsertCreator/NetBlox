@@ -9,7 +9,7 @@ namespace NetBlox.Runtime
 
 		[Lua([Security.Capability.None])]
 		public void Connect(DynValue dv)
-        {
+		{
 			lock (this) Attached.Add(dv);
 		}
 		[Lua([Security.Capability.None])]

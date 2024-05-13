@@ -109,47 +109,47 @@ namespace NetBlox.Runtime
 					return DynValue.Void;
 				}
 			});
-            MakeDataType(dm, "UDim2", (x, y) =>
-            {
-                try
-                {
-                    return SerializationManager.LuaSerializers["NetBlox.Structs.UDim2"]
+			MakeDataType(dm, "UDim2", (x, y) =>
+			{
+				try
+				{
+					return SerializationManager.LuaSerializers["NetBlox.Structs.UDim2"]
 						(new UDim2(
 							Convert.ToSingle(y[0].Number), 
 							Convert.ToSingle(y[1].Number), 
 							Convert.ToSingle(y[2].Number), 
 							Convert.ToSingle(y[3].Number)), dm.MainEnv);
-                }
-                catch
-                {
-                    return DynValue.Void;
-                }
-            });
-            MakeDataType(dm, "Color3", (x, y) =>
-            {
-                try
-                {
-                    return SerializationManager.LuaSerializers["Raylib_cs.Color"]
-                        (new Color(
-                            Convert.ToInt32(y[0].Number * 255),
-                            Convert.ToInt32(y[1].Number * 255),
-                            Convert.ToInt32(y[2].Number * 255),
-                            255), dm.MainEnv);
-                }
-                catch
-                {
-                    return DynValue.Void;
-                }
-            });
+				}
+				catch
+				{
+					return DynValue.Void;
+				}
+			});
+			MakeDataType(dm, "Color3", (x, y) =>
+			{
+				try
+				{
+					return SerializationManager.LuaSerializers["Raylib_cs.Color"]
+						(new Color(
+							Convert.ToInt32(y[0].Number * 255),
+							Convert.ToInt32(y[1].Number * 255),
+							Convert.ToInt32(y[2].Number * 255),
+							255), dm.MainEnv);
+				}
+				catch
+				{
+					return DynValue.Void;
+				}
+			});
 
-            Execute(string.Empty, 0, null, dm); // we will run nothing to initialize lua
+			Execute(string.Empty, 0, null, dm); // we will run nothing to initialize lua
 		}
 		public static void MakeDataType(DataModel dm, string name, Func<ScriptExecutionContext, CallbackArguments, DynValue> func)
-        {
-            var it = new Table(dm.MainEnv);
-            it["new"] = DynValue.NewCallback(func);
-            dm.MainEnv.Globals[name] = DynValue.NewTable(it);
-        }
+		{
+			var it = new Table(dm.MainEnv);
+			it["new"] = DynValue.NewCallback(func);
+			dm.MainEnv.Globals[name] = DynValue.NewTable(it);
+		}
 		public static LuaThread GetThreadFor(Coroutine c)
 		{
 			return (from x in Threads where x.Coroutine == c select x).First();
@@ -164,7 +164,7 @@ namespace NetBlox.Runtime
 				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
 				var lt = new LuaThread(dm, bs, d, sl, fc);
 
-                if (bs != null)
+				if (bs != null)
 					lt.Name = bs.GetFullName();
 
 				Threads.AddLast(lt);
@@ -174,13 +174,13 @@ namespace NetBlox.Runtime
 				LastException = ex; // for the sake of overcomplification
 				throw;
 			}
-        }
+		}
 		public static void ReportedExecute(Action ac, bool remthread)
 		{
 			try
 			{
 				ac();
-            }
+			}
 			catch (ScriptRuntimeException ex)
 			{
 				LogManager.LogError(ex.Message);
@@ -192,7 +192,7 @@ namespace NetBlox.Runtime
 						Threads.Remove(CurrentThread);
 			}
 		}
-        public static void PrintOut(string msg)
+		public static void PrintOut(string msg)
 		{
 			LogManager.LogInfo(msg);
 		}
@@ -228,8 +228,8 @@ namespace NetBlox.Runtime
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
 			table.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
-            {
-                var key = y[1].String;
+			{
+				var key = y[1].String;
 				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
 				var meth = (from z in meths where z.Name == key select z).FirstOrDefault();
 
@@ -254,10 +254,10 @@ namespace NetBlox.Runtime
 					{
 						var sec = meth.GetCustomAttribute<LuaAttribute>();
 
-                        if (Security.IsCompatible(CurrentThread.Value.Level, sec.Capabilities))
+						if (Security.IsCompatible(CurrentThread.Value.Level, sec.Capabilities))
 							return DynValue.NewCallback((a, b) =>
-                            {
-                                try
+							{
+								try
 								{
 									var args = new List<object?>();
 									var parms = meth.GetParameters();
@@ -330,8 +330,8 @@ namespace NetBlox.Runtime
 				}
 			});
 			table.MetaTable["__newindex"] = DynValue.NewCallback((x, y) =>
-            {
-                var key = y[1].String;
+			{
+				var key = y[1].String;
 				var val = y[2];
 				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
 

@@ -9,62 +9,62 @@ namespace NetBlox.Client
 {
 	public static class Program
 	{
-        public static void Main(string[] args)
-        {
-            LogManager.LogInfo($"NetBlox Server ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
-            /*GameManager.Start(false, true, false, args, x =>
-            {
-                DataModel dm = new();
-                RbxlParser.Load(x, GameManager.CurrentRoot);
-
-                GameManager.CurrentRoot = dm;
-
-                LuaRuntime.Setup(GameManager.CurrentRoot, false);
-
-                NetworkManager.StartServer();
-
-                GameManager.IsRunning = true;
-            });
-            return;*/
-            GameManager.Start(false, true, false, args, x =>
+		public static void Main(string[] args)
+		{
+			LogManager.LogInfo($"NetBlox Server ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
+			/*GameManager.Start(false, true, false, args, x =>
 			{
-                Workspace ws = new();
-                ReplicatedStorage rs = new();
-                ReplicatedFirst ri = new();
-                Players pl = new();
-                LocalScript ls = new();
+				DataModel dm = new();
+				RbxlParser.Load(x, GameManager.CurrentRoot);
 
-                ws.ZoomToExtents();
-                ws.Parent = GameManager.CurrentRoot;
+				GameManager.CurrentRoot = dm;
 
-                Part part = new()
-                {
-                    Parent = ws,
-                    Color = Color.DarkGreen,
-                    Position = new(0, -5, 0),
-                    Size = new(50, 2, 20),
-                    TopSurface = SurfaceType.Studs,
-                    Anchored = true
-                };
+				LuaRuntime.Setup(GameManager.CurrentRoot, false);
 
-                ls.Parent = ri;
-                ls.Source = "print(\"HIIIIII\"); printidentity();";
+				NetworkManager.StartServer();
 
-                rs.Parent = GameManager.CurrentRoot;
-                ri.Parent = GameManager.CurrentRoot;
-                pl.Parent = GameManager.CurrentRoot;
+				GameManager.IsRunning = true;
+			});
+			return;*/
+			GameManager.Start(false, true, false, args, x =>
+			{
+				Workspace ws = new();
+				ReplicatedStorage rs = new();
+				ReplicatedFirst ri = new();
+				Players pl = new();
+				LocalScript ls = new();
 
-                GameManager.CurrentIdentity.MaxPlayerCount = 8;
-                GameManager.CurrentIdentity.PlaceName = "Default Place";
-                GameManager.CurrentIdentity.UniverseName = "NetBlox Defaults";
-                GameManager.CurrentIdentity.Author = "The Lord";
-                GameManager.CurrentIdentity.PlaceID = 47384;
-                GameManager.CurrentIdentity.UniverseID = 47384;
+				ws.ZoomToExtents();
+				ws.Parent = GameManager.CurrentRoot;
 
-                GameManager.CurrentRoot.Name = GameManager.CurrentIdentity.PlaceName;
+				Part part = new()
+				{
+					Parent = ws,
+					Color = Color.DarkGreen,
+					Position = new(0, -5, 0),
+					Size = new(50, 2, 20),
+					TopSurface = SurfaceType.Studs,
+					Anchored = true
+				};
 
-                NetworkManager.StartServer();
-            });
+				ls.Parent = ri;
+				ls.Source = "print(\"HIIIIII\"); printidentity();";
+
+				rs.Parent = GameManager.CurrentRoot;
+				ri.Parent = GameManager.CurrentRoot;
+				pl.Parent = GameManager.CurrentRoot;
+
+				GameManager.CurrentIdentity.MaxPlayerCount = 8;
+				GameManager.CurrentIdentity.PlaceName = "Default Place";
+				GameManager.CurrentIdentity.UniverseName = "NetBlox Defaults";
+				GameManager.CurrentIdentity.Author = "The Lord";
+				GameManager.CurrentIdentity.PlaceID = 47384;
+				GameManager.CurrentIdentity.UniverseID = 47384;
+
+				GameManager.CurrentRoot.Name = GameManager.CurrentIdentity.PlaceName;
+
+				NetworkManager.StartServer();
+			});
 		}
 	}
 }

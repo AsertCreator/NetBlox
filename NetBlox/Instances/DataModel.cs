@@ -13,13 +13,13 @@ namespace NetBlox.Instances
 		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
 		public Script MainEnv = null!;
 
-        public T GetService<T>(bool allownull = false) where T : Instance, new()
-        {
-            for (int i = 0; i < Children.Count; i++)
-            {
-                if (Children[i] is T)
-                    return (T)Children[i];
-            }
+		public T GetService<T>(bool allownull = false) where T : Instance, new()
+		{
+			for (int i = 0; i < Children.Count; i++)
+			{
+				if (Children[i] is T)
+					return (T)Children[i];
+			}
 			if (!allownull)
 			{
 				var serv = new T();
@@ -27,21 +27,21 @@ namespace NetBlox.Instances
 				return serv;
 			}
 			return null!;
-        }
+		}
 
-        [Lua([Security.Capability.None])]
-        public Instance GetService(string sn)
-        {
-            for (int i = 0; i < Children.Count; i++)
-            {
-                if (Children[i].ClassName == sn)
-                    return Children[i];
-            }
+		[Lua([Security.Capability.None])]
+		public Instance GetService(string sn)
+		{
+			for (int i = 0; i < Children.Count; i++)
+			{
+				if (Children[i].ClassName == sn)
+					return Children[i];
+			}
 			var serv = InstanceCreator.CreateInstance(sn);
-            serv.Parent = this;
-            return serv;
-        }
-        [Lua([Security.Capability.None])]
+			serv.Parent = this;
+			return serv;
+		}
+		[Lua([Security.Capability.None])]
 		public bool IsLoaded()
 		{
 			return true;
@@ -50,8 +50,8 @@ namespace NetBlox.Instances
 		public void Shutdown()
 		{
 			GameManager.Shutdown();
-        }
-        [Lua([Security.Capability.None])]
+		}
+		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(DataModel) == classname) return true;

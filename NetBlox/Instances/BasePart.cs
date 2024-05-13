@@ -28,9 +28,9 @@ namespace NetBlox.Instances
 		public Vector3 Position { get => Origin.Position; set => Origin.Position = value; }
 		[Lua([Security.Capability.None])]
 		public Vector3 Size { get; set; } = new Vector3(4, 1, 2);
-        [Lua([Security.Capability.None])]
-        public Vector3 size { get => Size; set => Size = value; }
-        [Lua([Security.Capability.None])]
+		[Lua([Security.Capability.None])]
+		public Vector3 size { get => Size; set => Size = value; }
+		[Lua([Security.Capability.None])]
 		public bool CanCollide { get; set; } = true;
 		[Lua([Security.Capability.None])]
 		public bool CanTouch { get; set; } = true;

@@ -4,9 +4,9 @@ using System.Numerics;
 
 namespace NetBlox.Instances.Services
 {
-    public class Workspace : Instance
-    {
-        [Lua([Security.Capability.None])]
+	public class Workspace : Instance
+	{
+		[Lua([Security.Capability.None])]
 		public Instance? MainCamera { get; set; }
 
 		[Lua([Security.Capability.None])]

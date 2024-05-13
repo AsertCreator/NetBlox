@@ -47,9 +47,9 @@ namespace NetBlox
 			public List<NetworkClient> To = GameManager.AllClients;
 			public Instance? What;
 			public bool RepChildren = true;
-            public bool AsService = false;
+			public bool AsService = false;
 			public Action? Callback;
-        }
+		}
 		private static readonly JsonSerializerOptions DefaultJSON = new()
 		{
 			IncludeFields = true
@@ -59,8 +59,8 @@ namespace NetBlox
 		public static bool IsServer { get; private set; }
 		public static bool IsClient { get; private set; }
 		public static int ServerPort { get; private set; } = 2556;
-        public static int ClientPort { get; private set; } = 6552;
-        public static Queue<Replication> ToReplicate = new();
+		public static int ClientPort { get; private set; } = 6552;
+		public static Queue<Replication> ToReplicate = new();
 		public static Connection? ServerConnection;
 		private static uint NextPID = 0;
 		private static bool init;
@@ -90,18 +90,18 @@ namespace NetBlox
 			GameManager.AllClients.Remove(nc);
 		}
 		public static void DisconnectFromServer(CloseReason cr)
-        {
+		{
 			if (NetworkClient != null)
 			{
 				NetworkClient.Close();
 				LogManager.LogInfo("Disconnected from server due to " + cr + "!");
-            }
+			}
 
-            GameManager.CurrentRoot.GetService<ReplicatedFirst>().Destroy();
-            GameManager.CurrentRoot.GetService<Players>().Destroy();
-            GameManager.CurrentRoot.GetService<Workspace>().Destroy();
-            GameManager.CurrentRoot.GetService<ReplicatedStorage>().Destroy();
-        }
+			GameManager.CurrentRoot.GetService<ReplicatedFirst>().Destroy();
+			GameManager.CurrentRoot.GetService<Players>().Destroy();
+			GameManager.CurrentRoot.GetService<Workspace>().Destroy();
+			GameManager.CurrentRoot.GetService<ReplicatedStorage>().Destroy();
+		}
 		public static void StartServer()
 		{
 			if (!IsServer)
@@ -118,9 +118,9 @@ namespace NetBlox
 					ClientHandshake ch = DeserializeJsonBytes<ClientHandshake>(x.Data);
 					NetworkClient nc = new NetworkClient();
 					Players pls = GameManager.CurrentRoot.GetService<Players>()!;
-                    Backpack bck = new Backpack();
-                    PlayerGui pg = new PlayerGui();
-                    Player plr = new Player();
+					Backpack bck = new Backpack();
+					PlayerGui pg = new PlayerGui();
+					Player plr = new Player();
 
 					nc.Username = ch.Username;
 					nc.Connection = y;
@@ -128,10 +128,10 @@ namespace NetBlox
 					nc.IsDisconnecting = false;
 					nc.Player = plr;
 
-                    pg.Reload();
-                    bck.Reload();
+					pg.Reload();
+					bck.Reload();
 
-                    bck.Parent = plr;
+					bck.Parent = plr;
 					pg.Parent = plr;
 
 					GameManager.AllClients.Add(nc);
@@ -141,19 +141,19 @@ namespace NetBlox
 					plr.LoadCharacter();
 
 					sh.PlaceName = GameManager.CurrentIdentity.PlaceName;
-                    sh.UniverseName = GameManager.CurrentIdentity.UniverseName;
-                    sh.Author = GameManager.CurrentIdentity.Author;
-                    sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
-                    sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
-                    sh.UniquePlayerID = nc.UniquePlayerID;
-                    sh.PlayerInstance = plr.UniqueID;
+					sh.UniverseName = GameManager.CurrentIdentity.UniverseName;
+					sh.Author = GameManager.CurrentIdentity.Author;
+					sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
+					sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
+					sh.UniquePlayerID = nc.UniquePlayerID;
+					sh.PlayerInstance = plr.UniqueID;
 					sh.CharacterInstance = plr.Character.UniqueID;
 					sh.DataModelInstance = GameManager.CurrentRoot.UniqueID;
 					sh.InstanceCount = 
 						GameManager.CurrentRoot.GetService<ReplicatedFirst>().CountDescendants() +
-                        GameManager.CurrentRoot.GetService<Players>().CountDescendants() +
-                        GameManager.CurrentRoot.GetService<Workspace>().CountDescendants() +
-                        GameManager.CurrentRoot.GetService<ReplicatedStorage>().CountDescendants();
+						GameManager.CurrentRoot.GetService<Players>().CountDescendants() +
+						GameManager.CurrentRoot.GetService<Workspace>().CountDescendants() +
+						GameManager.CurrentRoot.GetService<ReplicatedStorage>().CountDescendants();
 
 					y.SendRawData("nb.placeinfo", SerializeJsonBytes(sh));
 
@@ -183,7 +183,7 @@ namespace NetBlox
 						}
 					});
 					_x.RegisterRawDataHandler("nb.req-int-rep", (x, y) =>
-                    {
+					{
 						lock (ToReplicate)
 						{
 							ToReplicate.Enqueue(new Replication()
@@ -217,15 +217,15 @@ namespace NetBlox
 								AsService = true
 							});
 						}
-                    });
+					});
 
-                    Task.Run(() =>
-                    {
-                        while (!GameManager.ShuttingDown)
-                        {
-                            try
-                            {
-                                while (ToReplicate.Count == 0) ;
+					Task.Run(() =>
+					{
+						while (!GameManager.ShuttingDown)
+						{
+							try
+							{
+								while (ToReplicate.Count == 0) ;
 								lock (ToReplicate)
 								{
 									var tr = ToReplicate.Dequeue();
@@ -238,15 +238,15 @@ namespace NetBlox
 									if (tr.Callback != null)
 										tr.Callback();
 								}
-                            }
-                            catch
-                            {
-                                LogManager.LogError($"Could not replicate queued instance, well i dont care!");
-                            }
-                        }
-                    });
+							}
+							catch
+							{
+								LogManager.LogError($"Could not replicate queued instance, well i dont care!");
+							}
+						}
+					});
 
-                    GameManager.AllowReplication = true;
+					GameManager.AllowReplication = true;
 				});
 			};
 		}
@@ -263,7 +263,7 @@ namespace NetBlox
 				{
 					LogManager.LogInfo($"Teleporting into server: {ipa}...");
 					GameManager.CurrentIdentity.Reset();
-                    LuaRuntime.Threads.Clear();
+					LuaRuntime.Threads.Clear();
 
 					try
 					{
@@ -281,7 +281,7 @@ namespace NetBlox
 							con.ConnectionClosed += (x, y) => 
 							{
 								DisconnectFromServer(x);
-                            };
+							};
 
 							ServerHandshake sh = default;
 							ClientHandshake ch = new();
@@ -296,25 +296,25 @@ namespace NetBlox
 								if (ins.UniqueID == sh.DataModelInstance)
 								{
 									GameManager.CurrentRoot.Name = (ins as DataModel)!.Name;
-                                    GameManager.IsRunning = true;
+									GameManager.IsRunning = true;
 
-                                    con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
-                                    {
-                                        var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
-                                        var ins = GameManager.GetInstance(Guid.Parse(dss["Instance"]));
-                                        var par = GameManager.GetInstance(Guid.Parse(dss["Parent"]));
+									con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
+									{
+										var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
+										var ins = GameManager.GetInstance(Guid.Parse(dss["Instance"]));
+										var par = GameManager.GetInstance(Guid.Parse(dss["Parent"]));
 
-                                        if (ins == null || par == null)
-                                        {
-                                            LogManager.LogError("Failed to reparent instance, because new parent does not exist");
-                                            return;
-                                        }
-                                        else
-                                        {
-                                            ins.Parent = par;
-                                        }
-                                    });
-                                }
+										if (ins == null || par == null)
+										{
+											LogManager.LogError("Failed to reparent instance, because new parent does not exist");
+											return;
+										}
+										else
+										{
+											ins.Parent = par;
+										}
+									});
+								}
 								if (ins.UniqueID == sh.PlayerInstance)
 								{
 									var plr = (Player)ins;
@@ -331,16 +331,16 @@ namespace NetBlox
 									cam.CameraSubject = chr;
 								}
 								if (loaded++ == sh.InstanceCount)
-                                {
-                                    GameManager.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
-                                }
+								{
+									GameManager.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
+								}
 							});
-                            con.RegisterRawDataHandler("nb.inc-service", (x, y) =>
-                            {
-                                var ins = SeqReceiveInstance(y, x.ToUTF8String());
+							con.RegisterRawDataHandler("nb.inc-service", (x, y) =>
+							{
+								var ins = SeqReceiveInstance(y, x.ToUTF8String());
 								ins.Parent = GameManager.CurrentRoot;
-                            });
-                            con.RegisterRawDataHandler("nb.placeinfo", (x, y) =>
+							});
+							con.RegisterRawDataHandler("nb.placeinfo", (x, y) =>
 							{
 								sh = DeserializeJsonBytes<ServerHandshake>(x.Data);
 
@@ -360,9 +360,9 @@ namespace NetBlox
 								GameManager.CurrentIdentity.UniquePlayerID = sh.UniquePlayerID;
 								GameManager.CurrentIdentity.MaxPlayerCount = sh.MaxPlayerCount;
 
-                                GameManager.CurrentRoot.GetService<CoreGui>().ShowTeleportGui(sh.PlaceName, sh.Author, (int)sh.PlaceID, 0);
+								GameManager.CurrentRoot.GetService<CoreGui>().ShowTeleportGui(sh.PlaceName, sh.Author, (int)sh.PlaceID, 0);
 
-                                y.SendRawData("nb.req-int-rep", []);
+								y.SendRawData("nb.req-int-rep", []);
 							});
 
 							con.SendRawData("nb.handshake", SerializeJsonBytes(ch));
@@ -426,26 +426,26 @@ namespace NetBlox
 					if (val == null) continue;
 
 					dss[prop.Name] = SerializationManager.Serialize(val);
-                }
+				}
 
 				var key = "nb." + ins.UniqueID;
 
-                c.RegisterRawDataHandler(key, (x, y) =>
-                {
-                    y.UnRegisterRawDataHandler(key);
-                    if (repchildren)
-                    {
-                        var ch = ins.GetChildren();
-                        for (int i = 0; i < ch.Length; i++)
-                            SeqReplicateInstance(c, ch[i], true, false);
-                    }
-                });
+				c.RegisterRawDataHandler(key, (x, y) =>
+				{
+					y.UnRegisterRawDataHandler(key);
+					if (repchildren)
+					{
+						var ch = ins.GetChildren();
+						for (int i = 0; i < ch.Length; i++)
+							SeqReplicateInstance(c, ch[i], true, false);
+					}
+				});
 
 				if (!asservice)
 					c.SendRawData("nb.inc-inst", SerializeJsonBytes(dss));
-                else
-                    c.SendRawData("nb.inc-service", SerializeJsonBytes(dss));
-            }
+				else
+					c.SendRawData("nb.inc-service", SerializeJsonBytes(dss));
+			}
 			catch
 			{
 				LogManager.LogError($"Failed to replicate instance ({ins.UniqueID})!");
@@ -482,7 +482,7 @@ namespace NetBlox
 
 				ins.Parent = (from x in GameManager.AllInstances where x.UniqueID == ins.ParentID select x).FirstOrDefault();
 
-                var key = "nb." + ins.UniqueID;
+				var key = "nb." + ins.UniqueID;
 
 				c.SendRawData(key, []);
 
@@ -511,6 +511,6 @@ namespace NetBlox
 
 				return pre;
 			}
-        }
-    }
+		}
+	}
 }

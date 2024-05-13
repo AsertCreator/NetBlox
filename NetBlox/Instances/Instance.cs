@@ -8,12 +8,12 @@ namespace NetBlox.Instances
 	{
 		[Lua([Security.Capability.None])]
 		public bool Archivable { get; set; }
-        [Lua([Security.Capability.None])]
-        public string ClassName => GetType().Name;
-        [Lua([Security.Capability.None])]
-        public string Name { get; set; }
-        [Lua([Security.Capability.None])]
-        [NotReplicated]
+		[Lua([Security.Capability.None])]
+		public string ClassName => GetType().Name;
+		[Lua([Security.Capability.None])]
+		public string Name { get; set; }
+		[Lua([Security.Capability.None])]
+		[NotReplicated]
 		public Instance? Parent
 		{
 			get => parent;
@@ -24,9 +24,9 @@ namespace NetBlox.Instances
 				if (parent != null)
 				{
 					parent.Children.Remove(this);
-                    if (GameManager.CurrentRoot.MainEnv != null)
-                        parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager.CurrentRoot.MainEnv)));
-                }
+					if (GameManager.CurrentRoot.MainEnv != null)
+						parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager.CurrentRoot.MainEnv)));
+				}
 				if (value != null)
 				{
 					parent = value;
@@ -34,7 +34,7 @@ namespace NetBlox.Instances
 					value.Children.Add(this);
 					if (GameManager.CurrentRoot.MainEnv != null)
 						value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager.CurrentRoot.MainEnv)));
-                }
+				}
 				else
 				{
 					parent = null;
@@ -53,15 +53,15 @@ namespace NetBlox.Instances
 		public Guid ParentID { get; set; }
 		public Guid UniqueID { get; set; }
 		[Lua([Security.Capability.None])]
-        [NotReplicated]
-        public LuaSignal ChildAdded { get; set; } = new();
-        [Lua([Security.Capability.None])]
-        [NotReplicated]
-        public LuaSignal ChildRemoved { get; set; } = new();
-        [Lua([Security.Capability.None])]
-        [NotReplicated]
-        public LuaSignal Destroying { get; set; } = new();
-        public bool WasDestroyed = false;
+		[NotReplicated]
+		public LuaSignal ChildAdded { get; set; } = new();
+		[Lua([Security.Capability.None])]
+		[NotReplicated]
+		public LuaSignal ChildRemoved { get; set; } = new();
+		[Lua([Security.Capability.None])]
+		[NotReplicated]
+		public LuaSignal Destroying { get; set; } = new();
+		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
 		public List<Instance> Children = new();
 		public Dictionary<Script, Table> Tables = new();
@@ -128,7 +128,7 @@ namespace NetBlox.Instances
 			{
 				Destroying.Fire();
 
-                Parent = null;
+				Parent = null;
 				ClearAllChildren();
 				GameManager.AllInstances.Remove(this);
 
@@ -258,17 +258,17 @@ namespace NetBlox.Instances
 		public virtual void RemoveTag(string tag) => Tags.Remove(tag);
 		[Lua([Security.Capability.None])]
 		public virtual bool IsA(string classname) => nameof(Instance) == classname;
-        public int CountDescendants()
-        {
-            lock (Children)
-            {
-                int sum = Children.Count;
-                for (int i = 0; i < Children.Count; i++)
-                    sum += Children[i].CountDescendants();
-                return sum;
-            }
-        }
-        [Lua([Security.Capability.None])]
+		public int CountDescendants()
+		{
+			lock (Children)
+			{
+				int sum = Children.Count;
+				for (int i = 0; i < Children.Count; i++)
+					sum += Children[i].CountDescendants();
+				return sum;
+			}
+		}
+		[Lua([Security.Capability.None])]
 		public LuaYield<Instance> WaitForChild(string name)
 		{
 			var n = new LuaYield<Instance>();

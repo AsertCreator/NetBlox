@@ -14,22 +14,22 @@ using System.Windows.Shapes;
 
 namespace WindowsNBServerManager
 {
-    /// <summary>
-    /// Interaction logic for CreateServerDialog.xaml
-    /// </summary>
-    public partial class CreateServerDialog : Window
-    {
-        public CreateServerDialog()
-        {
-            InitializeComponent();
-        }
+	/// <summary>
+	/// Interaction logic for CreateServerDialog.xaml
+	/// </summary>
+	public partial class CreateServerDialog : Window
+	{
+		public CreateServerDialog()
+		{
+			InitializeComponent();
+		}
 
-        private void StartAction(object sender, RoutedEventArgs e)
-        {
-            (sender as Button).IsEnabled = false;
-            App.SpawnServer(piifp.Text, (string.IsNullOrWhiteSpace(placo.Text) ? null : placo.Text), (string.IsNullOrWhiteSpace(univo.Text) ? null : univo.Text), int.Parse(maxpl.Text));
-            Close();
-            (Application.Current.MainWindow as MainWindow)!.ReloadServerList();
-        }
-    }
+		private void StartAction(object sender, RoutedEventArgs e)
+		{
+			(sender as Button).IsEnabled = false;
+			App.SpawnServer(piifp.Text, (string.IsNullOrWhiteSpace(placo.Text) ? null : placo.Text), (string.IsNullOrWhiteSpace(univo.Text) ? null : univo.Text), int.Parse(maxpl.Text));
+			Close();
+			(Application.Current.MainWindow as MainWindow)!.ReloadServerList();
+		}
+	}
 }

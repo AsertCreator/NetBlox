@@ -2,16 +2,16 @@
 
 namespace NetBlox.Instances.Scripts
 {
-    public class LuaSourceContainer : Instance
-    {
-        [Lua([Security.Capability.None])]
-        public string Source { get; set; } = string.Empty;
+	public class LuaSourceContainer : Instance
+	{
+		[Lua([Security.Capability.None])]
+		public string Source { get; set; } = string.Empty;
 
-        [Lua([Security.Capability.None])]
-        public override bool IsA(string classname)
-        {
-            if (nameof(LuaSourceContainer) == classname) return true;
-            return base.IsA(classname);
-        }
-    }
+		[Lua([Security.Capability.None])]
+		public override bool IsA(string classname)
+		{
+			if (nameof(LuaSourceContainer) == classname) return true;
+			return base.IsA(classname);
+		}
+	}
 }

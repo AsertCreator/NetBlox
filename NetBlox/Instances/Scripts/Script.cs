@@ -4,20 +4,20 @@ namespace NetBlox.Instances.Scripts
 {
 	[Creatable]
 	public class Script : BaseScript
-    {
-        public override void Process()
-        {
-            if (!HadExecuted && NetworkManager.IsServer && Enabled)
+	{
+		public override void Process()
+		{
+			if (!HadExecuted && NetworkManager.IsServer && Enabled)
 			{
 				LuaRuntime.Execute(Source, 2, this, GameManager.CurrentRoot);
 				HadExecuted = true;
-            }
-        }
-        [Lua([Security.Capability.None])]
-        public override bool IsA(string classname)
-        {
-            if (nameof(Script) == classname) return true;
-            return base.IsA(classname);
-        }
-    }
+			}
+		}
+		[Lua([Security.Capability.None])]
+		public override bool IsA(string classname)
+		{
+			if (nameof(Script) == classname) return true;
+			return base.IsA(classname);
+		}
+	}
 }

@@ -131,22 +131,22 @@ namespace NetBlox
 			CurrentRoot = new DataModel();
 
 			var rs = new RunService();
-            var cg = new CoreGui();
-            rs.Parent = CurrentRoot;
-            cg.Parent = CurrentRoot;
+			var cg = new CoreGui();
+			rs.Parent = CurrentRoot;
+			cg.Parent = CurrentRoot;
 
-            LuaRuntime.Setup(CurrentRoot, true);
+			LuaRuntime.Setup(CurrentRoot, true);
 			LoadAllCoreScripts();
 
 			if (NetworkManager.IsClient)
 			{
-                CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-                servercallback(rbxlinit);
-            }
+				CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
+				servercallback(rbxlinit);
+			}
 			if (NetworkManager.IsServer)
 			{
 				AddedInstance += (x) =>
-                {
+				{
 					lock (NetworkManager.ToReplicate)
 					{
 						NetworkManager.ToReplicate.Enqueue(new()
@@ -196,35 +196,35 @@ namespace NetBlox
 						{
 #endif
 							LuaRuntime.ReportedExecute(() =>
-                            {
-                                if (LuaRuntime.CurrentThread == null)
-                                {
-                                    if (LuaRuntime.Threads.Count > 0)
-                                        LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-                                    else
-                                        return;
-                                }
+							{
+								if (LuaRuntime.CurrentThread == null)
+								{
+									if (LuaRuntime.Threads.Count > 0)
+										LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+									else
+										return;
+								}
 
-                                var thread = LuaRuntime.CurrentThread.Value;
+								var thread = LuaRuntime.CurrentThread.Value;
 
-                                if (thread.ScrInst != null)
-                                    thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.Script);
-                                else
-                                    thread.Script.Globals["script"] = DynValue.Nil;
+								if (thread.ScrInst != null)
+									thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.Script);
+								else
+									thread.Script.Globals["script"] = DynValue.Nil;
 
-                                var res = thread.Coroutine.Resume();
-                                if (thread.Coroutine.State != CoroutineState.Dead || res == null)
-                                    return;
-                                else
-                                {
-                                    if (LuaRuntime.Threads.Contains(thread))
-                                    {
-                                        var ac = thread.FinishCallback;
-                                        if (ac != null) ac();
-                                        LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-                                    }
-                                }
-                            }, true);
+								var res = thread.Coroutine.Resume();
+								if (thread.Coroutine.State != CoroutineState.Dead || res == null)
+									return;
+								else
+								{
+									if (LuaRuntime.Threads.Contains(thread))
+									{
+										var ac = thread.FinishCallback;
+										if (ac != null) ac();
+										LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+									}
+								}
+							}, true);
 #if !DISABLE_EME
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
 						}, cst.Token);

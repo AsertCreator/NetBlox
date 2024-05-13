@@ -16,8 +16,8 @@ namespace NetBlox.Structs
 			return new Vector2()
 			{
 				X = X * Raylib.GetScreenWidth() + XOff,
-                Y = Y * Raylib.GetScreenHeight() + YOff
-            };
+				Y = Y * Raylib.GetScreenHeight() + YOff
+			};
 		}
 	}
 }
