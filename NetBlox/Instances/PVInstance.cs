@@ -8,6 +8,8 @@ namespace NetBlox.Instances
 		protected CFrame Origin;
 		protected CFrame PivotOffset;
 
+		public PVInstance(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public CFrame GetPivot()
 		{

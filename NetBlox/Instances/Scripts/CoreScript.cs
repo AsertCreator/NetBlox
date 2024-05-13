@@ -7,11 +7,13 @@ namespace NetBlox.Instances.Scripts
 {
 	public class CoreScript : BaseScript
 	{
+		public CoreScript(GameManager ins) : base(ins) { }
+
 		public override void Process()
 		{
-			if (!HadExecuted && NetworkManager.IsClient && Enabled) // we can only execute 
+			if (!HadExecuted && GameManager.NetworkManager.IsClient && Enabled) // we can only execute 
 			{
-				LuaRuntime.Execute(Source, 3, this, GameManager.CurrentRoot);
+				LuaRuntime.Execute(Source, 3, GameManager, this, GameManager.CurrentRoot);
 				HadExecuted = true;
 			}
 		}

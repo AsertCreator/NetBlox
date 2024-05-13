@@ -4,6 +4,8 @@ namespace NetBlox.Instances.Scripts
 {
 	public class LuaSourceContainer : Instance
 	{
+		public LuaSourceContainer(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public string Source { get; set; } = string.Empty;
 

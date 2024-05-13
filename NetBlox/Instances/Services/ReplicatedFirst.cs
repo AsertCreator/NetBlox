@@ -4,6 +4,8 @@ namespace NetBlox.Instances.Services
 {
 	public class ReplicatedFirst : Instance
 	{
+		public ReplicatedFirst(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public void RemoveDefaultLoadingScreen()
 		{

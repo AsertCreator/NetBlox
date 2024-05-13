@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 
 namespace NetBlox
 {
-	public static class NetworkManager
+	public class NetworkManager
 	{
 		private struct ClientHandshake
 		{
@@ -44,7 +44,7 @@ namespace NetBlox
 		}
 		public class Replication
 		{
-			public List<NetworkClient> To = GameManager.AllClients;
+			public List<NetworkClient> To;
 			public Instance? What;
 			public bool RepChildren = true;
 			public bool AsService = false;
@@ -54,20 +54,22 @@ namespace NetBlox
 		{
 			IncludeFields = true
 		};
-		public static TcpClient NetworkClient = null!;
-		public static TcpListener NetworkServer = null!;
-		public static bool IsServer { get; private set; }
-		public static bool IsClient { get; private set; }
-		public static int ServerPort { get; private set; } = 2556;
-		public static int ClientPort { get; private set; } = 6552;
-		public static Queue<Replication> ToReplicate = new();
-		public static Connection? ServerConnection;
-		private static uint NextPID = 0;
-		private static bool init;
-		private static int loaded = 0;
+		public TcpClient NetworkClient = null!;
+		public TcpListener NetworkServer = null!;
+		public GameManager GameManager;
+		public bool IsServer { get; private set; }
+		public bool IsClient { get; private set; }
+		public int ServerPort { get; private set; } = 2556;
+		public int ClientPort { get; private set; } = 6552;
+		public Queue<Replication> ToReplicate = new();
+		public Connection? ServerConnection;
+		private uint NextPID = 0;
+		private bool init;
+		private int loaded = 0;
 
-		public static void Initialize(bool server, bool client)
+		public NetworkManager(GameManager gm, bool server, bool client)
 		{
+			GameManager = gm;
 			if (!init)
 			{
 				IsServer = server;
@@ -75,7 +77,8 @@ namespace NetBlox
 				init = true;
 			}
 		}
-		public static void Disconnect(NetworkClient nc)
+
+		public void Disconnect(NetworkClient nc)
 		{
 			if (!IsServer)
 				throw new NotSupportedException("Attempt to disconnect another player from client");
@@ -89,7 +92,7 @@ namespace NetBlox
 			LogManager.LogInfo($"{nc.Username} had disconnected!");
 			GameManager.AllClients.Remove(nc);
 		}
-		public static void DisconnectFromServer(CloseReason cr)
+		public void DisconnectFromServer(CloseReason cr)
 		{
 			if (NetworkClient != null)
 			{
@@ -102,7 +105,7 @@ namespace NetBlox
 			GameManager.CurrentRoot.GetService<Workspace>().Destroy();
 			GameManager.CurrentRoot.GetService<ReplicatedStorage>().Destroy();
 		}
-		public static void StartServer()
+		public void StartServer()
 		{
 			if (!IsServer)
 				throw new NotSupportedException("Cannot start server in non-server configuration!");
@@ -118,9 +121,9 @@ namespace NetBlox
 					ClientHandshake ch = DeserializeJsonBytes<ClientHandshake>(x.Data);
 					NetworkClient nc = new NetworkClient();
 					Players pls = GameManager.CurrentRoot.GetService<Players>()!;
-					Backpack bck = new Backpack();
-					PlayerGui pg = new PlayerGui();
-					Player plr = new Player();
+					Backpack bck = new Backpack(GameManager);
+					PlayerGui pg = new PlayerGui(GameManager);
+					Player plr = new Player(GameManager);
 
 					nc.Username = ch.Username;
 					nc.Connection = y;
@@ -250,14 +253,14 @@ namespace NetBlox
 				});
 			};
 		}
-		public static void ConnectToServer(IPAddress ipa)
+		public void ConnectToServer(IPAddress ipa)
 		{
 			if (IsServer)
 				throw new NotSupportedException("Cannot teleport in server");
 
 			Task.Run(() =>
 			{
-				RenderManager.Status = string.Empty;
+				GameManager.RenderManager.Status = string.Empty;
 
 				try
 				{
@@ -286,9 +289,9 @@ namespace NetBlox
 							ServerHandshake sh = default;
 							ClientHandshake ch = new();
 							ch.Username = GameManager.Username;
-							ch.VersionMajor = GameManager.VersionMajor;
-							ch.VersionMinor = GameManager.VersionMinor;
-							ch.VersionPatch = GameManager.VersionPatch;
+							ch.VersionMajor = SharedData.VersionMajor;
+							ch.VersionMinor = SharedData.VersionMinor;
+							ch.VersionPatch = SharedData.VersionPatch;
 
 							con.RegisterRawDataHandler("nb.inc-inst", (x, y) =>
 							{
@@ -326,7 +329,7 @@ namespace NetBlox
 								{
 									var chr = (Character)ins;
 									chr.IsLocalPlayer = true;
-									var cam = new Camera();
+									var cam = new Camera(GameManager);
 									cam.Parent = GameManager.CurrentRoot.GetService<Workspace>();
 									cam.CameraSubject = chr;
 								}
@@ -348,7 +351,7 @@ namespace NetBlox
 								{
 									var msg = $"Could not connect to the server! {sh.ErrorCode} - {sh.ErrorMessage}";
 									LogManager.LogError(msg);
-									RenderManager.Status = msg;
+									GameManager.RenderManager.Status = msg;
 									return;
 								}
 
@@ -384,16 +387,16 @@ namespace NetBlox
 				}
 				catch (Exception ex)
 				{
-					RenderManager.Status = $"Could not connect due to error! {ex.GetType().FullName}: {ex.Message}";
-					LogManager.LogError(RenderManager.Status);
+					GameManager.RenderManager.Status = $"Could not connect due to error! {ex.GetType().FullName}: {ex.Message}";
+					LogManager.LogError(GameManager.RenderManager.Status);
 				}
 			});
 		}
-		public static byte[] SerializeJsonBytes<T>(T obj) => Encoding.UTF8.GetBytes(SerializeJson(obj));
-		public static string SerializeJson<T>(T obj) => JsonSerializer.Serialize(obj, DefaultJSON);
-		public static T? DeserializeJsonBytes<T>(byte[] d) => DeserializeJson<T>(Encoding.UTF8.GetString(d));
-		public static T? DeserializeJson<T>(string d) => JsonSerializer.Deserialize<T>(d, DefaultJSON);
-		public static void SeqReparentInstance(Connection c, Instance ins)
+		public byte[] SerializeJsonBytes<T>(T obj) => Encoding.UTF8.GetBytes(SerializeJson(obj));
+		public string SerializeJson<T>(T obj) => JsonSerializer.Serialize(obj, DefaultJSON);
+		public T? DeserializeJsonBytes<T>(byte[] d) => DeserializeJson<T>(Encoding.UTF8.GetString(d));
+		public T? DeserializeJson<T>(string d) => JsonSerializer.Deserialize<T>(d, DefaultJSON);
+		public void SeqReparentInstance(Connection c, Instance ins)
 		{
 			try
 			{
@@ -407,7 +410,7 @@ namespace NetBlox
 				LogManager.LogError($"Failed to perform network instance reparent ({ins.UniqueID}->{ins.ParentID})!");
 			}
 		}
-		public static void SeqReplicateInstance(Connection c, Instance ins, bool repchildren, bool asservice)
+		public void SeqReplicateInstance(Connection c, Instance ins, bool repchildren, bool asservice)
 		{
 			try
 			{
@@ -451,7 +454,7 @@ namespace NetBlox
 				LogManager.LogError($"Failed to replicate instance ({ins.UniqueID})!");
 			}
 		}
-		public static Instance SeqReceiveInstance(Connection c, string tag)
+		public Instance SeqReceiveInstance(Connection c, string tag)
 		{
 			var inf = JsonSerializer.Deserialize<Dictionary<string, string>>(tag);
 			var uid = Guid.Parse(inf["UniqueID"]);

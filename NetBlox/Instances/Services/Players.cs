@@ -7,6 +7,8 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public Instance? LocalPlayer { get; set; }
 
+		public Players(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
@@ -16,7 +18,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public Player CreateNewPlayer(string name, bool local)
 		{
-			Player player = new()
+			Player player = new(GameManager)
 			{
 				Name = name,
 				Parent = this,

@@ -38,6 +38,8 @@ namespace NetBlox.Instances
 		public Vector3 Velocity { get; set; }
 		public bool IsGrounded = false;
 
+		public BasePart(GameManager ins) : base(ins) { }
+
 		public virtual void Render()
 		{
 			// render nothing

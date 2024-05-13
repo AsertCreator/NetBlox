@@ -18,10 +18,10 @@ namespace NetBlox.Instances.GUIs
 		public string FilePath { get; set; } = "rbxasset://textures/somethingidontlike.png"; // i tried to load that but i(t) just died
 		private Texture2D handle;
 
-		public Image()
+		public Image(GameManager ins) : base(ins)
 		{
-			var fp = GameManager.ResolveUrl(FilePath);
-			handle = RenderManager.StudTexture; // so instead i will use this
+			var fp = SharedData.ResolveUrl(FilePath);
+			handle = GameManager.RenderManager.StudTexture; // so instead i will use this
 		}
 
 		[Lua([Security.Capability.None])]

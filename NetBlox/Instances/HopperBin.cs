@@ -10,6 +10,8 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public int BinType { get; set; }
 
+		public HopperBin(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

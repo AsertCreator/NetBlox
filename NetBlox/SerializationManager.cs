@@ -14,8 +14,8 @@ namespace NetBlox
 	{
 		public static Dictionary<string, Func<string, object>> Deserializers = new();
 		public static Dictionary<string, Func<object, string>> Serializers = new();
-		public static Dictionary<string, Func<object, Script, DynValue>> LuaSerializers = new();
-		public static Dictionary<string, Func<DynValue, Script, object>> LuaDeserializers = new();
+		public static Dictionary<string, Func<object, GameManager, DynValue>> LuaSerializers = new();
+		public static Dictionary<string, Func<DynValue, GameManager, object>> LuaDeserializers = new();
 		public static Dictionary<string, DataType> LuaDataTypes = new();
 
 		public static void SetProperty(object obj, string name, object data)
@@ -71,20 +71,20 @@ namespace NetBlox
 
 			return Serializers[name](data);
 		}
-		public static T LuaDeserialize<T>(DynValue dv, Script sc)
+		public static T LuaDeserialize<T>(DynValue dv, GameManager sc)
 		{
 			var type = typeof(T);
 			var name = type.FullName;
 
 			return (T)LuaDeserializers[name](dv, sc);
 		}
-		public static object LuaDeserialize(Type type, DynValue dv, Script sc)
+		public static object LuaDeserialize(Type type, DynValue dv, GameManager sc)
 		{
 			var name = type.FullName;
 
 			return LuaDeserializers[name](dv, sc);
 		}
-		public static object[] LuaDeserializeArray(Type et, DynValue dv, Script sc)
+		public static object[] LuaDeserializeArray(Type et, DynValue dv, GameManager sc)
 		{
 			List<object> l = new();
 			for (int i = 0; i < dv.Table.Length; i++)
@@ -151,11 +151,11 @@ namespace NetBlox
 			LuaSerializers.Add("NetBlox.Structs.Shape", (x, y) => DynValue.NewNumber((double)(Shape)x));
 			LuaSerializers.Add("NetBlox.Structs.SurfaceType", (x, y) => DynValue.NewNumber((double)(SurfaceType)x));
 			LuaSerializers.Add("NetBlox.Instances.Instance", (x, y) => DynValue.NewTable(LuaRuntime.MakeInstanceTable((Instance)x, y)));
-			LuaSerializers.Add("System.Numerics.Vector2", (x, y) => DynValue.NewTable(new Table(y) {
+			LuaSerializers.Add("System.Numerics.Vector2", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv) {
 				["X"] = ((Vector2)x).X,
 				["Y"] = ((Vector2)x).Y
 			}));
-			LuaSerializers.Add("NetBlox.Structs.LuaSignal", (x, y) => DynValue.NewTable(new Table(y)
+			LuaSerializers.Add("NetBlox.Structs.LuaSignal", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 			{
 				["Connect"] = DynValue.NewCallback((_x, _y) =>
 				{
@@ -167,7 +167,7 @@ namespace NetBlox
 						s.Attached.Add(_y[1]);
 					}
 
-					return DynValue.NewTable(new Table(y)
+					return DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 					{
 						["Disconnect"] = DynValue.NewCallback((x2, y2) =>
 						{
@@ -183,19 +183,19 @@ namespace NetBlox
 					return DynValue.Void;
 				})
 			}));
-			LuaSerializers.Add("System.Numerics.Vector3", (x, y) => DynValue.NewTable(new Table(y)
+			LuaSerializers.Add("System.Numerics.Vector3", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 			{
 				["X"] = ((Vector3)x).X,
 				["Y"] = ((Vector3)x).Y,
 				["Z"] = ((Vector3)x).Z
 			}));
-			LuaSerializers.Add("Raylib_cs.Color", (x, y) => DynValue.NewTable(new Table(y)
+			LuaSerializers.Add("Raylib_cs.Color", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 			{
 				["R"] = ((Color)x).R / 255f,
 				["G"] = ((Color)x).G / 255f,
 				["B"] = ((Color)x).B / 255f
 			}));
-			LuaSerializers.Add("NetBlox.Structs.UDim2", (x, y) => DynValue.NewTable(new Table(y)
+			LuaSerializers.Add("NetBlox.Structs.UDim2", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 			{
 				["X"] = ((UDim2)x).X,
 				["Y"] = ((UDim2)x).Y,
@@ -219,7 +219,7 @@ namespace NetBlox
 			LuaDeserializers.Add("NetBlox.Structs.Shape", (x, y) => (Shape)x.Number);
 			LuaDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)x.Number);
 			LuaDeserializers.Add("NetBlox.Instances.Instance", (x, y) => 
-			(from z in GameManager.AllInstances 
+			(from z in y.AllInstances 
 			 where z.UniqueID.ToString() == (string)x.Table.MetaTable["__handle"] 
 			 select z).FirstOrDefault() ?? throw new Exception($"Instance table with id {x.Table.MetaTable["__handle"]} is a zombie table!"));
 			LuaDeserializers.Add("System.Numerics.Vector2", (x, y) => new Vector2(

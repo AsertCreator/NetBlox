@@ -9,7 +9,7 @@ namespace NetBlox.Instances.Services
 {
 	public class RunService : Instance
 	{
-		public RunService() 
+		public RunService(GameManager gm) : base(gm) 
 		{
 			Name = "Run Service";
 		}
@@ -20,9 +20,9 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public void Stop() => GameManager.Shutdown();
 		[Lua([Security.Capability.None])]
-		public bool IsClient() => NetworkManager.IsClient;
+		public bool IsClient() => GameManager.NetworkManager.IsClient;
 		[Lua([Security.Capability.None])]
-		public bool IsServer() => NetworkManager.IsServer;
+		public bool IsServer() => GameManager.NetworkManager.IsServer;
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

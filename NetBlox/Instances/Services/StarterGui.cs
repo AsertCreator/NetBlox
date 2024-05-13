@@ -7,6 +7,7 @@ namespace NetBlox.Instances.Services
 {
 	public class StarterGui : Instance
 	{
+		public StarterGui(GameManager ins) : base(ins) { }
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

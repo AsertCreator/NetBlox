@@ -8,6 +8,8 @@ namespace NetBlox.Instances
 	[Creatable]
 	public class Folder : Instance
 	{
+		public Folder(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

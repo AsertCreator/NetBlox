@@ -13,10 +13,12 @@ namespace NetBlox.Instances
 		public Instance? Character { get; set; }
 		public bool IsLocalPlayer;
 
+		public Player(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public void LoadCharacter()
 		{
-			var ch = new Character();
+			var ch = new Character(GameManager);
 			var workspace = GameManager.CurrentRoot!.FindFirstChild("Workspace");
 
 			if (Character != null)
@@ -43,12 +45,12 @@ namespace NetBlox.Instances
 		{
 			if (IsLocalPlayer)
 			{
-				NetworkManager.ServerConnection.Close(Network.Enums.CloseReason.ClientClosed);
-				RenderManager.ShowKickMessage(msg);
+				GameManager.NetworkManager.ServerConnection.Close(Network.Enums.CloseReason.ClientClosed);
+				GameManager.RenderManager.ShowKickMessage(msg);
 				// why not call lua api lol
 				GameManager.CurrentRoot.GetService<RunService>().Pause();
 			}
-			else if (NetworkManager.IsServer)
+			else if (GameManager.NetworkManager.IsServer)
 			{
 				// do smth
 			}

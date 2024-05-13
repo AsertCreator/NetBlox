@@ -7,6 +7,8 @@ namespace NetBlox.Instances
 {
 	public class Backpack : Instance
 	{
+		public Backpack(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

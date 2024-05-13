@@ -11,6 +11,8 @@ namespace NetBlox.Instances.Scripts
 	[Creatable]
 	public class ModuleScript : BaseScript
 	{
+		public ModuleScript(GameManager ins) : base(ins) { }
+
 		public override void Process()
 		{
 			// we dont do THAT

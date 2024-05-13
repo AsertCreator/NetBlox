@@ -11,6 +11,8 @@ namespace NetBlox.Instances.GUIs
 		[Lua([Security.Capability.None])]
 		public bool Enabled { get; set; } = true;
 
+		public ScreenGui(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

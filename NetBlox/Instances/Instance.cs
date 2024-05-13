@@ -25,7 +25,7 @@ namespace NetBlox.Instances
 				{
 					parent.Children.Remove(this);
 					if (GameManager.CurrentRoot.MainEnv != null)
-						parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager.CurrentRoot.MainEnv)));
+						parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
 				}
 				if (value != null)
 				{
@@ -33,7 +33,7 @@ namespace NetBlox.Instances
 					ParentID = parent.UniqueID;
 					value.Children.Add(this);
 					if (GameManager.CurrentRoot.MainEnv != null)
-						value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager.CurrentRoot.MainEnv)));
+						value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
 				}
 				else
 				{
@@ -41,10 +41,10 @@ namespace NetBlox.Instances
 					ParentID = Guid.Empty;
 				}
 
-				if (NetworkManager.IsServer)
+				if (GameManager.NetworkManager.IsServer)
 					for (int i = 0; i < GameManager.AllClients.Count; i++)
 					{
-						NetworkManager.SeqReparentInstance(GameManager.AllClients[i].Connection, this);
+						GameManager.NetworkManager.SeqReparentInstance(GameManager.AllClients[i].Connection, this);
 					}
 			}
 		}
@@ -63,26 +63,29 @@ namespace NetBlox.Instances
 		public LuaSignal Destroying { get; set; } = new();
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
+		public GameManager GameManager;
 		public List<Instance> Children = new();
 		public Dictionary<Script, Table> Tables = new();
 		private Instance? parent;
 
-		public Instance()
+		public Instance(GameManager gm)
 		{
 			Name = ClassName;
 			UniqueID = Guid.NewGuid();
+			GameManager = gm;
 
-			GameManager.AllInstances.Add(this);
-			GameManager.InvokeAddedEvent(this);
+			gm.AllInstances.Add(this);
+			gm.InvokeAddedEvent(this);
 		}
-		public Instance(Guid guid)
+		public Instance(GameManager gm, Guid guid)
 		{
 			Name = ClassName;
 			UniqueID = guid;
 			WasReplicated = true;
+			GameManager = gm;
 
-			GameManager.AllInstances.Add(this);
-			GameManager.InvokeAddedEvent(this);
+			gm.AllInstances.Add(this);
+			gm.InvokeAddedEvent(this);
 		}
 
 		public virtual void Process()
@@ -102,7 +105,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public virtual Instance Clone()
 		{
-			var clone = new Instance()
+			var clone = new Instance(GameManager)
 			{
 				Name = Name,
 				Parent = null!,
@@ -289,8 +292,8 @@ namespace NetBlox.Instances
 		}
 		public void ReplicateProps()
 		{
-			if (NetworkManager.ServerConnection != null)
-				NetworkManager.SeqReplicateInstance(NetworkManager.ServerConnection, this, false, false);
+			if (GameManager.NetworkManager.ServerConnection != null)
+				GameManager.NetworkManager.SeqReplicateInstance(GameManager.NetworkManager.ServerConnection, this, false, false);
 		}
 	}
 }

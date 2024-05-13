@@ -4,6 +4,8 @@ namespace NetBlox.Instances.Services
 {
 	public class ReplicatedStorage : Instance
 	{
+		public ReplicatedStorage(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

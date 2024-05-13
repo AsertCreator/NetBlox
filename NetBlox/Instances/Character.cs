@@ -14,7 +14,7 @@ namespace NetBlox.Instances
 		[NotReplicated]
 		public bool IsLocalPlayer { get; set; }
 
-		public Character() : base()
+		public Character(GameManager gm) : base(gm)
 		{
 			Color = Color.White;
 			Anchored = false;
@@ -23,11 +23,11 @@ namespace NetBlox.Instances
 
 		public override void Render()
 		{
-			if (IsLocalPlayer && (NetworkManager.IsClient && !NetworkManager.IsServer))
+			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer))
 			{
 				if (Raylib.IsKeyPressed(KeyboardKey.G))
 				{
-					Part prt = new();
+					Part prt = new(GameManager);
 
 					prt.Name = "Trash";
 					prt.Position = Position;
@@ -38,19 +38,19 @@ namespace NetBlox.Instances
 				}
 			}
 
-			RenderManager.SetLight(0, 1, Position, Vector3.Zero, Color);
+			GameManager.RenderManager.SetLight(0, 1, Position, Vector3.Zero, Color);
 			base.Render();
 		}
 		public override void Process()
 		{
-			var cam = RenderManager.MainCamera;
+			var cam = GameManager.RenderManager.MainCamera;
 			var x1 = cam.Position.X;
 			var y1 = cam.Position.Z;
 			var x2 = cam.Target.X;
 			var y2 = cam.Target.Z;
 			var angle = MathF.Atan2(y2 - y1, x2 - x1);
 
-			if (IsLocalPlayer && (NetworkManager.IsClient && !NetworkManager.IsServer))
+			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer))
 			{
 				bool dot = false;
 
@@ -83,11 +83,11 @@ namespace NetBlox.Instances
 		}
 		public override void RenderUI()
 		{
-			var cam = RenderManager.MainCamera;
+			var cam = GameManager.RenderManager.MainCamera;
 			var pos = Raylib.GetWorldToScreen(Position + new Vector3(0, Size.Y / 2 + 1f, 0), cam);
-			var siz = Raylib.MeasureTextEx(RenderManager.MainFont, Name, 14, 1.4f);
+			var siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, Name, 14, 1.4f);
 
-			Raylib.DrawTextEx(RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
+			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

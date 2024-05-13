@@ -19,6 +19,8 @@ namespace NetBlox.Instances.GUIs
 		[Lua([Security.Capability.None])]
 		public float BackgroundTransparency { get; set; } = 0;
 
+		public Frame(GameManager ins) : base(ins) {	}
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

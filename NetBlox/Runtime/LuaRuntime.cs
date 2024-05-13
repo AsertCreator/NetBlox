@@ -14,6 +14,7 @@ namespace NetBlox.Runtime
 	public class LuaThread
 	{
 		public int Level;
+		public GameManager GameManager;
 		public DynValue MsThread;
 		public Coroutine Coroutine;
 		public Script Script;
@@ -22,8 +23,9 @@ namespace NetBlox.Runtime
 		public Action? FinishCallback;
 		public string Name = string.Empty;
 
-		public LuaThread(DataModel dm, BaseScript? bs, DynValue d, int sl, Action? fc)
+		public LuaThread(GameManager gm, DataModel dm, BaseScript? bs, DynValue d, int sl, Action? fc)
 		{
+			GameManager = gm;
 			Script = dm.MainEnv;
 			ScrInst = bs;
 			WaitUntil = default;
@@ -42,7 +44,7 @@ namespace NetBlox.Runtime
 		private static Type dvt = typeof(DynValue);
 		private static bool init = false;
 
-		public static void Setup(DataModel dm, bool core)
+		public static void Setup(GameManager gm, DataModel dm, bool core)
 		{
 			var works = dm.GetService<Workspace>(true);
 
@@ -58,10 +60,10 @@ namespace NetBlox.Runtime
 					CoreModules.Debug | CoreModules.Json |
 					CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
 
-			dm.MainEnv.Globals["game"] = MakeInstanceTable(dm, dm.MainEnv);
+			dm.MainEnv.Globals["game"] = MakeInstanceTable(dm, gm);
 
 			if (works != null && !core)
-				dm.MainEnv.Globals["workspace"] = MakeInstanceTable(works, dm.MainEnv);
+				dm.MainEnv.Globals["workspace"] = MakeInstanceTable(works, gm);
 
 			dm.MainEnv.Globals["wait"] = DynValue.NewCallback((x, y) =>
 			{
@@ -72,7 +74,7 @@ namespace NetBlox.Runtime
 			dm.MainEnv.Globals["require"] = DynValue.NewCallback((x, y) =>
 			{
 				var table = y[0];
-				var inst = SerializationManager.LuaDeserialize<Instance>(table, x.OwnerScript);
+				var inst = SerializationManager.LuaDeserialize<Instance>(table, GetThreadFor(x.GetCallingCoroutine()).GameManager);
 
 				throw new NotImplementedException();
 			});
@@ -102,7 +104,7 @@ namespace NetBlox.Runtime
 				try
 				{
 					var inst = InstanceCreator.CreateAccessibleInstance(y[0].String);
-					return DynValue.NewTable(MakeInstanceTable(inst, dm.MainEnv));
+					return DynValue.NewTable(MakeInstanceTable(inst, gm));
 				}
 				catch
 				{
@@ -118,7 +120,7 @@ namespace NetBlox.Runtime
 							Convert.ToSingle(y[0].Number), 
 							Convert.ToSingle(y[1].Number), 
 							Convert.ToSingle(y[2].Number), 
-							Convert.ToSingle(y[3].Number)), dm.MainEnv);
+							Convert.ToSingle(y[3].Number)), dm.GameManager);
 				}
 				catch
 				{
@@ -134,7 +136,7 @@ namespace NetBlox.Runtime
 							Convert.ToInt32(y[0].Number * 255),
 							Convert.ToInt32(y[1].Number * 255),
 							Convert.ToInt32(y[2].Number * 255),
-							255), dm.MainEnv);
+							255), dm.GameManager);
 				}
 				catch
 				{
@@ -142,7 +144,7 @@ namespace NetBlox.Runtime
 				}
 			});
 
-			Execute(string.Empty, 0, null, dm); // we will run nothing to initialize lua
+			Execute(string.Empty, 0, dm.GameManager, null, dm); // we will run nothing to initialize lua
 		}
 		public static void MakeDataType(DataModel dm, string name, Func<ScriptExecutionContext, CallbackArguments, DynValue> func)
 		{
@@ -154,7 +156,7 @@ namespace NetBlox.Runtime
 		{
 			return (from x in Threads where x.Coroutine == c select x).First();
 		}
-		public static void Execute(string code, int sl, BaseScript? bs, DataModel dm, Action? fc = null)
+		public static void Execute(string code, int sl, GameManager gm, BaseScript? bs, DataModel dm, Action? fc = null)
 		{
 			if (dm == null)
 				throw new Exception("DataModel must be present in order to execute scripts!");
@@ -162,7 +164,7 @@ namespace NetBlox.Runtime
 			try
 			{
 				var d = dm.MainEnv.CreateCoroutine(dm.MainEnv.LoadString(code));
-				var lt = new LuaThread(dm, bs, d, sl, fc);
+				var lt = new LuaThread(gm, dm, bs, d, sl, fc);
 
 				if (bs != null)
 					lt.Name = bs.GetFullName();
@@ -204,12 +206,14 @@ namespace NetBlox.Runtime
 		{
 			LogManager.LogError(msg);
 		}
-		public static Table MakeInstanceTable(Instance inst, Script scr)
+		public static Table MakeInstanceTable(Instance inst, GameManager gm)
 		{
+			var scr = gm.CurrentRoot.MainEnv;
+
 			// i want to bulge out my eyes
 			if (inst.Tables.TryGetValue(scr, out Table t)) return t;
 
-			var excs = NetworkManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
+			var excs = gm.NetworkManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
 			var type = inst.GetType();
 
 			var table = new Table(scr)
@@ -244,7 +248,7 @@ namespace NetBlox.Runtime
 					var val = prop.GetValue(inst);
 
 					if (val != null)
-						return ls(val, scr);
+						return ls(val, gm);
 					else
 						return DynValue.Nil;
 				}
@@ -275,7 +279,7 @@ namespace NetBlox.Runtime
 											if (b[i + 1] == DynValue.Nil)
 												args.Add(null);
 											else
-												args.Add(ld(b[i + 1], scr));
+												args.Add(ld(b[i + 1], gm));
 										}
 										else
 											args.Add(b[i + 1]);
@@ -289,7 +293,7 @@ namespace NetBlox.Runtime
 											return DynValue.Nil;
 
 										if (ret != null)
-											return ls(ret, scr);
+											return ls(ret, gm);
 										else
 											return DynValue.Nil;
 									}
@@ -301,7 +305,7 @@ namespace NetBlox.Runtime
 										for (int i = 0; i < arr.Length; i++)
 										{
 											if (SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.FullName, out var ls))
-												res[i] = ls(arr.GetValue(i)!, scr);
+												res[i] = ls(arr.GetValue(i)!, gm);
 											else
 												res[i] = DynValue.Nil;
 										}
@@ -325,7 +329,7 @@ namespace NetBlox.Runtime
 						if (prop == null && meth == null && child == null)
 							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"");
 
-						return DynValue.NewTable(MakeInstanceTable(child, scr));
+						return DynValue.NewTable(MakeInstanceTable(child, gm));
 					}
 				}
 			});
@@ -356,11 +360,11 @@ namespace NetBlox.Runtime
 
 								if (Guid.TryParse(val.Table.MetaTable["__handle"].ToString(), out Guid uid))
 								{
-									prop.SetValue(inst!, GameManager.AllInstances.Find(x => x.UniqueID == uid));
-									if (NetworkManager.IsServer)
-										for (int i = 0; i < GameManager.AllClients.Count; i++)
+									prop.SetValue(inst!, gm.AllInstances.Find(x => x.UniqueID == uid));
+									if (gm.NetworkManager.IsServer)
+										for (int i = 0; i < gm.AllClients.Count; i++)
 										{
-											NetworkManager.SeqReparentInstance(GameManager.AllClients[i].Connection, inst);
+											gm.NetworkManager.SeqReparentInstance(gm.AllClients[i].Connection, inst);
 										}
 								}
 								else
@@ -372,15 +376,15 @@ namespace NetBlox.Runtime
 									return DynValue.Nil;
 								else
 								{
-									var ret = ld(val, scr);
+									var ret = ld(val, gm);
 									var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName];
 
 									if (val.Type != exc)
 										throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");
 
 									prop.SetValue(inst!, ret);
-									if (NetworkManager.IsServer)
-										NetworkManager.ToReplicate.Enqueue(new NetworkManager.Replication()
+									if (gm.NetworkManager.IsServer)
+										gm.NetworkManager.ToReplicate.Enqueue(new NetworkManager.Replication()
 										{
 											What = inst
 										});

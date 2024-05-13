@@ -9,6 +9,8 @@ namespace NetBlox.Instances.Services
 	{
 		public static Action QueuedTeleport = () => { throw new Exception("NetBlox died!"); };
 
+		public PlatformService(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.CoreSecurity])]
 		public void BeginQueuedTeleport() => QueuedTeleport();
 		[Lua([Security.Capability.CoreSecurity])]
@@ -24,23 +26,23 @@ namespace NetBlox.Instances.Services
 			return task2.Result;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool IsClient() => NetworkManager.IsClient;
+		public bool IsClient() => GameManager.NetworkManager.IsClient;
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool IsServer() => NetworkManager.IsServer;
+		public bool IsServer() => GameManager.NetworkManager.IsServer;
 		[Lua([Security.Capability.CoreSecurity])]
 		public void ConnectToServer(string addr)
 		{
-			NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
+			GameManager.NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Disconnect()
 		{
-			NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
+			GameManager.NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableStatusPipe()
 		{
-			if (!NetworkManager.IsServer)
+			if (!GameManager.NetworkManager.IsServer)
 				throw new Exception("Cannot start status pipe in client");
 
 			System.Diagnostics.Process pr = System.Diagnostics.Process.GetCurrentProcess();

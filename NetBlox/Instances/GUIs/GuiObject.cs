@@ -7,6 +7,8 @@ namespace NetBlox.Instances.GUIs
 {
 	public class GuiObject : Instance
 	{
+		public GuiObject(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

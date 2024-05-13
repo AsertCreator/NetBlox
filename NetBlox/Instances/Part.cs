@@ -11,6 +11,8 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Shape Shape { get; set; } = Shape.Block;
 
+		public Part(GameManager ins) : base(ins) { }
+
 		public override void Render()
 		{
 			switch (Shape)
@@ -18,7 +20,7 @@ namespace NetBlox.Instances
 				case Shape.Ball:
 					break;
 				case Shape.Block:
-					RenderUtils.DrawCubeTextureRec(RenderManager.StudTexture, Position, Size.X, Size.Y, Size.Z, Color, Faces.All, true);
+					RenderUtils.DrawCubeTextureRec(GameManager.RenderManager.StudTexture, Position, Size.X, Size.Y, Size.Z, Color, Faces.All, true);
 					break;
 				case Shape.Cylinder:
 					break;

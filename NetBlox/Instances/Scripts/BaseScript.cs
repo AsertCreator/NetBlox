@@ -13,6 +13,8 @@ namespace NetBlox.Instances.Scripts
 		public bool Enabled { get; set; } = true;
 		public bool HadExecuted = false;
 
+		public BaseScript(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

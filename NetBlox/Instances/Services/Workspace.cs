@@ -9,6 +9,8 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public Instance? MainCamera { get; set; }
 
+		public Workspace(GameManager ins) : base(ins) { }
+
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
@@ -18,8 +20,8 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public void ZoomToExtents()
 		{
-			RenderManager.MainCamera.Position = new Vector3(50, 40, 0);
-			RenderManager.MainCamera.Target = Vector3.Zero;
+			GameManager.RenderManager.MainCamera.Position = new Vector3(50, 40, 0);
+			GameManager.RenderManager.MainCamera.Target = Vector3.Zero;
 		}
 	}
 }

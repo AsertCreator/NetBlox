@@ -20,12 +20,12 @@ namespace NetBlox.Structs
 		{
 			Skybox sb = new()
 			{
-				Back = Raylib.LoadTexture(GameManager.ContentFolder + $"skybox/{fp}_bk.png"),
-				Bottom = Raylib.LoadTexture(GameManager.ContentFolder + $"skybox/{fp}_dn.png"),
-				Front = Raylib.LoadTexture(GameManager.ContentFolder + $"skybox/{fp}_ft.png"),
-				Left = Raylib.LoadTexture(GameManager.ContentFolder + $"skybox/{fp}_lf.png"),
-				Right = Raylib.LoadTexture(GameManager.ContentFolder + $"skybox/{fp}_rt.png"),
-				Top = Raylib.LoadTexture(GameManager.ContentFolder + $"skybox/{fp}_up.png")
+				Back = Raylib.LoadTexture(SharedData.ContentFolder + $"skybox/{fp}_bk.png"),
+				Bottom = Raylib.LoadTexture(SharedData.ContentFolder + $"skybox/{fp}_dn.png"),
+				Front = Raylib.LoadTexture(SharedData.ContentFolder + $"skybox/{fp}_ft.png"),
+				Left = Raylib.LoadTexture(SharedData.ContentFolder + $"skybox/{fp}_lf.png"),
+				Right = Raylib.LoadTexture(SharedData.ContentFolder + $"skybox/{fp}_rt.png"),
+				Top = Raylib.LoadTexture(SharedData.ContentFolder + $"skybox/{fp}_up.png")
 			};
 
 			return sb;

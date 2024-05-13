@@ -21,22 +21,23 @@ namespace NetBlox.Client
 				return 1;
 			}
 
-			LogManager.LogInfo($"NetBlox Client ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
+			LogManager.LogInfo($"NetBlox Client ({SharedData.VersionMajor}.{SharedData.VersionMinor}.{SharedData.VersionPatch}) is running...");
 			PlatformService.QueuedTeleport = () =>
 			{
-				NetworkManager.ConnectToServer(IPAddress.Parse(xo));
+				var gm = SharedData.GameManagers[0];
+				gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
 				Task.Run(() =>
 				{
 					Console.WriteLine("NetBlox Console is running (enter Lua code to run it)");
-					while (!GameManager.ShuttingDown)
+					while (!gm.ShuttingDown)
 					{
 						Console.Write(">>> ");
 						var c = Console.ReadLine();
-						LuaRuntime.Execute(c, 8, null, GameManager.CurrentRoot);
+						LuaRuntime.Execute(c, 8, gm, null, gm.CurrentRoot);
 					}
 				});
 			};
-			GameManager.Start(true, false, true, args, x => xo = x);
+			SharedData.CreateGame("NetBlox Client", true, false, true, args, (x, y) => { });
 
 			return 0;
 		}

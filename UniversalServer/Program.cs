@@ -11,7 +11,7 @@ namespace NetBlox.Client
 	{
 		public static void Main(string[] args)
 		{
-			LogManager.LogInfo($"NetBlox Server ({GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}) is running...");
+			LogManager.LogInfo($"NetBlox Server ({SharedData.VersionMajor}.{SharedData.VersionMinor}.{SharedData.VersionPatch}) is running...");
 			/*GameManager.Start(false, true, false, args, x =>
 			{
 				DataModel dm = new();
@@ -26,18 +26,18 @@ namespace NetBlox.Client
 				GameManager.IsRunning = true;
 			});
 			return;*/
-			GameManager.Start(false, true, false, args, x =>
+			var g = SharedData.CreateGame("NetBlox Server", false, true, false, args, (x, gm) =>
 			{
-				Workspace ws = new();
-				ReplicatedStorage rs = new();
-				ReplicatedFirst ri = new();
-				Players pl = new();
-				LocalScript ls = new();
+				Workspace ws = new(gm);
+				ReplicatedStorage rs = new(gm);
+				ReplicatedFirst ri = new(gm);
+				Players pl = new(gm);
+				LocalScript ls = new(gm);
 
 				ws.ZoomToExtents();
-				ws.Parent = GameManager.CurrentRoot;
+				ws.Parent = gm.CurrentRoot;
 
-				Part part = new()
+				Part part = new(gm)
 				{
 					Parent = ws,
 					Color = Color.DarkGreen,
@@ -50,20 +50,20 @@ namespace NetBlox.Client
 				ls.Parent = ri;
 				ls.Source = "print(\"HIIIIII\"); printidentity();";
 
-				rs.Parent = GameManager.CurrentRoot;
-				ri.Parent = GameManager.CurrentRoot;
-				pl.Parent = GameManager.CurrentRoot;
+				rs.Parent = gm.CurrentRoot;
+				ri.Parent = gm.CurrentRoot;
+				pl.Parent = gm.CurrentRoot;
 
-				GameManager.CurrentIdentity.MaxPlayerCount = 8;
-				GameManager.CurrentIdentity.PlaceName = "Default Place";
-				GameManager.CurrentIdentity.UniverseName = "NetBlox Defaults";
-				GameManager.CurrentIdentity.Author = "The Lord";
-				GameManager.CurrentIdentity.PlaceID = 47384;
-				GameManager.CurrentIdentity.UniverseID = 47384;
+				gm.CurrentIdentity.MaxPlayerCount = 8;
+				gm.CurrentIdentity.PlaceName = "Default Place";
+				gm.CurrentIdentity.UniverseName = "NetBlox Defaults";
+				gm.CurrentIdentity.Author = "The Lord";
+				gm.CurrentIdentity.PlaceID = 47384;
+				gm.CurrentIdentity.UniverseID = 47384;
 
-				GameManager.CurrentRoot.Name = GameManager.CurrentIdentity.PlaceName;
+				gm.CurrentRoot.Name = gm.CurrentIdentity.PlaceName;
 
-				NetworkManager.StartServer();
+				gm.NetworkManager.StartServer();
 			});
 		}
 	}

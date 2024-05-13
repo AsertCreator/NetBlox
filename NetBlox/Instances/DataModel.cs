@@ -6,14 +6,12 @@ namespace NetBlox.Instances
 {
 	public class DataModel : Instance
 	{
-		[Lua([Security.Capability.None])]
-		public string TestString { get; set; } = "Test";
-		[Lua([Security.Capability.None])]
-		public int PreferredFPS { get => RenderManager.PreferredFPS; set => RenderManager.SetPreferredFPS(value); }
 		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
 		public Script MainEnv = null!;
 
-		public T GetService<T>(bool allownull = false) where T : Instance, new()
+		public DataModel(GameManager ins) : base(ins) { }
+
+		public T GetService<T>(bool allownull = false) where T : Instance
 		{
 			for (int i = 0; i < Children.Count; i++)
 			{
@@ -22,9 +20,9 @@ namespace NetBlox.Instances
 			}
 			if (!allownull)
 			{
-				var serv = new T();
+				var serv = (T)Activator.CreateInstance(typeof(T), GameManager);
 				serv.Parent = this;
-				return serv;
+                return serv;
 			}
 			return null!;
 		}

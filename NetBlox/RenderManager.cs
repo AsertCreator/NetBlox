@@ -12,24 +12,30 @@ using System.Numerics;
 
 namespace NetBlox
 {
-	public static class RenderManager
+	public class RenderManager
 	{
-		public static List<Func<int>> Coroutines = new();
-		public static List<Shader> Shaders = new();
-		public static int PreferredFPS = 60;
-		public static int ScreenSizeX = 1600;
-		public static int ScreenSizeY = 900;
-		public static string Status = string.Empty;
-		public static bool DisableAllGuis = false;
-		public static Thread? RenderThread;
-		public static Skybox? CurrentSkybox;
-		public static Camera3D MainCamera;
-		public static Texture2D StudTexture;
-		public static Shader LightingShader;
-		public static Font MainFont;
-		public static long Framecount;
+		public GameManager GameManager;
+		public List<Func<int>> Coroutines = new();
+		public List<Shader> Shaders = new();
+		public int ScreenSizeX = 1600;
+		public int ScreenSizeY = 900;
+		public string Status = string.Empty;
+		public bool DisableAllGuis = false;
+		public Thread? RenderThread;
+		public Skybox? CurrentSkybox;
+		public Camera3D MainCamera;
+		public Texture2D StudTexture;
+		public Shader LightingShader;
+		public Font MainFont;
+		public long Framecount;
 
-		public unsafe static void Initialize(bool render)
+		public RenderManager(GameManager gm, bool render)
+		{
+			GameManager = gm;
+			Initialize(render);
+		}
+
+		public unsafe void Initialize(bool render)
 		{
 			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
 
@@ -41,13 +47,13 @@ namespace NetBlox
 					Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
 
 					Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
-					Raylib.SetTargetFPS(PreferredFPS);
+					Raylib.SetTargetFPS(SharedData.PreferredFPS);
 					Raylib.SetExitKey(KeyboardKey.Null);
 
-					MainFont = Raylib.LoadFont(GameManager.ContentFolder + "fonts/arialbd.ttf");
-					StudTexture = Raylib.LoadTexture(GameManager.ContentFolder + "textures/stud.png");
+					MainFont = Raylib.LoadFont(SharedData.ContentFolder + "fonts/arialbd.ttf");
+					StudTexture = Raylib.LoadTexture(SharedData.ContentFolder + "textures/stud.png");
 					CurrentSkybox = Skybox.LoadSkybox("bluecloud");
-					LightingShader = LoadShader(GameManager.ResolveUrl("rbxasset://shaders/lighting"));
+					LightingShader = LoadShader(SharedData.ResolveUrl("rbxasset://shaders/lighting"));
 
 					int ambientLoc = Raylib.GetShaderLocation(LightingShader, "ambient");
 					LightingShader.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(LightingShader, "viewPos");
@@ -69,7 +75,7 @@ namespace NetBlox
 					{
 						if (render)
 						{
-							if (NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
+							if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
 							{
 								Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
 								if (Raylib.IsKeyDown(KeyboardKey.Space))
@@ -117,7 +123,7 @@ namespace NetBlox
 										RenderUI(GameManager.CurrentRoot.GetService<CoreGui>());
 									}
 
-									Raylib.DrawTextEx(MainFont, $"NetBlox {(NetworkManager.IsServer ? "Server" : "Client")}, version {GameManager.VersionMajor}.{GameManager.VersionMinor}.{GameManager.VersionPatch}",
+									Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.NetworkManager.IsServer ? "Server" : "Client")}, version {SharedData.VersionMajor}.{SharedData.VersionMinor}.{SharedData.VersionPatch}",
 										new Vector2(5, 5 + 16 * 0), 16, 0, Color.White);
 									Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
 										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
@@ -134,13 +140,6 @@ namespace NetBlox
 							if (Raylib.WindowShouldClose())
 								GameManager.Shutdown();
 						}
-
-						// perform processing
-						if (GameManager.CurrentRoot != null && GameManager.IsRunning)
-							GameManager.ProcessInstance(GameManager.CurrentRoot);
-
-						if (GameManager.CurrentRoot != null && GameManager.IsRunning)
-							GameManager.Schedule();
 
 						// run coroutines
 						for (int i = 0; i < Coroutines.Count; i++)
@@ -186,7 +185,7 @@ namespace NetBlox
 			public int colorLoc;
 			public int attenuationLoc;
 		}
-		public static unsafe void SetLight(int i, int type, Vector3 position, Vector3 target, Color color)
+		public unsafe void SetLight(int i, int type, Vector3 position, Vector3 target, Color color)
 		{
 			Light light = new();
 
@@ -217,7 +216,7 @@ namespace NetBlox
 			float[] cf = { light.color.R/255f, light.color.G/255f, light.color.B/255f, light.color.A/255f };
 			Raylib.SetShaderValue(LightingShader, light.colorLoc, cf, ShaderUniformDataType.Vec4);
 		}
-		public static class DebugViewInfo
+		public class DebugViewInfo
 		{
 			public static bool EnableDebugView = false;
 			public static bool ShowLua = false;
@@ -228,7 +227,7 @@ namespace NetBlox
 			public static string LECode = string.Empty;
 			public static string SCAddress = "127.0.0.1";
 		}
-		public static void DebugView()
+		public void DebugView()
 		{
 			rlImGui.Begin();
 
@@ -266,7 +265,7 @@ namespace NetBlox
 				{
 					for (int i = 0; i < 5; i++)
 					{
-						HopperBin hb = new();
+						HopperBin hb = new(GameManager);
 						hb.BinType = i;
 						hb.Parent = GameManager.CurrentRoot.GetService<Players>().LocalPlayer.FindFirstChild("Backpack");
 					}
@@ -350,7 +349,7 @@ namespace NetBlox
 				ImGui.InputTextMultiline("", ref DebugViewInfo.LECode, 256 * 1024, new Vector2(400 - 12, 300 - 55));
 				if (ImGui.Button("Execute"))
 				{
-					LuaRuntime.Execute(DebugViewInfo.LECode, 8, null, GameManager.CurrentRoot);
+					LuaRuntime.Execute(DebugViewInfo.LECode, 8, GameManager, null, GameManager.CurrentRoot);
 				}
 				ImGui.End();
 			}
@@ -361,7 +360,7 @@ namespace NetBlox
 				ImGui.InputText("Username", ref GameManager.Username, 256);
 				if (ImGui.Button("Connect"))
 				{
-					NetworkManager.ConnectToServer(IPAddress.Parse(DebugViewInfo.SCAddress));
+					GameManager.NetworkManager.ConnectToServer(IPAddress.Parse(DebugViewInfo.SCAddress));
 				}
 				ImGui.End();
 			}
@@ -375,7 +374,7 @@ namespace NetBlox
 
 			rlImGui.End();
 		}
-		public static void RenderInstanceUI(Instance? inst)
+		public void RenderInstanceUI(Instance? inst)
 		{
 			if (inst == null) return;
 			var children = inst.GetChildren();
@@ -388,7 +387,7 @@ namespace NetBlox
 				RenderInstanceUI(child);
 			}
 		}
-		public static void RenderUI(Instance? inst)
+		public void RenderUI(Instance? inst)
 		{
 			if (inst == null) return;
 			var children = inst.GetChildren();
@@ -399,7 +398,7 @@ namespace NetBlox
 				child.RenderUI();
 			}
 		}
-		public static void RenderSkybox()
+		public void RenderSkybox()
 		{
 			if (CurrentSkybox == null) return;
 
@@ -413,7 +412,7 @@ namespace NetBlox
 			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Left, new Vector3(0, 0, -ss) + pos, ss, ss, ss, Color.White, Faces.Front);
 			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Right, new Vector3(0, 0, ss) + pos, ss, ss, ss, Color.White, Faces.Back);
 		}
-		public static void RenderWorld()
+		public void RenderWorld()
 		{
 			// i should probably avoid using ifs in these moments, but who cares if its like 5 nanoseconds?
 			if (GameManager.CurrentRoot == null) return;
@@ -430,25 +429,20 @@ namespace NetBlox
 			if (works != null)
 				RenderInstance(works);
 		}
-		public static void RenderInstance(Instance instance)
+		public void RenderInstance(Instance instance)
 		{
 			if (instance is BasePart)
 				(instance as BasePart)!.Render();
 			for (int i = 0; i < instance.GetChildren().Length; i++)
 				RenderInstance(instance.GetChildren()[i]!);
 		}
-		public static Shader LoadShader(string f)
+		public Shader LoadShader(string f)
 		{
 			var s = Raylib.LoadShader(f + ".vs", f + ".fss");
 			Shaders.Add(s);
 			return s;
 		}
-		public static void SetPreferredFPS(int fps)
-		{
-			PreferredFPS = fps;
-			Raylib.SetTargetFPS(fps);
-		}
-		public static void ShowKickMessage(string msg)
+		public void ShowKickMessage(string msg)
 		{
 			Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
 		}
