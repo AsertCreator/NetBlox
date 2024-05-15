@@ -26,7 +26,7 @@ namespace NetBlox.Server
 						var child = children[i]!;
 						if (child.Name != "Item") continue;
 
-						var ins = InstanceCreator.CreateInstance(child.Attributes!["class"]!.Value);
+						var ins = InstanceCreator.CreateInstance(child.Attributes!["class"]!.Value, dm.GameManager);
 						var type = ins.GetType();
 						var props = node.SelectSingleNode("Properties");
 

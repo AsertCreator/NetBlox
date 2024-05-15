@@ -11,7 +11,7 @@ namespace NetBlox.Client
 	{
 		public static void Main(string[] args)
 		{
-			LogManager.LogInfo($"NetBlox Server ({SharedData.VersionMajor}.{SharedData.VersionMinor}.{SharedData.VersionPatch}) is running...");
+			LogManager.LogInfo($"NetBlox Server ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 			/*GameManager.Start(false, true, false, args, x =>
 			{
 				DataModel dm = new();
@@ -26,7 +26,7 @@ namespace NetBlox.Client
 				GameManager.IsRunning = true;
 			});
 			return;*/
-			var g = SharedData.CreateGame("NetBlox Server", false, true, false, args, (x, gm) =>
+			var g = AppManager.CreateGame("NetBlox Server", false, true, false, args, (x, gm) =>
 			{
 				Workspace ws = new(gm);
 				ReplicatedStorage rs = new(gm);
@@ -65,6 +65,7 @@ namespace NetBlox.Client
 
 				gm.NetworkManager.StartServer();
 			});
+			AppManager.StartTaskScheduler();
 		}
 	}
 }

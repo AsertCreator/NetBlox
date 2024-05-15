@@ -20,7 +20,7 @@ namespace NetBlox.Instances.GUIs
 
 		public Image(GameManager ins) : base(ins)
 		{
-			var fp = SharedData.ResolveUrl(FilePath);
+			var fp = AppManager.ResolveUrl(FilePath);
 			handle = GameManager.RenderManager.StudTexture; // so instead i will use this
 		}
 

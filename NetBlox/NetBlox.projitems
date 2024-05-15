@@ -48,7 +48,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaYield.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SharedData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />

@@ -22,6 +22,7 @@ namespace NetBlox
 		public DataModel CurrentRoot = null!;
 		public bool IsRunning = true;
 		public bool ShuttingDown = false;
+		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
 		public event EventHandler? ShutdownEvent;
@@ -35,7 +36,7 @@ namespace NetBlox
 		}
 		public void LoadAllCoreScripts()
 		{
-			string[] files = Directory.GetFiles(SharedData.ContentFolder + "scripts");
+			string[] files = Directory.GetFiles(AppManager.ContentFolder + "scripts");
 			for (int i = 0; i < files.Length; i++)
 			{
 				CoreScript cs = new(this);
@@ -64,7 +65,7 @@ namespace NetBlox
 							var key = args[++i];
 							var bo = int.Parse(args[++i]) == 1;
 
-							SharedData.FastFlags[key] = bo;
+							AppManager.FastFlags[key] = bo;
 							LogManager.LogInfo($"Setting fast flag {key} to {bo}");
 							break;
 						}
@@ -73,7 +74,7 @@ namespace NetBlox
 							var key = args[++i];
 							var st = args[++i];
 
-							SharedData.FastStrings[key] = st;
+							AppManager.FastStrings[key] = st;
 							LogManager.LogInfo($"Setting fast stirng {key} to \"{st}\"");
 							break;
 						}
@@ -82,7 +83,7 @@ namespace NetBlox
 							var key = args[++i];
 							var nu = int.Parse(args[++i]);
 
-							SharedData.FastNumbers[key] = nu;
+							AppManager.FastNumbers[key] = nu;
 							LogManager.LogInfo($"Setting fast number {key} to {nu}");
 							break;
 						}
@@ -137,6 +138,7 @@ namespace NetBlox
 			if (NetworkManager.IsClient)
 			{
 				CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
+				QueuedTeleportAddress = rbxlinit;
 				servercallback(rbxlinit, this);
 			}
 			if (NetworkManager.IsServer)
@@ -153,8 +155,6 @@ namespace NetBlox
 				};
 				servercallback(rbxlinit, this);
 			}
-
-			while (!ShuttingDown) ;
 		}
 		public void TeleportToPlace(ulong pid)
 		{

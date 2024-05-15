@@ -7,12 +7,12 @@ namespace NetBlox.Instances.Services
 	[Creatable]
 	public class PlatformService : Instance
 	{
-		public static Action QueuedTeleport = () => { throw new Exception("NetBlox died!"); };
+		public static Action<string> QueuedTeleport = (xo) => { throw new Exception("NetBlox died!"); };
 
 		public PlatformService(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.CoreSecurity])]
-		public void BeginQueuedTeleport() => QueuedTeleport();
+		public void BeginQueuedTeleport() => QueuedTeleport(GameManager.QueuedTeleportAddress);
 		[Lua([Security.Capability.CoreSecurity])]
 		public string[] GetConsoleArguments() => Environment.GetCommandLineArgs();
 		[Lua([Security.Capability.CoreSecurity])]

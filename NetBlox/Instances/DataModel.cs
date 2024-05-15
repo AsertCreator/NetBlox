@@ -35,7 +35,7 @@ namespace NetBlox.Instances
 				if (Children[i].ClassName == sn)
 					return Children[i];
 			}
-			var serv = InstanceCreator.CreateInstance(sn);
+			var serv = InstanceCreator.CreateInstance(sn, GameManager);
 			serv.Parent = this;
 			return serv;
 		}

@@ -103,7 +103,7 @@ namespace NetBlox.Runtime
 			{
 				try
 				{
-					var inst = InstanceCreator.CreateAccessibleInstance(y[0].String);
+					var inst = InstanceCreator.CreateAccessibleInstance(y[0].String, gm);
 					return DynValue.NewTable(MakeInstanceTable(inst, gm));
 				}
 				catch

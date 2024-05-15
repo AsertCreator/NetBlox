@@ -47,13 +47,13 @@ namespace NetBlox
 					Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
 
 					Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
-					Raylib.SetTargetFPS(SharedData.PreferredFPS);
+					Raylib.SetTargetFPS(AppManager.PreferredFPS);
 					Raylib.SetExitKey(KeyboardKey.Null);
 
-					MainFont = Raylib.LoadFont(SharedData.ContentFolder + "fonts/arialbd.ttf");
-					StudTexture = Raylib.LoadTexture(SharedData.ContentFolder + "textures/stud.png");
+					MainFont = Raylib.LoadFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
+					StudTexture = Raylib.LoadTexture(AppManager.ContentFolder + "textures/stud.png");
 					CurrentSkybox = Skybox.LoadSkybox("bluecloud");
-					LightingShader = LoadShader(SharedData.ResolveUrl("rbxasset://shaders/lighting"));
+					LightingShader = LoadShader(AppManager.ResolveUrl("rbxasset://shaders/lighting"));
 
 					int ambientLoc = Raylib.GetShaderLocation(LightingShader, "ambient");
 					LightingShader.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(LightingShader, "viewPos");
@@ -123,7 +123,7 @@ namespace NetBlox
 										RenderUI(GameManager.CurrentRoot.GetService<CoreGui>());
 									}
 
-									Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.NetworkManager.IsServer ? "Server" : "Client")}, version {SharedData.VersionMajor}.{SharedData.VersionMinor}.{SharedData.VersionPatch}",
+									Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.NetworkManager.IsServer ? "Server" : "Client")}, version {AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}",
 										new Vector2(5, 5 + 16 * 0), 16, 0, Color.White);
 									Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
 										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
@@ -147,6 +147,8 @@ namespace NetBlox
 							Func<int> cor = Coroutines[i];
 							if (cor() == -1) Coroutines.RemoveAt(i--);
 						}
+
+						GameManager.ProcessInstance(GameManager.CurrentRoot);
 					}
 					catch (Exception ex)
 					{

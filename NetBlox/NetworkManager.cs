@@ -289,9 +289,9 @@ namespace NetBlox
 							ServerHandshake sh = default;
 							ClientHandshake ch = new();
 							ch.Username = GameManager.Username;
-							ch.VersionMajor = SharedData.VersionMajor;
-							ch.VersionMinor = SharedData.VersionMinor;
-							ch.VersionPatch = SharedData.VersionPatch;
+							ch.VersionMajor = AppManager.VersionMajor;
+							ch.VersionMinor = AppManager.VersionMinor;
+							ch.VersionPatch = AppManager.VersionPatch;
 
 							con.RegisterRawDataHandler("nb.inc-inst", (x, y) =>
 							{
@@ -461,7 +461,7 @@ namespace NetBlox
 			var pre = (from x in GameManager.AllInstances where x.UniqueID == uid select x).FirstOrDefault();
 			if (pre == null)
 			{
-				var ins = InstanceCreator.CreateInstance(inf["ClassName"]);
+				var ins = InstanceCreator.CreateInstance(inf["ClassName"], GameManager);
 				var typ = ins.GetType();
 				var prs = typ.GetProperties();
 

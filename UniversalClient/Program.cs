@@ -12,7 +12,6 @@ namespace NetBlox.Client
 		{
 			Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
-			var xo = "";
 			var v = Rlgl.GetVersion();
 
 			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
@@ -21,10 +20,10 @@ namespace NetBlox.Client
 				return 1;
 			}
 
-			LogManager.LogInfo($"NetBlox Client ({SharedData.VersionMajor}.{SharedData.VersionMinor}.{SharedData.VersionPatch}) is running...");
-			PlatformService.QueuedTeleport = () =>
+			LogManager.LogInfo($"NetBlox Client ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
+			PlatformService.QueuedTeleport = (xo) =>
 			{
-				var gm = SharedData.GameManagers[0];
+				var gm = AppManager.GameManagers[0];
 				gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
 				Task.Run(() =>
 				{
@@ -37,7 +36,8 @@ namespace NetBlox.Client
 					}
 				});
 			};
-			SharedData.CreateGame("NetBlox Client", true, false, true, args, (x, y) => { });
+			AppManager.CreateGame("NetBlox Client", true, false, true, args, (x, y) => { });
+			AppManager.StartTaskScheduler();
 
 			return 0;
 		}

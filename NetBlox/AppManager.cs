@@ -7,7 +7,7 @@ using System.Text;
 
 namespace NetBlox
 {
-	public static class SharedData
+	public static class AppManager
 	{
 		public static List<GameManager> GameManagers = new List<GameManager>();
 		public static Dictionary<string, bool> FastFlags = [];
@@ -31,23 +31,20 @@ namespace NetBlox
 		}
 		public static void StartTaskScheduler()
 		{
-			Task.Run(() =>
+			while (!ShuttingDown)
 			{
-				while (!ShuttingDown)
+				// perform processing
+				for (int i = 0; i < GameManagers.Count; i++)
 				{
-					// perform processing
-					for (int i = 0; i < GameManagers.Count; i++)
-					{
-						var gm = GameManagers[i];
-						if (gm.CurrentRoot != null && gm.IsRunning)
-							gm.ProcessInstance(gm.CurrentRoot);
-					}
-
-					Schedule();
-
-					Thread.Sleep(1000 / 60);
+					var gm = GameManagers[i];
+					if (gm.CurrentRoot != null && gm.IsRunning)
+						gm.ProcessInstance(gm.CurrentRoot);
 				}
-			});
+
+				Schedule();
+
+				Thread.Sleep(1000 / 60);
+			}
 		}
 		public static void Shutdown()
 		{
