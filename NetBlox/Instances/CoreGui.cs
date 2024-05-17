@@ -4,7 +4,6 @@ using System.Security.Cryptography;
 
 namespace NetBlox.Instances
 {
-	[Creatable]
 	[NotReplicated]
 	public class CoreGui : Instance
 	{

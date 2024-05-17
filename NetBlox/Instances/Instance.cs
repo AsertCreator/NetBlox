@@ -7,7 +7,7 @@ namespace NetBlox.Instances
 	public class Instance
 	{
 		[Lua([Security.Capability.None])]
-		public bool Archivable { get; set; }
+		public bool Archivable { get; set; } = true;
 		[Lua([Security.Capability.None])]
 		public string ClassName => GetType().Name;
 		[Lua([Security.Capability.None])]
@@ -217,7 +217,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetAncestors()
 		{
-			if (Parent == null) return null!;
+			if (Parent == null) return [];
 
 			var list = new List<Instance>();
 			var inst = Parent;
@@ -240,7 +240,7 @@ namespace NetBlox.Instances
 
 			strings.Add(Name);
 
-			while (inst != null)
+			while (inst != null && !inst.IsA("DataModel"))
 			{
 				strings.Add(inst.Name);
 				inst = inst.Parent!;

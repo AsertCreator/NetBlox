@@ -10,6 +10,10 @@ using System.Reflection.Metadata;
 
 namespace NetBlox
 {
+	public enum SerializationType
+	{
+		String, Enum, Int32, Int64, Single, Double, True, False, Unknown
+	}
 	public static class SerializationManager
 	{
 		public static Dictionary<string, Func<string, object>> Deserializers = new();
@@ -17,7 +21,36 @@ namespace NetBlox
 		public static Dictionary<string, Func<object, GameManager, DynValue>> LuaSerializers = new();
 		public static Dictionary<string, Func<DynValue, GameManager, object>> LuaDeserializers = new();
 		public static Dictionary<string, DataType> LuaDataTypes = new();
-
+		
+		public static SerializationType GetSerializationType(object obj, string prop)
+		{
+			var type = obj.GetType();
+			var pi = type.GetProperty(prop);
+			if (pi.PropertyType.IsEnum)
+				return SerializationType.Enum;
+			switch (pi.PropertyType.FullName)
+			{
+				case "System.String": return SerializationType.String;
+				case "System.Int32": return SerializationType.Int32;
+				case "System.Int64": return SerializationType.Int64;
+				case "System.Single": return SerializationType.Single;
+				case "System.Double": return SerializationType.Double;
+				case "System.Boolean": return (bool)pi.GetValue(obj)! ? SerializationType.True : SerializationType.False;
+				default: return SerializationType.Unknown;
+			}
+		}
+		public static string[] GetAccessibleProperties(object obj)
+		{
+			var type = obj.GetType();
+			var pi = type.GetProperties();
+			return (from x in pi where x.GetMethod.IsPublic select x.Name).ToArray();
+		}
+		public static object GetProperty(object obj, string name)
+		{
+			var type = obj.GetType();
+			var fi = type.GetRuntimeProperty(name);
+			return fi.GetValue(obj);
+		}
 		public static void SetProperty(object obj, string name, object data)
 		{
 			var type = obj.GetType();

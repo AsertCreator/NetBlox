@@ -4,10 +4,12 @@ using System.IO.Pipes;
 
 namespace NetBlox.Instances.Services
 {
-	[Creatable]
 	public class PlatformService : Instance
 	{
+		public static HttpClient HttpClient = new();
 		public static Action<string> QueuedTeleport = (xo) => { throw new Exception("NetBlox died!"); };
+		[Lua([Security.Capability.CoreSecurity])]
+		public bool IsStudio => GameManager.IsStudio;
 
 		public PlatformService(GameManager ins) : base(ins) { }
 
@@ -18,8 +20,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public string HttpGet(string url)
 		{
-			var hc = new HttpClient();
-			var task = hc.GetAsync(url);
+			var task = HttpClient.GetAsync(url);
 			task.Wait();
 			var task2 = task.Result.Content.ReadAsStringAsync();
 			task2.Wait();

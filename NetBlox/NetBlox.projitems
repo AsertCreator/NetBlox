@@ -9,6 +9,7 @@
     <Import_RootNamespace>NetBlox</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)GameConfiguration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GameManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Backpack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
@@ -26,9 +27,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ServerStorage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterPack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ResourceManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />

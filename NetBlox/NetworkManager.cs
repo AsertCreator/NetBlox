@@ -92,7 +92,7 @@ namespace NetBlox
 			LogManager.LogInfo($"{nc.Username} had disconnected!");
 			GameManager.AllClients.Remove(nc);
 		}
-		public void DisconnectFromServer(CloseReason cr)
+		public void DisconnectFromServer(Network.Enums.CloseReason cr)
 		{
 			if (NetworkClient != null)
 			{
@@ -222,36 +222,35 @@ namespace NetBlox
 						}
 					});
 
-					Task.Run(() =>
-					{
-						while (!GameManager.ShuttingDown)
-						{
-							try
-							{
-								while (ToReplicate.Count == 0) ;
-								lock (ToReplicate)
-								{
-									var tr = ToReplicate.Dequeue();
-									var ins = tr.What;
-									var to = tr.To;
-
-									for (int i = 0; i < to.Count; i++)
-										SeqReplicateInstance(to[i].Connection!, ins!, tr.RepChildren, tr.AsService);
-
-									if (tr.Callback != null)
-										tr.Callback();
-								}
-							}
-							catch
-							{
-								LogManager.LogError($"Could not replicate queued instance, well i dont care!");
-							}
-						}
-					});
-
 					GameManager.AllowReplication = true;
 				});
 			};
+			Task.Run(() =>
+			{
+				while (!GameManager.ShuttingDown)
+				{
+					try
+					{
+						while (ToReplicate.Count == 0) ;
+						lock (ToReplicate)
+						{
+							var tr = ToReplicate.Dequeue();
+							var ins = tr.What;
+							var to = tr.To ?? GameManager.AllClients;
+
+							for (int i = 0; i < to.Count; i++)
+								SeqReplicateInstance(to[i].Connection!, ins!, tr.RepChildren, tr.AsService);
+
+							if (tr.Callback != null)
+								tr.Callback();
+						}
+					}
+					catch (Exception ex)
+					{
+						LogManager.LogError($"Could not replicate queued instance, well i dont care!");
+					}
+				}
+			});
 		}
 		public void ConnectToServer(IPAddress ipa)
 		{

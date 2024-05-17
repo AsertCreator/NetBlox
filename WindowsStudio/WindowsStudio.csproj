@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>NetBloxStudio</AssemblyName>
+    <RootNamespace>NetBlox.Studio</RootNamespace>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	  <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
+
+  <ItemGroup>
+    <PackageReference Include="MoonSharp" Version="2.0.0" />
+    <PackageReference Include="Network" Version="6.2.5.23" />
+    <PackageReference Include="Raylib-cs" Version="6.0.0" />
+    <PackageReference Include="rlImgui-cs" Version="2.0.3" />
+  </ItemGroup>
+
+</Project>

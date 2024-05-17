@@ -11,6 +11,10 @@ using System.Runtime;
 namespace NetBlox
 {
 	public delegate void InstanceEventHandler(Instance inst);
+
+	/// <summary>
+	/// Represents a NetBlox game. Believe it or not, but one NetBlox process can run multiple games at once (in theory)
+	/// </summary>
 	public class GameManager
 	{
 		public List<Instance> AllInstances = [];
@@ -20,8 +24,11 @@ namespace NetBlox
 		public RenderManager? RenderManager;
 		public NetworkManager? NetworkManager;
 		public DataModel CurrentRoot = null!;
+		public bool IsStudio = false;
 		public bool IsRunning = true;
 		public bool ShuttingDown = false;
+		public bool ProhibitProcessing = false;
+		public bool ProhibitScripts = false;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
@@ -42,51 +49,25 @@ namespace NetBlox
 				CoreScript cs = new(this);
 				string cont = File.ReadAllText(files[i]);
 				cs.Source = cont;
-				cs.Name = Path.GetFileName(files[i]);
+				cs.Name = Path.GetFileNameWithoutExtension(files[i]);
 				cs.Parent = CurrentRoot.GetService<CoreGui>();
 			}
 		}
-		public void Start(bool client, bool server, bool render, string[] args, Action<string, GameManager> servercallback)
+		public void Start(GameConfiguration gc, string[] args, Action<string, GameManager> servercallback)
 		{
 			ulong pid = ulong.MaxValue;
 			string rbxlinit = "";
 			LogManager.LogInfo("Initializing NetBlox...");
 
-			NetworkManager = new(this, server, client);
+			NetworkManager = new(this, gc.AsServer, gc.AsClient);
 			CurrentIdentity.Reset();
+			IsStudio = gc.AsStudio;
 
 			// common thingies
 			for (int i = 0; i < args.Length; i++)
 			{
 				switch (args[i])
 				{
-					case "--fast-flag":
-						{
-							var key = args[++i];
-							var bo = int.Parse(args[++i]) == 1;
-
-							AppManager.FastFlags[key] = bo;
-							LogManager.LogInfo($"Setting fast flag {key} to {bo}");
-							break;
-						}
-					case "--fast-string":
-						{
-							var key = args[++i];
-							var st = args[++i];
-
-							AppManager.FastStrings[key] = st;
-							LogManager.LogInfo($"Setting fast stirng {key} to \"{st}\"");
-							break;
-						}
-					case "--fast-number":
-						{
-							var key = args[++i];
-							var nu = int.Parse(args[++i]);
-
-							AppManager.FastNumbers[key] = nu;
-							LogManager.LogInfo($"Setting fast number {key} to {nu}");
-							break;
-						}
 					case "--placeor":
 						{
 							CurrentIdentity.PlaceName = args[++i];
@@ -107,11 +88,6 @@ namespace NetBlox
 							rbxlinit = args[++i];
 							break;
 						}
-					default:
-						{
-							LogManager.LogError($"Unknown console argument: {args[i]}");
-							break;
-						}
 				}
 			}
 
@@ -119,13 +95,13 @@ namespace NetBlox
 			Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
 
 			LogManager.LogInfo("Initializing RenderManager...");
-			RenderManager = new(this, render);
-
-			LogManager.LogInfo("Initializing SerializationManager...");
-			SerializationManager.Initialize();
+			RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
 
 			LogManager.LogInfo("Initializing internal scripts...");
 			CurrentRoot = new DataModel(this);
+
+			ProhibitProcessing = gc.ProhibitProcessing;
+			ProhibitScripts = gc.ProhibitScripts;
 
 			var rs = new RunService(this);
 			var cg = new CoreGui(this);
@@ -139,7 +115,6 @@ namespace NetBlox
 			{
 				CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
 				QueuedTeleportAddress = rbxlinit;
-				servercallback(rbxlinit, this);
 			}
 			if (NetworkManager.IsServer)
 			{
@@ -147,14 +122,15 @@ namespace NetBlox
 				{
 					lock (NetworkManager.ToReplicate)
 					{
-						NetworkManager.ToReplicate.Enqueue(new()
-						{
-							What = x
-						});
+						if (!x.IsA("ServerStorage") && !x.IsDescendantOf(CurrentRoot.GetService<ServerStorage>()))
+							NetworkManager.ToReplicate.Enqueue(new()
+							{
+								What = x
+							});
 					}
 				};
-				servercallback(rbxlinit, this);
 			}
+			servercallback(rbxlinit, this);
 		}
 		public void TeleportToPlace(ulong pid)
 		{
@@ -170,9 +146,20 @@ namespace NetBlox
 		}
 		public void Shutdown()
 		{
-			LogManager.LogInfo("Shutting down...");
+			LogManager.LogInfo($"Shutting down GameManager \"{ManagerName}\"...");
 			ShuttingDown = true;
 			ShutdownEvent?.Invoke(new(), new());
+			AppManager.GameManagers.Remove(this);
+
+			if (AppManager.CurrentRenderManager == RenderManager)
+				AppManager.CurrentRenderManager = null;
+
+			if (RenderManager != null)
+				RenderManager.Unload();
+			RenderManager = null;
+
+			if (CurrentRoot != null)
+				CurrentRoot.Destroy();
 		}
 		public Instance? GetInstance(Guid id)
 		{

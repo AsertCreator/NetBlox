@@ -9,19 +9,22 @@ using Raylib_cs;
 using rlImGui_cs;
 using System.Net;
 using System.Numerics;
+using System.Reflection;
 
 namespace NetBlox
 {
 	public class RenderManager
 	{
 		public GameManager GameManager;
+		public Action? PostRender;
 		public List<Func<int>> Coroutines = new();
 		public List<Shader> Shaders = new();
 		public int ScreenSizeX = 1600;
 		public int ScreenSizeY = 900;
+		public int VersionMargin = 0;
 		public string Status = string.Empty;
 		public bool DisableAllGuis = false;
-		public Thread? RenderThread;
+		public bool RenderAtAll = false;
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
@@ -29,146 +32,158 @@ namespace NetBlox
 		public Font MainFont;
 		public long Framecount;
 
-		public RenderManager(GameManager gm, bool render)
+		public unsafe RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
 		{
 			GameManager = gm;
-			Initialize(render);
-		}
+			VersionMargin = vm;
 
-		public unsafe void Initialize(bool render)
-		{
-			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
-
-			RenderThread = new(() =>
+			if (!skiprinit)
+				Initialize(render);
+			else
 			{
+				MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
+				RenderAtAll = render;
+
 				if (render)
 				{
-					Raylib.SetTraceLogLevel(TraceLogLevel.None);
-					Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
-
-					Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
-					Raylib.SetTargetFPS(AppManager.PreferredFPS);
-					Raylib.SetExitKey(KeyboardKey.Null);
-
-					MainFont = Raylib.LoadFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
-					StudTexture = Raylib.LoadTexture(AppManager.ContentFolder + "textures/stud.png");
+					MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
+					StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
 					CurrentSkybox = Skybox.LoadSkybox("bluecloud");
 					LightingShader = LoadShader(AppManager.ResolveUrl("rbxasset://shaders/lighting"));
 
 					int ambientLoc = Raylib.GetShaderLocation(LightingShader, "ambient");
 					LightingShader.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(LightingShader, "viewPos");
 					Raylib.SetShaderValue(LightingShader, ambientLoc, new float[] { 0.1f, 0.1f, 0.1f, 1.0f }, ShaderUniformDataType.Vec4);
-
-					rlImGui.Setup(true, true);
 				}
+			}
+		}
+		public unsafe void Initialize(bool render)
+		{
+			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
+			RenderAtAll = render;
 
-				while (!GameManager.ShuttingDown)
+			if (render)
+			{
+				Raylib.SetTraceLogLevel(TraceLogLevel.None);
+				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+
+				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
+				Raylib.SetTargetFPS(AppManager.PreferredFPS);
+				Raylib.SetExitKey(KeyboardKey.Null);
+
+				MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
+				StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
+				CurrentSkybox = Skybox.LoadSkybox("bluecloud");
+				LightingShader = LoadShader(AppManager.ResolveUrl("rbxasset://shaders/lighting"));
+
+				int ambientLoc = Raylib.GetShaderLocation(LightingShader, "ambient");
+				LightingShader.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(LightingShader, "viewPos");
+				Raylib.SetShaderValue(LightingShader, ambientLoc, new float[] { 0.1f, 0.1f, 0.1f, 1.0f }, ShaderUniformDataType.Vec4);
+
+				rlImGui.Setup(true, true);
+			}
+		}
+		public unsafe void RenderFrame()
+		{
+			if (RenderAtAll)
+			{
+				ScreenSizeX = Raylib.GetScreenWidth();
+				ScreenSizeY = Raylib.GetScreenHeight();
+			}
+
+			Framecount++;
+			try
+			{
+				if (RenderAtAll)
 				{
-					if (render)
+					if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
 					{
-						ScreenSizeX = Raylib.GetScreenWidth();
-						ScreenSizeY = Raylib.GetScreenHeight();
+						Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+						if (Raylib.IsKeyDown(KeyboardKey.Space))
+						{
+							MainCamera.Target.Y += 0.1f;
+							MainCamera.Position.Y += 0.1f;
+						}
+						if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+						{
+							MainCamera.Target.Y -= 0.1f;
+							MainCamera.Position.Y -= 0.1f;
+						}
 					}
 
-					Framecount++;
-					try
+					// render world
+					Raylib.BeginDrawing();
 					{
-						if (render)
+						Raylib.ClearBackground(Color.SkyBlue);
+
+						Raylib.BeginMode3D(MainCamera);
+
+						int a = Raylib.GetKeyPressed();
+						while (a != 0)
 						{
-							if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
-							{
-								Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
-								if (Raylib.IsKeyDown(KeyboardKey.Space))
-								{
-									MainCamera.Target.Y += 0.1f;
-									MainCamera.Position.Y += 0.1f;
-								}
-								if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
-								{
-									MainCamera.Target.Y -= 0.1f;
-									MainCamera.Position.Y -= 0.1f;
-								}
-							}
-
-							float[] cameraPos = [MainCamera.Position.X, MainCamera.Position.Y, MainCamera.Position.Z];
-							Raylib.SetShaderValue(LightingShader, LightingShader.Locs[(int)ShaderLocationIndex.VectorView], cameraPos, ShaderUniformDataType.Vec3);
-
-							// render world
-							Raylib.BeginDrawing();
-							{
-								Raylib.ClearBackground(Color.SkyBlue);
-
-								Raylib.BeginMode3D(MainCamera);
-								Raylib.BeginShaderMode(LightingShader);
-
-								int a = Raylib.GetKeyPressed();
-								while (a != 0)
-								{
-									if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
-										act();
-									a = Raylib.GetKeyPressed();
-								}
-
-								RenderWorld();
-
-								Raylib.EndShaderMode();
-								Raylib.EndMode3D();
-
-								// render all guis
-								if (!DisableAllGuis)
-								{
-									if (GameManager.CurrentRoot != null)
-									{
-										RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
-										RenderUI(GameManager.CurrentRoot.GetService<CoreGui>());
-									}
-
-									Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.NetworkManager.IsServer ? "Server" : "Client")}, version {AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}",
-										new Vector2(5, 5 + 16 * 0), 16, 0, Color.White);
-									Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}",
-										new Vector2(5, 5 + 16 * 1), 16, 0, Color.White);
-									Raylib.DrawTextEx(MainFont, Status,
-										new Vector2(5, 5 + 16 * 2), 16, 0, Color.White);
-
-									if (DebugViewInfo.EnableDebugView)
-										DebugView();
-								}
-
-								Raylib.EndDrawing();
-							}
-
-							if (Raylib.WindowShouldClose())
-								GameManager.Shutdown();
+							if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
+								act();
+							a = Raylib.GetKeyPressed();
 						}
 
-						// run coroutines
-						for (int i = 0; i < Coroutines.Count; i++)
+						RenderWorld();
+
+						Raylib.EndMode3D();
+
+						// render all guis
+						if (!DisableAllGuis)
 						{
-							Func<int> cor = Coroutines[i];
-							if (cor() == -1) Coroutines.RemoveAt(i--);
+							if (GameManager.CurrentRoot != null)
+							{
+								RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
+								RenderUI(GameManager.CurrentRoot.GetService<CoreGui>());
+							}
+
+							Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.IsStudio ? "StudioManager" : (GameManager.NetworkManager.IsServer ? "Server" : "Client"))}, version {AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}",
+								new Vector2(5, 5 + 16 * (0 + VersionMargin)), 16, 0, Color.White);
+							Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}, manager name: {GameManager.ManagerName}",
+								new Vector2(5, 5 + 16 * (1 + VersionMargin)), 16, 0, Color.White);
+							Raylib.DrawTextEx(MainFont, Status,
+								new Vector2(5, 5 + 16 * (2 + VersionMargin)), 16, 0, Color.White);
 						}
 
-						GameManager.ProcessInstance(GameManager.CurrentRoot);
+						if (PostRender != null)
+							PostRender();
+
+						if (!GameManager.ShuttingDown)
+							Raylib.EndDrawing();
 					}
-					catch (Exception ex)
-					{
-						Status = "Render error: " + ex.GetType().Name + ", " + ex.Message;
-					}
+
+					if (Raylib.WindowShouldClose())
+						GameManager.Shutdown();
 				}
 
-				if (render)
+				// run coroutines
+				for (int i = 0; i < Coroutines.Count; i++)
 				{
-					Raylib.CloseWindow();
-					rlImGui.Shutdown();
-
-					CurrentSkybox.Unload();
-
-					foreach (var shader in Shaders)
-						Raylib.UnloadShader(shader);
+					Func<int> cor = Coroutines[i];
+					if (cor() == -1) Coroutines.RemoveAt(i--);
 				}
-			});
 
-			RenderThread.Start();
+				GameManager.ProcessInstance(GameManager.CurrentRoot);
+			}
+			catch (Exception ex)
+			{
+				Status = "Render error: " + ex.GetType().Name + ", " + ex.Message;
+			}
+		}
+		public void Unload()
+		{
+			if (RenderAtAll)
+			{
+				Raylib.CloseWindow();
+				rlImGui.Shutdown();
+
+				CurrentSkybox.Unload();
+			}
+
+			foreach (var shader in Shaders)
+				Raylib.UnloadShader(shader);
 		}
 		private struct Light
 		{
@@ -218,164 +233,6 @@ namespace NetBlox
 			float[] cf = { light.color.R/255f, light.color.G/255f, light.color.B/255f, light.color.A/255f };
 			Raylib.SetShaderValue(LightingShader, light.colorLoc, cf, ShaderUniformDataType.Vec4);
 		}
-		public class DebugViewInfo
-		{
-			public static bool EnableDebugView = false;
-			public static bool ShowLua = false;
-			public static bool ShowITS = false;
-			public static bool ShowSC = false;
-			public static bool ShowOutput = false;
-			public static Dictionary<BaseScript, bool> ShowScriptSource = new();
-			public static string LECode = string.Empty;
-			public static string SCAddress = "127.0.0.1";
-		}
-		public void DebugView()
-		{
-			rlImGui.Begin();
-
-			var v = ImGui.GetMainViewport();
-			var flags = ImGuiWindowFlags.NoBringToFrontOnFocus |
-				ImGuiWindowFlags.NoNavFocus |
-				ImGuiWindowFlags.NoDocking |
-				ImGuiWindowFlags.NoTitleBar |
-				ImGuiWindowFlags.NoResize |
-				ImGuiWindowFlags.NoMove |
-				ImGuiWindowFlags.NoCollapse |
-				ImGuiWindowFlags.MenuBar |
-				ImGuiWindowFlags.NoBackground;
-			var pv = ImGui.GetStyle().WindowPadding;
-
-			ImGui.Begin("#root", flags);
-			ImGui.SetWindowPos(-pv);
-			ImGui.SetWindowSize(new Vector2(ScreenSizeX, ScreenSizeY) + pv * 2);
-
-			ImGui.DockSpace(v.ID, new(0.0f, 0.0f), ImGuiDockNodeFlags.PassthruCentralNode);
-			ImGui.BeginMainMenuBar();
-			if (ImGui.BeginMenu("NetBlox"))
-			{
-				if (ImGui.MenuItem(DebugViewInfo.ShowLua ? "Close Lua executor" : "Open Lua executor"))
-					DebugViewInfo.ShowLua = !DebugViewInfo.ShowLua;
-				if (ImGui.MenuItem("Teleport to default place"))
-					GameManager.TeleportToPlace(unchecked((ulong)-1));
-				if (ImGui.MenuItem("Teleport to server"))
-					DebugViewInfo.ShowSC = !DebugViewInfo.ShowSC;
-				if (ImGui.MenuItem("Show output"))
-					DebugViewInfo.ShowOutput = !DebugViewInfo.ShowOutput;
-				if (ImGui.MenuItem("Show instance tree viewer"))
-					DebugViewInfo.ShowITS = !DebugViewInfo.ShowITS;
-				if (ImGui.MenuItem("Give yourself build tools"))
-				{
-					for (int i = 0; i < 5; i++)
-					{
-						HopperBin hb = new(GameManager);
-						hb.BinType = i;
-						hb.Parent = GameManager.CurrentRoot.GetService<Players>().LocalPlayer.FindFirstChild("Backpack");
-					}
-				}
-				if (ImGui.MenuItem("Kill the entire thing"))
-				{
-					Environment.FailFast("NetBlox had died, lol");
-				}
-				if (ImGui.MenuItem("Exit")) 
-					GameManager.Shutdown();
-				ImGui.EndMenu();
-			}
-			if (ImGui.BeginMenu("View"))
-			{
-				ImGui.EndMenu();
-			}
-			if (ImGui.BeginMenu("Help"))
-			{
-				ImGui.EndMenu();
-			}
-			ImGui.EndMainMenuBar();
-
-			ImGui.End();
-			if (DebugViewInfo.ShowITS)
-			{
-				ImGui.Begin("Instance tree viewer");
-				void Node(Instance ins)
-				{
-					string msg = ins.Name + " - " + ins.ClassName;
-					bool open = ImGui.TreeNode(msg);
-					if (ImGui.BeginPopupContextItem())
-					{
-						if (ImGui.MenuItem("Destroy"))
-						{
-							ins.Destroy();
-						}
-						if (ins is BaseScript && ImGui.MenuItem("Show script's source code"))
-						{
-							var bs = ins as BaseScript;
-							if (DebugViewInfo.ShowScriptSource.ContainsKey(bs!))
-								DebugViewInfo.ShowScriptSource[bs!] = !DebugViewInfo.ShowScriptSource[bs!];
-							else
-								DebugViewInfo.ShowScriptSource[bs!] = true;
-						}
-						if (ins is BaseScript && ImGui.MenuItem("Re-execute"))
-						{
-							var bs = ins as BaseScript;
-							bs.HadExecuted = false;
-						}
-						ImGui.EndPopup();
-					}
-					if (open)
-					{
-						for (int i = 0; i < ins.Children.Count; i++)
-						{
-							Node(ins.Children[i]);
-						}
-						ImGui.TreePop();
-					}
-				}
-				if (GameManager.CurrentRoot != null)
-					Node(GameManager.CurrentRoot);
-
-				ImGui.End();
-			}
-			foreach (var kvp in DebugViewInfo.ShowScriptSource)
-			{
-				if (kvp.Value)
-				{
-					var sou = kvp.Key.Source;
-					ImGui.SetWindowSize(new(400, 500));
-					ImGui.Begin("Script Viewer - " + kvp.Key.GetFullName());
-					ImGui.InputTextMultiline("", ref sou, (uint)kvp.Key.Source.Length, ImGui.GetWindowSize(), ImGuiInputTextFlags.ReadOnly);
-					ImGui.End();
-				}
-			}
-			if (DebugViewInfo.ShowLua)
-			{
-				ImGui.Begin("Lua executor");
-				ImGui.SetWindowSize(new Vector2(400, 300));
-				ImGui.InputTextMultiline("", ref DebugViewInfo.LECode, 256 * 1024, new Vector2(400 - 12, 300 - 55));
-				if (ImGui.Button("Execute"))
-				{
-					LuaRuntime.Execute(DebugViewInfo.LECode, 8, GameManager, null, GameManager.CurrentRoot);
-				}
-				ImGui.End();
-			}
-			if (DebugViewInfo.ShowSC)
-			{
-				ImGui.Begin("Teleport to server");
-				ImGui.InputText("Address", ref DebugViewInfo.SCAddress, 256);
-				ImGui.InputText("Username", ref GameManager.Username, 256);
-				if (ImGui.Button("Connect"))
-				{
-					GameManager.NetworkManager.ConnectToServer(IPAddress.Parse(DebugViewInfo.SCAddress));
-				}
-				ImGui.End();
-			}
-			if (DebugViewInfo.ShowOutput)
-			{
-				string log = LogManager.Log.ToString();
-				ImGui.Begin("Output");
-				ImGui.InputTextMultiline("", ref log, (uint)(log.Length + 50), ImGui.GetWindowSize(), ImGuiInputTextFlags.ReadOnly);
-				ImGui.End();
-			}
-
-			rlImGui.End();
-		}
 		public void RenderInstanceUI(Instance? inst)
 		{
 			if (inst == null) return;
@@ -422,8 +279,7 @@ namespace NetBlox
 			var skypos = MainCamera.Position;
 			var works = GameManager.CurrentRoot.FindFirstChild("Workspace");
 
-			// if (works != null)
-			// 	RenderSkybox();
+			RenderSkybox();
 
 			if (CurrentSkybox != null && CurrentSkybox.SkyboxWires)
 				Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Color.Blue);

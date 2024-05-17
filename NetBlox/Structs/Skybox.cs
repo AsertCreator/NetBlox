@@ -1,4 +1,5 @@
 using Raylib_cs;
+using System.Resources;
 
 namespace NetBlox.Structs
 {
@@ -20,12 +21,12 @@ namespace NetBlox.Structs
 		{
 			Skybox sb = new()
 			{
-				Back = Raylib.LoadTexture(AppManager.ContentFolder + $"skybox/{fp}_bk.png"),
-				Bottom = Raylib.LoadTexture(AppManager.ContentFolder + $"skybox/{fp}_dn.png"),
-				Front = Raylib.LoadTexture(AppManager.ContentFolder + $"skybox/{fp}_ft.png"),
-				Left = Raylib.LoadTexture(AppManager.ContentFolder + $"skybox/{fp}_lf.png"),
-				Right = Raylib.LoadTexture(AppManager.ContentFolder + $"skybox/{fp}_rt.png"),
-				Top = Raylib.LoadTexture(AppManager.ContentFolder + $"skybox/{fp}_up.png")
+				Back = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_bk.png"),
+				Bottom = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_dn.png"),
+				Front = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_ft.png"),
+				Left = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_lf.png"),
+				Right = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_rt.png"),
+				Top = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_up.png")
 			};
 
 			return sb;

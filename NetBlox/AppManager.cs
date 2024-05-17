@@ -7,9 +7,13 @@ using System.Text;
 
 namespace NetBlox
 {
+	/// <summary>
+	/// Provides some APIs for the whole NetBlox environment
+	/// </summary>
 	public static class AppManager
 	{
 		public static List<GameManager> GameManagers = new List<GameManager>();
+		public static RenderManager? CurrentRenderManager;
 		public static Dictionary<string, bool> FastFlags = [];
 		public static Dictionary<string, string> FastStrings = [];
 		public static Dictionary<string, int> FastNumbers = [];
@@ -20,30 +24,81 @@ namespace NetBlox
 		public const int VersionMinor = 2;
 		public const int VersionPatch = 0;
 
-		public static GameManager CreateGame(string name, bool client, bool server, bool render, string[] args, Action<string, GameManager> callback)
+		public static void LoadFastFlags(string[] args)
+		{
+			for (int i = 0; i < args.Length; i++)
+			{
+				switch (args[i]) 
+				{
+					case "--fast-flag":
+						{
+							var key = args[++i];
+							var bo = int.Parse(args[++i]) == 1;
+
+							FastFlags[key] = bo;
+							LogManager.LogInfo($"Setting fast flag {key} to {bo}");
+							break;
+						}
+					case "--fast-string":
+						{
+							var key = args[++i];
+							var st = args[++i];
+
+							FastStrings[key] = st;
+							LogManager.LogInfo($"Setting fast stirng {key} to \"{st}\"");
+							break;
+						}
+					case "--fast-number":
+						{
+							var key = args[++i];
+							var nu = int.Parse(args[++i]);
+
+							FastNumbers[key] = nu;
+							LogManager.LogInfo($"Setting fast number {key} to {nu}");
+							break;
+						}
+				}
+			}
+		}
+		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<string, GameManager> callback)
 		{
 			GameManager manager = new GameManager();
-			manager.ManagerName = name;
-			manager.Start(client, server, render, args, callback);
+			manager.ManagerName = gc.GameName;
+			manager.Start(gc, args, callback);
 			GameManagers.Add(manager);
-			LogManager.LogInfo($"Created new game manager \"{name}\"...");
+			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
 			return manager;
 		}
-		public static void StartTaskScheduler()
+		public static void SetRenderTarget(GameManager gm)
 		{
+			CurrentRenderManager = gm.RenderManager;
+		}
+		public static void Start()
+		{
+			LogManager.LogInfo("Initializing SerializationManager...");
+			SerializationManager.Initialize();
+
 			while (!ShuttingDown)
 			{
-				// perform processing
-				for (int i = 0; i < GameManagers.Count; i++)
+				try
 				{
-					var gm = GameManagers[i];
-					if (gm.CurrentRoot != null && gm.IsRunning)
-						gm.ProcessInstance(gm.CurrentRoot);
+					if (CurrentRenderManager != null)
+						CurrentRenderManager.RenderFrame();
+
+					// perform processing
+					for (int i = 0; i < GameManagers.Count; i++)
+					{
+						var gm = GameManagers[i];
+						if (gm.CurrentRoot != null && gm.IsRunning && gm.ProhibitProcessing)
+							gm.ProcessInstance(gm.CurrentRoot);
+					}
+
+					Schedule();
 				}
-
-				Schedule();
-
-				Thread.Sleep(1000 / 60);
+				catch (RollbackException re)
+				{
+					// a rollback happened
+				}
 			}
 		}
 		public static void Shutdown()
@@ -51,6 +106,7 @@ namespace NetBlox
 			for (int i = 0; i < GameManagers.Count; i++)
 				GameManagers[i].Shutdown();
 			ShuttingDown = true;
+			throw new RollbackException();
 		}
 		public static void Schedule()
 		{
@@ -80,6 +136,12 @@ namespace NetBlox
 								}
 
 								var thread = LuaRuntime.CurrentThread.Value;
+
+								if (thread.GameManager.ProhibitScripts)
+								{
+									LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
+									return;
+								}
 
 								if (thread.ScrInst != null)
 									thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
@@ -113,6 +175,14 @@ namespace NetBlox
 #endif
 				}
 
+				if (LuaRuntime.CurrentThread == null)
+				{
+					if (LuaRuntime.Threads.Count > 0)
+						LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+					else
+						return;
+				}
+
 				if (LuaRuntime.Threads.Count > 0)
 					LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
 				else
@@ -125,4 +195,5 @@ namespace NetBlox
 		}
         public static string ResolveUrl(string url) => ContentFolder + url.Split("//")[1];
     }
+	public class RollbackException : Exception { }
 }

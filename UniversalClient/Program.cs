@@ -36,8 +36,14 @@ namespace NetBlox.Client
 					}
 				});
 			};
-			AppManager.CreateGame("NetBlox Client", true, false, true, args, (x, y) => { });
-			AppManager.StartTaskScheduler();
+			var cg = AppManager.CreateGame(new()
+			{
+				AsClient = true,
+				GameName = "NetBlox Client"
+			}, 
+			args, (x, y) => { });
+			AppManager.SetRenderTarget(cg);
+			AppManager.Start();
 
 			return 0;
 		}
