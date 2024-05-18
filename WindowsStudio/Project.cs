@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -84,6 +85,16 @@ namespace NetBlox.Studio
 							pn.SetAttribute("type", "false"); 
 							el.AppendChild(pn); 
 							break;
+						case SerializationType.Vector3:
+							pn.SetAttribute("type", "v3");
+							pn.InnerText = SerializationManager.Serialize((Vector3)SerializationManager.GetProperty(ins, prs[i]));
+							el.AppendChild(pn);
+							break;
+						case SerializationType.Color3:
+							pn.SetAttribute("type", "c3");
+							pn.InnerText = SerializationManager.Serialize((Color)SerializationManager.GetProperty(ins, prs[i]));
+							el.AppendChild(pn);
+							break;
 					}
 				}
 				for (int i = 0; i < chs.Length; i++)
@@ -130,6 +141,8 @@ namespace NetBlox.Studio
 			var xml = new XmlDocument();
 			xml.LoadXml(d);
 
+			LogManager.LogInfo("Loading project from XML...");
+
 			var root = xml.GetElementsByTagName("Project")[0];
 			Instance ParseInstance(XmlNode node)
 			{
@@ -164,6 +177,12 @@ namespace NetBlox.Studio
 							break;
 						case "false":
 							SerializationManager.SetProperty(ins, prp.Attributes["name"].InnerText, false);
+							break;
+						case "v3":
+							SerializationManager.SetProperty(ins, prp.Attributes["name"].InnerText, SerializationManager.Deserialize<Vector3>(prp.InnerText));
+							break;
+						case "c3":
+							SerializationManager.SetProperty(ins, prp.Attributes["name"].InnerText, SerializationManager.Deserialize<Color>(prp.InnerText));
 							break;
 					}
 				}

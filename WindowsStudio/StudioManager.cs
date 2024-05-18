@@ -38,14 +38,14 @@ namespace NetBlox.Studio
 				return 1;
 			}
 
-			LogManager.LogInfo($"NetBlox StudioManager ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
+			LogManager.LogInfo($"NetBlox Studio ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 			CreateTitleGame();
 			AppManager.SetRenderTarget(TitleGame);
 			AppManager.Start();
 
 			return 0;
 		}
-		public static GameManager CreateEditorGame()
+		public static GameManager CreateEditorGame(string? path)
 		{
 			EditorGame = AppManager.CreateGame(new()
 			{
@@ -58,15 +58,20 @@ namespace NetBlox.Studio
 			}, 
 			[], (x, y) =>
 			{
-				var works = y.CurrentRoot.GetService<Workspace>();
-				var part = new Part(y);
+				if (path == null)
+				{
+					var works = y.CurrentRoot.GetService<Workspace>();
+					var part = new Part(y);
 
-				part.Size = new(60, 5, 60);
-				part.Position = Vector3.Zero;
-				part.Color = Color.DarkGreen;
-				part.Parent = works;
+					part.Size = new(60, 5, 60);
+					part.Position = Vector3.Zero;
+					part.Color = Color.DarkGreen;
+					part.Parent = works;
 
-				works.ZoomToExtents();
+					works.ZoomToExtents();
+				}
+				else
+					new Project(y.CurrentRoot, true, path);
 
 				var em = new EditorManager(y.RenderManager);
 			});
@@ -102,12 +107,8 @@ namespace NetBlox.Studio
 
 					ImGui.Text($"Welcome to NetBlox StudioManager! ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch})");
 					ImGui.Dummy(new Vector2(0, 7));
-					if (ImGui.Button("Create Baseplate project"))
-					{
-						CreateEditorGame();
-						AppManager.SetRenderTarget(EditorGame);
-					}
-					ImGui.Button("Create Empty project");
+					if (ImGui.Button("Create Baseplate project")) OpenProject(null);
+					if (ImGui.Button("Create Empty project")) OpenProject(null);
 					if (ImGui.Button("Open existing project")) OpenExisting();
 					if (ImGui.Button("Exit")) { AppManager.Shutdown(); return; }
 
@@ -138,9 +139,11 @@ namespace NetBlox.Studio
 			th.SetApartmentState(ApartmentState.STA);
 			th.Start();
 		}
-		public static void OpenProject(string path)
+		public static void OpenProject(string? path)
 		{
-			LogManager.LogInfo("Loading project " + path);
+			LogManager.LogInfo("Loading project " + path ?? "<null>");
+			CreateEditorGame(path);
+			AppManager.SetRenderTarget(EditorGame);
 		}
 	}
 }

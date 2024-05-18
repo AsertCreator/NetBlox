@@ -12,7 +12,7 @@ namespace NetBlox
 {
 	public enum SerializationType
 	{
-		String, Enum, Int32, Int64, Single, Double, True, False, Unknown
+		String, Enum, Int32, Int64, Single, Double, True, False, Vector3, Color3, Unknown
 	}
 	public static class SerializationManager
 	{
@@ -36,6 +36,8 @@ namespace NetBlox
 				case "System.Single": return SerializationType.Single;
 				case "System.Double": return SerializationType.Double;
 				case "System.Boolean": return (bool)pi.GetValue(obj)! ? SerializationType.True : SerializationType.False;
+				case "System.Numerics.Vector3": return SerializationType.Vector3;
+				case "Raylib_cs.Color": return SerializationType.Color3;
 				default: return SerializationType.Unknown;
 			}
 		}
