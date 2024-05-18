@@ -13,7 +13,7 @@ namespace NetBlox.Instances.Scripts
 		{
 			if (!HadExecuted && GameManager.NetworkManager.IsClient && Enabled) // we can only execute 
 			{
-				LuaRuntime.Execute(Source, 3, GameManager, this, GameManager.CurrentRoot);
+				LuaRuntime.Execute(Source, 3, GameManager, this);
 				HadExecuted = true;
 			}
 		}

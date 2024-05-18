@@ -19,24 +19,16 @@ namespace NetBlox.Instances
 		public void LoadCharacter()
 		{
 			var ch = new Character(GameManager);
-			var workspace = GameManager.CurrentRoot!.FindFirstChild("Workspace");
+			var workspace = GameManager.CurrentRoot.GetService<Workspace>();
 
 			if (Character != null)
 				Character.Destroy();
 
-			if (workspace == null)
-			{
-				LogManager.LogError("No Workspace exists for Character!");
-				return;
-			}
-
-			var actws = (Workspace)workspace;
-
 			ch.Parent = workspace;
 			ch.Name = Name;
 
-			if (actws.MainCamera != null)
-				(actws.MainCamera as Camera)!.CameraSubject = ch;
+			if (workspace.MainCamera != null)
+				(workspace.MainCamera as Camera)!.CameraSubject = ch;
 
 			Character = ch;
 		}

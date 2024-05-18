@@ -1,33 +1,45 @@
 ﻿using MoonSharp.Interpreter;
+using NetBlox.Instances.Scripts;
 
 namespace NetBlox.Runtime
 {
 	public class LuaSignal
 	{
-		public List<DynValue> Attached = new();
-		public bool HasFired = false;
+		public List<LuaConnection> Attached = new();
+		public int FireCount = 0;
 
 		[Lua([Security.Capability.None])]
 		public void Connect(DynValue dv)
 		{
-			lock (this) Attached.Add(dv);
+			lock (this) Attached.Add(new LuaConnection()
+			{
+				Function = dv,
+				Level = LuaRuntime.CurrentThread.Value.Level,
+				Manager = LuaRuntime.CurrentThread.Value.GameManager,
+				Script = LuaRuntime.CurrentThread.Value.ScrInst
+			});
 		}
 		[Lua([Security.Capability.None])]
 		public void Wait()
 		{
-			while (!HasFired) ;
+			int c = FireCount;
+			while (c == FireCount) ;
 		}
 		public void Fire(params DynValue[] dvs)
 		{
 			lock (this)
 			{
-				HasFired = true;
 				for (int i = 0; i < Attached.Count; i++)
-				{
-					Attached[i].Function.Call(dvs);
-				}
-				HasFired = false;
+					LuaRuntime.Execute(Attached[i].Function, Attached[i].Level, Attached[i].Manager, Attached[i].Script, dvs);
+				FireCount++;
 			}
 		}
+	}
+	public class LuaConnection
+	{
+		public GameManager? Manager;
+		public BaseScript? Script;
+		public DynValue? Function;
+		public int Level;
 	}
 }

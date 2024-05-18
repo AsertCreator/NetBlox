@@ -29,6 +29,7 @@ namespace NetBlox
 		public bool ShuttingDown = false;
 		public bool ProhibitProcessing = false;
 		public bool ProhibitScripts = false;
+		public bool MainManager = false;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
@@ -108,7 +109,7 @@ namespace NetBlox
 			rs.Parent = CurrentRoot;
 			cg.Parent = CurrentRoot;
 
-			LuaRuntime.Setup(this, CurrentRoot, true);
+			LuaRuntime.Setup(this, CurrentRoot);
 			LoadAllCoreScripts();
 
 			if (NetworkManager.IsClient)
@@ -158,8 +159,8 @@ namespace NetBlox
 				RenderManager.Unload();
 			RenderManager = null;
 
-			if (CurrentRoot != null)
-				CurrentRoot.Destroy();
+			if (MainManager)
+				Environment.Exit(0);
 		}
 		public Instance? GetInstance(Guid id)
 		{

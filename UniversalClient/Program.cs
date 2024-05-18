@@ -32,7 +32,7 @@ namespace NetBlox.Client
 					{
 						Console.Write(">>> ");
 						var c = Console.ReadLine();
-						LuaRuntime.Execute(c, 8, gm, null, gm.CurrentRoot);
+						LuaRuntime.Execute(c, 8, gm, null);
 					}
 				});
 			};
@@ -42,6 +42,7 @@ namespace NetBlox.Client
 				GameName = "NetBlox Client"
 			}, 
 			args, (x, y) => { });
+			cg.MainManager = true;
 			AppManager.SetRenderTarget(cg);
 			AppManager.Start();
 

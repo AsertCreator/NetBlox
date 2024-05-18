@@ -250,5 +250,11 @@ namespace NetBlox
 					(vect.Y - vect2.Y) * (vect.Y - vect2.Y) +
 					(vect.Z - vect2.Z) * (vect.Z - vect2.Z));
 		}
+		public static bool MouseCollides(Vector2 p, Vector2 s)
+		{
+			int mx = Raylib.GetMouseX();
+			int my = Raylib.GetMouseY();
+			return (p.X <= mx && p.X + s.X >= mx) && (p.Y <= my && p.Y + s.Y >= my);
+		}
 	}
 }

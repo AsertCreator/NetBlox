@@ -34,10 +34,10 @@ namespace NetBlox.Client
 				GameName = "NetBlox Client"
 			}, args, (x, gm) =>
 			{
-				Workspace ws = new(gm);
-				ReplicatedStorage rs = new(gm);
-				ReplicatedFirst ri = new(gm);
-				Players pl = new(gm);
+				Workspace ws = gm.CurrentRoot.GetService<Workspace>();
+				ReplicatedStorage rs = gm.CurrentRoot.GetService<ReplicatedStorage>();
+				ReplicatedFirst ri = gm.CurrentRoot.GetService<ReplicatedFirst>();
+				Players pl = gm.CurrentRoot.GetService<Players>();
 				LocalScript ls = new(gm);
 
 				ws.ZoomToExtents();
@@ -71,6 +71,7 @@ namespace NetBlox.Client
 
 				gm.NetworkManager.StartServer();
 			});
+			g.MainManager = true;
 			AppManager.SetRenderTarget(g);
 			AppManager.Start();
 		}

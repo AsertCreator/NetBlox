@@ -7,6 +7,9 @@ namespace NetBlox.Instances.GUIs
 {
 	public class GuiObject : Instance
 	{
+		[Lua([Security.Capability.None])]
+		public bool Visible { get; set; } = true;
+
 		public GuiObject(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
@@ -17,10 +20,9 @@ namespace NetBlox.Instances.GUIs
 		}
 		public override void RenderUI()
 		{
-			for (int i = 0; i < Children.Count; i++)
-			{
-				Children[i].RenderUI();
-			}
+			if (Visible)
+				for (int i = 0; i < Children.Count; i++)
+					Children[i].RenderUI();
 		}
 	}
 }

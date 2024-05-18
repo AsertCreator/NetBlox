@@ -10,7 +10,10 @@ if not PlatformService.IsStudio then
 
 	function initIGG()
 		local TopbarGui = Instance.new("ScreenGui");
+		local Sidebar = Instance.new("Frame");
 		local TopbarFrame = Instance.new("Frame");
+		local MenuButton = Instance.new("TextButton");
+		local ExitButton = Instance.new("TextButton");
 	
 		TopbarGui.Name = "TopbarGui";
 		TopbarGui.Parent = CoreGui;
@@ -20,7 +23,35 @@ if not PlatformService.IsStudio then
 		TopbarFrame.Position = UDim2.new(0, 0, 0, 0);
 		TopbarFrame.Size = UDim2.new(1, 0, 0, 30);
 		TopbarFrame.BackgroundColor = Color3.new(0.1, 0.1, 0.1);
-		TopbarFrame.BackgroundTransparency = 0.5
+		TopbarFrame.BackgroundTransparency = 0.5;
+		
+		Sidebar.Parent = TopbarGui;
+		Sidebar.Position = UDim2.new(0, 0, 0, 0);
+		Sidebar.Size = UDim2.new(0, 400, 1, 0);
+		Sidebar.BackgroundColor = Color3.new(0.1, 0.1, 0.1);
+		Sidebar.Visible = false;
+
+		-- here we init Sidebar
+		
+		ExitButton.Parent = Sidebar;
+		ExitButton.Position = UDim2.new(0, 50, 0, 50);
+		ExitButton.Size = UDim2.new(0, 250, 0, 30);
+		ExitButton.BackgroundColor = Color3.new(1, 1, 1);
+		ExitButton.Text = "Leave the game";
+		ExitButton.MouseButton1Click:Connect(function()
+			game:Shutdown();
+		end)
+
+		-- here we stop init Sidebar
+		
+		MenuButton.Parent = TopbarFrame;
+		MenuButton.Position = UDim2.new(0, 0, 0, 0);
+		MenuButton.Size = UDim2.new(0, 30, 0, 30);
+		MenuButton.BackgroundColor = Color3.new(1, 1, 1);
+		MenuButton.BackgroundTransparency = 0.7;
+		MenuButton.MouseButton1Click:Connect(function()
+			Sidebar.Visible = not Sidebar.Visible;
+		end)
 	end
 	function initTUI()
 		local TeleportGui = Instance.new("ScreenGui");

@@ -1,12 +1,13 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
+using System.Diagnostics;
 
 namespace NetBlox.Instances
 {
 	public class DataModel : Instance
 	{
-		public Dictionary<Scripts.ModuleScript, Table> LoadedModules = new();
+		public Dictionary<Scripts.ModuleScript, DynValue> LoadedModules = new();
 		public Script MainEnv = null!;
 
 		public DataModel(GameManager ins) : base(ins) { }
@@ -44,7 +45,7 @@ namespace NetBlox.Instances
 		{
 			return true;
 		}
-		[Lua([Security.Capability.None])]
+		[Lua([Security.Capability.CoreSecurity])]
 		public void Shutdown()
 		{
 			GameManager.Shutdown();

@@ -9,7 +9,8 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public Instance? MainCamera { get; set; }
 
-		public Workspace(GameManager ins) : base(ins) { }
+		public Workspace(GameManager ins) : base(ins) 
+		{ }
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

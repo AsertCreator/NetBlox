@@ -29,9 +29,12 @@ namespace NetBlox.Instances.GUIs
 		}
 		public override void RenderUI()
 		{
-			var p = Position.Calculate();
-			var s = Size.Calculate();
-			Raylib.DrawRectangle((int)p.X, (int)p.Y, (int)s.X, (int)s.Y, new Color(BackgroundColor.R, BackgroundColor.G, BackgroundColor.B, (int)((1 - BackgroundTransparency) * 255)));
+			if (Visible)
+			{
+				var p = Position.Calculate();
+				var s = Size.Calculate();
+				Raylib.DrawRectangle((int)p.X, (int)p.Y, (int)s.X, (int)s.Y, new Color(BackgroundColor.R, BackgroundColor.G, BackgroundColor.B, (int)((1 - BackgroundTransparency) * 255)));
+			}
 			base.RenderUI();
 		}
 	}

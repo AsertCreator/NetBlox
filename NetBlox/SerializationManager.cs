@@ -190,17 +190,15 @@ namespace NetBlox
 				["X"] = ((Vector2)x).X,
 				["Y"] = ((Vector2)x).Y
 			}));
-			LuaSerializers.Add("NetBlox.Structs.LuaSignal", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
+			LuaSerializers.Add("NetBlox.Runtime.LuaSignal", (x, y) => 
+				DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 			{
 				["Connect"] = DynValue.NewCallback((_x, _y) =>
 				{
 					var s = (LuaSignal)x;
 					var i = 0;
 					lock (s) 
-					{
-						i = s.Attached.Count;
-						s.Attached.Add(_y[1]);
-					}
+						s.Connect(_y[1]);
 
 					return DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 					{

@@ -11,7 +11,8 @@ namespace NetBlox.Instances
 		public Instance? CameraSubject { get; set; }
 		public static Vector2 LastMousePosition;
 
-		public Camera(GameManager ins) : base(ins) { }
+		public Camera(GameManager ins) : base(ins) 
+		{ }
 
 		public override void Process()
 		{

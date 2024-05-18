@@ -21,6 +21,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\GuiObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)instances\guis\Image.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ScreenGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\HopperBin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />

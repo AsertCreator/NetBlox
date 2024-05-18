@@ -148,7 +148,7 @@ namespace NetBlox
 								else
 									thread.Script.Globals["script"] = DynValue.Nil;
 
-								var res = thread.Coroutine.Resume();
+								var res = thread.Coroutine.Resume(thread.StartArgs);
 								if (thread.Coroutine.State != CoroutineState.Dead || res == null)
 									return;
 								else

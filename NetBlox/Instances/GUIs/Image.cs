@@ -32,8 +32,11 @@ namespace NetBlox.Instances.GUIs
 		}
 		public override void RenderUI()
 		{
-			var p = Position.Calculate();
-			Raylib.DrawTexture(handle, (int)p.X, (int)p.Y, Color.White);
+			if (Visible)
+			{
+				var p = Position.Calculate();
+				Raylib.DrawTexture(handle, (int)p.X, (int)p.Y, Color.White);
+			}
 			base.RenderUI();
 		}
 	}
