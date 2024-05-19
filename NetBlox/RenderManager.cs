@@ -7,6 +7,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 using rlImGui_cs;
+using System.Diagnostics;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
@@ -139,12 +140,15 @@ namespace NetBlox
 								RenderUI(GameManager.CurrentRoot.GetService<CoreGui>());
 							}
 
-							Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.IsStudio ? "StudioManager" : (GameManager.NetworkManager.IsServer ? "Server" : "Client"))}, version {AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}",
-								new Vector2(5, 5 + 16 * (0 + VersionMargin)), 16, 0, Color.White);
-							Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}, manager name: {GameManager.ManagerName}",
-								new Vector2(5, 5 + 16 * (1 + VersionMargin)), 16, 0, Color.White);
-							Raylib.DrawTextEx(MainFont, Status,
-								new Vector2(5, 5 + 16 * (2 + VersionMargin)), 16, 0, Color.White);
+							if (Debugger.IsAttached)
+							{
+								Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.IsStudio ? "StudioManager" : (GameManager.NetworkManager.IsServer ? "Server" : "Client"))}, version {AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}",
+									new Vector2(5, 5 + 16 * (0 + VersionMargin)), 16, 0, Color.White);
+								Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}, manager name: {GameManager.ManagerName}",
+									new Vector2(5, 5 + 16 * (1 + VersionMargin)), 16, 0, Color.White);
+								Raylib.DrawTextEx(MainFont, Status,
+									new Vector2(5, 5 + 16 * (2 + VersionMargin)), 16, 0, Color.White);
+							}
 						}
 
 						if (PostRender != null)

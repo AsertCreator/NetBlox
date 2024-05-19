@@ -37,6 +37,7 @@ if not PlatformService.IsStudio then
 		ExitButton.Position = UDim2.new(0, 50, 0, 50);
 		ExitButton.Size = UDim2.new(0, 250, 0, 30);
 		ExitButton.BackgroundColor = Color3.new(1, 1, 1);
+		ExitButton.ForegroundColor = Color3.new(1, 1, 1);
 		ExitButton.Text = "Leave the game";
 		ExitButton.MouseButton1Click:Connect(function()
 			game:Shutdown();
@@ -71,12 +72,14 @@ if not PlatformService.IsStudio then
 		GameTitle.Parent = TeleportFrame;
 		GameTitle.Position = UDim2.new(0, 0, 0, 0);
 		GameTitle.Size = UDim2.new(1, 0, 1, 00);
+		GameTitle.ForegroundColor = Color3.new(1, 1, 1);
 		GameTitle.FontSize = 36;
 		GameTitle.Text = "";
 	
 		AuthorTitle.Parent = TeleportFrame;
 		AuthorTitle.Position = UDim2.new(0, 0, 0, 46);
 		AuthorTitle.Size = UDim2.new(1, 0, 1, 00);
+		AuthorTitle.ForegroundColor = Color3.new(1, 1, 1);
 		AuthorTitle.FontSize = 24;
 		AuthorTitle.Text = "";
 

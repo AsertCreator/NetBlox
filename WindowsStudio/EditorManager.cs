@@ -168,7 +168,7 @@ namespace NetBlox.Studio
 					ImGui.InputTextMultiline("", ref CurrentLuaCode, 256 * 1024, new Vector2(400 - 12, 300 - 55));
 					if (ImGui.Button("Execute"))
 					{
-						LuaRuntime.Execute(CurrentLuaCode, 4, rm.GameManager, null, rm.GameManager.CurrentRoot);
+						LuaRuntime.Execute(CurrentLuaCode, 4, rm.GameManager, null);
 					}
 					ImGui.End();
 				}

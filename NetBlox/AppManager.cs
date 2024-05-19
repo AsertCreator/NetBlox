@@ -20,7 +20,7 @@ namespace NetBlox
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
-		public const int VersionMajor = 2;
+		public const int VersionMajor = 3;
 		public const int VersionMinor = 2;
 		public const int VersionPatch = 0;
 
