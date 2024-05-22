@@ -137,17 +137,7 @@ namespace NetBlox
 							if (GameManager.CurrentRoot != null)
 							{
 								RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
-								RenderUI(GameManager.CurrentRoot.GetService<CoreGui>());
-							}
-
-							if (Debugger.IsAttached)
-							{
-								Raylib.DrawTextEx(MainFont, $"NetBlox {(GameManager.IsStudio ? "StudioManager" : (GameManager.NetworkManager.IsServer ? "Server" : "Client"))}, version {AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}",
-									new Vector2(5, 5 + 16 * (0 + VersionMargin)), 16, 0, Color.White);
-								Raylib.DrawTextEx(MainFont, $"Stats: instance count: {GameManager.AllInstances.Count}, fps: {Raylib.GetFPS()}, manager name: {GameManager.ManagerName}",
-									new Vector2(5, 5 + 16 * (1 + VersionMargin)), 16, 0, Color.White);
-								Raylib.DrawTextEx(MainFont, Status,
-									new Vector2(5, 5 + 16 * (2 + VersionMargin)), 16, 0, Color.White);
+								RenderInstanceUI(GameManager.CurrentRoot.GetService<CoreGui>());
 							}
 						}
 
@@ -248,17 +238,6 @@ namespace NetBlox
 			{
 				var child = children[i];
 				RenderInstanceUI(child);
-			}
-		}
-		public void RenderUI(Instance? inst)
-		{
-			if (inst == null) return;
-			var children = inst.GetChildren();
-
-			for (int i = 0; i < children.Length; i++)
-			{
-				var child = children[i];
-				child.RenderUI();
 			}
 		}
 		public void RenderSkybox()

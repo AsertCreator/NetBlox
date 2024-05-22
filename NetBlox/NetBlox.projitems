@@ -19,11 +19,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\Frame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\GuiObject.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\guis\Image.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ImageButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)instances\guis\ImageLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ScreenGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextLabel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Instances\HopperBin.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
@@ -70,6 +70,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Structs\UDim2.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\menu.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="$(MSBuildThisFileDirectory)content\fonts\arialbd.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

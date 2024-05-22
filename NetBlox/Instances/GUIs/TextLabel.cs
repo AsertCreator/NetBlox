@@ -3,6 +3,7 @@ using NetBlox.Structs;
 using Raylib_cs;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace NetBlox.Instances.GUIs
@@ -10,10 +11,6 @@ namespace NetBlox.Instances.GUIs
 	[Creatable]
 	public class TextLabel : GuiObject
 	{
-		[Lua([Security.Capability.None])]
-		public UDim2 Position { get; set; }
-		[Lua([Security.Capability.None])]
-		public UDim2 Size { get; set; }
 		[Lua([Security.Capability.None])]
 		public string Text { get; set; } = "";
 		[Lua([Security.Capability.None])]
@@ -33,17 +30,17 @@ namespace NetBlox.Instances.GUIs
 			if (nameof(TextLabel) == classname) return true;
 			return base.IsA(classname);
 		}
-		public override void RenderUI()
+		public override void RenderGUI(Vector2 cp, Vector2 cs)
 		{
 			if (Visible)
 			{
-				var p = Position.Calculate();
-				var s = Size.Calculate();
+				var p = Position.Calculate(cp, cs);
+				var s = Size.Calculate(cp, cs);
 				var m = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, Text, FontSize, FontSize / 10);
 				Raylib.DrawRectangle((int)p.X, (int)p.Y, (int)s.X, (int)s.Y, new Color(BackgroundColor.R, BackgroundColor.G, BackgroundColor.B, (int)((1 - BackgroundTransparency) * 255)));
 				Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Text, p + s / 2 - m / 2, FontSize, 0, ForegroundColor);
 			}
-			base.RenderUI();
+			base.RenderGUI(cp, cs);
 		}
 	}
 }

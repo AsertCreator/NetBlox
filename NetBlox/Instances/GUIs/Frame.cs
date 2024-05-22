@@ -3,6 +3,7 @@ using NetBlox.Structs;
 using Raylib_cs;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace NetBlox.Instances.GUIs
@@ -10,10 +11,6 @@ namespace NetBlox.Instances.GUIs
 	[Creatable]
 	public class Frame : GuiObject
 	{
-		[Lua([Security.Capability.None])]
-		public UDim2 Position { get; set; }
-		[Lua([Security.Capability.None])]
-		public UDim2 Size { get; set; }
 		[Lua([Security.Capability.None])]
 		public Color BackgroundColor { get; set; } = Color.White;
 		[Lua([Security.Capability.None])]
@@ -27,15 +24,15 @@ namespace NetBlox.Instances.GUIs
 			if (nameof(Frame) == classname) return true;
 			return base.IsA(classname);
 		}
-		public override void RenderUI()
+		public override void RenderGUI(Vector2 cp, Vector2 cs)
 		{
 			if (Visible)
 			{
-				var p = Position.Calculate();
-				var s = Size.Calculate();
+				var p = Position.Calculate(cp, cs);
+				var s = Size.Calculate(cp, cs);
 				Raylib.DrawRectangle((int)p.X, (int)p.Y, (int)s.X, (int)s.Y, new Color(BackgroundColor.R, BackgroundColor.G, BackgroundColor.B, (int)((1 - BackgroundTransparency) * 255)));
 			}
-			base.RenderUI();
+			base.RenderGUI(cp, cs);
 		}
 	}
 }

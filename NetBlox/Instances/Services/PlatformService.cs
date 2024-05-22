@@ -41,6 +41,8 @@ namespace NetBlox.Instances.Services
 			GameManager.NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
+		public string FormatVersion() => $"NetBlox {(IsStudio ? "Studio" : "Client")}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";
+		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableStatusPipe()
 		{
 			if (!GameManager.NetworkManager.IsServer)
