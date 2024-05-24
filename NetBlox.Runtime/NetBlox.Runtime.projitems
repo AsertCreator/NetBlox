@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>5e583385-3397-4774-93e9-5982b892d68c</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>NetBlox.Runtime</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Function.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Machine.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RuntimeObject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RuntimeType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ScriptException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table.cs" />
+  </ItemGroup>
+</Project>
