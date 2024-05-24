@@ -10,8 +10,6 @@ namespace NetBlox.Client
 	{
 		public static int Main(string[] args)
 		{
-			Raylib.SetTraceLogLevel(TraceLogLevel.None);
-
 			var v = Rlgl.GetVersion();
 
 			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)

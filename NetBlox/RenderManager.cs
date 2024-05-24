@@ -65,12 +65,13 @@ namespace NetBlox
 
 			if (render)
 			{
-				Raylib.SetTraceLogLevel(TraceLogLevel.None);
+				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
 				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
 
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
 				Raylib.SetTargetFPS(AppManager.PreferredFPS);
 				Raylib.SetExitKey(KeyboardKey.Null);
+				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
 
 				MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
 				StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
@@ -116,7 +117,7 @@ namespace NetBlox
 					Raylib.BeginDrawing();
 					{
 						Raylib.ClearBackground(Color.SkyBlue);
-
+						Raylib.BeginShaderMode(LightingShader);
 						Raylib.BeginMode3D(MainCamera);
 
 						int a = Raylib.GetKeyPressed();
@@ -129,6 +130,7 @@ namespace NetBlox
 
 						RenderWorld();
 
+						Raylib.EndShaderMode();
 						Raylib.EndMode3D();
 
 						// render all guis
@@ -209,7 +211,7 @@ namespace NetBlox
 			light.typeLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].type");
 			light.positionLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].position");
 			light.targetLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].target");
-			light.colorLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + " ].color");
+			light.colorLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].color");
 
 			// Send to shader light enabled state and type
 			Raylib.SetShaderValue(LightingShader, light.enabledLoc, &light.enabled, ShaderUniformDataType.Int);
@@ -220,7 +222,7 @@ namespace NetBlox
 			Raylib.SetShaderValue(LightingShader, light.positionLoc, pf, ShaderUniformDataType.Vec3);
 
 			// Send to shader light target position values
-			float[] tf = { light.position.X, light.position.Y, light.position.Z };
+			float[] tf = { light.target.X, light.target.Y, light.target.Z };
 			Raylib.SetShaderValue(LightingShader, light.targetLoc, tf, ShaderUniformDataType.Vec3);
 
 			// Send to shader light color values

@@ -21,7 +21,7 @@ namespace NetBlox
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
 		public const int VersionMajor = 4;
-		public const int VersionMinor = 0;
+		public const int VersionMinor = 1;
 		public const int VersionPatch = 1;
 
 		public static void LoadFastFlags(string[] args)

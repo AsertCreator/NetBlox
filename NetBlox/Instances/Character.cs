@@ -16,7 +16,9 @@ namespace NetBlox.Instances
 
 		public Character(GameManager gm) : base(gm)
 		{
-			Color = Color.White;
+			var c = Color.White;
+			c.A = 255;
+			Color = c;
 			Anchored = false;
 			Size = new Vector3(1, 1, 1);
 		}
