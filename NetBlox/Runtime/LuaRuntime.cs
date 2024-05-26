@@ -42,7 +42,7 @@ namespace NetBlox.Runtime
 		public static LinkedListNode<LuaThread>? CurrentThread;
 		public static LinkedList<LuaThread> Threads = new();
 		public static Exception? LastException;
-		public static int ScriptExecutionTimeout = 7;
+		public static int ScriptExecutionTimeout = 700;
 		private static Type dvt = typeof(DynValue);
 		private static bool init = false;
 

@@ -162,7 +162,7 @@ namespace NetBlox
 
 					LogManager.LogInfo($"Successfully performed handshake with {ch.Username}!");
 
-					Thread.Sleep(4000);
+					Thread.Sleep(40);
 
 					_x.ConnectionClosed += (f, g) =>
 					{

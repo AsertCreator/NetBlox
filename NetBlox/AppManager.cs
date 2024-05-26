@@ -12,8 +12,9 @@ namespace NetBlox
 	/// </summary>
 	public static class AppManager
 	{
-		public static List<GameManager> GameManagers = new List<GameManager>();
+		public static List<GameManager> GameManagers = [];
 		public static RenderManager? CurrentRenderManager;
+		public static Dictionary<string, string> Preferences = [];
 		public static Dictionary<string, bool> FastFlags = [];
 		public static Dictionary<string, string> FastStrings = [];
 		public static Dictionary<string, int> FastNumbers = [];
@@ -21,7 +22,7 @@ namespace NetBlox
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
 		public const int VersionMajor = 4;
-		public const int VersionMinor = 1;
+		public const int VersionMinor = 2;
 		public const int VersionPatch = 1;
 
 		public static void LoadFastFlags(string[] args)
@@ -72,6 +73,14 @@ namespace NetBlox
 		public static void SetRenderTarget(GameManager gm)
 		{
 			CurrentRenderManager = gm.RenderManager;
+		}
+		public static void SetPreference(string key, string val) 
+		{
+			Preferences[key] = val;
+		}
+		public static string GetPreference(string key)
+		{
+			return Preferences[key];
 		}
 		public static void Start()
 		{
@@ -193,7 +202,7 @@ namespace NetBlox
 				LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
 			}
 		}
-        public static string ResolveUrl(string url) => ContentFolder + url.Split("//")[1];
-    }
+		public static string ResolveUrl(string url) => ContentFolder + url.Split("//")[1];
+	}
 	public class RollbackException : Exception { }
 }

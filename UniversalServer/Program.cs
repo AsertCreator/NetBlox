@@ -48,7 +48,7 @@ namespace NetBlox.Client
 					Parent = ws,
 					Color = Color.DarkGreen,
 					Position = new(0, -5, 0),
-					Size = new(50, 2, 20),
+					Size = new(2048, 2, 2048),
 					TopSurface = SurfaceType.Studs,
 					Anchored = true
 				};

@@ -134,7 +134,11 @@ if not PlatformService.IsStudio then
 			TeleportGui.Enabled = false;
 		end);
 	end
+	function initRender()
+		PlatformService:SetRenderFlag("Msaa4xHint");
+	end
 
+	initRender();
 	initStatus();
 	initIGG();
 	initTUI();

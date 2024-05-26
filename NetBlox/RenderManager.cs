@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace NetBlox
 {
@@ -29,7 +30,6 @@ namespace NetBlox
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
-		public Shader LightingShader;
 		public Font MainFont;
 		public long Framecount;
 
@@ -50,11 +50,6 @@ namespace NetBlox
 					MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
 					StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
 					CurrentSkybox = Skybox.LoadSkybox("bluecloud");
-					LightingShader = LoadShader(AppManager.ResolveUrl("rbxasset://shaders/lighting"));
-
-					int ambientLoc = Raylib.GetShaderLocation(LightingShader, "ambient");
-					LightingShader.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(LightingShader, "viewPos");
-					Raylib.SetShaderValue(LightingShader, ambientLoc, new float[] { 0.1f, 0.1f, 0.1f, 1.0f }, ShaderUniformDataType.Vec4);
 				}
 			}
 		}
@@ -66,8 +61,7 @@ namespace NetBlox
 			if (render)
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
-				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
-
+				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
 				Raylib.SetTargetFPS(AppManager.PreferredFPS);
 				Raylib.SetExitKey(KeyboardKey.Null);
@@ -76,11 +70,6 @@ namespace NetBlox
 				MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
 				StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
 				CurrentSkybox = Skybox.LoadSkybox("bluecloud");
-				LightingShader = LoadShader(AppManager.ResolveUrl("rbxasset://shaders/lighting"));
-
-				int ambientLoc = Raylib.GetShaderLocation(LightingShader, "ambient");
-				LightingShader.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(LightingShader, "viewPos");
-				Raylib.SetShaderValue(LightingShader, ambientLoc, new float[] { 0.1f, 0.1f, 0.1f, 1.0f }, ShaderUniformDataType.Vec4);
 
 				rlImGui.Setup(true, true);
 			}
@@ -117,7 +106,6 @@ namespace NetBlox
 					Raylib.BeginDrawing();
 					{
 						Raylib.ClearBackground(Color.SkyBlue);
-						Raylib.BeginShaderMode(LightingShader);
 						Raylib.BeginMode3D(MainCamera);
 
 						int a = Raylib.GetKeyPressed();
@@ -130,7 +118,6 @@ namespace NetBlox
 
 						RenderWorld();
 
-						Raylib.EndShaderMode();
 						Raylib.EndMode3D();
 
 						// render all guis
@@ -181,10 +168,11 @@ namespace NetBlox
 			foreach (var shader in Shaders)
 				Raylib.UnloadShader(shader);
 		}
+		[StructLayout(LayoutKind.Sequential)]
 		private struct Light
 		{
 			public int type;
-			public bool enabled;
+			public int enabled;
 			public Vector3 position;
 			public Vector3 target;
 			public Color color;
@@ -197,37 +185,6 @@ namespace NetBlox
 			public int targetLoc;
 			public int colorLoc;
 			public int attenuationLoc;
-		}
-		public unsafe void SetLight(int i, int type, Vector3 position, Vector3 target, Color color)
-		{
-			Light light = new();
-
-			light.enabled = true;
-			light.type = type;
-			light.position = position;
-			light.target = target;
-			light.color = color;
-			light.enabledLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].enabled");
-			light.typeLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].type");
-			light.positionLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].position");
-			light.targetLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].target");
-			light.colorLoc = Raylib.GetShaderLocation(LightingShader, "lights[" + i + "].color");
-
-			// Send to shader light enabled state and type
-			Raylib.SetShaderValue(LightingShader, light.enabledLoc, &light.enabled, ShaderUniformDataType.Int);
-			Raylib.SetShaderValue(LightingShader, light.typeLoc, &light.type, ShaderUniformDataType.Int);
-
-			// Send to shader light position values
-			float[] pf = { light.position.X, light.position.Y, light.position.Z };
-			Raylib.SetShaderValue(LightingShader, light.positionLoc, pf, ShaderUniformDataType.Vec3);
-
-			// Send to shader light target position values
-			float[] tf = { light.target.X, light.target.Y, light.target.Z };
-			Raylib.SetShaderValue(LightingShader, light.targetLoc, tf, ShaderUniformDataType.Vec3);
-
-			// Send to shader light color values
-			float[] cf = { light.color.R/255f, light.color.G/255f, light.color.B/255f, light.color.A/255f };
-			Raylib.SetShaderValue(LightingShader, light.colorLoc, cf, ShaderUniformDataType.Vec4);
 		}
 		public void RenderInstanceUI(Instance? inst)
 		{
@@ -278,12 +235,6 @@ namespace NetBlox
 				(instance as BasePart)!.Render();
 			for (int i = 0; i < instance.GetChildren().Length; i++)
 				RenderInstance(instance.GetChildren()[i]!);
-		}
-		public Shader LoadShader(string f)
-		{
-			var s = Raylib.LoadShader(f + ".vs", f + ".fss");
-			Shaders.Add(s);
-			return s;
 		}
 		public void ShowKickMessage(string msg)
 		{

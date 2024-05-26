@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
+using Raylib_cs;
 using System.IO.Pipes;
 
 namespace NetBlox.Instances.Services
@@ -30,6 +31,29 @@ namespace NetBlox.Instances.Services
 		public bool IsClient() => GameManager.NetworkManager.IsClient;
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsServer() => GameManager.NetworkManager.IsServer;
+		[Lua([Security.Capability.CoreSecurity])]
+		public void SetRenderFlag(string flag)
+		{
+			var type = typeof(ConfigFlags);
+			var conf = (ConfigFlags)(type.GetEnumValues() as uint[])[Array.FindIndex(type.GetEnumNames(), x => x == flag)];
+			// help
+			Raylib.SetConfigFlags(conf);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void OpenBrowser(string url)
+		{
+			Raylib.OpenURL(url);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void SetPreference(string key, string val)
+		{
+			AppManager.SetPreference(key, val);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public string GetPreference(string key)
+		{
+			return AppManager.GetPreference(key);
+		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void ConnectToServer(string addr)
 		{
