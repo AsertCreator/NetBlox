@@ -26,6 +26,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStu
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Runtime", "NetBlox.Runtime\NetBlox.Runtime.shproj", "{5E583385-3397-4774-93E9-5982B892D68C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NRTTest", "NRTTest\NRTTest.csproj", "{7DDE950E-41C4-4A77-92C5-AA5088D48FF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,10 @@ Global
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DDE950E-41C4-4A77-92C5-AA5088D48FF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DDE950E-41C4-4A77-92C5-AA5088D48FF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DDE950E-41C4-4A77-92C5-AA5088D48FF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DDE950E-41C4-4A77-92C5-AA5088D48FF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
