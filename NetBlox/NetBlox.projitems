@@ -33,7 +33,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterPack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ResourceManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Player.cs" />
@@ -49,17 +48,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaYield.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\CreatableAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaRuntime.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SerializationManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkClient.cs" />

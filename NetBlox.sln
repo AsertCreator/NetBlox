@@ -26,8 +26,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStu
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Runtime", "NetBlox.Runtime\NetBlox.Runtime.shproj", "{5E583385-3397-4774-93E9-5982B892D68C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBRTTest", "NBRTTest\NBRTTest.csproj", "{9C25CB85-0DCE-42B2-ADCD-4C0DD70358CC}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,10 +48,6 @@ Global
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C25CB85-0DCE-42B2-ADCD-4C0DD70358CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C25CB85-0DCE-42B2-ADCD-4C0DD70358CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C25CB85-0DCE-42B2-ADCD-4C0DD70358CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C25CB85-0DCE-42B2-ADCD-4C0DD70358CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -62,11 +56,14 @@ Global
 		SolutionGuid = {241DE33A-F8D5-4F77-BA8E-FC6319E0F607}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{10d6f7d6-5588-4b13-b317-37ab34182920}*SharedItemsImports = 13
 		NetBlox\NetBlox.projitems*{10d6f7d6-5588-4b13-b317-37ab34182920}*SharedItemsImports = 13
 		NetBlox.Runtime\NetBlox.Runtime.projitems*{5e583385-3397-4774-93e9-5982b892d68c}*SharedItemsImports = 13
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
-		NetBlox.Runtime\NetBlox.Runtime.projitems*{9c25cb85-0dce-42b2-adcd-4c0dd70358cc}*SharedItemsImports = 5
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

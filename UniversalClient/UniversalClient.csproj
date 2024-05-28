@@ -20,5 +20,6 @@
   </ItemGroup>
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
+  <Import Project="..\NetBlox.Runtime\NetBlox.Runtime.projitems" Label="Shared" />
 
 </Project>

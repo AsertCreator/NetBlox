@@ -9,11 +9,13 @@
     <Import_RootNamespace>NetBlox.Runtime</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Function.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Machine.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)RuntimeObject.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)RuntimeType.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ScriptException.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CreatableAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InstanceCreator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaRuntime.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaSignal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaYield.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NotReplicatedAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Security.cs" />
   </ItemGroup>
 </Project>

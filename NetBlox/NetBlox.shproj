@@ -9,5 +9,6 @@
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\CodeSharing\Microsoft.CodeSharing.Common.props" />
   <PropertyGroup />
   <Import Project="NetBlox.projitems" Label="Shared" />
+  <Import Project="..\NetBlox.Runtime\NetBlox.Runtime.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\CodeSharing\Microsoft.CodeSharing.CSharp.targets" />
 </Project>
