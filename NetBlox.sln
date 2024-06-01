@@ -24,6 +24,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsNBServerManager", "W
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStudio\WindowsStudio.csproj", "{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Runtime", "NetBlox.Runtime\NetBlox.Runtime.shproj", "{94CB2F50-9376-47A5-937C-6413FE6F0B75}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Network", "NetBlox.Network\NetBlox.Network.shproj", "{68B6EE31-C889-4F15-9832-7BD0AED0E1C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,9 +58,17 @@ Global
 		SolutionGuid = {241DE33A-F8D5-4F77-BA8E-FC6319E0F607}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		NetBlox.Network\NetBlox.Network.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{10d6f7d6-5588-4b13-b317-37ab34182920}*SharedItemsImports = 13
+		NetBlox.Network\NetBlox.Network.projitems*{68b6ee31-c889-4f15-9832-7bd0aed0e1c0}*SharedItemsImports = 13
+		NetBlox.Network\NetBlox.Network.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{94cb2f50-9376-47a5-937c-6413fe6f0b75}*SharedItemsImports = 13
+		NetBlox.Network\NetBlox.Network.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
+		NetBlox.Runtime\NetBlox.Runtime.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

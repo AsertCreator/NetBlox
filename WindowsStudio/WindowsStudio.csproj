@@ -13,6 +13,8 @@
   </PropertyGroup>
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
+  <Import Project="..\NetBlox.Runtime\NetBlox.Runtime.projitems" Label="Shared" />
+  <Import Project="..\NetBlox.Network\NetBlox.Network.projitems" Label="Shared" />
 
   <ItemGroup>
     <Content Include="favicon.ico" />

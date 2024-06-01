@@ -1,9 +1,9 @@
 ﻿using NetBlox.Instances;
 using Network;
 
-namespace NetBlox.Structs
+namespace NetBlox
 {
-	public class NetworkClient
+	public class RemoteClient
 	{
 		public string? Username;
 		public uint UniquePlayerID;

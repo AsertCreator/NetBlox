@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>94cb2f50-9376-47a5-937c-6413fe6f0b75</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>NetBlox.Runtime</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CreatableAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InstanceCreator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaRuntime.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaSignal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LuaYield.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NotReplicatedAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Security.cs" />
+  </ItemGroup>
+</Project>

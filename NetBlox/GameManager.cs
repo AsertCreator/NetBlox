@@ -18,7 +18,6 @@ namespace NetBlox
 	public class GameManager
 	{
 		public List<Instance> AllInstances = [];
-		public List<NetworkClient> AllClients = [];
 		public Dictionary<char, Action> Verbs = [];
 		public NetworkIdentity CurrentIdentity = new();
 		public RenderManager? RenderManager;
