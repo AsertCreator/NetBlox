@@ -27,11 +27,15 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ScriptContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ServerStorage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterPack.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\UserInputService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Profile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ResourceManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
@@ -76,7 +80,7 @@
     <None Include="$(MSBuildThisFileDirectory)content\fonts\arialbd.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="$(MSBuildThisFileDirectory)content\scripts\init.lua">
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\StarterScript.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_bk.png">
