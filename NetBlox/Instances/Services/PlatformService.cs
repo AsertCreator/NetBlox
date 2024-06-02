@@ -1,13 +1,13 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 using Raylib_cs;
+using System.Diagnostics;
 using System.IO.Pipes;
 
 namespace NetBlox.Instances.Services
 {
 	public class PlatformService : Instance
 	{
-		public static HttpClient HttpClient = new();
 		public static Action<string> QueuedTeleport = (xo) => { throw new Exception("NetBlox died!"); };
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsStudio => GameManager.IsStudio;
@@ -18,15 +18,6 @@ namespace NetBlox.Instances.Services
 		public void BeginQueuedTeleport() => QueuedTeleport(GameManager.QueuedTeleportAddress);
 		[Lua([Security.Capability.CoreSecurity])]
 		public string[] GetConsoleArguments() => Environment.GetCommandLineArgs();
-		[Lua([Security.Capability.CoreSecurity])]
-		public string HttpGet(string url)
-		{
-			var task = HttpClient.GetAsync(url);
-			task.Wait();
-			var task2 = task.Result.Content.ReadAsStringAsync();
-			task2.Wait();
-			return task2.Result;
-		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsClient() => GameManager.NetworkManager.IsClient;
 		[Lua([Security.Capability.CoreSecurity])]
@@ -63,6 +54,14 @@ namespace NetBlox.Instances.Services
 		public void Disconnect()
 		{
 			GameManager.NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void OpenBrowserWindow(string url)
+		{
+			ProcessStartInfo psi = new();
+			psi.FileName = url;
+			psi.UseShellExecute = true;
+			System.Diagnostics.Process.Start(psi);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public string FormatVersion() => $"NetBlox {(IsStudio ? "Studio" : "Client")}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";

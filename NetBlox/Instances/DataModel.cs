@@ -5,41 +5,14 @@ using System.Diagnostics;
 
 namespace NetBlox.Instances
 {
-	public class DataModel : Instance
+	public class DataModel : ServiceProvider
 	{
 		public Dictionary<Scripts.ModuleScript, DynValue> LoadedModules = new();
+		public static HttpClient HttpClient = new();
 		public Script MainEnv = null!;
 
 		public DataModel(GameManager ins) : base(ins) { }
 
-		public T GetService<T>(bool allownull = false) where T : Instance
-		{
-			for (int i = 0; i < Children.Count; i++)
-			{
-				if (Children[i] is T)
-					return (T)Children[i];
-			}
-			if (!allownull)
-			{
-				var serv = (T)Activator.CreateInstance(typeof(T), GameManager);
-				serv.Parent = this;
-                return serv;
-			}
-			return null!;
-		}
-
-		[Lua([Security.Capability.None])]
-		public Instance GetService(string sn)
-		{
-			for (int i = 0; i < Children.Count; i++)
-			{
-				if (Children[i].ClassName == sn)
-					return Children[i];
-			}
-			var serv = InstanceCreator.CreateInstance(sn, GameManager);
-			serv.Parent = this;
-			return serv;
-		}
 		[Lua([Security.Capability.None])]
 		public bool IsLoaded()
 		{
@@ -49,6 +22,15 @@ namespace NetBlox.Instances
 		public void Shutdown()
 		{
 			GameManager.Shutdown();
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public string HttpGet(string url)
+		{
+			var task = HttpClient.GetAsync(url);
+			task.Wait();
+			var task2 = task.Result.Content.ReadAsStringAsync();
+			task2.Wait();
+			return task2.Result;
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

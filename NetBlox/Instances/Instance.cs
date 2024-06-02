@@ -24,7 +24,7 @@ namespace NetBlox.Instances
 				if (parent != null)
 				{
 					parent.Children.Remove(this);
-					if (GameManager.CurrentRoot.MainEnv != null)
+					if (Root.MainEnv != null)
 						parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
 				}
 				if (value != null)
@@ -32,7 +32,7 @@ namespace NetBlox.Instances
 					parent = value;
 					ParentID = parent.UniqueID;
 					value.Children.Add(this);
-					if (GameManager.CurrentRoot.MainEnv != null)
+					if (Root.MainEnv != null)
 						value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
 				}
 				else
@@ -66,7 +66,9 @@ namespace NetBlox.Instances
 		public GameManager GameManager;
 		public List<Instance> Children = new();
 		public Dictionary<Script, Table> Tables = new();
+		public DateTime DestroyAt = DateTime.MaxValue;
 		private Instance? parent;
+		protected DataModel Root => GameManager.CurrentRoot;
 
 		public Instance(GameManager gm)
 		{

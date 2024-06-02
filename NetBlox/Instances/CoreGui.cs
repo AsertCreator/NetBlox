@@ -1,5 +1,6 @@
 using MoonSharp.Interpreter;
 using NetBlox.Runtime;
+using Raylib_cs;
 using System.Security.Cryptography;
 
 namespace NetBlox.Instances
@@ -34,6 +35,11 @@ namespace NetBlox.Instances
 			}
 		}
 		[Lua([Security.Capability.CoreSecurity])]
+		public void Notify(string title, string message)
+		{
+
+		}
+		[Lua([Security.Capability.CoreSecurity])]
 		public void HideTeleportGui()
 		{
 			if (hideTeleportGui != null && hideTeleportGui.Type == DataType.Function)
@@ -43,6 +49,12 @@ namespace NetBlox.Instances
 					hideTeleportGui.Function.Call();
 				}, false);
 			}
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void TakeScreenshot()
+		{
+			Raylib.TakeScreenshot(AppManager.LibraryFolder + DateTime.Now.ToString("s") + ".png");
+			Notify("Screenshot taken!", "Check the screenshort folder");
 		}
 	}
 }

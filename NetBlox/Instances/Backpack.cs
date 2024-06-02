@@ -18,7 +18,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Reload()
 		{
-			var sg = GameManager.CurrentRoot.GetService("StarterPack");
+			var sg = Root.GetService("StarterPack");
 			var ss = sg.GetChildren();
 
 			ClearAllChildren();

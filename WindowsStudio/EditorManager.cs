@@ -61,6 +61,8 @@ namespace NetBlox.Studio
 						CurrentProject.SaveProject(false, x => Raylib.SetWindowTitle("netblox studio - " + x));
 					if (ImGui.MenuItem("Save as"))
 						CurrentProject.SaveProject(true, x => Raylib.SetWindowTitle("netblox studio - " + x));
+					if (ImGui.MenuItem("Take screenshot"))
+						rm.GameManager.CurrentRoot.GetService<CoreGui>().TakeScreenshot();
 					if (ImGui.MenuItem("Exit"))
 					{
 						AppManager.Shutdown();
@@ -133,6 +135,7 @@ namespace NetBlox.Studio
 					if (rm.GameManager.CurrentRoot != null)
 					{
 						Node(rm.GameManager.CurrentRoot.GetService<Workspace>());
+						Node(rm.GameManager.CurrentRoot.GetService<Lighting>());
 						Node(rm.GameManager.CurrentRoot.GetService<Players>());
 						Node(rm.GameManager.CurrentRoot.GetService<ServerStorage>());
 						Node(rm.GameManager.CurrentRoot.GetService<ReplicatedFirst>());

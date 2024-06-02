@@ -340,12 +340,13 @@ namespace NetBlox.Runtime
 										Table res = new(scr);
 										Array arr = (ret as Array)!;
 
-										for (int i = 0; i < arr.Length; i++)
+										if (SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.GetElementType().FullName, out var ls))
 										{
-											if (SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.FullName, out var ls))
-												res[i] = ls(arr.GetValue(i)!, gm);
-											else
-												res[i] = DynValue.Nil;
+											for (int i = 0; i < arr.Length; i++)
+											{
+												var val = ls(arr.GetValue(i)!, gm); // i hate you vs debugger for fuck sake help
+												res[i] = val;
+											}
 										}
 
 										return DynValue.NewTable(res);

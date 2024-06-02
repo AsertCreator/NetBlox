@@ -28,6 +28,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Debris.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Lighting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ScriptContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ServerStorage.cs" />

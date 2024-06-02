@@ -44,6 +44,7 @@ namespace NetBlox.Instances
 		}
 		public override void Process()
 		{
+			if (GameManager.RenderManager == null) return;
 			var cam = GameManager.RenderManager.MainCamera;
 			var x1 = cam.Position.X;
 			var y1 = cam.Position.Z;

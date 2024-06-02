@@ -1,21 +1,13 @@
 ﻿global using Font = Raylib_cs.Font;
-using ImGuiNET;
 using NetBlox.Instances;
-using NetBlox.Instances.Scripts;
-using NetBlox.Instances.Services;
-using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 using rlImGui_cs;
-using System.Diagnostics;
-using System.Net;
 using System.Numerics;
-using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace NetBlox
 {
-	public class RenderManager
+	public sealed class RenderManager
 	{
 		public GameManager GameManager;
 		public Action? PostRender;
@@ -24,14 +16,17 @@ namespace NetBlox
 		public int ScreenSizeX = 1600;
 		public int ScreenSizeY = 900;
 		public int VersionMargin = 0;
+		public double TimeOfDay = 12;
 		public string Status = string.Empty;
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;
+		public bool DoPostProcessing = true;
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
 		public Font MainFont;
 		public long Framecount;
+		private DataModel Root => GameManager.CurrentRoot;
 
 		public unsafe RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
 		{
@@ -120,13 +115,20 @@ namespace NetBlox
 
 						Raylib.EndMode3D();
 
+						if (DoPostProcessing) // sounds too fancy
+						{
+							TimeOfDay = TimeOfDay % 24;
+							if (TimeOfDay != 12)
+								Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255) * 0.8 + 255 * 0.2))));
+						}
+
 						// render all guis
 						if (!DisableAllGuis)
 						{
-							if (GameManager.CurrentRoot != null)
+							if (Root != null)
 							{
-								RenderInstanceUI(GameManager.CurrentRoot.FindFirstChild("Workspace"));
-								RenderInstanceUI(GameManager.CurrentRoot.GetService<CoreGui>());
+								RenderInstanceUI(Root.FindFirstChild("Workspace"));
+								RenderInstanceUI(Root.GetService<CoreGui>());
 							}
 						}
 
@@ -148,7 +150,7 @@ namespace NetBlox
 					if (cor() == -1) Coroutines.RemoveAt(i--);
 				}
 
-				GameManager.ProcessInstance(GameManager.CurrentRoot);
+				GameManager.ProcessInstance(Root);
 			}
 			catch (Exception ex)
 			{
@@ -167,24 +169,6 @@ namespace NetBlox
 
 			foreach (var shader in Shaders)
 				Raylib.UnloadShader(shader);
-		}
-		[StructLayout(LayoutKind.Sequential)]
-		private struct Light
-		{
-			public int type;
-			public int enabled;
-			public Vector3 position;
-			public Vector3 target;
-			public Color color;
-			public float attenuation;
-
-			// Shader locations
-			public int enabledLoc;
-			public int typeLoc;
-			public int positionLoc;
-			public int targetLoc;
-			public int colorLoc;
-			public int attenuationLoc;
 		}
 		public void RenderInstanceUI(Instance? inst)
 		{
@@ -216,10 +200,10 @@ namespace NetBlox
 		public void RenderWorld()
 		{
 			// i should probably avoid using ifs in these moments, but who cares if its like 5 nanoseconds?
-			if (GameManager.CurrentRoot == null) return;
+			if (Root == null) return;
 
 			var skypos = MainCamera.Position;
-			var works = GameManager.CurrentRoot.FindFirstChild("Workspace");
+			var works = Root.FindFirstChild("Workspace");
 
 			RenderSkybox();
 

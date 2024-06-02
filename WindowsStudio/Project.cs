@@ -102,6 +102,7 @@ namespace NetBlox.Studio
 			}
 
 			AddInstance(DataModel.GetService<Workspace>(), project);
+			AddInstance(DataModel.GetService<Lighting>(), project);
 			AddInstance(DataModel.GetService<ReplicatedFirst>(), project);
 			AddInstance(DataModel.GetService<ReplicatedStorage>(), project);
 			AddInstance(DataModel.GetService<ServerStorage>(), project);

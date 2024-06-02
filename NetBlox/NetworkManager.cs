@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 
 namespace NetBlox
 {
-	public class NetworkManager
+	public sealed class NetworkManager
 	{
 		private struct ClientHandshake
 		{
@@ -63,6 +63,7 @@ namespace NetBlox
 		public int ClientPort { get; private set; } = 6552;
 		public Queue<Replication> ToReplicate = new();
 		public Connection? ServerConnection;
+		private DataModel Root => GameManager.CurrentRoot;
 		private uint NextPID = 0;
 		private bool init;
 		private int loaded = 0;
@@ -100,10 +101,10 @@ namespace NetBlox
 				LogManager.LogInfo("Disconnected from server due to " + cr + "!");
 			}
 
-			GameManager.CurrentRoot.GetService<ReplicatedFirst>().Destroy();
-			GameManager.CurrentRoot.GetService<Players>().Destroy();
-			GameManager.CurrentRoot.GetService<Workspace>().Destroy();
-			GameManager.CurrentRoot.GetService<ReplicatedStorage>().Destroy();
+			Root.GetService<ReplicatedFirst>().Destroy();
+			Root.GetService<Players>().Destroy();
+			Root.GetService<Workspace>().Destroy();
+			Root.GetService<ReplicatedStorage>().Destroy();
 		}
 		public void StartServer()
 		{
@@ -120,7 +121,7 @@ namespace NetBlox
 					ServerHandshake sh = new ServerHandshake();
 					ClientHandshake ch = DeserializeJsonBytes<ClientHandshake>(x.Data);
 					NetworkClient nc = new NetworkClient();
-					Players pls = GameManager.CurrentRoot.GetService<Players>()!;
+					Players pls = Root.GetService<Players>()!;
 					Backpack bck = new Backpack(GameManager);
 					PlayerGui pg = new PlayerGui(GameManager);
 					Player plr = new Player(GameManager);
@@ -151,12 +152,12 @@ namespace NetBlox
 					sh.UniquePlayerID = nc.UniquePlayerID;
 					sh.PlayerInstance = plr.UniqueID;
 					sh.CharacterInstance = plr.Character.UniqueID;
-					sh.DataModelInstance = GameManager.CurrentRoot.UniqueID;
+					sh.DataModelInstance = Root.UniqueID;
 					sh.InstanceCount = 
-						GameManager.CurrentRoot.GetService<ReplicatedFirst>().CountDescendants() +
-						GameManager.CurrentRoot.GetService<Players>().CountDescendants() +
-						GameManager.CurrentRoot.GetService<Workspace>().CountDescendants() +
-						GameManager.CurrentRoot.GetService<ReplicatedStorage>().CountDescendants();
+						Root.GetService<ReplicatedFirst>().CountDescendants() +
+						Root.GetService<Players>().CountDescendants() +
+						Root.GetService<Workspace>().CountDescendants() +
+						Root.GetService<ReplicatedStorage>().CountDescendants();
 
 					y.SendRawData("nb.placeinfo", SerializeJsonBytes(sh));
 
@@ -192,31 +193,31 @@ namespace NetBlox
 							ToReplicate.Enqueue(new Replication()
 							{
 								To = [nc],
-								What = GameManager.CurrentRoot,
+								What = Root,
 								RepChildren = false
 							});
 							ToReplicate.Enqueue(new Replication()
 							{
 								To = [nc],
-								What = GameManager.CurrentRoot.GetService<ReplicatedFirst>(),
+								What = Root.GetService<ReplicatedFirst>(),
 								AsService = true
 							});
 							ToReplicate.Enqueue(new Replication()
 							{
 								To = [nc],
-								What = GameManager.CurrentRoot.GetService<Players>(),
+								What = Root.GetService<Players>(),
 								AsService = true
 							});
 							ToReplicate.Enqueue(new Replication()
 							{
 								To = [nc],
-								What = GameManager.CurrentRoot.GetService<Workspace>(),
+								What = Root.GetService<Workspace>(),
 								AsService = true
 							});
 							ToReplicate.Enqueue(new Replication()
 							{
 								To = [nc],
-								What = GameManager.CurrentRoot.GetService<ReplicatedStorage>(),
+								What = Root.GetService<ReplicatedStorage>(),
 								AsService = true
 							});
 						}
@@ -297,7 +298,7 @@ namespace NetBlox
 								var ins = SeqReceiveInstance(y, x.ToUTF8String());
 								if (ins.UniqueID == sh.DataModelInstance)
 								{
-									GameManager.CurrentRoot.Name = (ins as DataModel)!.Name;
+									Root.Name = (ins as DataModel)!.Name;
 									GameManager.IsRunning = true;
 
 									con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
@@ -320,7 +321,7 @@ namespace NetBlox
 								if (ins.UniqueID == sh.PlayerInstance)
 								{
 									var plr = (Player)ins;
-									var pls = GameManager.CurrentRoot.GetService<Players>();
+									var pls = Root.GetService<Players>();
 									plr.IsLocalPlayer = true;
 									pls.LocalPlayer = plr;
 								}
@@ -329,18 +330,18 @@ namespace NetBlox
 									var chr = (Character)ins;
 									chr.IsLocalPlayer = true;
 									var cam = new Camera(GameManager);
-									cam.Parent = GameManager.CurrentRoot.GetService<Workspace>();
+									cam.Parent = Root.GetService<Workspace>();
 									cam.CameraSubject = chr;
 								}
 								if (loaded++ == sh.InstanceCount)
 								{
-									GameManager.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
+									Root.GetService<CoreGui>().HideTeleportGui();
 								}
 							});
 							con.RegisterRawDataHandler("nb.inc-service", (x, y) =>
 							{
 								var ins = SeqReceiveInstance(y, x.ToUTF8String());
-								ins.Parent = GameManager.CurrentRoot;
+								ins.Parent = Root;
 							});
 							con.RegisterRawDataHandler("nb.placeinfo", (x, y) =>
 							{
@@ -362,7 +363,7 @@ namespace NetBlox
 								GameManager.CurrentIdentity.UniquePlayerID = sh.UniquePlayerID;
 								GameManager.CurrentIdentity.MaxPlayerCount = sh.MaxPlayerCount;
 
-								GameManager.CurrentRoot.GetService<CoreGui>().ShowTeleportGui(sh.PlaceName, sh.Author, (int)sh.PlaceID, 0);
+								Root.GetService<CoreGui>().ShowTeleportGui(sh.PlaceName, sh.Author, (int)sh.PlaceID, 0);
 
 								y.SendRawData("nb.req-int-rep", []);
 							});
@@ -373,7 +374,7 @@ namespace NetBlox
 					catch (Exception ex)
 					{
 						var msg = $"Could not connect to the server! {ex.GetType().Name} - {ex.Message}";
-						var pls = GameManager.CurrentRoot.GetService<Players>();
+						var pls = Root.GetService<Players>();
 						if (pls == null) return;
 						var plr = pls.LocalPlayer as Player;
 

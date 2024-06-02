@@ -15,11 +15,11 @@ namespace NetBlox.Client
 			/*GameManager.Start(false, true, false, args, x =>
 			{
 				DataModel dm = new();
-				RbxlParser.Load(x, GameManager.CurrentRoot);
+				RbxlParser.Load(x, Root);
 
-				GameManager.CurrentRoot = dm;
+				Root = dm;
 
-				LuaRuntime.Setup(GameManager.CurrentRoot, false);
+				LuaRuntime.Setup(Root, false);
 
 				NetworkManager.StartServer();
 

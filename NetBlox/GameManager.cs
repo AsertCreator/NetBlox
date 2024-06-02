@@ -104,8 +104,24 @@ namespace NetBlox
 			ProhibitProcessing = gc.ProhibitProcessing;
 			ProhibitScripts = gc.ProhibitScripts;
 
-			var rs = new RunService(this);
-			var cg = new CoreGui(this);
+			if (NetworkManager.IsServer)
+			{
+				CurrentRoot.GetService<Workspace>();
+				CurrentRoot.GetService<Players>();
+				CurrentRoot.GetService<Lighting>();
+				CurrentRoot.GetService<ReplicatedStorage>();
+				CurrentRoot.GetService<ReplicatedFirst>();
+				CurrentRoot.GetService<StarterGui>();
+				CurrentRoot.GetService<StarterPack>();
+				CurrentRoot.GetService<ServerStorage>();
+				CurrentRoot.GetService<ScriptContext>();
+				CurrentRoot.GetService<PlatformService>();
+				CurrentRoot.GetService<UserInputService>();
+				CurrentRoot.GetService<Debris>();
+			}
+
+			var rs = CurrentRoot.GetService<RunService>();
+			var cg = CurrentRoot.GetService<CoreGui>();
 			rs.Parent = CurrentRoot;
 			cg.Parent = CurrentRoot;
 
@@ -175,6 +191,12 @@ namespace NetBlox
 		{
 			if (inst != null)
 			{ // i was outsmarted
+				if (inst.DestroyAt < DateTime.Now)
+				{
+					inst.Destroy();
+					return;
+				}
+
 				inst.Process();
 
 				var ch = inst.GetChildren();

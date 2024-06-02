@@ -5,6 +5,7 @@ using System.Text;
 
 namespace NetBlox.Instances
 {
+	[Creatable]
 	public class Tool : Instance
 	{
 		public Tool(GameManager ins) : base(ins) { }

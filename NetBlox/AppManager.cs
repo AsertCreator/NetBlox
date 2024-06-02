@@ -21,7 +21,8 @@ namespace NetBlox
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
-		public const int VersionMajor = 5;
+		public static string LibraryFolder = "tmp/";
+		public const int VersionMajor = 6;
 		public const int VersionMinor = 0;
 		public const int VersionPatch = 1;
 
@@ -84,6 +85,9 @@ namespace NetBlox
 		}
 		public static void Start()
 		{
+			if (!Directory.Exists(LibraryFolder))
+				Directory.CreateDirectory(LibraryFolder);
+
 			LogManager.LogInfo("Initializing SerializationManager...");
 			SerializationManager.Initialize();
 

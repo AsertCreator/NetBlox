@@ -18,7 +18,11 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
-
+	
+  <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
+  	<DefineConstants>_WINDOWS</DefineConstants>
+  </PropertyGroup>
+	
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
 
 </Project>

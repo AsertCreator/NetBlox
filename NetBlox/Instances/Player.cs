@@ -19,7 +19,7 @@ namespace NetBlox.Instances
 		public void LoadCharacter()
 		{
 			var ch = new Character(GameManager);
-			var workspace = GameManager.CurrentRoot.GetService<Workspace>();
+			var workspace = Root.GetService<Workspace>();
 
 			if (Character != null)
 				Character.Destroy();
@@ -40,7 +40,7 @@ namespace NetBlox.Instances
 				GameManager.NetworkManager.ServerConnection.Close(Network.Enums.CloseReason.ClientClosed);
 				GameManager.RenderManager.ShowKickMessage(msg);
 				// why not call lua api lol
-				GameManager.CurrentRoot.GetService<RunService>().Pause();
+				Root.GetService<RunService>().Pause();
 			}
 			else if (GameManager.NetworkManager.IsServer)
 			{
