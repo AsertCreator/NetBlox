@@ -14,6 +14,8 @@
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
 
+  <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
+
   <ItemGroup>
     <Content Include="favicon.ico" />
   </ItemGroup>

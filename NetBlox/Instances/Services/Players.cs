@@ -15,7 +15,7 @@ namespace NetBlox.Instances.Services
 			if (nameof(Players) == classname) return true;
 			return base.IsA(classname);
 		}
-		[Lua([Security.Capability.RobloxScriptSecurity])]
+		[Lua([Security.Capability.CoreSecurity])]
 		public Player CreateNewPlayer(string name, bool local)
 		{
 			Player player = new(GameManager)
@@ -26,6 +26,16 @@ namespace NetBlox.Instances.Services
 			};
 
 			return player;
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void KickAll(string msg)
+		{
+			for (int i = 0; i < Children.Count; i++)
+			{
+				var ch = Children[i];
+				if (ch is Player)
+					(ch as Player)!.Kick(msg);
+			}
 		}
 	}
 }

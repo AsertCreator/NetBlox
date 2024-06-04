@@ -66,6 +66,7 @@ namespace NetBlox
 		private DataModel Root => GameManager.CurrentRoot;
 		private uint NextPID = 0;
 		private bool init;
+		private bool filtermutex = false;
 		private int loaded = 0;
 
 		public NetworkManager(GameManager gm, bool server, bool client)
@@ -93,7 +94,7 @@ namespace NetBlox
 			LogManager.LogInfo($"{nc.Username} had disconnected!");
 			GameManager.AllClients.Remove(nc);
 		}
-		public void DisconnectFromServer(Network.Enums.CloseReason cr)
+		public void DisconnectFromServer(CloseReason cr)
 		{
 			if (NetworkClient != null)
 			{
@@ -221,6 +222,13 @@ namespace NetBlox
 								AsService = true
 							});
 						}
+					});
+					_x.RegisterRawDataHandler("nb.filter-string", (x, y) =>
+					{
+						var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data)!;
+						var text = dss["Text"];
+
+						y.SendRawData("nb.filter-string-out", Encoding.UTF8.GetBytes(GameManager.FilterString(text)));
 					});
 
 					GameManager.AllowReplication = true;
@@ -396,6 +404,38 @@ namespace NetBlox
 		public string SerializeJson<T>(T obj) => JsonSerializer.Serialize(obj, DefaultJSON);
 		public T? DeserializeJsonBytes<T>(byte[] d) => DeserializeJson<T>(Encoding.UTF8.GetString(d));
 		public T? DeserializeJson<T>(string d) => JsonSerializer.Deserialize<T>(d, DefaultJSON);
+		public string SeqFilterString(string text, Guid from, Guid to) => SeqFilterString(ServerConnection, text, from, to);
+		public string SeqFilterString(Connection c, string text, Guid from, Guid to)
+		{
+			try
+			{
+				while (filtermutex) ;
+				filtermutex = true;
+				string? outp = null;
+				var yes = false;
+				var dss = new Dictionary<string, string>();
+
+				dss["From"] = from.ToString();
+				dss["To"] = to.ToString();
+				dss["Text"] = text;
+
+				c.SendRawData("nb.filter-string", SerializeJsonBytes(dss));
+				c.RegisterRawDataHandler("nb.filter-string-out", (x, y) =>
+				{
+					c.UnRegisterRawDataHandler("nb.filter-string-out");
+					outp = x.ToUTF8String();
+					yes = true;
+				});
+
+				while (!yes) ;
+				return outp!;
+			}
+			catch
+			{
+				LogManager.LogError($"Failed to perform chat string filtering ({from}->{to})!");
+				return "";
+			}
+		}
 		public void SeqReparentInstance(Connection c, Instance ins)
 		{
 			try

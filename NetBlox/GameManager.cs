@@ -30,6 +30,7 @@ namespace NetBlox
 		public bool ProhibitProcessing = false;
 		public bool ProhibitScripts = false;
 		public bool MainManager = false;
+		public bool UsePublicService = false;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
@@ -205,6 +206,14 @@ namespace NetBlox
 					ProcessInstance(ch[i]);
 				}
 			}
+		}
+		public string FilterString(string text)
+		{
+			if (!UsePublicService)
+			{
+				return "lol";
+			}
+			return "c'est ma chatte";
 		}
 	}
 }

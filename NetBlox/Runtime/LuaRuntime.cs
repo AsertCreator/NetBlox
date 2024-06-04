@@ -324,10 +324,19 @@ namespace NetBlox.Runtime
 									}
 
 									var ret = meth!.Invoke(inst, args.ToArray());
+									var rett = meth.ReturnType;
 
-									if (!meth.ReturnType.IsArray)
+									if (meth.ReturnType.Name == "LuaYield")
 									{
-										if (!SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.FullName, out var ls))
+										var hasr = (bool)meth.ReturnType.GetField("HasResult")!.GetValue(ret)!; // idc lol
+										if (!hasr)
+											return DynValue.NewYieldReq(y.GetArray());
+										else
+											rett = meth.ReturnType.GetGenericArguments()[0];
+									}
+									if (!rett.IsArray)
+									{
+										if (!SerializationManager.LuaSerializers.TryGetValue(rett.FullName, out var ls))
 											return DynValue.Nil;
 
 										if (ret != null)
@@ -340,7 +349,7 @@ namespace NetBlox.Runtime
 										Table res = new(scr);
 										Array arr = (ret as Array)!;
 
-										if (SerializationManager.LuaSerializers.TryGetValue(meth.ReturnType.GetElementType().FullName, out var ls))
+										if (SerializationManager.LuaSerializers.TryGetValue(rett.GetElementType().FullName, out var ls))
 										{
 											for (int i = 0; i < arr.Length; i++)
 											{
@@ -436,7 +445,7 @@ namespace NetBlox.Runtime
 				}
 				return DynValue.Nil;
 			});
-			table.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.ClassName));
+			table.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.Name));
 			table.MetaTable["__handle"] = inst.UniqueID.ToString();
 			table.MetaTable["__handleType"] = 0;
 

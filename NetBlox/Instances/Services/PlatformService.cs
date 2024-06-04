@@ -71,11 +71,11 @@ namespace NetBlox.Instances.Services
 			if (!GameManager.NetworkManager.IsServer)
 				throw new Exception("Cannot start status pipe in client");
 
-			System.Diagnostics.Process pr = System.Diagnostics.Process.GetCurrentProcess();
+			Process pr = System.Diagnostics.Process.GetCurrentProcess();
 
 			Task.Run(() =>
 			{
-				while (true)
+				while (GameManager.IsRunning)
 				{
 					using (NamedPipeServerStream ss = new("netblox.index" + pr.Id, PipeDirection.Out))
 					{
@@ -93,6 +93,41 @@ namespace NetBlox.Instances.Services
 							sw.WriteLine(GameManager.CurrentIdentity.MaxPlayerCount);
 
 							sw.Flush();
+						}
+					}
+				}
+			});
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void EnableRctlPipe()
+		{
+			if (!GameManager.NetworkManager.IsServer)
+				throw new Exception("Cannot start remote control pipe in client");
+
+			Process pr = System.Diagnostics.Process.GetCurrentProcess();
+
+			Task.Run(() =>
+			{
+				while (GameManager.IsRunning)
+				{
+					using (NamedPipeServerStream ss = new("netblox.rctl" + pr.Id, PipeDirection.In))
+					{
+						ss.WaitForConnection();
+						using (StreamReader sw = new StreamReader(ss))
+						{
+							string what = sw.ReadLine()!;
+							switch (what)
+							{
+								case "runlua":
+									LuaRuntime.Execute(sw.ReadToEnd(), 8, GameManager, null);
+									break;
+								case "kickall":
+									var pl = Root.GetService<Players>();
+									pl.KickAll(sw.ReadToEnd());
+									break;
+								case "sysmsg":
+									throw new NotImplementedException("no");
+							}
 						}
 					}
 				}

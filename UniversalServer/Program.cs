@@ -5,7 +5,7 @@ using NetBlox.Runtime;
 using NetBlox.Server;
 using NetBlox.Structs;
 
-namespace NetBlox.Client
+namespace NetBlox.Server
 {
 	public static class Program
 	{
@@ -31,7 +31,7 @@ namespace NetBlox.Client
 				AsServer = true,
 				SkipWindowCreation = true,
 				DoNotRenderAtAll = true,
-				GameName = "NetBlox Client"
+				GameName = "NetBlox Server"
 			}, args, (x, gm) =>
 			{
 				Workspace ws = gm.CurrentRoot.GetService<Workspace>();

@@ -1,9 +1,7 @@
-﻿using MoonSharp.Interpreter;
+﻿// #define DISABLE_EME
+using MoonSharp.Interpreter;
 using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
 using System.Runtime;
-using System.Text;
 
 namespace NetBlox
 {
@@ -22,9 +20,9 @@ namespace NetBlox
 		public static bool ShuttingDown = false;
 		public static string ContentFolder = "content/";
 		public static string LibraryFolder = "tmp/";
-		public const int VersionMajor = 6;
-		public const int VersionMinor = 0;
-		public const int VersionPatch = 1;
+		public static int VersionMajor => Common.Version.VersionMajor;
+		public static int VersionMinor => Common.Version.VersionMinor;
+		public static int VersionPatch => Common.Version.VersionPatch;
 
 		public static void LoadFastFlags(string[] args)
 		{

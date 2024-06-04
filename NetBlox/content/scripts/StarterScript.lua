@@ -5,6 +5,7 @@ if not PlatformService.IsStudio then
 	function initStatus()
 		if PlatformService:IsServer() then
 			PlatformService:EnableStatusPipe();
+			PlatformService:EnableRctlPipe();
 		end
 	end
 

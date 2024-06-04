@@ -28,6 +28,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Chat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Debris.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Lighting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
@@ -37,6 +38,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterPack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\UserInputService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Profile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ResourceManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
@@ -54,7 +56,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ReplicatedStorage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaYield.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
