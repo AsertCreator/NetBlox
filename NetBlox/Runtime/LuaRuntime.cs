@@ -52,7 +52,7 @@ namespace NetBlox.Runtime
 
 			dm.MainEnv = new Script(
 				CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
-				CoreModules.TableIterators | CoreModules.String | CoreModules.ErrorHandling |
+				CoreModules.TableIterators | CoreModules.Table | CoreModules.String | CoreModules.ErrorHandling |
 				CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
 
 			dm.MainEnv.Globals["game"] = MakeInstanceTable(dm, gm);

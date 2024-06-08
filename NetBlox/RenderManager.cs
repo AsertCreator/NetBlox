@@ -2,7 +2,9 @@
 using NetBlox.Instances;
 using NetBlox.Structs;
 using Raylib_cs;
+#if STUDIO
 using rlImGui_cs;
+#endif
 using System.Numerics;
 
 namespace NetBlox
@@ -66,7 +68,9 @@ namespace NetBlox
 				StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
 				CurrentSkybox = Skybox.LoadSkybox("bluecloud");
 
+#if STUDIO
 				rlImGui.Setup(true, true);
+#endif
 			}
 		}
 		public unsafe void RenderFrame()
@@ -162,7 +166,9 @@ namespace NetBlox
 			if (RenderAtAll)
 			{
 				Raylib.CloseWindow();
+#if STUDIO
 				rlImGui.Shutdown();
+#endif
 
 				CurrentSkybox.Unload();
 			}

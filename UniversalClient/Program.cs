@@ -28,16 +28,6 @@ namespace NetBlox.Client
 			{
 				var gm = AppManager.GameManagers[0];
 				gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
-				Task.Run(() =>
-				{
-					Console.WriteLine("NetBlox Console is running (enter Lua code to run it)");
-					while (!gm.ShuttingDown)
-					{
-						Console.Write(">>> ");
-						var c = Console.ReadLine();
-						LuaRuntime.Execute(c, 8, gm, null);
-					}
-				});
 			};
 			var cg = AppManager.CreateGame(new()
 			{
@@ -46,6 +36,16 @@ namespace NetBlox.Client
 			}, 
 			args, (x, y) => { });
 			cg.MainManager = true;
+			Task.Run(() =>
+			{
+				Console.WriteLine("NetBlox Console is running (enter Lua code to run it)");
+				while (!cg.ShuttingDown)
+				{
+					Console.Write(">>> ");
+					var c = Console.ReadLine();
+					LuaRuntime.Execute(c, 8, cg, null);
+				}
+			});
 			AppManager.SetRenderTarget(cg);
 			AppManager.Start();
 

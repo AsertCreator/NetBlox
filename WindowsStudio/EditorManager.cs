@@ -29,6 +29,16 @@ namespace NetBlox.Studio
 		public EditorManager(RenderManager rm) 
 		{
 			CurrentProject = new(rm.GameManager.CurrentRoot, false, "");
+			Task.Run(() =>
+			{
+				Console.WriteLine("NetBlox Console is running (enter Lua code to run it)");
+				while (!rm.GameManager.ShuttingDown)
+				{
+					Console.Write(">>> ");
+					var c = Console.ReadLine();
+					LuaRuntime.Execute(c, 8, rm.GameManager, null);
+				}
+			});
 			rm.PostRender = () =>
 			{
 				rlImGui.Begin();
