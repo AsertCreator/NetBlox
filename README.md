@@ -4,17 +4,27 @@ dedicate my two weeks school break on creating the clone of it on c#. it lowkey
 looks like some "pixel gun 3d" type of game you would find on play store.
 
 ## Features
-none. not even networking. but there is scripting support and some other shit like
-walking lol.
+well there are instances, scripting(maybe), networking, physics(maybe). roblox offers the 
+same, but a lot better, netblox is very poorly made. also there's physics engine named qu3e-sharp,
+which i believe is licensed same as qu3e, so zlib.
+
+## Architecture
+`AppManager` class is static and holds within task scheduler (i.e. game processor), a lot
+of common things. `GameManager` is some sort of sandboxed game, it holds one `DataModel`, and
+also `Instance`s must be assigned to one `GameManager`, and there's no way for them to switch
+ones. entire networking is managed by `NetworkManager` object, reference to which is in
+`GameManager`. entire rendering is managed by `RenderManager`, which referenced the same way.
+nothing else to describe.
 
 ## System requirements
-anything that can run raylib and .net. it uses a bunch of memory becuse of everything,
-around ~128 MB, so make sure you have enough.
+anything that can run raylib and .net. it consumes a bunch of memory becuse of everything,
+around ~196 MB, so make sure you have enough.
 
 ## Licenses
-netblox. Copyright (c) 2024 AsertCreator. <br/>
-raylib. Copyright (c) 2013-2024 Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))<br/>
-raylib_cs. Copyright (c) 2018-2024 ChrisDill (check [license](https://github.com/ChrisDill/Raylib-cs/blob/master/LICENSE))<br/>
+netblox. Copyright (c) 2024, AsertCreator. <br/>
+raylib. Copyright (c) 2013-2024, Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))<br/>
+raylib_cs. Copyright (c) 2018-2024, ChrisDill (check [license](https://github.com/ChrisDill/Raylib-cs/blob/master/LICENSE))<br/>
 MoonSharp. Copyright (c) 2014-2016, Marco Mastropaolo (check [license](https://github.com/moonsharp-devs/moonsharp/blob/master/LICENSE))<br/>
+Qu3e-Sharp. Copyright (c) 2017, Wildan M (check [license](https://github.com/willnode/Qu3e-Sharp))
 
 netblox is licensed under MIT license. check LICENSE.txt file in repository root.

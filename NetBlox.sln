@@ -26,6 +26,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStu
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Common", "NetBlox.Common\NetBlox.Common.shproj", "{FA4E3BA7-1080-4AB5-925C-9BE6C4A9CD1F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhysicsTest", "PhysicsTest\PhysicsTest.csproj", "{9B249205-9985-44A3-BDF8-F5FD264EAB21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qu3e", "Qu3e\Qu3e.csproj", "{ABF57AFB-695D-4641-84B3-D33D3658CCDC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +52,14 @@ Global
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
