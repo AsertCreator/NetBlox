@@ -38,6 +38,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterPack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\UserInputService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Profile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ResourceManager.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\Actor.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />

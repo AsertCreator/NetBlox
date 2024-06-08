@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>41572111-4627-464d-87bd-be48fc33ff51</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Qu3eSharp</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)broadphase\BroadPhase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)broadphase\DynamicAABBTree.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)collision\Box.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)collision\Collide.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)common\Geometry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)common\Render.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)common\Settings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)dynamics\Body.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)dynamics\Contact.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)dynamics\ContactManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)dynamics\ContactSolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)dynamics\Island.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)math\Mat3.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)math\Quaternion.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)math\Transform.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)math\Vec3.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)scene\Scene.cs" />
+  </ItemGroup>
+</Project>

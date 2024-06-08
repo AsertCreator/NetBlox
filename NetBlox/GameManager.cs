@@ -22,6 +22,7 @@ namespace NetBlox
 		public Dictionary<char, Action> Verbs = [];
 		public NetworkIdentity CurrentIdentity = new();
 		public RenderManager? RenderManager;
+		public PhysicsManager? PhysicsManager;
 		public NetworkManager? NetworkManager;
 		public DataModel CurrentRoot = null!;
 		public bool IsStudio = false;
@@ -96,9 +97,6 @@ namespace NetBlox
 			LogManager.LogInfo("Initializing verbs...");
 			Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
 
-			LogManager.LogInfo("Initializing RenderManager...");
-			RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
-
 			LogManager.LogInfo("Initializing internal scripts...");
 			CurrentRoot = new DataModel(this);
 
@@ -107,6 +105,7 @@ namespace NetBlox
 
 			if (NetworkManager.IsServer)
 			{
+				LogManager.LogInfo("Creating main services...");
 				CurrentRoot.GetService<Workspace>();
 				CurrentRoot.GetService<Players>();
 				CurrentRoot.GetService<Lighting>();
@@ -128,6 +127,12 @@ namespace NetBlox
 
 			LuaRuntime.Setup(this, CurrentRoot);
 			LoadAllCoreScripts();
+
+			LogManager.LogInfo("Initializing PhysicsManager...");
+			PhysicsManager = new(this);
+
+			LogManager.LogInfo("Initializing RenderManager...");
+			RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
 
 			if (NetworkManager.IsClient)
 			{

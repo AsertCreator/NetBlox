@@ -90,6 +90,7 @@ namespace NetBlox.Instances
 			var siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, Name, 14, 1.4f);
 
 			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
+			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, SerializationManager.Serialize(Position), new Vector2(20, 20), 14, 1.4f, Color.White);
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

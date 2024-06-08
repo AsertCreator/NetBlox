@@ -1,6 +1,7 @@
 ﻿using NetBlox.Runtime;
 using NetBlox.Instances;
 using System.Numerics;
+using Qu3e;
 
 namespace NetBlox.Instances.Services
 {
@@ -8,9 +9,14 @@ namespace NetBlox.Instances.Services
 	{
 		[Lua([Security.Capability.None])]
 		public Instance? MainCamera { get; set; }
+		[Lua([Security.Capability.None])]
+		public Vector3 Gravity { get; set; } = new Vector3(0, -9.8f, 0);
+		public Scene Scene;
 
 		public Workspace(GameManager ins) : base(ins) 
-		{ }
+		{ 
+			Scene = new(1 / AppManager.PreferredFPS, Gravity, 10);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

@@ -84,6 +84,14 @@ namespace NetBlox.Studio
 				{
 					ImGui.EndMenu();
 				}
+				if (ImGui.BeginMenu("Debug"))
+				{
+					if (ImGui.MenuItem("Switch client network identity", "", rm.GameManager.NetworkManager.IsClient))
+						rm.GameManager.NetworkManager.IsClient = !rm.GameManager.NetworkManager.IsClient;
+					if (ImGui.MenuItem("Switch server network identity", "", rm.GameManager.NetworkManager.IsServer))
+						rm.GameManager.NetworkManager.IsServer = !rm.GameManager.NetworkManager.IsServer;
+					ImGui.EndMenu();
+				}
 				ImGui.EndMainMenuBar();
 
 				ImGui.End();

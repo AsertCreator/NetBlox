@@ -100,13 +100,17 @@ namespace NetBlox
 					for (int i = 0; i < GameManagers.Count; i++)
 					{
 						var gm = GameManagers[i];
-						if (gm.CurrentRoot != null && gm.IsRunning && gm.ProhibitProcessing)
+						if (gm.CurrentRoot != null && gm.IsRunning && !gm.ProhibitProcessing)
+						{
 							gm.ProcessInstance(gm.CurrentRoot);
+							if (gm.NetworkManager.IsClient)
+								gm.PhysicsManager.Step();
+						}
 					}
 
 					Schedule();
 				}
-				catch (RollbackException re)
+				catch (RollbackException)
 				{
 					// a rollback happened
 				}

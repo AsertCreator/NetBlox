@@ -57,10 +57,10 @@ namespace NetBlox
 		public TcpClient NetworkClient = null!;
 		public TcpListener NetworkServer = null!;
 		public GameManager GameManager;
-		public bool IsServer { get; private set; }
-		public bool IsClient { get; private set; }
-		public int ServerPort { get; private set; } = 2556;
-		public int ClientPort { get; private set; } = 6552;
+		public bool IsServer;
+		public bool IsClient;
+		public int ServerPort = 2556;
+		public int ClientPort = 6552;
 		public Queue<Replication> ToReplicate = new();
 		public Connection? ServerConnection;
 		private DataModel Root => GameManager.CurrentRoot;
@@ -94,7 +94,7 @@ namespace NetBlox
 			LogManager.LogInfo($"{nc.Username} had disconnected!");
 			GameManager.AllClients.Remove(nc);
 		}
-		public void DisconnectFromServer(CloseReason cr)
+		public void DisconnectFromServer(Network.Enums.CloseReason cr)
 		{
 			if (NetworkClient != null)
 			{

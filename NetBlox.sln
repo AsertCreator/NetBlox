@@ -26,9 +26,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStu
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Common", "NetBlox.Common\NetBlox.Common.shproj", "{FA4E3BA7-1080-4AB5-925C-9BE6C4A9CD1F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PhysicsTest", "PhysicsTest\PhysicsTest.csproj", "{9B249205-9985-44A3-BDF8-F5FD264EAB21}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qu3e", "Qu3e\Qu3e.csproj", "{ABF57AFB-695D-4641-84B3-D33D3658CCDC}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Qu3eSharp", "Qu3eSharp\Qu3eSharp.shproj", "{41572111-4627-464D-87BD-BE48FC33FF51}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,14 +50,6 @@ Global
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9B249205-9985-44A3-BDF8-F5FD264EAB21}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ABF57AFB-695D-4641-84B3-D33D3658CCDC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -70,12 +60,16 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		NetBlox.Common\NetBlox.Common.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
+		Qu3eSharp\Qu3eSharp.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{10d6f7d6-5588-4b13-b317-37ab34182920}*SharedItemsImports = 13
+		Qu3eSharp\Qu3eSharp.projitems*{41572111-4627-464d-87bd-be48fc33ff51}*SharedItemsImports = 13
 		NetBlox.Common\NetBlox.Common.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
+		Qu3eSharp\Qu3eSharp.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{9e72f3f5-07fc-4ac3-9d56-733622a42d70}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
+		Qu3eSharp\Qu3eSharp.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{fa4e3ba7-1080-4ab5-925c-9be6c4a9cd1f}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

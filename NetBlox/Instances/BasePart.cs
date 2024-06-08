@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using NetBlox.Instances.Services;
+using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Numerics;
 
@@ -27,6 +28,8 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Vector3 Position { get => Origin.Position; set => Origin.Position = value; }
 		[Lua([Security.Capability.None])]
+		public Vector3 Rotation { get; set; }
+		[Lua([Security.Capability.None])]
 		public Vector3 Size { get; set; } = new Vector3(4, 1, 2);
 		[Lua([Security.Capability.None])]
 		public Vector3 size { get => Size; set => Size = value; }
@@ -36,9 +39,13 @@ namespace NetBlox.Instances
 		public bool CanTouch { get; set; } = true;
 		[Lua([Security.Capability.None])]
 		public Vector3 Velocity { get; set; }
+		public Actor Actor;
 		public bool IsGrounded = false;
 
-		public BasePart(GameManager ins) : base(ins) { }
+		public BasePart(GameManager ins) : base(ins) 
+		{
+			Actor = new(this);
+		}
 
 		public virtual void Render()
 		{
@@ -52,6 +59,12 @@ namespace NetBlox.Instances
 		{
 			if (nameof(BasePart) == classname) return true;
 			return base.IsA(classname);
+		}
+		public override void Destroy()
+		{
+			Actor.Remove();
+			Actor = null!;
+			base.Destroy();
 		}
 	}
 }
