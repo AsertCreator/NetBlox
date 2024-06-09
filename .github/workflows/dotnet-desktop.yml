@@ -7,5 +7,5 @@ jobs:
     name: test if netblox even builds
     runs-on: windows-latest
     steps:
-      - uses: EasyDesk/action-dotnet-build@v1.0.0
       - name: build
+        uses: EasyDesk/action-dotnet-build@v1.0.0
