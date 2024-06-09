@@ -101,11 +101,11 @@ namespace NetBlox.Studio
 				y.RenderManager.PostRender = () =>
 				{
 					rlImGui.Begin();
-					ImGui.Begin("NetBlox StudioManager");
+					ImGui.Begin("NetBlox Studio");
 					ImGui.SetWindowSize(new Vector2(400, 200));
 					ImGui.SetWindowPos(new Vector2(Raylib.GetScreenWidth() / 2 - 200, Raylib.GetScreenHeight() / 2 - 100));
-
-					ImGui.Text($"Welcome to NetBlox StudioManager! ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch})");
+					// i hate you, ctrl+r
+					ImGui.Text($"Welcome to NetBlox Studio! ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch})");
 					ImGui.Dummy(new Vector2(0, 7));
 					if (ImGui.Button("Create Baseplate project")) OpenProject(null);
 					if (ImGui.Button("Create Empty project")) OpenProject(null);
