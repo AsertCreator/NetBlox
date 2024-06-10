@@ -11,6 +11,10 @@ namespace NetBlox.Instances.Services
 		public static Action<string> QueuedTeleport = (xo) => { throw new Exception("NetBlox died!"); };
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsStudio => GameManager.IsStudio;
+		[Lua([Security.Capability.CoreSecurity])]
+		public bool IsOffline => Profile.IsOffline;
+		[Lua([Security.Capability.CoreSecurity])]
+		public bool LoggedIn => Profile.LastLogin != null;
 
 		public PlatformService(GameManager ins) : base(ins) { }
 
@@ -31,30 +35,13 @@ namespace NetBlox.Instances.Services
 			Raylib.SetConfigFlags(conf);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public void OpenBrowser(string url)
-		{
-			Raylib.OpenURL(url);
-		}
+		public void SetPreference(string key, string val) => AppManager.SetPreference(key, val);
 		[Lua([Security.Capability.CoreSecurity])]
-		public void SetPreference(string key, string val)
-		{
-			AppManager.SetPreference(key, val);
-		}
+		public string GetPreference(string key) => AppManager.GetPreference(key);
 		[Lua([Security.Capability.CoreSecurity])]
-		public string GetPreference(string key)
-		{
-			return AppManager.GetPreference(key);
-		}
+		public void ConnectToServer(string addr) => GameManager.NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
 		[Lua([Security.Capability.CoreSecurity])]
-		public void ConnectToServer(string addr)
-		{
-			GameManager.NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Disconnect()
-		{
-			GameManager.NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
-		}
+		public void Disconnect() => GameManager.NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
 		[Lua([Security.Capability.CoreSecurity])]
 		public void OpenBrowserWindow(string url)
 		{

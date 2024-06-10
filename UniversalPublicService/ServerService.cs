@@ -1,42 +1,31 @@
 ﻿using Serilog;
-using WebSocketSharp;
-using WebSocketSharp.Server;
+using System.Net;
+using System.Text;
 
 namespace NetBlox.PublicService
 {
+	/// <summary>
+	/// Manages all servers running on local computer. Does not provide any kind of REST API, that's a job of <seealso cref="WebService"/>
+	/// </summary>
 	public class ServerService : Service
 	{
 		public override string Name => nameof(ServerService);
-		private WebSocketServer Server;
 		private Task Task;
 		private bool Running = false;
 
-		private class ServerServiceBeh  : WebSocketBehavior
-		{
-			protected override void OnMessage(MessageEventArgs e)
-			{
-				Log.Error(e.Data);
-				Send("{}");
-				Close();
-			}
-		}
 		public override void Start()
 		{
 			base.Start();
 
 			Task = Task.Run(async () =>
 			{
-				Server = new WebSocketServer("ws://localhost:443/");
-				Server.AddWebSocketService<ServerServiceBeh>("/");
-				Server.Start();
-				Log.Information("ServerService: Listening at port 443...");
+				Log.Information("ServerService: Successfully started!");
 			});
 			Running = true;
 		}
 		public override void Stop()
 		{
 			Running = false;
-			Server.Stop();
 			base.Stop();
 		}
 		public override bool IsRunning() => Running;

@@ -34,7 +34,7 @@ namespace NetBlox
 		public bool UsePublicService = false;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
-		public string? Username = "DevDevDev" + Random.Shared.Next(1000, 9999);
+		public string Username = ""; // bye bye DevDevDev
 		public event EventHandler? ShutdownEvent;
 		public event InstanceEventHandler? AddedInstance;
 		public bool AllowReplication = false;

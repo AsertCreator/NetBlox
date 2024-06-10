@@ -50,10 +50,6 @@ namespace NetBlox
 			public bool AsService = false;
 			public Action? Callback;
 		}
-		private static readonly JsonSerializerOptions DefaultJSON = new()
-		{
-			IncludeFields = true
-		};
 		public TcpClient NetworkClient = null!;
 		public TcpListener NetworkServer = null!;
 		public GameManager GameManager;
@@ -120,7 +116,7 @@ namespace NetBlox
 				_x.RegisterRawDataHandler("nb.handshake", (x, y) =>
 				{
 					ServerHandshake sh = new ServerHandshake();
-					ClientHandshake ch = DeserializeJsonBytes<ClientHandshake>(x.Data);
+					ClientHandshake ch = SerializationManager.DeserializeJsonBytes<ClientHandshake>(x.Data);
 					NetworkClient nc = new NetworkClient();
 					Players pls = Root.GetService<Players>()!;
 					Backpack bck = new Backpack(GameManager);
@@ -160,7 +156,7 @@ namespace NetBlox
 						Root.GetService<Workspace>().CountDescendants() +
 						Root.GetService<ReplicatedStorage>().CountDescendants();
 
-					y.SendRawData("nb.placeinfo", SerializeJsonBytes(sh));
+					y.SendRawData("nb.placeinfo", SerializationManager.SerializeJsonBytes(sh));
 
 					LogManager.LogInfo($"Successfully performed handshake with {ch.Username}!");
 
@@ -225,7 +221,7 @@ namespace NetBlox
 					});
 					_x.RegisterRawDataHandler("nb.filter-string", (x, y) =>
 					{
-						var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data)!;
+						var dss = SerializationManager.DeserializeJsonBytes<Dictionary<string, string>>(x.Data)!;
 						var text = dss["Text"];
 
 						y.SendRawData("nb.filter-string-out", Encoding.UTF8.GetBytes(GameManager.FilterString(text)));
@@ -311,7 +307,7 @@ namespace NetBlox
 
 									con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
 									{
-										var dss = DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
+										var dss = SerializationManager.DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
 										var ins = GameManager.GetInstance(Guid.Parse(dss["Instance"]));
 										var par = GameManager.GetInstance(Guid.Parse(dss["Parent"]));
 
@@ -353,7 +349,7 @@ namespace NetBlox
 							});
 							con.RegisterRawDataHandler("nb.placeinfo", (x, y) =>
 							{
-								sh = DeserializeJsonBytes<ServerHandshake>(x.Data);
+								sh = SerializationManager.DeserializeJsonBytes<ServerHandshake>(x.Data);
 
 								if (sh.ErrorCode != 0)
 								{
@@ -376,7 +372,7 @@ namespace NetBlox
 								y.SendRawData("nb.req-int-rep", []);
 							});
 
-							con.SendRawData("nb.handshake", SerializeJsonBytes(ch));
+							con.SendRawData("nb.handshake", SerializationManager.SerializeJsonBytes(ch));
 						}
 					}
 					catch (Exception ex)
@@ -400,10 +396,6 @@ namespace NetBlox
 				}
 			});
 		}
-		public byte[] SerializeJsonBytes<T>(T obj) => Encoding.UTF8.GetBytes(SerializeJson(obj));
-		public string SerializeJson<T>(T obj) => JsonSerializer.Serialize(obj, DefaultJSON);
-		public T? DeserializeJsonBytes<T>(byte[] d) => DeserializeJson<T>(Encoding.UTF8.GetString(d));
-		public T? DeserializeJson<T>(string d) => JsonSerializer.Deserialize<T>(d, DefaultJSON);
 		public string SeqFilterString(string text, Guid from, Guid to) => SeqFilterString(ServerConnection, text, from, to);
 		public string SeqFilterString(Connection c, string text, Guid from, Guid to)
 		{
@@ -419,7 +411,7 @@ namespace NetBlox
 				dss["To"] = to.ToString();
 				dss["Text"] = text;
 
-				c.SendRawData("nb.filter-string", SerializeJsonBytes(dss));
+				c.SendRawData("nb.filter-string", SerializationManager.SerializeJsonBytes(dss));
 				c.RegisterRawDataHandler("nb.filter-string-out", (x, y) =>
 				{
 					c.UnRegisterRawDataHandler("nb.filter-string-out");
@@ -443,7 +435,7 @@ namespace NetBlox
 				var dss = new Dictionary<string, string>();
 				dss["Instance"] = ins.UniqueID.ToString();
 				dss["Parent"] = ins.ParentID.ToString();
-				c.SendRawData("nb.repar-inst", SerializeJsonBytes(dss));
+				c.SendRawData("nb.repar-inst", SerializationManager.SerializeJsonBytes(dss));
 			}
 			catch
 			{
@@ -485,9 +477,9 @@ namespace NetBlox
 				});
 
 				if (!asservice)
-					c.SendRawData("nb.inc-inst", SerializeJsonBytes(dss));
+					c.SendRawData("nb.inc-inst", SerializationManager.SerializeJsonBytes(dss));
 				else
-					c.SendRawData("nb.inc-service", SerializeJsonBytes(dss));
+					c.SendRawData("nb.inc-service", SerializationManager.SerializeJsonBytes(dss));
 			}
 			catch
 			{

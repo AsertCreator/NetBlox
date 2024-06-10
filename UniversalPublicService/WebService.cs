@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using NetBlox.Common;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,11 @@ namespace NetBlox.PublicService
 
 		private string? Serve(HttpListenerContext cl, string uri, ref int i)
 		{
+			if (uri.Contains(".."))
+			{
+				i = 403;
+				return File.ReadAllText("./content/forbidden.html");
+			}
 			if (uri == "/") return File.ReadAllText("./content/index.html");
 			if (uri.StartsWith("/cdn/")) // its not cdn actually but idc
 			{
@@ -24,13 +30,27 @@ namespace NetBlox.PublicService
 			}
 			if (uri.StartsWith("/game/"))
 			{
-				return "fuck you";
+				return File.ReadAllText("./content/gamepage.html");
 			}
 			if (uri == "/join" || uri == "/join/")
 			{
 				return File.ReadAllText("./content/joingame.html");
 			}
+			if (uri.StartsWith("/api/"))
+			{
+				return ServeAPI(cl, uri, ref i);
+			}
+			i = 404;
 			return File.ReadAllText("./content/notfound.html");
+		}
+		private string? ServeAPI(HttpListenerContext cl, string uri, ref int i)
+		{ 
+			if (uri == "/api/login")
+			{
+				string data = cl.Request.InputStream.ReadToEnd();
+				// idk what to do
+			}
+			return "{}";
 		}
 		public override void Start()
 		{
@@ -61,7 +81,7 @@ namespace NetBlox.PublicService
 					cl.Response.ContentLength64 = by.Length;
 					st.Write(by);
 					st.Flush();
-					cl.Response.StatusCode = 200;
+					cl.Response.StatusCode = code;
 					cl.Response.Close();
 
 					TokenSource.Token.ThrowIfCancellationRequested();

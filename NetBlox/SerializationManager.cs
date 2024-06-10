@@ -7,6 +7,8 @@ using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Text.Json;
+using System.Text;
 
 namespace NetBlox
 {
@@ -21,7 +23,16 @@ namespace NetBlox
 		public static Dictionary<string, Func<object, GameManager, DynValue>> LuaSerializers = new();
 		public static Dictionary<string, Func<DynValue, GameManager, object>> LuaDeserializers = new();
 		public static Dictionary<string, DataType> LuaDataTypes = new();
-		
+		private static readonly JsonSerializerOptions DefaultJSON = new()
+		{
+			IncludeFields = true
+		};
+		private static bool init = false;
+
+		public static byte[] SerializeJsonBytes<T>(T obj) => Encoding.UTF8.GetBytes(SerializeJson(obj));
+		public static string SerializeJson<T>(T obj) => JsonSerializer.Serialize(obj, DefaultJSON);
+		public static T? DeserializeJsonBytes<T>(byte[] d) => DeserializeJson<T>(Encoding.UTF8.GetString(d));
+		public static T? DeserializeJson<T>(string d) => JsonSerializer.Deserialize<T>(d, DefaultJSON);
 		public static SerializationType GetSerializationType(object obj, string prop)
 		{
 			var type = obj.GetType();
@@ -130,6 +141,9 @@ namespace NetBlox
 		}
 		public static void Initialize()
 		{
+			if (init) return;
+			init = true;
+
 			Deserializers.Add("System.Byte", x => Byte.Parse(x, CultureInfo.InvariantCulture));
 			Deserializers.Add("System.Int16", x => Int16.Parse(x, CultureInfo.InvariantCulture));
 			Deserializers.Add("System.Int32", x => Int32.Parse(x, CultureInfo.InvariantCulture));

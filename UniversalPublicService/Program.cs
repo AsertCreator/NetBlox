@@ -17,8 +17,8 @@ namespace NetBlox.PublicService
 				.WriteTo.File($"{DateTime.Now:s}.log")
 				.CreateLogger();
 			Log.Information($"Starting NetBlox public service (v{Version.VersionMajor}.{Version.VersionMinor}.{Version.VersionPatch})...");
-			GetService<WebService>().Start();
 			GetService<ServerService>().Start();
+			GetService<WebService>().Start();
 			WaitForAll();
 		}
 		public static T GetService<T>() where T : Service, new()
@@ -29,6 +29,7 @@ namespace NetBlox.PublicService
 					return (T)Services[i];
 			}
 			T s = new();
+			s.Start();
 			Services.Add(s);
 			return s;
 		}
