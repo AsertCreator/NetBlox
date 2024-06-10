@@ -20,6 +20,10 @@ nothing else to describe.
 anything that can run raylib and .net. it consumes a bunch of memory becuse of everything,
 around ~196 MB, so make sure you have enough.
 
+## Contributing
+all contributions should ideally adhere to the "constitution" thing i wrote bc idk what to do
+with this project. the thing lies in `docs` folder
+
 ## Licenses
 netblox. Copyright (c) 2024, AsertCreator. <br/>
 raylib. Copyright (c) 2013-2024, Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))<br/>

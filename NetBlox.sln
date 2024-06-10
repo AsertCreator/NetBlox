@@ -23,7 +23,12 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Common", "NetBlox.C
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Qu3eSharp", "Qu3eSharp\Qu3eSharp.shproj", "{41572111-4627-464D-87BD-BE48FC33FF51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniversalPublicService", "UniversalPublicService\UniversalPublicService.csproj", "{DDD41AE9-8F20-4187-ADC9-C1302549291C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalPublicService", "UniversalPublicService\UniversalPublicService.csproj", "{DDD41AE9-8F20-4187-ADC9-C1302549291C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{62300AC6-A657-43D0-8AAF-7BEE4B5A5B05}"
+	ProjectSection(SolutionItems) = preProject
+		docs\constitution.md = docs\constitution.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +55,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{62300AC6-A657-43D0-8AAF-7BEE4B5A5B05} = {CBE329B1-EE72-4952-B990-AB64225CA299}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {241DE33A-F8D5-4F77-BA8E-FC6319E0F607}
