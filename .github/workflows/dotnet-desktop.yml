@@ -16,13 +16,3 @@ jobs:
         with:
           name: NetBloxClientWindows.zip
           path: ./UniversalClient/bin/Release/net8.0/
-      - name: Upload NetBlox Server for Windows
-        uses: actions/upload-artifact@v4.3.3
-        with:
-          name: NetBloxServerWindows.zip
-          path: ./UniversalServer/bin/Release/net8.0/
-      - name: Upload NetBlox Studio for Windows
-        uses: actions/upload-artifact@v4.3.3
-        with:
-          name: NetBloxStudioWindows.zip
-          path: ./WindowsStudio/bin/Release/net8.0-windows/
