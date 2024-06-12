@@ -16,7 +16,6 @@ namespace NetBlox.Structs
 		public ulong UniverseID;
 		public uint MaxPlayerCount;
 		public uint UniquePlayerID;
-		public XmlDocument? PlaceXMLData;
 
 		public void Reset()
 		{
@@ -26,7 +25,6 @@ namespace NetBlox.Structs
 			PlaceID = 0;
 			UniverseID = 0;
 			MaxPlayerCount = 0;
-			PlaceXMLData = null;
 		}
 	}
 }

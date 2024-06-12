@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
+using NetBlox.Structs;
 using System.Text.Json.Serialization;
 
 namespace NetBlox.Instances
@@ -40,17 +41,13 @@ namespace NetBlox.Instances
 					parent = null;
 					ParentID = Guid.Empty;
 				}
-
-				if (GameManager.NetworkManager.IsServer)
-					for (int i = 0; i < GameManager.AllClients.Count; i++)
-					{
-						GameManager.NetworkManager.SeqReparentInstance(GameManager.AllClients[i].Connection, this);
-					}
 			}
 		}
 		[NotReplicated]
 		public List<string> Tags { get; set; } = new();
+		[NotReplicated]
 		public Guid ParentID { get; set; }
+		[NotReplicated]
 		public Guid UniqueID { get; set; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
@@ -64,6 +61,7 @@ namespace NetBlox.Instances
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
 		public GameManager GameManager;
+		public NetworkClient? NetworkOwner;
 		public List<Instance> Children = new();
 		public Dictionary<Script, Table> Tables = new();
 		public DateTime DestroyAt = DateTime.MaxValue;

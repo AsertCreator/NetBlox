@@ -2,6 +2,7 @@
 using NetBlox.Runtime;
 using NetBlox.Instances;
 using System.Text.Json.Serialization;
+using NetBlox.Structs;
 
 namespace NetBlox.Instances
 {
@@ -12,9 +13,36 @@ namespace NetBlox.Instances
 		[NotReplicated]
 		public Instance? Character { get; set; }
 		public bool IsLocalPlayer;
+		public NetworkClient Client;
 
 		public Player(GameManager ins) : base(ins) { }
 
+
+		[Lua([Security.Capability.CoreSecurity])]
+		public void Reload()
+		{
+			ClearAllChildren();
+			Backpack bc = new(GameManager);
+			PlayerGui pg = new(GameManager);
+			bc.Parent = this;
+			pg.Parent = this;
+
+			var sg = Root.GetService<StarterGui>().GetChildren();
+			for (int i = 0; i < sg.Length; i++)
+			{
+				var cl = sg[i].Clone();
+				cl.Parent = pg;
+			}
+
+			var sp = Root.GetService<StarterPack>().GetChildren();
+			for (int i = 0; i < sp.Length; i++)
+			{
+				var cl = sp[i].Clone();
+				cl.Parent = bc;
+			}
+
+			LogManager.LogInfo("Reloaded " + Name + "'s backpack and GUI!");
+		}
 		[Lua([Security.Capability.None])]
 		public void LoadCharacter()
 		{

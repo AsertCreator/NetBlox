@@ -1,33 +1,30 @@
-﻿using NetBlox.Instances;
+﻿using NetBlox.Common;
+using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Network;
-using Network.Enums;
-using Network.Extensions;
 using System.Net;
-using System.Net.Sockets;
-using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace NetBlox
 {
 	public sealed class NetworkManager
 	{
-		private struct ClientHandshake
+		[StructLayout(LayoutKind.Sequential)]
+		private unsafe struct ClientHandshake
 		{
-			public string? Username;
-			public int VersionMajor;
-			public int VersionMinor;
-			public int VersionPatch;
+			public fixed char Username[24];
+			public ushort VersionMajor;
+			public ushort VersionMinor;
+			public ushort VersionPatch;
 		}
-		private struct ServerHandshake
+		private unsafe struct ServerHandshake
 		{
-			public string PlaceName;
-			public string UniverseName;
-			public string Author;
+			public fixed char PlaceName[36];
+			public fixed char UniverseName[36];
+			public fixed char Author[36];
 
 			public ulong PlaceID;
 			public ulong UniverseID;
@@ -35,35 +32,49 @@ namespace NetBlox
 			public uint UniquePlayerID;
 
 			public int ErrorCode;
-			public string ErrorMessage;
 
 			public int InstanceCount;
-			public Guid DataModelInstance;
-			public Guid PlayerInstance;
-			public Guid CharacterInstance;
+			public fixed byte DataModelInstance[16];
+			public fixed byte PlayerInstance[16];
+			public fixed byte CharacterInstance[16];
 		}
 		public class Replication
 		{
-			public List<NetworkClient> To;
-			public Instance? What;
-			public bool RepChildren = true;
-			public bool AsService = false;
-			public Action? Callback;
+			public int Mode;
+			public int What;
+			public NetworkClient[] Recievers = [];
+			public Instance Target;
+			public bool ReplicateChildren = true;
+
+			public const int REPM_TOALL = 0;
+			public const int REPM_BUTOWNER = 1;
+			public const int REPM_TORECIEVERS = 2;
+
+			public const int REPW_NEWINST = 0;
+			public const int REPW_PROPCHG = 1;
+			public const int REPW_REPARNT = 2;
+
+			public Replication(int m, int w, Instance t)
+			{
+				Mode = m;
+				What = w;
+				Target = t;
+			}
 		}
-		public TcpClient NetworkClient = null!;
-		public TcpListener NetworkServer = null!;
+
 		public GameManager GameManager;
+		public List<NetworkClient> Clients = [];
+		public Queue<Replication> ReplicationQueue = [];
 		public bool IsServer;
 		public bool IsClient;
-		public int ServerPort = 2556;
-		public int ClientPort = 6552;
-		public Queue<Replication> ToReplicate = new();
-		public Connection? ServerConnection;
+		public int ServerPort = 2557; // new port lol
+		public int ClientPort = 6553;
+		public Connection? RemoteConnection;
+		public ServerConnectionContainer Server;
+		private static Type LST = typeof(LuaSignal);
 		private DataModel Root => GameManager.CurrentRoot;
-		private uint NextPID = 0;
+		private uint nextpid = 0;
 		private bool init;
-		private bool filtermutex = false;
-		private int loaded = 0;
 
 		public NetworkManager(GameManager gm, bool server, bool client)
 		{
@@ -75,477 +86,253 @@ namespace NetBlox
 				init = true;
 			}
 		}
-
-		public void Disconnect(NetworkClient nc)
-		{
-			if (!IsServer)
-				throw new NotSupportedException("Attempt to disconnect another player from client");
-
-			nc.IsDisconnecting = true;
-			if (nc.Player != null)
-			{
-				nc.Player.Character?.Destroy();
-				nc.Player.Destroy();
-			}
-			LogManager.LogInfo($"{nc.Username} had disconnected!");
-			GameManager.AllClients.Remove(nc);
-		}
-		public void DisconnectFromServer(Network.Enums.CloseReason cr)
-		{
-			if (NetworkClient != null)
-			{
-				NetworkClient.Close();
-				LogManager.LogInfo("Disconnected from server due to " + cr + "!");
-			}
-
-			Root.GetService<ReplicatedFirst>().Destroy();
-			Root.GetService<Players>().Destroy();
-			Root.GetService<Workspace>().Destroy();
-			Root.GetService<ReplicatedStorage>().Destroy();
-		}
-		public void StartServer()
+		/// <summary>
+		/// Starts NetBlox server on current <seealso cref="NetworkManager"/>, this function is blocking, start it in other thread.
+		/// </summary>
+		public unsafe void StartServer()
 		{
 			if (!IsServer)
 				throw new NotSupportedException("Cannot start server in non-server configuration!");
 
-			LogManager.LogInfo($"Starting listening for server connections at {ServerPort}...");
-			ServerConnectionContainer scc = ConnectionFactory.CreateServerConnectionContainer(ServerPort);
-			scc.ConnectionEstablished += (_x, _y) =>
+			Server = ConnectionFactory.CreateServerConnectionContainer(ServerPort);
+			Server.AllowUDPConnections = false;
+			Server.ConnectionEstablished += (x, y) =>
 			{
-				LogManager.LogInfo($"Connection established with {_x.IPRemoteEndPoint.Address}!");
-				_x.RegisterRawDataHandler("nb.handshake", (x, y) =>
+				x.EnableLogging = false;
+				LogManager.LogInfo(x.IPRemoteEndPoint.Address + " is trying to connect");
+				bool gothandshake = false;
+
+				x.RegisterRawDataHandler("nb2-handshake", (_x, _) =>
 				{
-					ServerHandshake sh = new ServerHandshake();
-					ClientHandshake ch = SerializationManager.DeserializeJsonBytes<ClientHandshake>(x.Data);
-					NetworkClient nc = new NetworkClient();
-					Players pls = Root.GetService<Players>()!;
-					Backpack bck = new Backpack(GameManager);
-					PlayerGui pg = new PlayerGui(GameManager);
-					Player plr = new Player(GameManager);
+					byte[] data = _x.Data;
+					ClientHandshake ch;
 
-					nc.Username = ch.Username;
-					nc.Connection = y;
-					nc.UniquePlayerID = NextPID++;
+					gothandshake = true;
+
+					fixed (byte* d = &data[0])
+						ch = Marshal.PtrToStructure<ClientHandshake>((nint)d);
+
+					// as per to constitution, we must immediately disconnect the client if version mismatch happens
+
+					if (ch.VersionMajor != Common.Version.VersionMajor ||
+						ch.VersionMinor != Common.Version.VersionMinor ||
+						ch.VersionPatch != Common.Version.VersionPatch)
+					{
+						LogManager.LogWarn(x.IPRemoteEndPoint.Address + " has wrong version! disconnecting...");
+						x.Close(Network.Enums.CloseReason.DifferentVersion);
+						return;
+					}
+
+					ServerHandshake sh = new();
+					NetworkClient nc = new();
+					nc.Connection = x;
+					nc.UniquePlayerID = nextpid++;
+					nc.Username = new string(ch.Username);
 					nc.IsDisconnecting = false;
-					nc.Player = plr;
 
-					pg.Reload();
-					bck.Reload();
-
-					bck.Parent = plr;
-					pg.Parent = plr;
-
-					GameManager.AllClients.Add(nc);
-
-					plr.Name = nc.Username ?? string.Empty;
-					plr.Parent = pls;
-					plr.LoadCharacter();
-
-					sh.PlaceName = GameManager.CurrentIdentity.PlaceName;
-					sh.UniverseName = GameManager.CurrentIdentity.UniverseName;
-					sh.Author = GameManager.CurrentIdentity.Author;
-					sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
-					sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
-					sh.UniquePlayerID = nc.UniquePlayerID;
-					sh.PlayerInstance = plr.UniqueID;
-					sh.CharacterInstance = plr.Character.UniqueID;
-					sh.DataModelInstance = Root.UniqueID;
-					sh.InstanceCount = 
-						Root.GetService<ReplicatedFirst>().CountDescendants() +
-						Root.GetService<Players>().CountDescendants() +
-						Root.GetService<Workspace>().CountDescendants() +
-						Root.GetService<ReplicatedStorage>().CountDescendants();
-
-					y.SendRawData("nb.placeinfo", SerializationManager.SerializeJsonBytes(sh));
-
-					LogManager.LogInfo($"Successfully performed handshake with {ch.Username}!");
-
-					Thread.Sleep(40);
-
-					_x.ConnectionClosed += (f, g) =>
+					// here we do a lot of shit
 					{
-						Disconnect(nc);
-					};
-					_x.RegisterRawDataHandler("nb.inc-inst", (x, y) =>
+						Player pl = new(GameManager);
+						pl.IsLocalPlayer = false;
+						pl.Name = nc.Username;
+						pl.Parent = Root.GetService<Players>();
+						pl.Client = nc;
+						nc.Player = pl;
+
+						pl.Reload();
+						pl.LoadCharacter();
+						Character character = (Character)pl.Character;
+
+						Marshal.Copy(
+							Encoding.Unicode.GetBytes(GameManager.CurrentIdentity.Author), 0, (nint)sh.Author,
+							GameManager.CurrentIdentity.Author.Length * 2); // optimization? more like dick sucking
+						Marshal.Copy(
+							Encoding.Unicode.GetBytes(GameManager.CurrentIdentity.UniverseName), 0, (nint)sh.UniverseName,
+							GameManager.CurrentIdentity.UniverseName.Length * 2);
+						Marshal.Copy(
+							Encoding.Unicode.GetBytes(GameManager.CurrentIdentity.PlaceName), 0, (nint)sh.PlaceName,
+							GameManager.CurrentIdentity.PlaceName.Length * 2);
+						Marshal.Copy(pl.UniqueID.ToByteArray(), 0, (nint)sh.PlayerInstance, 16);
+						Marshal.Copy(character.UniqueID.ToByteArray(), 0, (nint)sh.CharacterInstance, 16);
+						Marshal.Copy(Root.UniqueID.ToByteArray(), 0, (nint)sh.DataModelInstance, 16);
+
+						sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
+						sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
+						sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
+						sh.UniquePlayerID = nc.UniquePlayerID;
+
+						Clients.Add(nc);
+					}
+
+					x.SendRawData("nb2-placeinfo", ValueTypeExtensions.GetBytes(sh));
+					x.UnRegisterRawDataHandler("nb2-handshake");
+
+					bool acked = false;
+
+					x.RegisterRawDataHandler("nb2-init", (_, _) =>
 					{
-						var ins = SeqReceiveInstance(_x, x.ToUTF8String());
-						var to = GameManager.AllClients;
-						to.Remove(nc);
-						if (to.Count != 0)
+						acked = true;
+
+						AddReplication(Root, Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, false, [nc]);
+						AddReplication(Root.GetService<ReplicatedFirst>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<Workspace>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<ReplicatedStorage>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<Lighting>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<Players>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<StarterGui>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<StarterPack>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+
+						x.UnRegisterRawDataHandler("nb2-init"); // as per to constitution, we now do nothing lol
+					});
+
+					Task.Delay(5000).ContinueWith(_ =>
+					{
+						if (!acked)
 						{
-							lock (ToReplicate)
-							{
-								ToReplicate.Enqueue(new Replication()
-								{
-									To = to,
-									What = ins
-								});
-							}
+							LogManager.LogWarn(x.IPRemoteEndPoint.Address + " didn't acknowledge server handshake! disconnecting...");
+							x.Close(Network.Enums.CloseReason.NetworkError);
+							return;
 						}
 					});
-					_x.RegisterRawDataHandler("nb.req-int-rep", (x, y) =>
-					{
-						lock (ToReplicate)
-						{
-							ToReplicate.Enqueue(new Replication()
-							{
-								To = [nc],
-								What = Root,
-								RepChildren = false
-							});
-							ToReplicate.Enqueue(new Replication()
-							{
-								To = [nc],
-								What = Root.GetService<ReplicatedFirst>(),
-								AsService = true
-							});
-							ToReplicate.Enqueue(new Replication()
-							{
-								To = [nc],
-								What = Root.GetService<Players>(),
-								AsService = true
-							});
-							ToReplicate.Enqueue(new Replication()
-							{
-								To = [nc],
-								What = Root.GetService<Workspace>(),
-								AsService = true
-							});
-							ToReplicate.Enqueue(new Replication()
-							{
-								To = [nc],
-								What = Root.GetService<ReplicatedStorage>(),
-								AsService = true
-							});
-						}
-					});
-					_x.RegisterRawDataHandler("nb.filter-string", (x, y) =>
-					{
-						var dss = SerializationManager.DeserializeJsonBytes<Dictionary<string, string>>(x.Data)!;
-						var text = dss["Text"];
+				});
 
-						y.SendRawData("nb.filter-string-out", Encoding.UTF8.GetBytes(GameManager.FilterString(text)));
-					});
-
-					GameManager.AllowReplication = true;
+				Task.Delay(5000).ContinueWith(_ =>
+				{
+					if (!gothandshake)
+					{
+						LogManager.LogWarn(x.IPRemoteEndPoint.Address + " didn't send handshake! disconnecting...");
+						x.Close(Network.Enums.CloseReason.NetworkError);
+						return;
+					}
 				});
 			};
-			Task.Run(() =>
+
+			Server.Start();
+
+			// but actually we are not done
+
+			while (!GameManager.ShuttingDown)
 			{
-				while (!GameManager.ShuttingDown)
+				while (ReplicationQueue.Count == 0) ;
+				lock (ReplicationQueue)
 				{
-					try
+					var rq = ReplicationQueue.Dequeue();
+					var rc = rq.Recievers;
+					var ins = rq.Target;
+
+					switch (rq.Mode)
 					{
-						while (ToReplicate.Count == 0) ;
-						lock (ToReplicate)
-						{
-							var tr = ToReplicate.Dequeue();
-							var ins = tr.What;
-							var to = tr.To ?? GameManager.AllClients;
-
-							for (int i = 0; i < to.Count; i++)
-								SeqReplicateInstance(to[i].Connection!, ins!, tr.RepChildren, tr.AsService);
-
-							if (tr.Callback != null)
-								tr.Callback();
-						}
+						case Replication.REPM_TOALL:
+							rc = Clients.ToArray();
+							break;
+						case Replication.REPM_BUTOWNER:
+							rc = (NetworkClient[])Clients.ToArray().Clone();
+							if (ins.NetworkOwner != null)
+								rc.ToList().Remove(ins.NetworkOwner);
+							break;
+						case Replication.REPM_TORECIEVERS:
+							break;
 					}
-					catch (Exception ex)
+
+					switch (rq.What)
 					{
-						LogManager.LogError($"Could not replicate queued instance, well i dont care!");
+						case Replication.REPW_NEWINST:
+							PerformReplicationNew(ins, rc);
+							break;
+						case Replication.REPW_PROPCHG:
+							PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
+							break;
+						case Replication.REPW_REPARNT:
+							PerformReplicationReparent(ins, rc);
+							break;
 					}
 				}
-			});
+			}
 		}
 		public void ConnectToServer(IPAddress ipa)
 		{
 			if (IsServer)
 				throw new NotSupportedException("Cannot teleport in server");
 
-			Task.Run(() =>
+
+
+		}
+		private void PerformReplicationNew(Instance ins, NetworkClient[] recs)
+		{
+			using MemoryStream ms = new();
+			using BinaryWriter bw = new(ms);
+			var gm = ins.GameManager;
+			var type = ins.GetType(); // apparently gettype caches type object but i dont believe
+			var props = type.GetProperties();
+
+			bw.Write(SerializationManager.NetworkSerialize(ins.UniqueID, gm));
+			bw.Write(SerializationManager.NetworkSerialize(ins.ParentID, gm));
+
+			var c = 0;
+
+			for (int i = 0; i < props.Length; i++)
 			{
-				GameManager.RenderManager.Status = string.Empty;
+				var prop = props[i];
+				if (prop.PropertyType == LST)
+					continue;
 
-				try
-				{
-					LogManager.LogInfo($"Teleporting into server: {ipa}...");
-					GameManager.CurrentIdentity.Reset();
-					LuaRuntime.Threads.Clear();
+				if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName, out var x))
+					continue;
 
-					try
-					{
-						LogManager.LogInfo("Starting client network thread...");
+				c++;
+				var b = x(prop.GetValue(ins), gm);
 
-						var res = ConnectionResult.TCPConnectionNotAlive;
-						var con = ConnectionFactory.CreateTcpConnection(ipa.ToString(), ServerPort, out res);
+				bw.Write((short)prop.Name.Length);
+				bw.Write(SerializationManager.NetworkSerialize(prop.Name, gm));
+				bw.Write((short)b.Length);
+				bw.Write(b);
+			}
 
-						ServerConnection = con;
-						con.EnableLogging = false;
+			bw.Write((byte)c);
 
-						if (res == ConnectionResult.Connected)
-						{
-							LogManager.LogInfo($"Connected to {ipa}, performing C>S handshake...");
-							con.ConnectionClosed += (x, y) => 
-							{
-								DisconnectFromServer(x);
-							};
+			byte[] buf = ms.ToArray();
 
-							ServerHandshake sh = default;
-							ClientHandshake ch = new();
-							ch.Username = GameManager.Username;
-							ch.VersionMajor = AppManager.VersionMajor;
-							ch.VersionMinor = AppManager.VersionMinor;
-							ch.VersionPatch = AppManager.VersionPatch;
+			for (int i = 0; i < recs.Length; i++)
+			{
+				var nc = recs[i];
+				var con = nc.Connection;
+				if (con == null) continue; // how did this happen
 
-							con.RegisterRawDataHandler("nb.inc-inst", (x, y) =>
-							{
-								var ins = SeqReceiveInstance(y, x.ToUTF8String());
-								if (ins.UniqueID == sh.DataModelInstance)
-								{
-									Root.Name = (ins as DataModel)!.Name;
-									GameManager.IsRunning = true;
+				con.SendRawData("nb2-replicate", buf);
+			}
+		}
+		private void PerformReplicationPropchg(Instance ins, NetworkClient[] recs)
+		{
+			PerformReplicationNew(ins, recs); // same thing really
+		}
+		private unsafe struct ReparentPacket
+		{
+			public fixed byte Target[16];
+			public fixed byte Parent[16];
+		}
+		private unsafe void PerformReplicationReparent(Instance ins, NetworkClient[] recs)
+		{
+			ReparentPacket rp = new();
+			Marshal.Copy(ins.UniqueID.ToByteArray(), 0, (nint)rp.Target, 16);
+			Marshal.Copy(ins.ParentID.ToByteArray(), 0, (nint)rp.Parent, 16);
+			var bytes = ValueTypeExtensions.GetBytes(rp);
 
-									con.RegisterRawDataHandler("nb.repar-inst", (x, y) =>
-									{
-										var dss = SerializationManager.DeserializeJsonBytes<Dictionary<string, string>>(x.Data);
-										var ins = GameManager.GetInstance(Guid.Parse(dss["Instance"]));
-										var par = GameManager.GetInstance(Guid.Parse(dss["Parent"]));
+			for (int i = 0; i < recs.Length; i++)
+			{
+				var nc = recs[i];
+				var con = nc.Connection;
+				if (con == null) continue; // how did this happen
 
-										if (ins == null || par == null)
-										{
-											LogManager.LogError("Failed to reparent instance, because new parent does not exist");
-											return;
-										}
-										else
-										{
-											ins.Parent = par;
-										}
-									});
-								}
-								if (ins.UniqueID == sh.PlayerInstance)
-								{
-									var plr = (Player)ins;
-									var pls = Root.GetService<Players>();
-									plr.IsLocalPlayer = true;
-									pls.LocalPlayer = plr;
-								}
-								if (ins.UniqueID == sh.CharacterInstance)
-								{
-									var chr = (Character)ins;
-									chr.IsLocalPlayer = true;
-									var cam = new Camera(GameManager);
-									cam.Parent = Root.GetService<Workspace>();
-									cam.CameraSubject = chr;
-								}
-								if (loaded++ == sh.InstanceCount)
-								{
-									Root.GetService<CoreGui>().HideTeleportGui();
-								}
-							});
-							con.RegisterRawDataHandler("nb.inc-service", (x, y) =>
-							{
-								var ins = SeqReceiveInstance(y, x.ToUTF8String());
-								ins.Parent = Root;
-							});
-							con.RegisterRawDataHandler("nb.placeinfo", (x, y) =>
-							{
-								sh = SerializationManager.DeserializeJsonBytes<ServerHandshake>(x.Data);
-
-								if (sh.ErrorCode != 0)
-								{
-									var msg = $"Could not connect to the server! {sh.ErrorCode} - {sh.ErrorMessage}";
-									LogManager.LogError(msg);
-									GameManager.RenderManager.Status = msg;
-									return;
-								}
-
-								GameManager.CurrentIdentity.PlaceName = sh.PlaceName;
-								GameManager.CurrentIdentity.PlaceID = sh.PlaceID;
-								GameManager.CurrentIdentity.UniverseName = sh.UniverseName;
-								GameManager.CurrentIdentity.UniverseID = sh.UniverseID;
-								GameManager.CurrentIdentity.Author = sh.Author;
-								GameManager.CurrentIdentity.UniquePlayerID = sh.UniquePlayerID;
-								GameManager.CurrentIdentity.MaxPlayerCount = sh.MaxPlayerCount;
-
-								Root.GetService<CoreGui>().ShowTeleportGui(sh.PlaceName, sh.Author, (int)sh.PlaceID, 0);
-
-								y.SendRawData("nb.req-int-rep", []);
-							});
-
-							con.SendRawData("nb.handshake", SerializationManager.SerializeJsonBytes(ch));
-						}
-					}
-					catch (Exception ex)
-					{
-						var msg = $"Could not connect to the server! {ex.GetType().Name} - {ex.Message}";
-						var pls = Root.GetService<Players>();
-						if (pls == null) return;
-						var plr = pls.LocalPlayer as Player;
-
-						LogManager.LogError(msg);
-
-						plr?.Kick(msg);
-
-						return;
-					}
-				}
-				catch (Exception ex)
-				{
-					GameManager.RenderManager.Status = $"Could not connect due to error! {ex.GetType().FullName}: {ex.Message}";
-					LogManager.LogError(GameManager.RenderManager.Status);
-				}
+				con.SendRawData("nb2-reparent", bytes);
+			}
+		}
+		public void AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
+		{
+			ReplicationQueue.Enqueue(new(m, w, inst)
+			{
+				Recievers = nc ?? [],
+				ReplicateChildren = rc
 			});
-		}
-		public string SeqFilterString(string text, Guid from, Guid to) => SeqFilterString(ServerConnection, text, from, to);
-		public string SeqFilterString(Connection c, string text, Guid from, Guid to)
-		{
-			try
-			{
-				while (filtermutex) ;
-				filtermutex = true;
-				string? outp = null;
-				var yes = false;
-				var dss = new Dictionary<string, string>();
-
-				dss["From"] = from.ToString();
-				dss["To"] = to.ToString();
-				dss["Text"] = text;
-
-				c.SendRawData("nb.filter-string", SerializationManager.SerializeJsonBytes(dss));
-				c.RegisterRawDataHandler("nb.filter-string-out", (x, y) =>
-				{
-					c.UnRegisterRawDataHandler("nb.filter-string-out");
-					outp = x.ToUTF8String();
-					yes = true;
-				});
-
-				while (!yes) ;
-				return outp!;
-			}
-			catch
-			{
-				LogManager.LogError($"Failed to perform chat string filtering ({from}->{to})!");
-				return "";
-			}
-		}
-		public void SeqReparentInstance(Connection c, Instance ins)
-		{
-			try
-			{
-				var dss = new Dictionary<string, string>();
-				dss["Instance"] = ins.UniqueID.ToString();
-				dss["Parent"] = ins.ParentID.ToString();
-				c.SendRawData("nb.repar-inst", SerializationManager.SerializeJsonBytes(dss));
-			}
-			catch
-			{
-				LogManager.LogError($"Failed to perform network instance reparent ({ins.UniqueID}->{ins.ParentID})!");
-			}
-		}
-		public void SeqReplicateInstance(Connection c, Instance ins, bool repchildren, bool asservice)
-		{
-			try
-			{
-				var dss = new Dictionary<string, string>();
-				var typ = ins.GetType();
-				var prs = typ.GetProperties();
-
-				if (typ.GetCustomAttribute<NotReplicatedAttribute>() != null) // we dont do THAT
-					return;
-
-				for (int i = 0; i < prs.Length; i++)
-				{
-					var prop = prs[i];
-					var val = prop.GetValue(ins);
-					if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null) continue;
-					if (val == null) continue;
-
-					dss[prop.Name] = SerializationManager.Serialize(val);
-				}
-
-				var key = "nb." + ins.UniqueID;
-
-				c.RegisterRawDataHandler(key, (x, y) =>
-				{
-					y.UnRegisterRawDataHandler(key);
-					if (repchildren)
-					{
-						var ch = ins.GetChildren();
-						for (int i = 0; i < ch.Length; i++)
-							SeqReplicateInstance(c, ch[i], true, false);
-					}
-				});
-
-				if (!asservice)
-					c.SendRawData("nb.inc-inst", SerializationManager.SerializeJsonBytes(dss));
-				else
-					c.SendRawData("nb.inc-service", SerializationManager.SerializeJsonBytes(dss));
-			}
-			catch
-			{
-				LogManager.LogError($"Failed to replicate instance ({ins.UniqueID})!");
-			}
-		}
-		public Instance SeqReceiveInstance(Connection c, string tag)
-		{
-			var inf = JsonSerializer.Deserialize<Dictionary<string, string>>(tag);
-			var uid = Guid.Parse(inf["UniqueID"]);
-			var pre = (from x in GameManager.AllInstances where x.UniqueID == uid select x).FirstOrDefault();
-			if (pre == null)
-			{
-				var ins = InstanceCreator.CreateInstance(inf["ClassName"], GameManager);
-				var typ = ins.GetType();
-				var prs = typ.GetProperties();
-
-				ins.WasReplicated = true;
-
-				for (int i = 0; i < inf.Count; i++)
-				{
-					try
-					{
-						var kvp = inf.ElementAt(i);
-						var prop = Array.Find(prs, x => x.Name == kvp.Key);
-						if (prop == null) continue;
-						if (prop.CanWrite)
-							prop.SetValue(ins, SerializationManager.Deserialize(prop.PropertyType, inf[kvp.Key]));
-					}
-					catch
-					{
-						// we had failed
-					}
-				}
-
-				ins.Parent = (from x in GameManager.AllInstances where x.UniqueID == ins.ParentID select x).FirstOrDefault();
-
-				var key = "nb." + ins.UniqueID;
-
-				c.SendRawData(key, []);
-
-				return ins;
-			}
-			else
-			{
-				var typ = pre.GetType();
-				var prs = typ.GetProperties();
-
-				for (int i = 0; i < inf.Count; i++)
-				{
-					try
-					{
-						var kvp = inf.ElementAt(i);
-						var prop = Array.Find(prs, x => x.Name == kvp.Key);
-						if (prop == null) continue;
-						if (prop.CanWrite)
-							prop.SetValue(pre, SerializationManager.Deserialize(prop.PropertyType, inf[kvp.Key]));
-					}
-					catch
-					{
-						// we had failed
-					}
-				}
-
-				return pre;
-			}
 		}
 	}
 }

@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)OnlineMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)StreamExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ValueTypeExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Version.cs" />
   </ItemGroup>
 </Project>
