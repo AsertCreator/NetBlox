@@ -43,7 +43,6 @@ namespace NetBlox
 				string data = await res.Content.ReadAsStringAsync();
 				Dictionary<string, string> result = SerializationManager.DeserializeJson<Dictionary<string, string>>(data)!;
 				Username = user;
-				AppManager.SetUsername(Username);
 				IsOffline = false;
 				return Guid.Parse(result["token"]);
 			}
@@ -53,7 +52,6 @@ namespace NetBlox
 			IsOffline = true;
 			LastLogin = null;
 			Username = "Guest " + Random.Shared.Next(100, 9999);
-			AppManager.SetUsername(Username);
 		}
 		public static async Task<bool> SetOnlineModeAsync(OnlineMode pm)
 		{

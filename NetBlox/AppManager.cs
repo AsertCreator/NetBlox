@@ -57,34 +57,7 @@ namespace NetBlox
 							LogManager.LogInfo($"Setting fast number {key} to {nu}");
 							break;
 						}
-					case "--guest":
-						{
-							Profile.LoginAsGuest();
-							break;
-						}
-					case "--login":
-						{
-							var user = args[++i];
-							var pass = args[++i];
-							var task = Profile.LoginAsync(user, pass);
-							task.Wait();
-							if (task.Result == null)
-							{
-								LogManager.LogWarn("Login failed, logging as guest...");
-								Profile.LoginAsGuest();
-							}
-							break;
-						}
 				}
-			}
-		}
-		public static void SetUsername(string user)
-		{
-			LogManager.LogInfo("Setting username as " + user);
-			for (int i = 0; i < GameManagers.Count; i++)
-			{
-				var gm = GameManagers[i];
-				gm.Username = user;
 			}
 		}
 		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<string, GameManager> callback)

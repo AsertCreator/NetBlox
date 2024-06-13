@@ -34,7 +34,7 @@ namespace NetBlox
 		public bool UsePublicService = false;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
-		public string Username = ""; // bye bye DevDevDev
+		public string Username => Profile.Username; // bye bye DevDevDev
 		public event EventHandler? ShutdownEvent;
 		public event InstanceEventHandler? AddedInstance;
 		public bool AllowReplication = false;
@@ -91,8 +91,28 @@ namespace NetBlox
 							rbxlinit = args[++i];
 							break;
 						}
+					case "--guest":
+						{
+							Profile.LoginAsGuest();
+							break;
+						}
+					case "--login":
+						{
+							var user = args[++i];
+							var pass = args[++i];
+							var task = Profile.LoginAsync(user, pass);
+							task.Wait();
+							if (task.Result == null)
+							{
+								LogManager.LogWarn("Login failed, logging as guest...");
+								Profile.LoginAsGuest();
+							}
+							break;
+						}
 				}
 			}
+
+			LogManager.LogInfo("Logged in as " + Username);
 
 			LogManager.LogInfo("Initializing verbs...");
 			Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
