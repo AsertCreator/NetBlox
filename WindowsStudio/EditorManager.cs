@@ -1,5 +1,4 @@
 ﻿using ImGuiNET;
-using Microsoft.VisualBasic.Logging;
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
