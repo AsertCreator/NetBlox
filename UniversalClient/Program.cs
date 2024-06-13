@@ -28,7 +28,12 @@ namespace NetBlox.Client
 			PlatformService.QueuedTeleport = (xo) =>
 			{
 				var gm = AppManager.GameManagers[0];
-				gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
+
+				gm.NetworkManager.ClientReplicator = Task.Run(async delegate ()
+				{
+					gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
+					return new object();
+				}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
 			};
 			var cg = AppManager.CreateGame(new()
 			{

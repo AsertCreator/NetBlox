@@ -71,6 +71,8 @@ namespace NetBlox
 		public int ClientPort = 6553;
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer Server;
+		public CancellationTokenSource ClientReplicatorCanceller = new();
+		public Task<object> ClientReplicator;
 		private object replock = new();
 		private static Type LST = typeof(LuaSignal);
 		private DataModel Root => GameManager.CurrentRoot;
@@ -361,6 +363,44 @@ namespace NetBlox
 					Thread.Sleep(1);
 				}
 			});
+
+			while (!GameManager.ShuttingDown)
+			{
+				while (ReplicationQueue.Count == 0) ;
+				lock (ReplicationQueue)
+				{
+					var rq = ReplicationQueue.Dequeue();
+					var rc = rq.Recievers;
+					var ins = rq.Target;
+
+					switch (rq.Mode)
+					{
+						case Replication.REPM_TOALL:
+							rc = Clients.ToArray();
+							break;
+						case Replication.REPM_BUTOWNER:
+							rc = (NetworkClient[])Clients.ToArray().Clone();
+							if (ins.NetworkOwner != null)
+								rc.ToList().Remove(ins.NetworkOwner);
+							break;
+						case Replication.REPM_TORECIEVERS:
+							break;
+					}
+
+					switch (rq.What)
+					{
+						case Replication.REPW_NEWINST:
+							Task.Delay(12).ContinueWith(x => PerformReplicationNew(ins, rc)); // as per constitution
+							break;
+						case Replication.REPW_PROPCHG:
+							PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
+							break;
+						case Replication.REPW_REPARNT:
+							PerformReplicationReparent(ins, rc);
+							break;
+					}
+				}
+			}
 		}
 		public void PerformKick(NetworkClient nc, string msg, bool islocal)
 		{

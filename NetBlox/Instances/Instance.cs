@@ -62,6 +62,7 @@ namespace NetBlox.Instances
 		public bool WasReplicated = false;
 		public GameManager GameManager;
 		public NetworkClient? NetworkOwner;
+		public bool IAmOwner = false;
 		public List<Instance> Children = new();
 		public Dictionary<Script, Table> Tables = new();
 		public DateTime DestroyAt = DateTime.MaxValue;

@@ -39,8 +39,6 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public string GetPreference(string key) => AppManager.GetPreference(key);
 		[Lua([Security.Capability.CoreSecurity])]
-		public void ConnectToServer(string addr) => GameManager.NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
-		[Lua([Security.Capability.CoreSecurity])]
 		public void OpenBrowserWindow(string url)
 		{
 			ProcessStartInfo psi = new();
