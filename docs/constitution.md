@@ -127,3 +127,46 @@ was made by the network owner, server replicates the instance to everybody but t
 
 All replication packets are sent to this queue with recievers explicitly specified. When the time
 comes, server takes one packet out of there and sends it to the clients.
+
+## System structure lol
+
+What is NetBlox? Usually this kind of question is answered in the first paragraph, but here we
+are asking about what things make up NetBlox. So first thing that player interacts with is
+Public Service, precisely its Web Service, that provides a cute web interface, just like
+`www.roblox.com`. 
+
+The thing is, if we think of Public Service as a social media part of Roblox
+platform, that there is no single, united social media part of NetBlox, there are multiple
+Public Services, hosted by different people, can might be modded. Thats actually the whole
+point - so people could traverse throught different Public Services and experience different
+things, like different textures, sounds, gameplay.
+
+Perhaps I should shut up, but anyway, after player logs into the Public Service of their choice,
+they get to download the client, which MIGHT BE different from the official NetBlox client I
+just realized (basically PS can offer not an official NB client, but their own).
+
+Actually they don't download, well, the client itself. The client is a game, that has to be
+installed, its not portable in means that the files can be moved around (theoretically and
+how-i-meant-this-to-be-because-i-felt-like-it-ly). When the player treis to join the game, PS
+will to open the client that already is installed, otherwise it will offer the player to
+download the installer.
+
+The installer is a very episodical character in this non-sense, but it first creates a necessary
+folder structure, moves itself to it, downloads NetBlox client to the folder, unpacks the archive,
+deletes the archive, and starts the client. Client can then re-run installer from the same folder,
+if it detects that new version has rolled out.
+
+The client offers gameplay, and... well... nothing more lmao.
+
+The server, on the other hand, is a more intersting thing. It uses the same codebase as the
+client, but instead of providing gameplay, it just makes the NetBlox feel like it's a multiplayer
+game. Nothing much else to say here, except that it has constant connection to the Public Service
+that runs it, the PS process is responsible for chat filtration, asset delivery, users, friends,
+social media part of NetBlox.
+
+Of course I couldn't resist from creating another caveat. The server can run in offline mode,
+so its not connected to any Public Service, all user connecting to it are guests (remember when
+that was a thing?), chat filteration, asset delivery, and everything, excluding the aforementioned
+"social media part of NetBlox" is handles by it.
+
+My hands died while writing this, please help me aaaaaaaaaaaaa, im done.
