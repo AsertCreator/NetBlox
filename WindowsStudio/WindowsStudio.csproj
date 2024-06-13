@@ -8,7 +8,6 @@
     <AssemblyName>NetBloxStudio</AssemblyName>
     <RootNamespace>NetBlox.Studio</RootNamespace>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-	  <UseWindowsForms>true</UseWindowsForms>
 	  <ApplicationIcon>favicon.ico</ApplicationIcon>
   </PropertyGroup>
 

@@ -5,7 +5,8 @@ namespace NetBlox.Instances.Services
 	public class Players : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public Instance? LocalPlayer { get; set; }
+		public Instance? LocalPlayer => CurrentPlayer;
+		public Player? CurrentPlayer;
 
 		public Players(GameManager ins) : base(ins) { }
 

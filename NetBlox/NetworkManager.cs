@@ -4,7 +4,9 @@ using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Network;
+using Network.Enums;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -12,19 +14,18 @@ namespace NetBlox
 {
 	public sealed class NetworkManager
 	{
-		[StructLayout(LayoutKind.Sequential)]
 		private unsafe struct ClientHandshake
 		{
-			public fixed char Username[24];
+			public string Username;
 			public ushort VersionMajor;
 			public ushort VersionMinor;
 			public ushort VersionPatch;
 		}
 		private unsafe struct ServerHandshake
 		{
-			public fixed char PlaceName[36];
-			public fixed char UniverseName[36];
-			public fixed char Author[36];
+			public string PlaceName;
+			public string UniverseName;
+			public string Author;
 
 			public ulong PlaceID;
 			public ulong UniverseID;
@@ -34,9 +35,9 @@ namespace NetBlox
 			public int ErrorCode;
 
 			public int InstanceCount;
-			public fixed byte DataModelInstance[16];
-			public fixed byte PlayerInstance[16];
-			public fixed byte CharacterInstance[16];
+			public string DataModelInstance;
+			public string PlayerInstance;
+			public string CharacterInstance;
 		}
 		public class Replication
 		{
@@ -44,7 +45,6 @@ namespace NetBlox
 			public int What;
 			public NetworkClient[] Recievers = [];
 			public Instance Target;
-			public bool ReplicateChildren = true;
 
 			public const int REPM_TOALL = 0;
 			public const int REPM_BUTOWNER = 1;
@@ -71,6 +71,7 @@ namespace NetBlox
 		public int ClientPort = 6553;
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer Server;
+		private object replock = new();
 		private static Type LST = typeof(LuaSignal);
 		private DataModel Root => GameManager.CurrentRoot;
 		private uint nextpid = 0;
@@ -105,12 +106,9 @@ namespace NetBlox
 				x.RegisterRawDataHandler("nb2-handshake", (_x, _) =>
 				{
 					byte[] data = _x.Data;
-					ClientHandshake ch;
+					ClientHandshake ch = SerializationManager.DeserializeJson<ClientHandshake>(Encoding.UTF8.GetString(data));
 
 					gothandshake = true;
-
-					fixed (byte* d = &data[0])
-						ch = Marshal.PtrToStructure<ClientHandshake>((nint)d);
 
 					// as per to constitution, we must immediately disconnect the client if version mismatch happens
 
@@ -119,53 +117,55 @@ namespace NetBlox
 						ch.VersionPatch != Common.Version.VersionPatch)
 					{
 						LogManager.LogWarn(x.IPRemoteEndPoint.Address + " has wrong version! disconnecting...");
-						x.Close(Network.Enums.CloseReason.DifferentVersion);
+						x.Close(CloseReason.DifferentVersion);
 						return;
 					}
 
 					ServerHandshake sh = new();
-					NetworkClient nc = new();
-					nc.Connection = x;
-					nc.UniquePlayerID = nextpid++;
-					nc.Username = new string(ch.Username);
-					nc.IsDisconnecting = false;
+					NetworkClient nc;
 
 					// here we do a lot of shit
 					{
 						Player pl = new(GameManager);
 						pl.IsLocalPlayer = false;
-						pl.Name = nc.Username;
 						pl.Parent = Root.GetService<Players>();
+
+						nc = new(new(ch.Username), nextpid++, x, pl);
+
+						pl.Name = nc.Username;
 						pl.Client = nc;
 						nc.Player = pl;
 
 						pl.Reload();
 						pl.LoadCharacter();
-						Character character = (Character)pl.Character;
 
-						Marshal.Copy(
-							Encoding.Unicode.GetBytes(GameManager.CurrentIdentity.Author), 0, (nint)sh.Author,
-							GameManager.CurrentIdentity.Author.Length * 2); // optimization? more like dick sucking
-						Marshal.Copy(
-							Encoding.Unicode.GetBytes(GameManager.CurrentIdentity.UniverseName), 0, (nint)sh.UniverseName,
-							GameManager.CurrentIdentity.UniverseName.Length * 2);
-						Marshal.Copy(
-							Encoding.Unicode.GetBytes(GameManager.CurrentIdentity.PlaceName), 0, (nint)sh.PlaceName,
-							GameManager.CurrentIdentity.PlaceName.Length * 2);
-						Marshal.Copy(pl.UniqueID.ToByteArray(), 0, (nint)sh.PlayerInstance, 16);
-						Marshal.Copy(character.UniqueID.ToByteArray(), 0, (nint)sh.CharacterInstance, 16);
-						Marshal.Copy(Root.UniqueID.ToByteArray(), 0, (nint)sh.DataModelInstance, 16);
+						sh.Author = GameManager.CurrentIdentity.Author;
+						sh.PlaceName = GameManager.CurrentIdentity.PlaceName;
+						sh.UniverseName = GameManager.CurrentIdentity.UniverseName;
+						sh.PlayerInstance = pl.UniqueID.ToString();
+						sh.CharacterInstance = pl.Character!.UniqueID.ToString();
+						sh.DataModelInstance = Root.UniqueID.ToString();
 
 						sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
 						sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
 						sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
 						sh.UniquePlayerID = nc.UniquePlayerID;
+						sh.InstanceCount = 2; // idk lol
 
 						Clients.Add(nc);
 					}
 
-					x.SendRawData("nb2-placeinfo", ValueTypeExtensions.GetBytes(sh));
+					x.SendRawData("nb2-placeinfo", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(sh)));
 					x.UnRegisterRawDataHandler("nb2-handshake");
+
+					void OnClose(CloseReason cr, Connection c)
+					{
+						LogManager.LogInfo(nc.Username + " had disconnected");
+						nc.Player.Character.Destroy();
+						nc.Player.Destroy();
+					}
+
+					x.ConnectionClosed += OnClose;
 
 					bool acked = false;
 
@@ -173,7 +173,6 @@ namespace NetBlox
 					{
 						acked = true;
 
-						AddReplication(Root, Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, false, [nc]);
 						AddReplication(Root.GetService<ReplicatedFirst>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Workspace>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<ReplicatedStorage>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
@@ -190,7 +189,7 @@ namespace NetBlox
 						if (!acked)
 						{
 							LogManager.LogWarn(x.IPRemoteEndPoint.Address + " didn't acknowledge server handshake! disconnecting...");
-							x.Close(Network.Enums.CloseReason.NetworkError);
+							x.Close(CloseReason.NetworkError);
 							return;
 						}
 					});
@@ -201,7 +200,7 @@ namespace NetBlox
 					if (!gothandshake)
 					{
 						LogManager.LogWarn(x.IPRemoteEndPoint.Address + " didn't send handshake! disconnecting...");
-						x.Close(Network.Enums.CloseReason.NetworkError);
+						x.Close(CloseReason.NetworkError);
 						return;
 					}
 				});
@@ -237,7 +236,7 @@ namespace NetBlox
 					switch (rq.What)
 					{
 						case Replication.REPW_NEWINST:
-							PerformReplicationNew(ins, rc);
+							Task.Delay(12).ContinueWith(x => PerformReplicationNew(ins, rc)); // as per constitution
 							break;
 						case Replication.REPW_PROPCHG:
 							PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
@@ -249,13 +248,135 @@ namespace NetBlox
 				}
 			}
 		}
-		public void ConnectToServer(IPAddress ipa)
+		public unsafe void ConnectToServer(IPAddress ipa)
 		{
 			if (IsServer)
 				throw new NotSupportedException("Cannot teleport in server");
 
+			var cn = ConnectionResult.TCPConnectionNotAlive;
+			var tcp = ConnectionFactory.CreateTcpConnection(ipa.ToString(), ServerPort, out cn);
+			tcp.EnableLogging = false;
+			RemoteConnection = tcp;
 
+			if (cn != ConnectionResult.Connected)
+				throw new Exception("Could not connect to remote server!");
 
+			ClientHandshake ch;
+			ch.Username = GameManager.Username;
+			ch.VersionMajor = Common.Version.VersionMajor;
+			ch.VersionMinor = Common.Version.VersionMinor;
+			ch.VersionPatch = Common.Version.VersionPatch;
+
+			void OnClose(CloseReason cr, Connection c)
+			{
+				if (GameManager.RenderManager != null)
+					GameManager.RenderManager.ShowKickMessage("The server had closed");
+			}
+
+			bool gotpi = false;
+
+			tcp.SendRawData("nb2-handshake", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(ch)));
+			tcp.RegisterRawDataHandler("nb2-placeinfo", (x, _) =>
+			{
+				gotpi = true;
+				tcp.UnRegisterRawDataHandler("nb2-placeinfo");
+				ServerHandshake sh = SerializationManager.DeserializeJson<ServerHandshake>(Encoding.UTF8.GetString(x.Data));
+
+				if (sh.ErrorCode != 0)
+					throw new Exception("Weird thing happened");
+
+				tcp.ConnectionClosed += OnClose;
+
+				GameManager.CurrentIdentity.PlaceName = sh.PlaceName;
+				GameManager.CurrentIdentity.UniverseName = sh.UniverseName;
+				GameManager.CurrentIdentity.PlaceID = sh.PlaceID;
+				GameManager.CurrentIdentity.UniverseID = sh.UniverseID;
+				GameManager.CurrentIdentity.UniquePlayerID = sh.UniquePlayerID;
+				GameManager.CurrentIdentity.Author = sh.Author;
+				GameManager.CurrentIdentity.MaxPlayerCount = sh.MaxPlayerCount;
+
+				Root.GetService<CoreGui>().ShowTeleportGui(
+					GameManager.CurrentIdentity.PlaceName, GameManager.CurrentIdentity.Author,
+					(int)GameManager.CurrentIdentity.PlaceID, (int)GameManager.CurrentIdentity.UniverseID);
+
+				Root.UniqueID = Guid.Parse(sh.DataModelInstance);
+				Root.Name = sh.PlaceName;
+				Root.Clear();
+
+				// i feel some netflix ce exploit shit can be done here.
+
+				int actinstc = sh.InstanceCount - 2; // didn't i just tell the server that optimal instance count is 2, so here its 0?
+				int gotinsts = 0;
+				Camera c = new(GameManager);
+
+				tcp.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
+				{
+					if (++gotinsts >= actinstc)
+						Root.GetService<CoreGui>().HideTeleportGui();
+
+					var ins = RecieveNewInstance(rep.Data);
+
+					if (ins is Workspace) c.Parent = Root;
+					if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID)
+					{
+						var ch = ins as Character;
+						ch.IsLocalPlayer = true;
+						c.CameraSubject = ch;
+					}
+					if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
+					{
+						Root.GetService<Players>().CurrentPlayer = (Player)ins;
+						Root.GetService<Players>().CurrentPlayer.IsLocalPlayer = true;
+					}
+				});
+				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>
+				{
+					Guid inst = new Guid(rep.Data[0..16]);
+					Guid newp = new Guid(rep.Data[16..32]);
+					Instance? actinst = GameManager.GetInstance(inst);
+					if (actinst != null)
+					{
+						Instance? parent = GameManager.GetInstance(inst);
+						if (parent != null)
+							actinst.Parent = parent;
+						else
+							actinst.Destroy();
+					}
+				});
+				tcp.RegisterRawDataHandler("nb2-kick", (rep, _) =>
+				{
+					tcp.ConnectionClosed -= OnClose;
+					if (GameManager.RenderManager != null)
+						GameManager.RenderManager.ShowKickMessage(Encoding.UTF8.GetString(rep.Data));
+				});
+				tcp.SendRawData("nb2-init", []);
+			});
+
+			Task.Run(() =>
+			{
+				for (int i = 0; i < 7000 && !gotpi; i++)
+				{
+					if (!tcp.IsAlive)
+						throw new Exception("Your NetBlox client is outdated!");
+					Thread.Sleep(1);
+				}
+			});
+		}
+		public void PerformKick(NetworkClient nc, string msg, bool islocal)
+		{
+			// it's not really constitutionally defined, but idc.
+			if (RemoteConnection == null) return;
+			if (IsClient && !islocal)
+				throw new Exception("Cannot kick non-local player from client");
+			if (IsClient && islocal)
+			{
+				RemoteConnection.Close(CloseReason.ClientClosed);
+				if (GameManager.RenderManager != null)
+					GameManager.RenderManager.ShowKickMessage(msg);
+			}
+			// we are on server
+			nc.Connection.SendRawData("nb2-kick", Encoding.UTF8.GetBytes(msg));
+			nc.Connection.Close(CloseReason.ServerClosed);
 		}
 		private void PerformReplicationNew(Instance ins, NetworkClient[] recs)
 		{
@@ -265,25 +386,29 @@ namespace NetBlox
 			var type = ins.GetType(); // apparently gettype caches type object but i dont believe
 			var props = type.GetProperties();
 
-			bw.Write(SerializationManager.NetworkSerialize(ins.UniqueID, gm));
-			bw.Write(SerializationManager.NetworkSerialize(ins.ParentID, gm));
+			bw.Write(ins.UniqueID.ToByteArray());
+			bw.Write(ins.ParentID.ToByteArray());
+			bw.Write(ins.ClassName);
 
 			var c = 0;
 
 			for (int i = 0; i < props.Length; i++)
 			{
 				var prop = props[i];
+
+				if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
+					continue;
 				if (prop.PropertyType == LST)
 					continue;
-
-				if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName, out var x))
+				if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName ?? "", out var x))
 					continue;
 
+				var v = prop.GetValue(ins);
+				if (v == null) continue;
 				c++;
-				var b = x(prop.GetValue(ins), gm);
+				var b = x(v, gm);
 
-				bw.Write((short)prop.Name.Length);
-				bw.Write(SerializationManager.NetworkSerialize(prop.Name, gm));
+				bw.Write(prop.Name);
 				bw.Write((short)b.Length);
 				bw.Write(b);
 			}
@@ -301,21 +426,57 @@ namespace NetBlox
 				con.SendRawData("nb2-replicate", buf);
 			}
 		}
+		private Instance RecieveNewInstance(byte[] data)
+		{
+			lock (replock)
+			{
+				using MemoryStream ms = new(data);
+				using BinaryReader br = new(ms);
+
+				int propc = data[data.Length - 1];
+				Guid guid = new(br.ReadBytes(16));
+				Guid newp = new(br.ReadBytes(16));
+
+				var ins = GameManager.GetInstance(guid);
+				if (ins == null)
+					ins = InstanceCreator.CreateInstance(br.ReadString(), GameManager);
+				ins.UniqueID = guid;
+				ins.WasReplicated = true;
+				var type = ins.GetType();
+
+				ins.Parent = GameManager.GetInstance(newp);
+
+				for (int i = 0; i < propc; i++)
+				{
+					string propname = br.ReadString();
+					var prop = type.GetProperty(propname);
+					if (prop == null) // how did this happen
+						continue;
+
+					var ptyp = prop.PropertyType;
+					var pnam = ptyp.FullName;
+					var bc = br.ReadInt16();
+					var pbytes = br.ReadBytes(bc);
+
+					if (SerializationManager.NetworkDeserializers.TryGetValue(pnam, out var x) && prop.CanWrite) 
+						prop.SetValue(ins, x(pbytes, GameManager));
+				}
+
+				LogManager.LogInfo(guid + ", classname: " + ins.ClassName);
+				GameManager.IsRunning = true; // i cant find better place
+				return ins;
+			}
+		}
 		private void PerformReplicationPropchg(Instance ins, NetworkClient[] recs)
 		{
 			PerformReplicationNew(ins, recs); // same thing really
 		}
-		private unsafe struct ReparentPacket
-		{
-			public fixed byte Target[16];
-			public fixed byte Parent[16];
-		}
 		private unsafe void PerformReplicationReparent(Instance ins, NetworkClient[] recs)
 		{
-			ReparentPacket rp = new();
-			Marshal.Copy(ins.UniqueID.ToByteArray(), 0, (nint)rp.Target, 16);
-			Marshal.Copy(ins.ParentID.ToByteArray(), 0, (nint)rp.Parent, 16);
-			var bytes = ValueTypeExtensions.GetBytes(rp);
+			var bytes = new List<byte>();
+			bytes.AddRange(ins.UniqueID.ToByteArray());
+			bytes.AddRange(ins.ParentID.ToByteArray());
+			var b = bytes.ToArray();
 
 			for (int i = 0; i < recs.Length; i++)
 			{
@@ -323,15 +484,17 @@ namespace NetBlox
 				var con = nc.Connection;
 				if (con == null) continue; // how did this happen
 
-				con.SendRawData("nb2-reparent", bytes);
+				con.SendRawData("nb2-reparent", b);
 			}
 		}
 		public void AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
 		{
+			if (rc)
+				for (int i = 0; i < inst.Children.Count; i++)
+					AddReplication(inst.Children[i], m, w, true, nc);
 			ReplicationQueue.Enqueue(new(m, w, inst)
 			{
-				Recievers = nc ?? [],
-				ReplicateChildren = rc
+				Recievers = nc ?? []
 			});
 		}
 	}

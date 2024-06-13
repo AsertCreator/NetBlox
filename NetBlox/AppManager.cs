@@ -57,9 +57,9 @@ namespace NetBlox
 							LogManager.LogInfo($"Setting fast number {key} to {nu}");
 							break;
 						}
-					case "--username":
+					case "--guest":
 						{
-
+							Profile.LoginAsGuest();
 							break;
 						}
 					case "--login":

@@ -8,10 +8,17 @@ namespace NetBlox.Structs
 	/// </summary>
 	public class NetworkClient
 	{
-		public string? Username;
+		public string Username;
 		public uint UniquePlayerID;
-		public Connection? Connection;
-		public Player? Player;
-		public bool IsDisconnecting;
+		public Connection Connection;
+		public Player Player;
+
+		public NetworkClient(string user, uint uniquePlayerID, Connection connection, Player player)
+		{
+			Username = user;
+			UniquePlayerID = uniquePlayerID;
+			Connection = connection;
+			Player = player;
+		}
 	}
 }

@@ -69,7 +69,7 @@ namespace NetBlox.Server
 
 				gm.CurrentRoot.Name = gm.CurrentIdentity.PlaceName;
 
-				gm.NetworkManager.StartServer();
+				Task.Run(gm.NetworkManager.StartServer);
 			});
 			g.MainManager = true;
 			AppManager.SetRenderTarget(g);

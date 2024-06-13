@@ -39,7 +39,7 @@ namespace NetBlox.Instances.Services
 			fsa = Task.Run(() => {
 				if (GameManager.NetworkManager!.IsServer)
 					return GameManager.FilterString(text);
-				return GameManager.NetworkManager!.SeqFilterString(text, from.UniqueID, to.UniqueID); // i cant believe that the actual implementation is here
+				return "not filtering lol"; // i cant believe that the actual implementation is here
 			});
 			return new() { HasResult = false };
 		}

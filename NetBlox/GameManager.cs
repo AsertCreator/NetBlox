@@ -6,6 +6,7 @@ using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Net;
+using System.Reflection;
 using System.Runtime;
 
 namespace NetBlox
@@ -140,31 +141,15 @@ namespace NetBlox
 			}
 			if (NetworkManager.IsServer)
 			{
-				AddedInstance += (x) =>
+				AddedInstance += x =>
 				{
-					lock (NetworkManager.ToReplicate)
-					{
-						if (!x.IsA("ServerStorage") && !x.IsDescendantOf(CurrentRoot.GetService<ServerStorage>()))
-							NetworkManager.ToReplicate.Enqueue(new()
-							{
-								What = x
-							});
-					}
+					if (NetworkManager.Server == null) return;
+
+					if (x.GetType().GetCustomAttribute<NotReplicatedAttribute>() == null)
+						NetworkManager.AddReplication(x, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
 				};
 			}
 			servercallback(rbxlinit, this);
-		}
-		public void TeleportToPlace(ulong pid)
-		{
-			if (NetworkManager.IsServer)
-				throw new NotSupportedException("Cannot teleport in server");
-
-			LogManager.LogInfo($"Teleporting to the place ({pid})...");
-			// no actual servers as of now, so just hardcoded values
-			string pname = "Testing Place";
-			ulong pauth = 1;
-			LogManager.LogInfo($"Place has name ({pname}) and author ({pauth})...");
-			NetworkManager.ConnectToServer(null!);
 		}
 		public void Shutdown()
 		{

@@ -41,8 +41,6 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public void ConnectToServer(string addr) => GameManager.NetworkManager.ConnectToServer(System.Net.IPAddress.Parse(addr));
 		[Lua([Security.Capability.CoreSecurity])]
-		public void Disconnect() => GameManager.NetworkManager.DisconnectFromServer(Network.Enums.CloseReason.ClientClosed);
-		[Lua([Security.Capability.CoreSecurity])]
 		public void OpenBrowserWindow(string url)
 		{
 			ProcessStartInfo psi = new();
@@ -76,7 +74,7 @@ namespace NetBlox.Instances.Services
 							sw.WriteLine(GameManager.CurrentIdentity.PlaceID);
 							sw.WriteLine(GameManager.CurrentIdentity.PlaceID);
 							sw.WriteLine(-1);
-							sw.WriteLine(GameManager.AllClients.Count);
+							sw.WriteLine(GameManager.NetworkManager.Clients.Count);
 							sw.WriteLine(GameManager.CurrentIdentity.MaxPlayerCount);
 
 							sw.Flush();

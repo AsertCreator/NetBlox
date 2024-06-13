@@ -410,10 +410,7 @@ namespace NetBlox.Runtime
 								{
 									prop.SetValue(inst!, gm.AllInstances.Find(x => x.UniqueID == uid));
 									if (gm.NetworkManager.IsServer)
-										for (int i = 0; i < gm.AllClients.Count; i++)
-										{
-											gm.NetworkManager.SeqReparentInstance(gm.AllClients[i].Connection, inst);
-										}
+										gm.NetworkManager.AddReplication(inst, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_REPARNT, false);
 								}
 								else
 									throw new ScriptRuntimeException($"Attempted to assign Instance's parent to foreign Instance");
@@ -432,10 +429,7 @@ namespace NetBlox.Runtime
 
 									prop.SetValue(inst!, ret);
 									if (gm.NetworkManager.IsServer)
-										gm.NetworkManager.ToReplicate.Enqueue(new NetworkManager.Replication()
-										{
-											What = inst
-										});
+										gm.NetworkManager.AddReplication(inst, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_PROPCHG, false);
 								}
 							}
 						}

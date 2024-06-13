@@ -292,8 +292,8 @@ namespace NetBlox.Instances
 		}
 		public void ReplicateProps()
 		{
-			if (GameManager.NetworkManager.ServerConnection != null)
-				GameManager.NetworkManager.SeqReplicateInstance(GameManager.NetworkManager.ServerConnection, this, false, false);
+			if (GameManager.NetworkManager.RemoteConnection != null)
+				GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
 		}
 	}
 }

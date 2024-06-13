@@ -12,7 +12,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
 		public Instance? Character { get; set; }
-		public bool IsLocalPlayer;
+		public bool IsLocalPlayer = false;
 		public NetworkClient Client;
 
 		public Player(GameManager ins) : base(ins) { }
@@ -61,25 +61,7 @@ namespace NetBlox.Instances
 			Character = ch;
 		}
 		[Lua([Security.Capability.None])]
-		public void Kick(string msg)
-		{
-			if (IsLocalPlayer)
-			{
-				GameManager.NetworkManager.ServerConnection.Close(Network.Enums.CloseReason.ClientClosed);
-				GameManager.RenderManager.ShowKickMessage(msg);
-				// why not call lua api lol
-				Root.GetService<RunService>().Pause();
-			}
-			else if (GameManager.NetworkManager.IsServer)
-			{
-				// do smth
-			}
-			else
-			{
-				// we're trying to kick another player from client
-				throw new Exception("Cannot kick non-local player from client");
-			}
-		}
+		public void Kick(string msg) => GameManager.NetworkManager.PerformKick(Client, msg, IsLocalPlayer);
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
