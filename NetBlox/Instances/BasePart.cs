@@ -44,7 +44,7 @@ namespace NetBlox.Instances
 
 		public BasePart(GameManager ins) : base(ins) 
 		{
-			Actor = new(this);
+			// Actor = new(this);
 		}
 
 		public virtual void Render()

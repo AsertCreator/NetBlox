@@ -11,20 +11,23 @@ namespace NetBlox
 	public class PhysicsManager
 	{
 		public GameManager GameManager;
-		public Workspace Workspace;
-		public Vector3 Gravity { get => Workspace.Gravity; set => Workspace.Gravity = value; }
-		public Scene Scene { get => Workspace.Scene; set => Workspace.Scene = value; }
+		public Workspace? Workspace;
+		public Vector3 Gravity { get => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity; set => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity = value; }
+		public Scene Scene { get => (Workspace ?? throw new Exception("No workspace is loaded")).Scene; set => (Workspace ?? throw new Exception("No workspace is loaded")).Scene = value; }
 		public List<Actor> Actors = new();
 		private DateTime LastTime;
 
 		public PhysicsManager(GameManager gameManager)
 		{
 			GameManager = gameManager;
-			Workspace = GameManager.CurrentRoot.GetService<Workspace>();
+			// Workspace = GameManager.CurrentRoot.GetService<Workspace>();
+			// no
 		}
 		public void Begin() => LastTime = DateTime.Now;
 		public void Step()
 		{
+			if (Workspace == null)
+				return;
 			lock (Scene)
 			{
 				Scene.Step((DateTime.Now - LastTime).TotalSeconds);

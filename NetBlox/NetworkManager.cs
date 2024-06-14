@@ -9,6 +9,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using CloseReason = Network.Enums.CloseReason;
 
 namespace NetBlox
 {
@@ -165,6 +166,10 @@ namespace NetBlox
 						LogManager.LogInfo(nc.Username + " had disconnected");
 						nc.Player.Character.Destroy();
 						nc.Player.Destroy();
+						Clients.Remove(nc);
+
+						if (Clients.Count == 0)
+							ReplicationQueue.Clear(); // we dont care anymore. we might as well shutdown hehe
 					}
 
 					x.ConnectionClosed += OnClose;
@@ -209,6 +214,7 @@ namespace NetBlox
 			};
 
 			Server.Start();
+			GameManager.AllowReplication = true;
 
 			// but actually we are not done
 
@@ -257,6 +263,8 @@ namespace NetBlox
 
 			var cn = ConnectionResult.TCPConnectionNotAlive;
 			var tcp = ConnectionFactory.CreateTcpConnection(ipa.ToString(), ServerPort, out cn);
+			if (tcp == null)
+				throw new Exception("Remote server had refused to connect");
 			tcp.EnableLogging = false;
 			RemoteConnection = tcp;
 
@@ -273,6 +281,7 @@ namespace NetBlox
 			{
 				if (GameManager.RenderManager != null)
 					GameManager.RenderManager.ShowKickMessage("The server had closed");
+				GameManager.IsRunning = false;
 			}
 
 			bool gotpi = false;
@@ -318,7 +327,7 @@ namespace NetBlox
 
 					var ins = RecieveNewInstance(rep.Data);
 
-					if (ins is Workspace) c.Parent = Root;
+					if (ins is Workspace) c.Parent = ins;
 					if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID)
 					{
 						var ch = ins as Character;

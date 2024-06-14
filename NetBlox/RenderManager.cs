@@ -134,6 +134,8 @@ namespace NetBlox
 								RenderInstanceUI(Root.FindFirstChild("Workspace"));
 								RenderInstanceUI(Root.GetService<CoreGui>());
 							}
+
+							Raylib.DrawTextEx(MainFont, Status, new Vector2(20, 20), 16, 0, Color.White);
 						}
 
 						if (PostRender != null)

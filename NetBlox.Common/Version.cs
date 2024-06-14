@@ -6,8 +6,8 @@ namespace NetBlox.Common
 {
 	public static class Version
 	{
-		public const int VersionMajor = 11;
-		public const int VersionMinor = 3;
+		public const int VersionMajor = 12;
+		public const int VersionMinor = 0;
 		public const int VersionPatch = 0;
 	}
 }

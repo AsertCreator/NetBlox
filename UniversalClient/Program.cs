@@ -1,5 +1,6 @@
 ﻿using NetBlox.Instances.Services;
 using NetBlox.Runtime;
+using NetBlox.Studio;
 using Raylib_cs;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -31,27 +32,39 @@ namespace NetBlox.Client
 
 				gm.NetworkManager.ClientReplicator = Task.Run(async delegate ()
 				{
-					gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
-					return new object();
+					try
+					{
+						gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
+						return new object();
+					}
+					catch (Exception ex)
+					{
+						gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
+						return new();
+					}
 				}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
+
+				Task.Run(() =>
+				{
+					Console.WriteLine("NetBlox Console is running (enter Lua code to run it)");
+					while (!gm.ShuttingDown)
+					{
+						Console.Write(">>> ");
+						var c = Console.ReadLine();
+						LuaRuntime.Execute(c, 8, gm, null);
+					}
+				});
+				new EditorManager(gm.RenderManager);
 			};
-			var cg = AppManager.CreateGame(new()
+
+			GameManager cg = null!;
+			cg = AppManager.CreateGame(new()
 			{
 				AsClient = true,
 				GameName = "NetBlox Client"
 			}, 
 			args, (x, y) => { });
 			cg.MainManager = true;
-			Task.Run(() =>
-			{
-				Console.WriteLine("NetBlox Console is running (enter Lua code to run it)");
-				while (!cg.ShuttingDown)
-				{
-					Console.Write(">>> ");
-					var c = Console.ReadLine();
-					LuaRuntime.Execute(c, 8, cg, null);
-				}
-			});
 			AppManager.SetRenderTarget(cg);
 			AppManager.Start();
 
