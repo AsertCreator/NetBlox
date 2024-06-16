@@ -29,8 +29,6 @@ namespace NetBlox.Server
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,
-				SkipWindowCreation = true,
-				DoNotRenderAtAll = true,
 				GameName = "NetBlox Server"
 			}, args, (x, gm) =>
 			{
@@ -47,8 +45,54 @@ namespace NetBlox.Server
 				{
 					Parent = ws,
 					Color = Color.DarkGreen,
-					Position = new(0, -5, 0),
+					Position = new(0, -4.5f, 0),
 					Size = new(2048, 2, 2048),
+					TopSurface = SurfaceType.Studs,
+					Anchored = true
+				};
+
+				new Part(gm)
+				{
+					Parent = ws,
+					Color = Color.DarkBlue,
+					Position = new(0, -3f, 0),
+					Size = new(1, 2, 1),
+					TopSurface = SurfaceType.Studs,
+					Anchored = true
+				};
+				new Part(gm)
+				{
+					Parent = ws,
+					Color = Color.DarkBlue,
+					Position = new(-1, -3f, 0),
+					Size = new(1, 2, 1),
+					TopSurface = SurfaceType.Studs,
+					Anchored = true
+				};
+				new Part(gm)
+				{
+					Parent = ws,
+					Color = Color.Red,
+					Position = new(-0.5f, -1f, 0),
+					Size = new(2, 2, 1),
+					TopSurface = SurfaceType.Studs,
+					Anchored = true
+				};
+				new Part(gm)
+				{
+					Parent = ws,
+					Color = Color.Yellow,
+					Position = new(-2f, -1f, 0),
+					Size = new(1, 2, 1),
+					TopSurface = SurfaceType.Studs,
+					Anchored = true
+				};
+				new Part(gm)
+				{
+					Parent = ws,
+					Color = Color.Yellow,
+					Position = new(1f, -1f, 0),
+					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
 					Anchored = true
 				};
@@ -70,6 +114,11 @@ namespace NetBlox.Server
 				gm.CurrentRoot.Name = gm.CurrentIdentity.PlaceName;
 
 				Task.Run(gm.NetworkManager.StartServer);
+				Task.Run(() =>
+				{
+					while (gm.RenderManager == null) ;
+					new EditorManager(gm.RenderManager);
+				});
 			});
 			g.MainManager = true;
 			AppManager.SetRenderTarget(g);

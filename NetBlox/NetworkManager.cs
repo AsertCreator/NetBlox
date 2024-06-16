@@ -244,7 +244,7 @@ namespace NetBlox
 					switch (rq.What)
 					{
 						case Replication.REPW_NEWINST:
-							Task.Delay(12).ContinueWith(x => PerformReplicationNew(ins, rc)); // as per constitution
+							PerformReplicationNew(ins, rc); // not as per constitution, constitution is wrong, this cannot be implemented really
 							break;
 						case Replication.REPW_PROPCHG:
 							PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
@@ -267,9 +267,6 @@ namespace NetBlox
 				throw new Exception("Remote server had refused to connect");
 			tcp.EnableLogging = false;
 			RemoteConnection = tcp;
-
-			if (cn != ConnectionResult.Connected)
-				throw new Exception("Could not connect to remote server!");
 
 			ClientHandshake ch;
 			ch.Username = GameManager.Username;
@@ -538,13 +535,13 @@ namespace NetBlox
 		}
 		public void AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
 		{
-			if (rc)
-				for (int i = 0; i < inst.Children.Count; i++)
-					AddReplication(inst.Children[i], m, w, true, nc);
 			ReplicationQueue.Enqueue(new(m, w, inst)
 			{
 				Recievers = nc ?? []
 			});
+			if (rc)
+				for (int i = 0; i < inst.Children.Count; i++)
+					AddReplication(inst.Children[i], m, w, true, nc);
 		}
 	}
 }

@@ -53,7 +53,8 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.CoreSecurity])]
 		public void TakeScreenshot()
 		{
-			Raylib.TakeScreenshot(AppManager.LibraryFolder + DateTime.Now.ToString("s") + ".png");
+			string path = AppManager.LibraryFolder + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss") + ".png";
+			Raylib.TakeScreenshot(path);
 			Notify("Screenshot taken!", "Check the screenshort folder");
 		}
 	}

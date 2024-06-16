@@ -21,13 +21,14 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Clear()
 		{
-			for (int i = 0; i < Children.Count; i++)
-			{
-				var child = Children[i];
-				if (child is CoreGui) continue;
-				else if (child is RunService || child is ScriptContext || child is UserInputService || child is Debris) child.ClearAllChildren();
-				else child.Destroy();
-			}
+			LogManager.LogInfo("Clearing DataModel...");
+			GetService<ReplicatedFirst>().Destroy();
+			GetService<Workspace>().Destroy();
+			GetService<ReplicatedStorage>().Destroy();
+			GetService<Lighting>().Destroy();
+			GetService<Players>().Destroy();
+			GetService<StarterGui>().Destroy();
+			GetService<StarterPack>().Destroy();
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Shutdown()
