@@ -165,6 +165,8 @@ namespace NetBlox.Runtime
 				var d = gm.CurrentRoot.MainEnv.CreateCoroutine(gm.CurrentRoot.MainEnv.LoadString(code));
 				var lt = new LuaThread(gm, gm.CurrentRoot, bs, d, sl, [], fc);
 
+				d.Coroutine.AutoYieldCounter = 100000;
+
 				if (bs != null)
 					lt.Name = bs.GetFullName();
 
@@ -182,6 +184,8 @@ namespace NetBlox.Runtime
 			{
 				var d = gm.CurrentRoot.MainEnv.CreateCoroutine(fun);
 				var lt = new LuaThread(gm, gm.CurrentRoot, bs, d, sl, dva, fc);
+
+				d.Coroutine.AutoYieldCounter = 100000;
 
 				if (bs != null)
 					lt.Name = bs.GetFullName();

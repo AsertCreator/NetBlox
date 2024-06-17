@@ -220,7 +220,8 @@ namespace NetBlox
 
 			while (!GameManager.ShuttingDown)
 			{
-				while (ReplicationQueue.Count == 0) ;
+				while (ReplicationQueue.Count == 0 || AppManager.BlockReplication) ;
+
 				lock (ReplicationQueue)
 				{
 					var rq = ReplicationQueue.Dequeue();
@@ -372,7 +373,8 @@ namespace NetBlox
 
 			while (!GameManager.ShuttingDown)
 			{
-				while (ReplicationQueue.Count == 0) ;
+				while (ReplicationQueue.Count == 0 || AppManager.BlockReplication) ;
+
 				lock (ReplicationQueue)
 				{
 					var rq = ReplicationQueue.Dequeue();
@@ -534,14 +536,22 @@ namespace NetBlox
 			}
 		}
 		public void AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
+		{ // the fucking aRgUmEnT ExCePtIoN CirCumCiSiTiOn .net fuck off for god's sake
+			lock (ReplicationQueue)
+			{
+				AddReplicationImpl(inst, m, w, rc, nc);
+			}
+		}
+		private void AddReplicationImpl(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
 		{
+			Thread.Sleep(1); // i just cant
 			ReplicationQueue.Enqueue(new(m, w, inst)
 			{
 				Recievers = nc ?? []
 			});
 			if (rc)
 				for (int i = 0; i < inst.Children.Count; i++)
-					AddReplication(inst.Children[i], m, w, true, nc);
+					AddReplicationImpl(inst.Children[i], m, w, true, nc);
 		}
 	}
 }

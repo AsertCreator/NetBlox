@@ -1,4 +1,5 @@
 using MoonSharp.Interpreter;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using Raylib_cs;
 using System.Security.Cryptography;
@@ -37,7 +38,15 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Notify(string title, string message)
 		{
-
+			try
+			{
+				Root.GetService<StarterGui>().SetCore("SendNotification", DynValue.NewTable(new Table(Root.MainEnv)
+				{
+					["Title"] = title,
+					["Text"] = message,
+				}));
+			}
+			catch { } // we tried
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void HideTeleportGui()

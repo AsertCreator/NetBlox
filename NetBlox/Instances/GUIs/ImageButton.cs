@@ -54,7 +54,7 @@ namespace NetBlox.Instances.GUIs
 			if (Visible)
 			{
 				var p = Position.Calculate(cp, cs);
-				var s = Size.Calculate(cp, cs);
+				var s = Size.Calculate(Vector2.Zero, cs);
 				for (int y = 0; y < height; y++)
 					for (int x = 0; x < width; x++)
 					{

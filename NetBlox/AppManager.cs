@@ -18,6 +18,7 @@ namespace NetBlox
 		public static Dictionary<string, int> FastNumbers = [];
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
+		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
 		public static string ContentFolder = "content/";
 		public static string LibraryFolder = "tmp/";
 		public static int VersionMajor => Common.Version.VersionMajor;
@@ -125,87 +126,99 @@ namespace NetBlox
 		}
 		public static void Schedule()
 		{
-			if (LuaRuntime.CurrentThread != null)
+			BlockReplication = true;
+			try
 			{
-				if (LuaRuntime.CurrentThread.Value.Coroutine == null)
-					LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-				else if (DateTime.Now >= LuaRuntime.CurrentThread.Value.WaitUntil &&
-					LuaRuntime.CurrentThread.Value.Coroutine.State != CoroutineState.Dead)
+				if (LuaRuntime.CurrentThread != null)
 				{
-					var cst = new CancellationTokenSource();
+					if (LuaRuntime.CurrentThread.Value.Coroutine == null)
+						LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+					else if (DateTime.Now >= LuaRuntime.CurrentThread.Value.WaitUntil &&
+						LuaRuntime.CurrentThread.Value.Coroutine.State != CoroutineState.Dead)
+					{
+						var cst = new CancellationTokenSource();
 #if !DISABLE_EME
 #pragma warning disable SYSLIB0046 // Type or member is obsolete
-					var tsk = Task.Run(() =>
-					{
-						ControlledExecution.Run(() =>
+						var tsk = Task.Run(() =>
 						{
-#endif
-							LuaRuntime.ReportedExecute(() =>
+							ControlledExecution.Run(() =>
 							{
-								if (LuaRuntime.CurrentThread == null)
+#endif
+								LuaRuntime.ReportedExecute(() =>
 								{
-									if (LuaRuntime.Threads.Count > 0)
-										LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-									else
-										return;
-								}
-
-								var thread = LuaRuntime.CurrentThread.Value;
-
-								if (thread.GameManager.ProhibitScripts)
-								{
-									LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
-									return;
-								}
-
-								if (thread.ScrInst != null)
-									thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
-								else
-									thread.Script.Globals["script"] = DynValue.Nil;
-
-								var res = thread.Coroutine.Resume(thread.StartArgs);
-								if (thread.Coroutine.State != CoroutineState.Dead || res == null)
-									return;
-								else
-								{
-									if (LuaRuntime.Threads.Contains(thread))
+									if (LuaRuntime.CurrentThread == null)
 									{
-										var ac = thread.FinishCallback;
-										if (ac != null) ac();
-										LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+										if (LuaRuntime.Threads.Count > 0)
+											LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+										else
+											return;
 									}
-								}
-							}, true);
+
+									var thread = LuaRuntime.CurrentThread.Value;
+
+									if (thread.GameManager.ProhibitScripts)
+									{
+										LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
+										return;
+									}
+
+									if (thread.ScrInst != null)
+										thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
+									else
+										thread.Script.Globals["script"] = DynValue.Nil;
+
+									var res = thread.Coroutine.Resume(thread.StartArgs);
+									if (thread.Coroutine.State != CoroutineState.Dead || res == null)
+										return;
+									else
+									{
+										if (LuaRuntime.Threads.Contains(thread))
+										{
+											var ac = thread.FinishCallback;
+											if (ac != null) ac();
+											LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
+										}
+									}
+								}, true);
 #if !DISABLE_EME
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
-						}, cst.Token);
-					});
-					if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
-					{
-						LuaRuntime.PrintError("Exhausted maximum script execution time!");
-						var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
-						if (ac != null) ac();
-						cst.Cancel();
-					}
+							}, cst.Token);
+						});
+						if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
+						{
+							LuaRuntime.PrintError("Exhausted maximum script execution time!");
+							var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
+							if (ac != null) ac();
+							cst.Cancel();
+						}
 #endif
-				}
+					}
 
-				if (LuaRuntime.CurrentThread == null)
-				{
+					if (LuaRuntime.CurrentThread == null)
+					{
+						if (LuaRuntime.Threads.Count > 0)
+							LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+						else
+							return;
+					}
+
 					if (LuaRuntime.Threads.Count > 0)
-						LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+						LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
 					else
-						return;
+						LuaRuntime.CurrentThread = null;
 				}
-
-				if (LuaRuntime.Threads.Count > 0)
-					LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
 				else
-					LuaRuntime.CurrentThread = null;
+				{
+					LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+				}
 			}
-			else
+			catch(Exception ex)
 			{
-				LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+				LogManager.LogError("Severe scheduling failure! " + ex.GetType() + ", msg: " + ex.Message);
+			}
+			finally
+			{
+				BlockReplication = false;
 			}
 		}
 		public static string ResolveUrl(string url) => ContentFolder + url.Split("//")[1];
