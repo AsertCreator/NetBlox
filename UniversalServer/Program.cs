@@ -29,6 +29,8 @@ namespace NetBlox.Server
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,
+				DoNotRenderAtAll = true,
+				SkipWindowCreation = true,
 				GameName = "NetBlox Server"
 			}, args, (x, gm) =>
 			{
@@ -114,11 +116,6 @@ namespace NetBlox.Server
 				gm.CurrentRoot.Name = gm.CurrentIdentity.PlaceName;
 
 				Task.Run(gm.NetworkManager.StartServer);
-				Task.Run(() =>
-				{
-					while (gm.RenderManager == null) ;
-					new EditorManager(gm.RenderManager);
-				});
 			});
 			g.MainManager = true;
 			AppManager.SetRenderTarget(g);

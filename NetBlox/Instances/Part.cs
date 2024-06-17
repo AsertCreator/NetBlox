@@ -13,7 +13,7 @@ namespace NetBlox.Instances
 
 		public Part(GameManager ins) : base(ins) { }
 
-		public override void Render()
+		public unsafe override void Render()
 		{
 			switch (Shape)
 			{
@@ -21,36 +21,13 @@ namespace NetBlox.Instances
 					break;
 				case Shape.Block:
 					var st = GameManager.RenderManager.StudTexture;
+					var mesh = Raylib.GenMeshCube(Size.X, Size.Y, Size.Z);
+					var model = Raylib.LoadModelFromMesh(mesh);
+					model.Materials[0].Maps[(int)MaterialMapIndex.Diffuse].Texture = st;
 
-					if (TopSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Top, true);
-					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Top);
+					Raylib.DrawModel(model, Position, 1, Color);
 
-					if (LeftSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Left, true);
-					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Left);
-
-					if (RightSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Right, true);
-					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Right);
-
-					if (BottomSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Bottom, true);
-					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Bottom);
-
-					if (FrontSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Front, true);
-					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Front);
-
-					if (BackSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Back, true);
-					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Back);
+					Raylib.UnloadModel(model);
 					break;
 				case Shape.Cylinder:
 					break;
