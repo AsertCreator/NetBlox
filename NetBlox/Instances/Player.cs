@@ -52,6 +52,7 @@ namespace NetBlox.Instances
 			if (Character != null)
 				Character.Destroy();
 
+			ch.IsLocalPlayer = true;
 			ch.Parent = workspace;
 			ch.Name = Name;
 

@@ -69,7 +69,6 @@ namespace NetBlox
 		public bool IsServer;
 		public bool IsClient;
 		public int ServerPort = 2557; // new port lol
-		public int ClientPort = 6553;
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer Server;
 		public CancellationTokenSource ClientReplicatorCanceller = new();
@@ -326,7 +325,11 @@ namespace NetBlox
 
 					var ins = RecieveNewInstance(rep.Data);
 
-					if (ins is Workspace) c.Parent = ins;
+					if (ins is Workspace)
+					{
+						((Workspace)ins).MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
+						c.Parent = ins;
+					}
 					if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
 					{
 						var ch = ins as Character;

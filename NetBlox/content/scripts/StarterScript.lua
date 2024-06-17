@@ -36,15 +36,24 @@ if not PlatformService.IsStudio then
 	-- initializes in-game GUI
 	function initIGG()
 		local Sidebar = Instance.new("Frame");
+		local BlackOut = Instance.new("Frame");
 		local TopbarFrame = Instance.new("Frame");
 		local MenuButton = Instance.new("ImageButton");
 		
+		BlackOut.Name = "NBGBlackOut";
+		BlackOut.Parent = RobloxGui;
+		BlackOut.Position = UDim2.new(0, 0, 0, 0);
+		BlackOut.Size = UDim2.new(1, 0, 1, 0);
+		BlackOut.BackgroundColor3 = Color3.new(0, 0, 0);
+		BlackOut.BackgroundTransparency = 0.6;
+		BlackOut.ZIndex = 2;
+		BlackOut.Visible = false;
+
 		Sidebar.Name = "NBGSidebar";
 		Sidebar.Parent = RobloxGui;
 		Sidebar.Position = UDim2.new(0, 0, 0, 30);
 		Sidebar.Size = UDim2.new(0, 400, 1, -30);
-		Sidebar.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1);
-		Sidebar.BackgroundTransparency = 0.2;
+		Sidebar.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2);
 		Sidebar.ZIndex = 1;
 		Sidebar.Visible = false;
 		
@@ -74,6 +83,9 @@ if not PlatformService.IsStudio then
 		ExitButton.BackgroundTransparency = 0.7;
 		ExitButton.Text = "Leave the game";
 		ExitButton.MouseButton1Click:Connect(function()
+			Sidebar.Visible = false;
+			BlackOut.Visible = false;
+
 			game:Shutdown();
 		end)
 		
@@ -86,6 +98,9 @@ if not PlatformService.IsStudio then
 		ResetButton.BackgroundTransparency = 0.7;
 		ResetButton.Text = "Reset character";
 		ResetButton.MouseButton1Click:Connect(function() -- how do i debug this 😭
+			Sidebar.Visible = false;
+			BlackOut.Visible = false;
+
 			local pls = game.Players;
 			local lpr = pls.LocalPlayer;
 			local chr = lpr.Character;
@@ -117,6 +132,7 @@ if not PlatformService.IsStudio then
 		CloseButton.Text = "Close sidebar";
 		CloseButton.MouseButton1Click:Connect(function()
 			Sidebar.Visible = false;
+			BlackOut.Visible = false;
 		end)
 		
 		local VersionText = Instance.new("TextLabel");
@@ -135,6 +151,7 @@ if not PlatformService.IsStudio then
 		MenuButton.MouseButton1Click:Connect(function()
 			TitleLabel.Text = game.Name; -- lol
 			Sidebar.Visible = not Sidebar.Visible;
+			BlackOut.Visible = Sidebar.Visible;
 		end)
 	end
 	-- initializes teleport GUI

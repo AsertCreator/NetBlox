@@ -89,9 +89,10 @@ namespace NetBlox.Instances
 			if (Health <= 0 && IsLocalPlayer && !isDying)
 			{
 				isDying = true;
-				Health = 0;
 				Die();
 			}
+
+			Health = Math.Max(Health, 0);
 
 			base.Process();
 		}
