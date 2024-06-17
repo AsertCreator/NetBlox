@@ -1,8 +1,9 @@
--- init script
+﻿-- init script
 
 local PlatformService = game:GetService("PlatformService");
 local StarterGui = game:GetService("StarterGui");
 local CoreGui = game:GetService("CoreGui");
+local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
 
 if not PlatformService.IsStudio then
 	function sendNotification(title, msg)
@@ -34,24 +35,21 @@ if not PlatformService.IsStudio then
 	end
 	-- initializes in-game GUI
 	function initIGG()
-		local TopbarGui = Instance.new("ScreenGui");
 		local Sidebar = Instance.new("Frame");
 		local TopbarFrame = Instance.new("Frame");
 		local MenuButton = Instance.new("ImageButton");
-	
-		TopbarGui.Name = "TopbarGui";
-		TopbarGui.Parent = CoreGui;
-		TopbarGui.Enabled = true;
 		
-		Sidebar.Parent = TopbarGui;
+		Sidebar.Name = "NBGSidebar";
+		Sidebar.Parent = RobloxGui;
 		Sidebar.Position = UDim2.new(0, 0, 0, 30);
 		Sidebar.Size = UDim2.new(0, 400, 1, -30);
 		Sidebar.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1);
 		Sidebar.BackgroundTransparency = 0.2;
 		Sidebar.ZIndex = 1;
 		Sidebar.Visible = false;
-
-		TopbarFrame.Parent = TopbarGui;
+		
+		TopbarFrame.Name = "NBGTopbar";
+		TopbarFrame.Parent = RobloxGui;
 		TopbarFrame.Position = UDim2.new(0, 0, 0, 0);
 		TopbarFrame.Size = UDim2.new(1, 0, 0, 30);
 		TopbarFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1);
@@ -87,13 +85,31 @@ if not PlatformService.IsStudio then
 		ResetButton.TextColor3 = Color3.new(1, 1, 1);
 		ResetButton.BackgroundTransparency = 0.7;
 		ResetButton.Text = "Reset character";
+		ResetButton.MouseButton1Click:Connect(function() -- how do i debug this 😭
+			local pls = game.Players;
+			local lpr = pls.LocalPlayer;
+			local chr = lpr.Character;
+			chr.Health = 0;
+		end)
+		
+		local ResetButton = Instance.new("TextButton");
+		ResetButton.Parent = Sidebar;
+		ResetButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 3);
+		ResetButton.Size = UDim2.new(1, -60, 0, 35);
+		ResetButton.BackgroundColor3 = Color3.new(1, 1, 1);
+		ResetButton.TextColor3 = Color3.new(1, 1, 1);
+		ResetButton.BackgroundTransparency = 0.7;
+		ResetButton.Text = "Damage yourself";
 		ResetButton.MouseButton1Click:Connect(function()
-			game.Players.LocalPlayer.Character:Destroy();
+			local pls = game.Players;
+			local lpr = pls.LocalPlayer;
+			local chr = lpr.Character;
+			chr.Health = chr.Health - 1;
 		end)
 		
 		local CloseButton = Instance.new("TextButton");
 		CloseButton.Parent = Sidebar;
-		CloseButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 3);
+		CloseButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 4);
 		CloseButton.Size = UDim2.new(1, -60, 0, 35);
 		CloseButton.BackgroundColor3 = Color3.new(1, 1, 1);
 		CloseButton.TextColor3 = Color3.new(1, 1, 1);
@@ -151,12 +167,12 @@ if not PlatformService.IsStudio then
 		AuthorTitle.FontSize = 24;
 		AuthorTitle.Text = "";
 
-		CoreGui:SetShowTeleportGuiCallback(function(placename, authorname, pid, uid)
+		CoreGui.OnTeleportStarts:Connect(function(placename, authorname, pid, uid)
 			TeleportGui.Enabled = true;
 			GameTitle.Text = placename;
 			AuthorTitle.Text = "by " .. authorname;
 		end);
-		CoreGui:SetHideTeleportGuiCallback(function()
+		CoreGui.OnTeleportEnds:Connect(function()
 			TeleportGui.Enabled = false;
 		end);
 	end

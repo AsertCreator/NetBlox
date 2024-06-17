@@ -138,6 +138,8 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)content\scripts\Modules\" />
+    <Folder Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\" />
     <Folder Include="$(MSBuildThisFileDirectory)content\shaders\" />
   </ItemGroup>
 </Project>

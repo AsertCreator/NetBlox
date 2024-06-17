@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
+    <Compile Include="..\NetBlox.Common\MathE.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)OnlineMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)StreamExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskExtensions.cs" />

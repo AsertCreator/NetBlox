@@ -219,7 +219,7 @@ namespace NetBlox.Runtime
 			t.Pairs.ToList().ForEach(x => ta.Set(x.Key, x.Value));
 			return ta;
 		}
-		public static void ReportedExecute(Action ac, bool remthread)
+		public static void ReportedExecute(Action ac, string name, bool remthread)
 		{
 			try
 			{
@@ -229,7 +229,7 @@ namespace NetBlox.Runtime
 			{
 				LogManager.LogError(ex.Message);
 				for (int i = 0; i<ex.CallStack.Count; i++)
-					LogManager.LogError($"    at {ex.CallStack[i].Name ?? "(root)"}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
+					LogManager.LogError($"    at {name}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
 
 				if (remthread)
 					if (Threads.Contains(CurrentThread.Value))

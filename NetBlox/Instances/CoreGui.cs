@@ -2,6 +2,7 @@ using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using Raylib_cs;
+using System;
 using System.Security.Cryptography;
 
 namespace NetBlox.Instances
@@ -12,6 +13,11 @@ namespace NetBlox.Instances
 		private DynValue? showTeleportGui;
 		private DynValue? hideTeleportGui;
 
+		[Lua([Security.Capability.CoreSecurity])]
+		public LuaSignal OnTeleportStarts { get; set; } = new LuaSignal();
+		[Lua([Security.Capability.CoreSecurity])]
+		public LuaSignal OnTeleportEnds { get; set; } = new LuaSignal();
+
 		public CoreGui(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
@@ -21,20 +27,9 @@ namespace NetBlox.Instances
 			return base.IsA(classname);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public void SetShowTeleportGuiCallback(DynValue dv) => showTeleportGui = dv;
+		public void ShowTeleportGui(string placename, string authorname, int pid, int uid) => OnTeleportStarts.Fire(DynValue.NewString(placename), DynValue.NewString(authorname), DynValue.NewNumber(pid), DynValue.NewNumber(uid));
 		[Lua([Security.Capability.CoreSecurity])]
-		public void SetHideTeleportGuiCallback(DynValue dv) => hideTeleportGui = dv;
-		[Lua([Security.Capability.CoreSecurity])]
-		public void ShowTeleportGui(string placename, string authorname, int pid, int uid)
-		{
-			if (showTeleportGui != null && showTeleportGui.Type == DataType.Function)
-			{
-				LuaRuntime.ReportedExecute(() =>
-				{
-					showTeleportGui.Function.Call(placename, authorname, pid, uid);
-				}, false);
-			}
-		}
+		public void HideTeleportGui() => OnTeleportEnds.Fire();
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Notify(string title, string message)
 		{
@@ -47,17 +42,6 @@ namespace NetBlox.Instances
 				}));
 			}
 			catch { } // we tried
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void HideTeleportGui()
-		{
-			if (hideTeleportGui != null && hideTeleportGui.Type == DataType.Function)
-			{
-				LuaRuntime.ReportedExecute(() =>
-				{
-					hideTeleportGui.Function.Call();
-				}, false);
-			}
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void TakeScreenshot()

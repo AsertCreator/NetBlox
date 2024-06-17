@@ -9,8 +9,8 @@ namespace NetBlox.Instances.Services
 {
 	public class StarterGui : Instance
 	{
-		public Dictionary<string, Closure> RegisteredSetCallbacks = [];
-		public Dictionary<string, Closure> RegisteredGetCallbacks = [];
+		public Dictionary<string, DynValue> RegisteredSetCallbacks = [];
+		public Dictionary<string, DynValue> RegisteredGetCallbacks = [];
 
 		public StarterGui(GameManager ins) : base(ins) { }
 
@@ -24,25 +24,25 @@ namespace NetBlox.Instances.Services
 		public void RegisterSetCore(string name, DynValue func)
 		{
 			if (func.Type != DataType.Function) throw new Exception($"RegisterSetCore only accepts functions");
-			RegisteredSetCallbacks[name] = func.Function;
+			RegisteredSetCallbacks[name] = func;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void RegisterGetCore(string name, DynValue func)
 		{
 			if (func.Type != DataType.Function) throw new Exception($"RegisterGetCore only accepts functions");
-			RegisteredGetCallbacks[name] = func.Function;
+			RegisteredGetCallbacks[name] = func;
 		}
 		[Lua([Security.Capability.None])]
 		public void SetCore(string name, DynValue dv)
 		{
-			if (RegisteredSetCallbacks.ContainsKey(name)) RegisteredSetCallbacks[name].Call(dv);
+			if (RegisteredSetCallbacks.ContainsKey(name)) LuaRuntime.Execute(RegisteredSetCallbacks[name], 
+				(LuaRuntime.CurrentThread != null ? LuaRuntime.CurrentThread.Value.Level : 3), GameManager, null, [dv]);
 			throw new Exception($"\"{name}\" has not been registered by CoreScripts");
 		}
 		[Lua([Security.Capability.None])]
 		public DynValue GetCore(string name)
 		{
-			if (RegisteredGetCallbacks.TryGetValue(name, out var f)) return f.Call();
-			throw new Exception($"\"{name}\" has not been registered by CoreScripts");
+			throw new Exception($"im not sure yielding works here");
 		}
 	}
 }

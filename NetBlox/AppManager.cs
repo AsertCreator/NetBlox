@@ -144,23 +144,23 @@ namespace NetBlox
 							ControlledExecution.Run(() =>
 							{
 #endif
+								if (LuaRuntime.CurrentThread == null)
+								{
+									if (LuaRuntime.Threads.Count > 0)
+										LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+									else
+										return;
+								}
+
+								var thread = LuaRuntime.CurrentThread.Value;
+
+								if (thread.GameManager.ProhibitScripts)
+								{
+									LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
+									return;
+								}
 								LuaRuntime.ReportedExecute(() =>
 								{
-									if (LuaRuntime.CurrentThread == null)
-									{
-										if (LuaRuntime.Threads.Count > 0)
-											LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-										else
-											return;
-									}
-
-									var thread = LuaRuntime.CurrentThread.Value;
-
-									if (thread.GameManager.ProhibitScripts)
-									{
-										LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
-										return;
-									}
 
 									if (thread.ScrInst != null)
 										thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
@@ -179,7 +179,7 @@ namespace NetBlox
 											LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 										}
 									}
-								}, true);
+								}, thread.Name, true);
 #if !DISABLE_EME
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
 							}, cst.Token);

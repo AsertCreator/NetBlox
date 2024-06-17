@@ -1,6 +1,7 @@
 ﻿global using Color = Raylib_cs.Color;
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
+using NetBlox.Instances.GUIs;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
@@ -44,132 +45,149 @@ namespace NetBlox
 			if (AddedInstance != null && AllowReplication)
 				AddedInstance(inst);
 		}
-		public void LoadAllCoreScripts()
+		public void SetupCoreGui()
 		{
-			string[] files = Directory.GetFiles(AppManager.ContentFolder + "scripts");
-			for (int i = 0; i < files.Length; i++)
-			{
-				CoreScript cs = new(this);
-				string cont = File.ReadAllText(files[i]);
-				cs.Source = cont;
-				cs.Name = Path.GetFileNameWithoutExtension(files[i]);
-				cs.Parent = CurrentRoot.GetService<CoreGui>();
-			}
+			// apparently roblox does not just load all corescritps on bulk.
+			var ssurl = AppManager.ResolveUrl("rbxasset://scripts/StarterScript.lua");
+			if (!File.Exists(ssurl))
+				throw new Exception("No StarterScript found in content directory!");
+
+			CoreGui cg = CurrentRoot.GetService<CoreGui>();
+			ScreenGui sg = new(this);
+			sg.Name = "RobloxGui"; // i love breaking copyright :D
+			sg.Parent = cg;
+
+			CoreScript ss = new(this);
+			ss.Name = "StarterScript";
+			ss.Source = File.ReadAllText(ssurl);
+			ss.Parent = sg;
 		}
 		public void Start(GameConfiguration gc, string[] args, Action<string, GameManager> servercallback)
 		{
-			ulong pid = ulong.MaxValue;
-			string rbxlinit = "";
-			LogManager.LogInfo("Initializing NetBlox...");
-
-			NetworkManager = new(this, gc.AsServer, gc.AsClient);
-			CurrentIdentity.Reset();
-			IsStudio = gc.AsStudio;
-
-			// common thingies
-			for (int i = 0; i < args.Length; i++)
+			try
 			{
-				switch (args[i])
+				ulong pid = ulong.MaxValue;
+				string rbxlinit = "";
+				LogManager.LogInfo("Initializing NetBlox...");
+
+				NetworkManager = new(this, gc.AsServer, gc.AsClient);
+				CurrentIdentity.Reset();
+				IsStudio = gc.AsStudio;
+
+				// common thingies
+				for (int i = 0; i < args.Length; i++)
 				{
-					case "--placeor":
-						{
-							CurrentIdentity.PlaceName = args[++i];
-							break;
-						}
-					case "--univor":
-						{
-							CurrentIdentity.UniverseName = args[++i];
-							break;
-						}
-					case "--maxplayers":
-						{
-							CurrentIdentity.MaxPlayerCount = uint.Parse(args[++i]);
-							break;
-						}
-					case "--rbxl":
-						{
-							rbxlinit = args[++i];
-							break;
-						}
-					case "--guest":
-						{
-							Profile.LoginAsGuest();
-							break;
-						}
-					case "--login":
-						{
-							var user = args[++i];
-							var pass = args[++i];
-							var task = Profile.LoginAsync(user, pass);
-							task.Wait();
-							if (task.Result == null)
+					switch (args[i])
+					{
+						case "--placeor":
 							{
-								LogManager.LogWarn("Login failed, logging as guest...");
-								Profile.LoginAsGuest();
+								CurrentIdentity.PlaceName = args[++i];
+								break;
 							}
-							break;
-						}
+						case "--univor":
+							{
+								CurrentIdentity.UniverseName = args[++i];
+								break;
+							}
+						case "--maxplayers":
+							{
+								CurrentIdentity.MaxPlayerCount = uint.Parse(args[++i]);
+								break;
+							}
+						case "--rbxl":
+							{
+								rbxlinit = args[++i];
+								break;
+							}
+						case "--guest":
+							{
+								Profile.LoginAsGuest();
+								break;
+							}
+						case "--login":
+							{
+								var user = args[++i];
+								var pass = args[++i];
+								var task = Profile.LoginAsync(user, pass);
+								task.Wait();
+								if (task.Result == null)
+								{
+									LogManager.LogWarn("Login failed, logging as guest...");
+									Profile.LoginAsGuest();
+								}
+								break;
+							}
+					}
 				}
-			}
 
-			LogManager.LogInfo("Logged in as " + Username);
+				if (gc.AsClient)
+					LogManager.LogInfo("Logged in as " + Username);
 
-			LogManager.LogInfo("Initializing verbs...");
-			Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
+				LogManager.LogInfo("Initializing verbs...");
+				Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
 
-			LogManager.LogInfo("Initializing internal scripts...");
-			CurrentRoot = new DataModel(this);
+				LogManager.LogInfo("Initializing internal scripts...");
+				CurrentRoot = new DataModel(this);
 
-			ProhibitProcessing = gc.ProhibitProcessing;
-			ProhibitScripts = gc.ProhibitScripts;
+				ProhibitProcessing = gc.ProhibitProcessing;
+				ProhibitScripts = gc.ProhibitScripts;
 
-			if (NetworkManager.IsServer)
-			{
-				LogManager.LogInfo("Creating main services...");
-				CurrentRoot.GetService<Workspace>();
-				CurrentRoot.GetService<Players>();
-				CurrentRoot.GetService<Lighting>();
-				CurrentRoot.GetService<ReplicatedStorage>();
-				CurrentRoot.GetService<ReplicatedFirst>();
-				CurrentRoot.GetService<StarterGui>();
-				CurrentRoot.GetService<StarterPack>();
-				CurrentRoot.GetService<ServerStorage>();
-				CurrentRoot.GetService<ScriptContext>();
-				CurrentRoot.GetService<PlatformService>();
-				CurrentRoot.GetService<UserInputService>();
-				CurrentRoot.GetService<Debris>();
-			}
-
-			var rs = CurrentRoot.GetService<RunService>();
-			var cg = CurrentRoot.GetService<CoreGui>();
-			rs.Parent = CurrentRoot;
-			cg.Parent = CurrentRoot;
-
-			LuaRuntime.Setup(this, CurrentRoot);
-			LoadAllCoreScripts();
-
-			LogManager.LogInfo("Initializing PhysicsManager...");
-			PhysicsManager = new(this);
-
-			LogManager.LogInfo("Initializing RenderManager...");
-			RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
-
-			if (NetworkManager.IsClient)
-			{
-				CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-				QueuedTeleportAddress = rbxlinit;
-			}
-			if (NetworkManager.IsServer)
-			{
-				AddedInstance += x =>
+				if (NetworkManager.IsServer)
 				{
-					if (NetworkManager.Server == null) return;
+					LogManager.LogInfo("Creating main services...");
+					CurrentRoot.GetService<Workspace>();
+					CurrentRoot.GetService<Players>();
+					CurrentRoot.GetService<Lighting>();
+					CurrentRoot.GetService<ReplicatedStorage>();
+					CurrentRoot.GetService<ReplicatedFirst>();
+					CurrentRoot.GetService<StarterGui>();
+					CurrentRoot.GetService<StarterPack>();
+					CurrentRoot.GetService<ServerStorage>();
+					CurrentRoot.GetService<ScriptContext>();
+					CurrentRoot.GetService<PlatformService>();
+					CurrentRoot.GetService<UserInputService>();
+					CurrentRoot.GetService<Debris>();
+				}
 
-					if (x.GetType().GetCustomAttribute<NotReplicatedAttribute>() == null)
-						NetworkManager.AddReplication(x, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
-				};
+				var rs = CurrentRoot.GetService<RunService>();
+				var cg = CurrentRoot.GetService<CoreGui>();
+				rs.Parent = CurrentRoot;
+				cg.Parent = CurrentRoot;
+
+				LuaRuntime.Setup(this, CurrentRoot);
+
+				LogManager.LogInfo("Initializing user interface...");
+				SetupCoreGui();
+
+				LogManager.LogInfo("Initializing PhysicsManager...");
+				PhysicsManager = new(this);
+
+				LogManager.LogInfo("Initializing RenderManager...");
+				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
+
+				if (NetworkManager.IsClient)
+				{
+					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
+					QueuedTeleportAddress = rbxlinit;
+				}
+				if (NetworkManager.IsServer)
+				{
+					AddedInstance += x =>
+					{
+						if (NetworkManager.Server == null) return;
+
+						if (x.GetType().GetCustomAttribute<NotReplicatedAttribute>() == null)
+							NetworkManager.AddReplication(x, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+					};
+				}
+				servercallback(rbxlinit, this);
 			}
-			servercallback(rbxlinit, this);
+			catch (Exception ex)
+			{
+				LogManager.LogError("A fatal error had occurred during NetBlox initialization! " + ex.GetType() + ", msg: " + ex.Message + ", stacktrace: " + ex.StackTrace);
+				Environment.Exit(ex.GetHashCode());
+				for (;;); // perhaps platform we're running on does not support exiting.
+			}
 		}
 		public void Shutdown()
 		{

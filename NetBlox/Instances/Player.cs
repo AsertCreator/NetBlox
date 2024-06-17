@@ -13,7 +13,7 @@ namespace NetBlox.Instances
 		[NotReplicated]
 		public Instance? Character { get; set; }
 		public bool IsLocalPlayer = false;
-		public NetworkClient Client;
+		public NetworkClient? Client;
 
 		public Player(GameManager ins) : base(ins) { }
 

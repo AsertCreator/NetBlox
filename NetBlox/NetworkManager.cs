@@ -181,12 +181,12 @@ namespace NetBlox
 						acked = true;
 
 						AddReplication(Root.GetService<ReplicatedFirst>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
-						AddReplication(Root.GetService<Workspace>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<ReplicatedStorage>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Lighting>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Players>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<StarterGui>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<StarterPack>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<Workspace>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 
 						x.UnRegisterRawDataHandler("nb2-init"); // as per to constitution, we now do nothing lol
 					});
@@ -317,6 +317,7 @@ namespace NetBlox
 				int actinstc = sh.InstanceCount - 2; // didn't i just tell the server that optimal instance count is 2, so here its 0?
 				int gotinsts = 0;
 				Camera c = new(GameManager);
+				Player? lp = null;
 
 				tcp.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 				{
@@ -326,16 +327,19 @@ namespace NetBlox
 					var ins = RecieveNewInstance(rep.Data);
 
 					if (ins is Workspace) c.Parent = ins;
-					if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID)
+					if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
 					{
 						var ch = ins as Character;
 						ch.IsLocalPlayer = true;
 						c.CameraSubject = ch;
+						if (lp != null)
+							lp.Character = ch;
 					}
 					if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
 					{
 						Root.GetService<Players>().CurrentPlayer = (Player)ins;
 						Root.GetService<Players>().CurrentPlayer.IsLocalPlayer = true;
+						lp = (Player)ins;
 					}
 				});
 				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>
