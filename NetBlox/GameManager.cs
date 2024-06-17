@@ -47,15 +47,29 @@ namespace NetBlox
 		}
 		public void SetupCoreGui()
 		{
-			// apparently roblox does not just load all corescritps on bulk.
-			var ssurl = AppManager.ResolveUrl("rbxasset://scripts/StarterScript.lua");
-			if (!File.Exists(ssurl))
-				throw new Exception("No StarterScript found in content directory!");
-
 			CoreGui cg = CurrentRoot.GetService<CoreGui>();
 			ScreenGui sg = new(this);
 			sg.Name = "RobloxGui"; // i love breaking copyright :D
 			sg.Parent = cg;
+
+			// apparently roblox does not just load all corescritps on bulk.
+			var scrurl = AppManager.ResolveUrl("rbxasset://scripts/Modules/");
+			var ssurl = AppManager.ResolveUrl("rbxasset://scripts/StarterScript.lua");
+			if (!File.Exists(ssurl))
+				throw new Exception("No StarterScript found in content directory!");
+
+			var Modules = new Folder(this);
+			Modules.Name = "Modules";
+			Modules.Parent = sg;
+			var files = Directory.GetFiles(scrurl);
+
+			for (int i = 0; i < files.Length; i++)
+			{
+				ModuleScript ms = new(this);
+				ms.Name = Path.GetFileNameWithoutExtension(files[i]);
+				ms.Source = File.ReadAllText(files[i]);
+				ms.Parent = Modules;
+			}
 
 			CoreScript ss = new(this);
 			ss.Name = "StarterScript";

@@ -25,7 +25,7 @@ namespace NetBlox.Instances.GUIs
 		{
 			if (Enabled)
 			{
-				var tor = from x in Children where x is GuiObject orderby -((GuiObject)x).ZIndex select x;
+				var tor = from x in Children where x is GuiObject orderby ((GuiObject)x).ZIndex select x;
 				var ssz = new Vector2(Raylib.GetScreenWidth(), Raylib.GetScreenHeight());
 				var c = tor.Count();
 				for (int i = 0; i < c; i++)

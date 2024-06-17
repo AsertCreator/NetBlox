@@ -11,15 +11,14 @@ namespace NetBlox.Instances.Scripts
 	[Creatable]
 	public class ModuleScript : BaseScript
 	{
+		public bool Modulating;
+		public bool DoneModulating;
+		public DynValue? DynValue;
 		public ModuleScript(GameManager ins) : base(ins) { }
 
 		public override void Process()
 		{
 			// we dont do THAT
-		}
-		public DynValue Modulate()
-		{
-			throw new NotImplementedException();
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

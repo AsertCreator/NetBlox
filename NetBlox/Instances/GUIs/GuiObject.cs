@@ -8,7 +8,7 @@ namespace NetBlox.Instances.GUIs
 	public class GuiObject : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public int ZIndex { get; set; } = -1;
+		public int ZIndex { get; set; } = 1;
 		[Lua([Security.Capability.None])]
 		public UDim2 Position { get; set; }
 		[Lua([Security.Capability.None])]

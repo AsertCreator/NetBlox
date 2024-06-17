@@ -37,7 +37,7 @@ namespace NetBlox.Instances.Services
 		{
 			if (RegisteredSetCallbacks.ContainsKey(name)) LuaRuntime.Execute(RegisteredSetCallbacks[name], 
 				(LuaRuntime.CurrentThread != null ? LuaRuntime.CurrentThread.Value.Level : 3), GameManager, null, [dv]);
-			throw new Exception($"\"{name}\" has not been registered by CoreScripts");
+			else throw new Exception($"\"{name}\" has not been registered by CoreScripts");
 		}
 		[Lua([Security.Capability.None])]
 		public DynValue GetCore(string name)

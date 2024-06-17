@@ -1,5 +1,6 @@
 ﻿global using Font = Raylib_cs.Font;
 using NetBlox.Instances;
+using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 #if STUDIO
@@ -34,6 +35,7 @@ namespace NetBlox
 		{
 			GameManager = gm;
 			VersionMargin = vm;
+			GameManager.RenderManager = this;
 
 			if (!skiprinit)
 				Initialize(render);
@@ -70,6 +72,18 @@ namespace NetBlox
 
 #if STUDIO
 				rlImGui.Setup(true, true);
+
+				Task.Run(() =>
+				{
+					Console.WriteLine("NetBlox Console is running (enter Lua code to run it)");
+					while (!GameManager.ShuttingDown)
+					{
+						Console.Write(">>> ");
+						var c = Console.ReadLine();
+						LuaRuntime.Execute(c, 8, GameManager, null);
+					}
+				});
+				new EditorManager(GameManager.RenderManager);
 #endif
 			}
 		}

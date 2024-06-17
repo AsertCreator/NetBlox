@@ -21,10 +21,10 @@ namespace NetBlox.Runtime
 		public Script Script;
 		public BaseScript? ScrInst;
 		public DateTime WaitUntil;
-		public Action? FinishCallback;
+		public Action<DynValue>? FinishCallback;
 		public string Name = string.Empty;
 
-		public LuaThread(GameManager gm, DataModel dm, BaseScript? bs, DynValue d, int sl, DynValue[]? dv = null, Action? fc = null)
+		public LuaThread(GameManager gm, DataModel dm, BaseScript? bs, DynValue d, int sl, DynValue[]? dv = null, Action<DynValue>? fc = null)
 		{
 			GameManager = gm;
 			Script = dm.MainEnv;
@@ -76,9 +76,20 @@ namespace NetBlox.Runtime
 				var ms = inst as ModuleScript;
 				if (gm.CurrentRoot.LoadedModules.TryGetValue(ms, out var dv)) return dv;
 
-				var ret = ImmediateExecute(ms.Source, ms.GameManager, ms);
-				gm.CurrentRoot.LoadedModules[ms] = ret;
-				return ret;
+				if (!ms.Modulating && !ms.DoneModulating)
+					Execute(ms.Source, CurrentThread.Value.Level, gm, ms, x =>
+					{
+						ms.DoneModulating = true;
+						ms.Modulating = false;
+						ms.DynValue = x;
+					});
+
+				if (!ms.Modulating && ms.DoneModulating)
+				{
+					gm.CurrentRoot.LoadedModules[ms] = ms.DynValue;
+					return ms.DynValue;
+				}
+				else return DynValue.NewYieldReq(y.GetArray());
 			});
 			dm.MainEnv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
 			{
@@ -158,7 +169,7 @@ namespace NetBlox.Runtime
 		{
 			return (from x in Threads where x.Coroutine == c select x).First();
 		}
-		public static void Execute(string code, int sl, GameManager gm, BaseScript? bs, Action? fc = null)
+		public static void Execute(string code, int sl, GameManager gm, BaseScript? bs, Action<DynValue>? fc = null)
 		{
 			try
 			{
@@ -178,7 +189,7 @@ namespace NetBlox.Runtime
 				throw;
 			}
 		}
-		public static void Execute(DynValue fun, int sl, GameManager gm, BaseScript? bs, DynValue[]? dva, Action? fc = null)
+		public static void Execute(DynValue fun, int sl, GameManager gm, BaseScript? bs, DynValue[]? dva, Action<DynValue>? fc = null)
 		{
 			try
 			{

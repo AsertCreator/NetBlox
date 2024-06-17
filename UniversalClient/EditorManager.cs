@@ -12,7 +12,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NetBlox.Studio
+namespace NetBlox
 {
 	public class EditorManager
 	{

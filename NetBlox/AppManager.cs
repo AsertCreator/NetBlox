@@ -15,7 +15,7 @@ namespace NetBlox
 		public static Dictionary<string, string> Preferences = [];
 		public static Dictionary<string, bool> FastFlags = [];
 		public static Dictionary<string, string> FastStrings = [];
-		public static Dictionary<string, int> FastNumbers = [];
+		public static Dictionary<string, int> FastInts = [];
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
@@ -54,12 +54,30 @@ namespace NetBlox
 							var key = args[++i];
 							var nu = int.Parse(args[++i]);
 
-							FastNumbers[key] = nu;
+							FastInts[key] = nu;
 							LogManager.LogInfo($"Setting fast number {key} to {nu}");
 							break;
 						}
 				}
 			}
+		}
+		/// <summary>
+		/// Defines a fast flag, must be called after loading current fast flags
+		/// </summary>
+		public static void DefineFastFlag(string fflag, bool def)
+		{
+			if (!FastFlags.TryGetValue(fflag, out var _))
+				FastFlags[fflag] = def;
+		}
+		public static void DefineFastInt(string fflag, int def)
+		{
+			if (!FastInts.TryGetValue(fflag, out var _))
+				FastInts[fflag] = def;
+		}
+		public static void DefineFastString(string fflag, string def)
+		{
+			if (!FastStrings.TryGetValue(fflag, out var _))
+				FastStrings[fflag] = def;
 		}
 		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<string, GameManager> callback)
 		{
@@ -70,18 +88,9 @@ namespace NetBlox
 			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
 			return manager;
 		}
-		public static void SetRenderTarget(GameManager gm)
-		{
-			CurrentRenderManager = gm.RenderManager;
-		}
-		public static void SetPreference(string key, string val) 
-		{
-			Preferences[key] = val;
-		}
-		public static string GetPreference(string key)
-		{
-			return Preferences[key];
-		}
+		public static void SetRenderTarget(GameManager gm) => CurrentRenderManager = gm.RenderManager;
+		public static void SetPreference(string key, string val) => Preferences[key] = val;
+		public static string GetPreference(string key) => Preferences[key];
 		public static void Start()
 		{
 			if (!Directory.Exists(LibraryFolder))
@@ -89,6 +98,9 @@ namespace NetBlox
 
 			LogManager.LogInfo("Initializing SerializationManager...");
 			SerializationManager.Initialize();
+
+			DefineFastFlag("FFlagShowCoreGui", true);
+			DefineFastInt("FIntDefaultUIVariant", 1);
 
 			while (!ShuttingDown)
 			{
@@ -161,21 +173,20 @@ namespace NetBlox
 								}
 								LuaRuntime.ReportedExecute(() =>
 								{
-
 									if (thread.ScrInst != null)
 										thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
 									else
 										thread.Script.Globals["script"] = DynValue.Nil;
 
 									var res = thread.Coroutine.Resume(thread.StartArgs);
-									if (thread.Coroutine.State != CoroutineState.Dead || res == null)
+									if (thread.Coroutine.State == CoroutineState.Suspended || thread.Coroutine.State == CoroutineState.ForceSuspended || res == null)
 										return;
 									else
 									{
 										if (LuaRuntime.Threads.Contains(thread))
 										{
 											var ac = thread.FinishCallback;
-											if (ac != null) ac();
+											if (ac != null) ac(res);
 											LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 										}
 									}
@@ -188,7 +199,7 @@ namespace NetBlox
 						{
 							LuaRuntime.PrintError("Exhausted maximum script execution time!");
 							var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
-							if (ac != null) ac();
+							if (ac != null) ac(DynValue.Nil);
 							cst.Cancel();
 						}
 #endif
