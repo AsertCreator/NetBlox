@@ -68,7 +68,7 @@ namespace NetBlox
 		public Queue<Replication> ReplicationQueue = [];
 		public bool IsServer;
 		public bool IsClient;
-		public int ServerPort = 2557; // new port lol
+		public int ServerPort = 25570; // apparently that port was forbidden
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer Server;
 		public CancellationTokenSource ClientReplicatorCanceller = new();
