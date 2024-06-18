@@ -6,7 +6,8 @@ looks like some "pixel gun 3d" type of game you would find on play store.
 ## Features
 well there are instances, scripting(maybe), networking, physics(maybe). roblox offers the 
 same, but a lot better, netblox is very poorly made. also there's physics engine named qu3e-sharp,
-which i believe is licensed same as qu3e, so zlib.
+which i believe is licensed same as qu3e, so zlib. the lua engine used is a modified version of
+moonsharp (so no luau for you)
 
 ## Architecture
 `AppManager` class is static and holds within task scheduler (i.e. game processor), a lot
