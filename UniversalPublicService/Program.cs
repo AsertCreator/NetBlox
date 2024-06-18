@@ -14,7 +14,6 @@ namespace NetBlox.PublicService
 		{
 			Log.Logger = new LoggerConfiguration()
 				.WriteTo.Console()
-				.WriteTo.File($"{DateTime.Now:s}.log")
 				.CreateLogger();
 			Log.Information($"Starting NetBlox public service (v{Version.VersionMajor}.{Version.VersionMinor}.{Version.VersionPatch})...");
 			GetService<ServerService>().Start();
