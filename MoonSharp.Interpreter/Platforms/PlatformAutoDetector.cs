@@ -112,18 +112,7 @@ namespace MoonSharp.Interpreter.Platforms
 		{
 			AutoDetectPlatformFlags();
 
-#if PCL || ENABLE_DOTNET
-			return new LimitedPlatformAccessor();
-#else
-			if (IsRunningOnUnity)
-				return new LimitedPlatformAccessor();
-
-#if DOTNET_CORE
-			return new DotNetCorePlatformAccessor();
-#else
-			return new StandardPlatformAccessor();
-#endif
-#endif
+			return new LimitedPlatformAccessor(); // welcome to netblox
 		}
 
 		internal static IScriptLoader GetDefaultScriptLoader()

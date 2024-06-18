@@ -15,42 +15,6 @@ namespace MoonSharp.Interpreter.CoreLib
 	public class DebugModule
 	{
 		[MoonSharpModuleMethod]
-		public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments args)
-		{
-			Script script = executionContext.GetScript();
-
-			if (script.Options.DebugInput == null)
-				throw new ScriptRuntimeException("debug.debug not supported on this platform/configuration");
-
-			ReplInterpreter interpreter = new ReplInterpreter(script)
-				{
-					HandleDynamicExprs = false,
-					HandleClassicExprsSyntax = true
-				};
-
-			while (true)
-			{
-				string s = script.Options.DebugInput(interpreter.ClassicPrompt + " ");
-
-				try
-				{
-					DynValue result = interpreter.Evaluate(s);
-
-					if (result != null && result.Type != DataType.Void)
-						script.Options.DebugPrint(string.Format("{0}", result));
-				}
-				catch (InterpreterException ex)
-				{
-					script.Options.DebugPrint(string.Format("{0}", ex.DecoratedMessage ?? ex.Message));
-				}
-				catch (Exception ex)
-				{
-					script.Options.DebugPrint(string.Format("{0}", ex.Message));
-				}
-			}
-		}
-
-		[MoonSharpModuleMethod]
 		public static DynValue getuservalue(ScriptExecutionContext executionContext, CallbackArguments args)
 		{
 			DynValue v = args[0];
@@ -68,44 +32,6 @@ namespace MoonSharp.Interpreter.CoreLib
 			DynValue t = args.AsType(0, "setuservalue", DataType.Table, true);
 
 			return v.UserData.UserValue = t;
-		}
-
-		[MoonSharpModuleMethod]
-		public static DynValue getregistry(ScriptExecutionContext executionContext, CallbackArguments args)
-		{
-			return DynValue.NewTable(executionContext.GetScript().Registry);
-		}
-
-		[MoonSharpModuleMethod]
-		public static DynValue getmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
-		{
-			DynValue v = args[0];
-			Script S = executionContext.GetScript();
-
-			if (v.Type.CanHaveTypeMetatables())
-				return DynValue.NewTable(S.GetTypeMetatable(v.Type));
-			else if (v.Type == DataType.Table)
-				return DynValue.NewTable(v.Table.MetaTable);
-			else
-				return DynValue.Nil;
-		}
-
-		[MoonSharpModuleMethod]
-		public static DynValue setmetatable(ScriptExecutionContext executionContext, CallbackArguments args)
-		{
-			DynValue v = args[0];
-			DynValue t = args.AsType(1, "setmetatable", DataType.Table, true);
-			Table m = (t.IsNil()) ? null : t.Table;
-			Script S = executionContext.GetScript();
-
-			if (v.Type.CanHaveTypeMetatables())
-				S.SetTypeMetatable(v.Type, m);
-			else if (v.Type == DataType.Table)
-				v.Table.MetaTable = m;
-			else
-				throw new ScriptRuntimeException("cannot debug.setmetatable on type {0}", v.Type.ToErrorTypeString());
-
-			return v;
 		}
 
 		[MoonSharpModuleMethod]

@@ -11,7 +11,6 @@ namespace NetBlox.Instances.Scripts
 	[Creatable]
 	public class ModuleScript : BaseScript
 	{
-		public bool Modulating;
 		public bool DoneModulating;
 		public DynValue? DynValue;
 		public ModuleScript(GameManager ins) : base(ins) { }

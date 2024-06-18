@@ -63,7 +63,7 @@ namespace NetBlox.Runtime
 			{
 				var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
 				GetThreadFor(x.GetCallingCoroutine()).WaitUntil = wa;
-				return DynValue.NewYieldReq(y.GetArray());
+				return DynValue.NewYieldReq(y.GetArray()); // here we go to the next, bc thread is paused
 			});
 			dm.MainEnv.Globals["require"] = DynValue.NewCallback((x, y) =>
 			{
@@ -76,20 +76,14 @@ namespace NetBlox.Runtime
 				var ms = inst as ModuleScript;
 				if (gm.CurrentRoot.LoadedModules.TryGetValue(ms, out var dv)) return dv;
 
-				if (!ms.Modulating && !ms.DoneModulating)
-					Execute(ms.Source, CurrentThread.Value.Level, gm, ms, x =>
-					{
-						ms.DoneModulating = true;
-						ms.Modulating = false;
-						ms.DynValue = x;
-					});
-
-				if (!ms.Modulating && ms.DoneModulating)
-				{
-					gm.CurrentRoot.LoadedModules[ms] = ms.DynValue;
-					return ms.DynValue;
-				}
-				else return DynValue.NewYieldReq(y.GetArray());
+				var on = CurrentThread.Value.Name;
+				CurrentThread.Value.Name = ms.GetFullName();
+				var cl = ImmediateExecute(ms.Source, gm, ms);
+				gm.CurrentRoot.LoadedModules[ms] = cl;
+				ms.DoneModulating = true;
+				ms.DynValue = cl;
+				CurrentThread.Value.Name = on;
+				return cl;
 			});
 			dm.MainEnv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
 			{
@@ -238,9 +232,12 @@ namespace NetBlox.Runtime
 			}
 			catch (ScriptRuntimeException ex)
 			{
-				LogManager.LogError(ex.Message);
-				for (int i = 0; i<ex.CallStack.Count; i++)
-					LogManager.LogError($"    at {name}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
+				var ct = CurrentThread;
+				{
+					LogManager.LogError(ex.Message);
+					for (int i = 0; i < ex.CallStack.Count; i++)
+						LogManager.LogError($"    at {ct.Value.Name}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
+				}
 
 				if (remthread)
 					if (Threads.Contains(CurrentThread.Value))

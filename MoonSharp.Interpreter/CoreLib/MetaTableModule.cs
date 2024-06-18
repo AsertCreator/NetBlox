@@ -24,7 +24,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
 			DynValue curmeta = executionContext.GetMetamethod(table, "__metatable");
 
-			if (curmeta != null)
+			if (curmeta != null || executionContext.GetMetamethod(table, "__handle") != null)
 			{
 				throw new ScriptRuntimeException("cannot change a protected metatable");
 			}
@@ -55,6 +55,8 @@ namespace MoonSharp.Interpreter.CoreLib
 			}
 
 			if (meta == null)
+				return DynValue.Nil;
+			else if (meta.RawGet("__handle") != null) // idl when people are getting instance metatables :angry:
 				return DynValue.Nil;
 			else if (meta.RawGet("__metatable") != null)
 				return meta.Get("__metatable");

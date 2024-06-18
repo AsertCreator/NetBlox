@@ -17,9 +17,7 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
 				lcontext.IsDynamicExpression = true;
 				lcontext.Anonymous = true;
 
-				Expression exp;
-				using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.AstCreation))
-					exp = Expression.Expr(lcontext);
+				Expression exp = Expression.Expr(lcontext);
 
 				return new DynamicExprExpression(exp, lcontext);
 			}
@@ -46,16 +44,12 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
 			ScriptLoadingContext lcontext = CreateLoadingContext(script, source);
 			try
 			{
-				Statement stat;
-
-				using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.AstCreation))
-					stat = new ChunkStatement(lcontext);
+				Statement stat = new ChunkStatement(lcontext);
 
 				int beginIp = -1;
 
 				//var srcref = new SourceRef(source.SourceID);
 
-				using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.Compilation))
 				using (bytecode.EnterSource(null))
 				{
 					bytecode.Emit_Nop(string.Format("Begin chunk {0}", source.Name));
@@ -83,15 +77,12 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
 			try
 			{
 				FunctionDefinitionExpression fnx;
-
-				using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.AstCreation))
-					fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
+				fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
 
 				int beginIp = -1;
 
 				//var srcref = new SourceRef(source.SourceID);
 
-				using (script.PerformanceStats.StartStopwatch(Diagnostics.PerformanceCounter.Compilation))
 				using (bytecode.EnterSource(null))
 				{
 					bytecode.Emit_Nop(string.Format("Begin function {0}", source.Name));

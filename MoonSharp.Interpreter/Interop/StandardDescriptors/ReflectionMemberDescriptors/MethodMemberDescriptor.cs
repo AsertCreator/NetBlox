@@ -226,51 +226,48 @@ namespace MoonSharp.Interpreter.Interop
 
 			if (methodInfo == null)
 				return;
+			
+			var ep = Expression.Parameter(typeof(object[]), "pars");
+			var objinst = Expression.Parameter(typeof(object), "instance");
+			var inst = Expression.Convert(objinst, MethodInfo.DeclaringType);
 
-			using (PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation))
+			Expression[] args = new Expression[parameters.Length];
+
+			for (int i = 0; i < parameters.Length; i++)
 			{
-				var ep = Expression.Parameter(typeof(object[]), "pars");
-				var objinst = Expression.Parameter(typeof(object), "instance");
-				var inst = Expression.Convert(objinst, MethodInfo.DeclaringType);
-
-				Expression[] args = new Expression[parameters.Length];
-
-				for (int i = 0; i < parameters.Length; i++)
+				if (parameters[i].OriginalType.IsByRef)
 				{
-					if (parameters[i].OriginalType.IsByRef)
-					{
-						throw new InternalErrorException("Out/Ref params cannot be precompiled.");
-					}
-					else
-					{
-						var x = Expression.ArrayIndex(ep, Expression.Constant(i));
-						args[i] = Expression.Convert(x, parameters[i].OriginalType);
-					}
-				}
-
-				Expression fn;
-
-				if (IsStatic)
-				{
-					fn = Expression.Call(methodInfo, args);
+					throw new InternalErrorException("Out/Ref params cannot be precompiled.");
 				}
 				else
 				{
-					fn = Expression.Call(inst, methodInfo, args);
+					var x = Expression.ArrayIndex(ep, Expression.Constant(i));
+					args[i] = Expression.Convert(x, parameters[i].OriginalType);
 				}
+			}
+
+			Expression fn;
+
+			if (IsStatic)
+			{
+				fn = Expression.Call(methodInfo, args);
+			}
+			else
+			{
+				fn = Expression.Call(inst, methodInfo, args);
+			}
 
 
-				if (this.m_IsAction)
-				{
-					var lambda = Expression.Lambda<Action<object, object[]>>(fn, objinst, ep);
-					Interlocked.Exchange(ref m_OptimizedAction, lambda.Compile());
-				}
-				else
-				{
-					var fnc = Expression.Convert(fn, typeof(object));
-					var lambda = Expression.Lambda<Func<object, object[], object>>(fnc, objinst, ep);
-					Interlocked.Exchange(ref m_OptimizedFunc, lambda.Compile());
-				}
+			if (this.m_IsAction)
+			{
+				var lambda = Expression.Lambda<Action<object, object[]>>(fn, objinst, ep);
+				Interlocked.Exchange(ref m_OptimizedAction, lambda.Compile());
+			}
+			else
+			{
+				var fnc = Expression.Convert(fn, typeof(object));
+				var lambda = Expression.Lambda<Func<object, object[], object>>(fnc, objinst, ep);
+				Interlocked.Exchange(ref m_OptimizedFunc, lambda.Compile());
 			}
 		}
 

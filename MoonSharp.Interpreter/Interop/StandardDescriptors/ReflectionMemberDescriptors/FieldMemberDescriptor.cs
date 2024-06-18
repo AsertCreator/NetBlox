@@ -125,25 +125,22 @@ namespace MoonSharp.Interpreter.Interop
 			if (this.IsConst)
 				return;
 
-			using (PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation))
+			if (IsStatic)
 			{
-				if (IsStatic)
-				{
-					var paramExp = Expression.Parameter(typeof(object), "dummy");
-					var propAccess = Expression.Field(null, FieldInfo);
-					var castPropAccess = Expression.Convert(propAccess, typeof(object));
-					var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
-					Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
-				}
-				else
-				{
-					var paramExp = Expression.Parameter(typeof(object), "obj");
-					var castParamExp = Expression.Convert(paramExp, this.FieldInfo.DeclaringType);
-					var propAccess = Expression.Field(castParamExp, FieldInfo);
-					var castPropAccess = Expression.Convert(propAccess, typeof(object));
-					var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
-					Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
-				}
+				var paramExp = Expression.Parameter(typeof(object), "dummy");
+				var propAccess = Expression.Field(null, FieldInfo);
+				var castPropAccess = Expression.Convert(propAccess, typeof(object));
+				var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
+				Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
+			}
+			else
+			{
+				var paramExp = Expression.Parameter(typeof(object), "obj");
+				var castParamExp = Expression.Convert(paramExp, this.FieldInfo.DeclaringType);
+				var propAccess = Expression.Field(castParamExp, FieldInfo);
+				var castPropAccess = Expression.Convert(propAccess, typeof(object));
+				var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
+				Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
 			}
 		}
 

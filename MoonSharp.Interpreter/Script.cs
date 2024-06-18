@@ -69,7 +69,6 @@ namespace MoonSharp.Interpreter
 		public Script(CoreModules coreModules)
 		{
 			Options = new ScriptOptions(DefaultOptions);
-			PerformanceStats = new PerformanceStatistics();
 			Registry = new Table(this);
 
 			m_ByteCode = new ByteCode(this);
@@ -93,11 +92,6 @@ namespace MoonSharp.Interpreter
 		/// Gets the global options, that is options which cannot be customized per-script.
 		/// </summary>
 		public static ScriptGlobalOptions GlobalOptions { get; private set; }
-
-		/// <summary>
-		/// Gets access to performance statistics.
-		/// </summary>
-		public PerformanceStatistics PerformanceStats { get; private set; }
 
 		/// <summary>
 		/// Gets the default global table for this script. Unless a different table is intentionally passed (or setfenv has been used)
