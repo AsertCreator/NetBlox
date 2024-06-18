@@ -69,6 +69,7 @@ if not PlatformService.IsStudio then
 	-- initializes teleport GUI
 	function initTUI()
 		local telgui = require(script.Parent.Modules.TeleportGui);
+		print(telgui);
 		CoreGui.OnTeleportStarts:Connect(telgui.show);
 		CoreGui.OnTeleportEnds:Connect(telgui.hide);
 	end

@@ -1,4 +1,4 @@
-﻿ // #define DISABLE_EME
+﻿#define DISABLE_EME
 using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 using System.Runtime;
@@ -178,7 +178,7 @@ namespace NetBlox
 									else
 										thread.Script.Globals["script"] = DynValue.Nil;
 
-									var res = thread.Coroutine.Resume(thread.StartArgs);
+									var res = thread.Coroutine.Resume();
 									if (thread.Coroutine.State == CoroutineState.Suspended || thread.Coroutine.State == CoroutineState.ForceSuspended || res == null)
 										return;
 									else
