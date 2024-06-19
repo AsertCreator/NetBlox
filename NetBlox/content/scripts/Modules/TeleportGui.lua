@@ -32,10 +32,6 @@ AuthorTitle.Text = "";
 
 return {
 	show = function(placename, authorname, pid, uid)
-		print(placename);
-		print(authorname);
-		print(pid);
-		print(uid);
 		TeleportGui.Enabled = true;
 		GameTitle.Text = placename;
 		AuthorTitle.Text = "by " .. authorname;

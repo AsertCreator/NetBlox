@@ -517,7 +517,6 @@ namespace NetBlox
 						prop.SetValue(ins, x(pbytes, GameManager));
 				}
 
-				LogManager.LogInfo(guid + ", classname: " + ins.ClassName);
 				GameManager.IsRunning = true; // i cant find better place
 				return ins;
 			}

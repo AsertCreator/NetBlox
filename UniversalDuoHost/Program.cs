@@ -46,7 +46,7 @@ namespace UniversalDuoHost
 					Parent = ws,
 					Color = Color.DarkGreen,
 					Position = new(0, -4.5f, 0),
-					Size = new(2048, 2, 2048),
+					Size = new(32, 2, 32),
 					TopSurface = SurfaceType.Studs,
 					Anchored = true
 				};
