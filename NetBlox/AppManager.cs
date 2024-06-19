@@ -143,10 +143,14 @@ namespace NetBlox
 			{
 				if (LuaRuntime.CurrentThread != null)
 				{
-					if (LuaRuntime.CurrentThread.Value.Coroutine == null)
+					var thread = LuaRuntime.CurrentThread.Value;
+					if (thread.Coroutine == null)
+					{
+						thread.IsDead = true;
 						LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-					else if (DateTime.Now >= LuaRuntime.CurrentThread.Value.WaitUntil &&
-						LuaRuntime.CurrentThread.Value.Coroutine.State != CoroutineState.Dead)
+					}
+					else if (DateTime.Now >= thread.WaitUntil && !(thread.JoinedTo != null && thread.JoinedTo.IsDead) &&
+						thread.Coroutine.State != CoroutineState.Dead)
 					{
 						var cst = new CancellationTokenSource();
 #if !DISABLE_EME
@@ -156,41 +160,46 @@ namespace NetBlox
 							ControlledExecution.Run(() =>
 							{
 #endif
-								if (LuaRuntime.CurrentThread == null)
+						if (LuaRuntime.CurrentThread == null)
+						{
+							if (LuaRuntime.Threads.Count > 0)
+								LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
+							else
+								return;
+						}
+
+						if (thread.GameManager.ProhibitScripts)
+						{
+							LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
+							return;
+						}
+						LuaRuntime.ReportedExecute(() =>
+						{
+							if (thread.ScrInst != null)
+								thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
+							else
+								thread.Script.Globals["script"] = DynValue.Nil;
+
+							var res = DynValue.Nil;
+							if (thread.ToReturn.IsNil())
+								res = thread.Coroutine.Resume(thread.StartArgs);
+							else
+								res = thread.Coroutine.Resume(thread.ToReturn);
+							thread.JoinedTo = null;
+							thread.ToReturn = DynValue.Nil;
+							if (thread.Coroutine.State == CoroutineState.Suspended || thread.Coroutine.State == CoroutineState.ForceSuspended || res == null)
+								return;
+							else
+							{
+								if (LuaRuntime.Threads.Contains(thread))
 								{
-									if (LuaRuntime.Threads.Count > 0)
-										LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-									else
-										return;
+									var ac = thread.FinishCallback;
+									if (ac != null) ac(res);
+									thread.IsDead = true;
+									LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
 								}
-
-								var thread = LuaRuntime.CurrentThread.Value;
-
-								if (thread.GameManager.ProhibitScripts)
-								{
-									LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
-									return;
-								}
-								LuaRuntime.ReportedExecute(() =>
-								{
-									if (thread.ScrInst != null)
-										thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
-									else
-										thread.Script.Globals["script"] = DynValue.Nil;
-
-									var res = thread.Coroutine.Resume(thread.StartArgs);
-									if (thread.Coroutine.State == CoroutineState.Suspended || thread.Coroutine.State == CoroutineState.ForceSuspended || res == null)
-										return;
-									else
-									{
-										if (LuaRuntime.Threads.Contains(thread))
-										{
-											var ac = thread.FinishCallback;
-											if (ac != null) ac(res);
-											LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-										}
-									}
-								}, thread.Name, true);
+							}
+						}, thread.Name, true);
 #if !DISABLE_EME
 #pragma warning restore SYSLIB0046 // Type or member is obsolete
 							}, cst.Token);

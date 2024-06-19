@@ -105,7 +105,7 @@ end)
 
 local VersionText = Instance.new("TextLabel");
 VersionText.Parent = Sidebar;
-VersionText.Position = UDim2.new(0, 0, 1, -60);
+VersionText.Position = UDim2.new(0, 0, 1, -30);
 VersionText.Size = UDim2.new(1, 0, 0, 30);
 VersionText.TextColor3 = Color3.new(1, 1, 1);
 VersionText.Text = PlatformService:FormatVersion();
@@ -121,5 +121,3 @@ MenuButton.MouseButton1Click:Connect(function()
 	Sidebar.Visible = not Sidebar.Visible;
 	BlackOut.Visible = Sidebar.Visible;
 end)
-
-return { Sidebar, BlackOut, TopbarFrame };

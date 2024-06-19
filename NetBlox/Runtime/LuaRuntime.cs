@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime;
+using System.Threading;
 using Script = MoonSharp.Interpreter.Script;
 
 namespace NetBlox.Runtime
@@ -14,13 +15,17 @@ namespace NetBlox.Runtime
 	public class LuaThread
 	{
 		public int Level;
+		public int SwitchCount;
+		public bool IsDead = false;
 		public GameManager GameManager;
 		public DynValue MsThread;
 		public Coroutine Coroutine;
-		public DynValue[] StartArgs;
+		public DynValue[] StartArgs = [];
+		public DynValue ToReturn = DynValue.Nil;
 		public Script Script;
 		public BaseScript? ScrInst;
 		public DateTime WaitUntil;
+		public LuaThread? JoinedTo;
 		public Action<DynValue>? FinishCallback;
 		public string Name = string.Empty;
 
@@ -63,7 +68,7 @@ namespace NetBlox.Runtime
 			{
 				var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
 				GetThreadFor(x.GetCallingCoroutine()).WaitUntil = wa;
-				return DynValue.NewYieldReq(y.GetArray()); // here we go to the next, bc thread is paused
+				return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
 			});
 			dm.MainEnv.Globals["require"] = DynValue.NewCallback((x, y) =>
 			{
@@ -76,14 +81,13 @@ namespace NetBlox.Runtime
 				var ms = inst as ModuleScript;
 				if (gm.CurrentRoot.LoadedModules.TryGetValue(ms, out var dv)) return dv;
 
-				var on = CurrentThread.Value.Name;
-				CurrentThread.Value.Name = ms.GetFullName();
-				var cl = ImmediateExecute(ms.Source, gm, ms);
-				gm.CurrentRoot.LoadedModules[ms] = cl;
-				ms.DoneModulating = true;
-				ms.DynValue = cl;
-				CurrentThread.Value.Name = on;
-				return cl;
+				var lt = GetThreadFor(x.GetCallingCoroutine());
+				lt.JoinedTo = Execute(ms.Source, lt.Level, gm, ms, x =>
+				{
+					lt.ToReturn = x;
+				});
+
+				return DynValue.NewYieldReq([]);
 			});
 			dm.MainEnv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
 			{
@@ -163,19 +167,20 @@ namespace NetBlox.Runtime
 		{
 			return (from x in Threads where x.Coroutine == c select x).First();
 		}
-		public static void Execute(string code, int sl, GameManager gm, BaseScript? bs, Action<DynValue>? fc = null)
+		public static LuaThread Execute(string code, int sl, GameManager gm, BaseScript? bs, Action<DynValue>? fc = null)
 		{
 			try
 			{
 				var d = gm.CurrentRoot.MainEnv.CreateCoroutine(gm.CurrentRoot.MainEnv.LoadString(code));
 				var lt = new LuaThread(gm, gm.CurrentRoot, bs, d, sl, [], fc);
 
-				d.Coroutine.AutoYieldCounter = 100000;
+				d.Coroutine.AutoYieldCounter = 0;
 
 				if (bs != null)
 					lt.Name = bs.GetFullName();
 
 				Threads.AddLast(lt);
+				return lt;
 			}
 			catch (Exception ex)
 			{
@@ -183,7 +188,7 @@ namespace NetBlox.Runtime
 				throw;
 			}
 		}
-		public static void Execute(DynValue fun, int sl, GameManager gm, BaseScript? bs, DynValue[]? dva, Action<DynValue>? fc = null)
+		public static LuaThread Execute(DynValue fun, int sl, GameManager gm, BaseScript? bs, DynValue[]? dva, Action<DynValue>? fc = null)
 		{
 			try
 			{
@@ -196,6 +201,7 @@ namespace NetBlox.Runtime
 					lt.Name = bs.GetFullName();
 
 				Threads.AddLast(lt);
+				return lt;
 			}
 			catch (Exception ex)
 			{
@@ -208,7 +214,10 @@ namespace NetBlox.Runtime
 			try
 			{
 				var g = ShallowCloneTable(gm.CurrentRoot.MainEnv.Globals);
-				g["script"] = MakeInstanceTable(bs, bs.GameManager);
+				if (bs != null)
+					g["script"] = MakeInstanceTable(bs, bs.GameManager);
+				else
+					g["script"] = null;
 				var v = gm.CurrentRoot.MainEnv.DoString(code, g);
 				return v;
 			}
@@ -239,9 +248,12 @@ namespace NetBlox.Runtime
 						LogManager.LogError($"    at {ct.Value.Name}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
 				}
 
-				if (remthread)
+				if (remthread && CurrentThread != null)
 					if (Threads.Contains(CurrentThread.Value))
+					{
+						CurrentThread.Value.IsDead = true;
 						Threads.Remove(CurrentThread);
+					}
 			}
 		}
 		public static void PrintOut(string msg)

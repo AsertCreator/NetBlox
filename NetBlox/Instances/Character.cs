@@ -17,6 +17,10 @@ namespace NetBlox.Instances
 		public bool IsLocalPlayer { get; set; }
 		[Lua([Security.Capability.None])]
 		public float Health { get; set; } = 100;
+		[Lua([Security.Capability.None])]
+		public float WalkSpeed { get; set; } = 12;
+		[Lua([Security.Capability.None])]
+		public float JumpPower { get; set; } = 6;
 		private bool isDying = false;
 
 		public Character(GameManager gm) : base(gm)
@@ -63,22 +67,22 @@ namespace NetBlox.Instances
 
 				if (Raylib.IsKeyDown(KeyboardKey.W))
 				{
-					Position = Position + new Vector3(0.2f * MathF.Cos(angle), 0, 0.2f * MathF.Sin(angle));
+					Position = Position + new Vector3(0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.A))
 				{
-					Position = Position + new Vector3(0.2f * MathF.Cos(angle - 1.5708f), 0, 0.2f * MathF.Sin(angle - 1.5708f));
+					Position = Position + new Vector3(0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.S))
 				{
-					Position = Position + new Vector3(-0.2f * MathF.Cos(angle), 0, -0.2f * MathF.Sin(angle));
+					Position = Position + new Vector3(-0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.D))
 				{
-					Position = Position + new Vector3(-0.2f * MathF.Cos(angle - 1.5708f), 0, -0.2f * MathF.Sin(angle - 1.5708f));
+					Position = Position + new Vector3(-0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f));
 					dot = true;
 				}
 

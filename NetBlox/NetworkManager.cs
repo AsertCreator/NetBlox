@@ -332,7 +332,7 @@ namespace NetBlox
 					}
 					if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
 					{
-						var ch = ins as Character;
+						var ch = (Character)ins;
 						ch.IsLocalPlayer = true;
 						c.CameraSubject = ch;
 						if (lp != null)
@@ -340,9 +340,9 @@ namespace NetBlox
 					}
 					if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
 					{
-						Root.GetService<Players>().CurrentPlayer = (Player)ins;
-						Root.GetService<Players>().CurrentPlayer.IsLocalPlayer = true;
 						lp = (Player)ins;
+						lp.IsLocalPlayer = true;
+						Root.GetService<Players>().CurrentPlayer = lp;
 					}
 				});
 				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>

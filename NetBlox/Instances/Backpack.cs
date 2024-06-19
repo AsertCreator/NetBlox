@@ -15,20 +15,5 @@ namespace NetBlox.Instances
 			if (nameof(Backpack) == classname) return true;
 			return base.IsA(classname);
 		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Reload()
-		{
-			var sg = Root.GetService("StarterPack");
-			var ss = sg.GetChildren();
-
-			ClearAllChildren();
-
-			for (int i = 0; i < ss.Length; i++)
-			{
-				var child = ss[i];
-				var clone = child.Clone();
-				clone.Parent = this;
-			}
-		}
 	}
 }

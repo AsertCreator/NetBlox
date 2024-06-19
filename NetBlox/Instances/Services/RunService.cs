@@ -13,11 +13,11 @@ namespace NetBlox.Instances.Services
 		{
 			Name = "Run Service";
 		}
-		[Lua([Security.Capability.None])]
+		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void Pause() => GameManager.IsRunning = false;
-		[Lua([Security.Capability.None])]
+		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void Run() => GameManager.IsRunning = true;
-		[Lua([Security.Capability.None])]
+		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void Stop() => GameManager.Shutdown();
 		[Lua([Security.Capability.None])]
 		public bool IsClient() => GameManager.NetworkManager.IsClient;

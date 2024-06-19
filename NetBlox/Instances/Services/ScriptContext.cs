@@ -26,7 +26,7 @@ namespace NetBlox.Instances.Services
 		{
 			CoreScript cs = new(GameManager);
 			cs.Name = path;
-			cs.Source = File.ReadAllText(AppManager.ResolveUrl("rbxasset://script/" + cs.Name));
+			cs.Source = File.ReadAllText(AppManager.ResolveUrl("rbxasset://scripts/" + cs.Name + ".lua"));
 			cs.Parent = parent;
 		}
 	}

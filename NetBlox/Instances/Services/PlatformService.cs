@@ -15,6 +15,7 @@ namespace NetBlox.Instances.Services
 		public bool IsOffline => Profile.IsOffline;
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool LoggedIn => Profile.LastLogin != null;
+		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
 		public PlatformService(GameManager ins) : base(ins) { }
 

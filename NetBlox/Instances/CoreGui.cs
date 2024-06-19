@@ -12,6 +12,7 @@ namespace NetBlox.Instances
 	{
 		private DynValue? showTeleportGui;
 		private DynValue? hideTeleportGui;
+		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
 		[Lua([Security.Capability.CoreSecurity])]
 		public LuaSignal OnTeleportStarts { get; set; } = new LuaSignal();

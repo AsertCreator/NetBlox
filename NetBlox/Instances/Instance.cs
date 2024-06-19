@@ -58,6 +58,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
 		public LuaSignal Destroying { get; set; } = new();
+		public virtual Security.Capability[] RequiredCapabilities => [];
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
 		public GameManager GameManager;

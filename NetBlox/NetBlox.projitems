@@ -85,7 +85,7 @@
     <None Include="$(MSBuildThisFileDirectory)content\fonts\arialbd.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\SidebarGui.lua">
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\Sidebar.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\TeleportGui.lua">

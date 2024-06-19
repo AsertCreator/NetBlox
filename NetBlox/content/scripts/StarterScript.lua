@@ -1,6 +1,7 @@
 ﻿-- init script
 
 local PlatformService = game:GetService("PlatformService");
+local ScriptContext = game:GetService("ScriptContext");
 local StarterGui = game:GetService("StarterGui");
 local CoreGui = game:GetService("CoreGui");
 local Debris = game:GetService("Debris");
@@ -63,7 +64,7 @@ if not PlatformService.IsStudio then
 	-- initializes in-game GUI
 	function initIGG()
 		if guivar == 1 then
-			require(script.Parent.Modules.SidebarGui);
+			ScriptContext:AddCoreScriptLocal("CoreScripts/Sidebar", RobloxGui);
 		end
 	end
 	-- initializes teleport GUI
