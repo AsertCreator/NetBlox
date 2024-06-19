@@ -22,6 +22,7 @@ Sidebar.Parent = RobloxGui;
 Sidebar.Position = UDim2.new(0, 0, 0, 30);
 Sidebar.Size = UDim2.new(0, 400, 1, -30);
 Sidebar.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2);
+Sidebar.BackgroundTransparency = 0.005;
 Sidebar.ZIndex = 3;
 Sidebar.Visible = false;
 
@@ -116,6 +117,7 @@ MenuButton.Parent = TopbarFrame;
 MenuButton.Position = UDim2.new(0, 0, 0, 0);
 MenuButton.Size = UDim2.new(0, 30, 0, 30);
 MenuButton.FilePath = "rbxasset://textures/menu.png";
+MenuButton.ZIndex = 4;
 MenuButton.MouseButton1Click:Connect(function()
 	TitleLabel.Text = game.Name; -- lol
 	Sidebar.Visible = not Sidebar.Visible;
