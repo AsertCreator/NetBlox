@@ -33,6 +33,7 @@ namespace NetBlox
 		public bool ProhibitScripts = false;
 		public bool MainManager = false;
 		public bool UsePublicService = false;
+		public bool FilteringEnabled = true;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public string Username => Profile.Username; // bye bye DevDevDev

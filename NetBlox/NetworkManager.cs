@@ -187,6 +187,12 @@ namespace NetBlox
 						AddReplication(Root.GetService<StarterPack>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Workspace>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 
+						x.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
+						{ // here we get instances from owners. actually for now, from everyone
+							var ins = RecieveNewInstance(rep.Data);
+							AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_NEWINST);
+						});
+
 						x.UnRegisterRawDataHandler("nb2-init"); // as per to constitution, we now do nothing lol
 					});
 
@@ -410,8 +416,7 @@ namespace NetBlox
 						case Replication.REPW_PROPCHG:
 							PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
 							break;
-						case Replication.REPW_REPARNT:
-							PerformReplicationReparent(ins, rc);
+						case Replication.REPW_REPARNT: // nuh-uh
 							break;
 					}
 				}
@@ -491,10 +496,13 @@ namespace NetBlox
 				int propc = data[data.Length - 1];
 				Guid guid = new(br.ReadBytes(16));
 				Guid newp = new(br.ReadBytes(16));
-
 				var ins = GameManager.GetInstance(guid);
 				if (ins == null)
-					ins = InstanceCreator.CreateInstance(br.ReadString(), GameManager);
+				{
+					if (GameManager.FilteringEnabled && IsServer)
+						return null!; // we do not permit this shit.
+					ins = InstanceCreator.CreateReplicatedInstance(br.ReadString(), GameManager);
+				}
 				ins.UniqueID = guid;
 				ins.WasReplicated = true;
 				var type = ins.GetType();

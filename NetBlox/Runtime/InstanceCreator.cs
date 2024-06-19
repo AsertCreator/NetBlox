@@ -18,6 +18,14 @@ namespace NetBlox.Instances
 			CreatableInstanceTypes = (from x in InstanceTypes where x.GetCustomAttribute<CreatableAttribute>() != null select x).ToArray();
 		}
 		public static Instance CreateInstance(string cn, GameManager gm) => (Instance)Activator.CreateInstance((from x in InstanceTypes where x.Name == cn select x).First(), gm)!;
+		public static Instance CreateReplicatedInstance(string cn, GameManager gm)
+		{
+			var og = gm.AllowReplication;
+			gm.AllowReplication = false;
+			var inst = (Instance)Activator.CreateInstance((from x in InstanceTypes where x.Name == cn select x).First(), gm)!;
+			gm.AllowReplication = og;
+			return inst;
+		}
 		public static Instance CreateAccessibleInstance(string cn, GameManager gm)
 		{
 			return (Instance)Activator.CreateInstance((from x in InstanceTypes where 
