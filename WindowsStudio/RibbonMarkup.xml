@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application xmlns="http://schemas.microsoft.com/windows/2009/Ribbon">
+	<Application.Commands>
+		<Command Name="cmdEdit" LabelTitle="Edit"/>
+		<Command Name="cmdPlayback" LabelTitle="Playback">
+			<Command.LargeImages>
+				<Image Id="251" MinDPI="96">
+					<Image.Source>res/sizeAndColor_96.bmp</Image.Source>
+				</Image>
+				<Image Id="252" MinDPI="120">
+					<Image.Source>res/sizeAndColor_120.bmp</Image.Source>
+				</Image>
+				<Image Id="253" MinDPI="144">
+					<Image.Source>res/sizeAndColor_144.bmp</Image.Source>
+				</Image>
+				<Image Id="254" MinDPI="192">
+					<Image.Source>res/sizeAndColor_192.bmp</Image.Source>
+				</Image>
+			</Command.LargeImages>
+		</Command>
+		<Command Name="cmdControls" LabelTitle="Controls" />
+		<Command Name="cmdExit" LabelTitle="Exit application" />
+	</Application.Commands>
+	
+	<Application.Views>
+		<Ribbon>
+			<Ribbon.Tabs>
+				<Tab CommandName="cmdEdit">
+					<Group CommandName="cmdControls">
+						<Button CommandName="cmdExit" />
+					</Group>
+					<Group CommandName="cmdPlayback">
+						<Button CommandName="cmdExit" />
+					</Group>
+				</Tab>
+			</Ribbon.Tabs>
+		</Ribbon>
+	</Application.Views>
+</Application>

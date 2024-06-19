@@ -27,17 +27,38 @@
   <Import Project="..\Qu3eSharp\Qu3eSharp.projitems" Label="Shared" />
 
   <ItemGroup>
+    <None Remove="RibbonMarkup.ribbon" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="favicon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="RibbonMarkup.ribbon" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="Raylib-CsLo" Version="4.2.0.9" />
+    <PackageReference Include="RibbonLib" Version="2.7.9" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="RibbonLib">
+      <HintPath>RibbonLib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="RibbonLib.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -117,8 +117,8 @@ namespace NetBlox.Studio
 					using var ofd = new SaveFileDialog();
 
 					nw.AssignHandle(new nint(Raylib.GetWindowHandle()));
-					ofd.Title = "Select destination RBXL file";
-					ofd.Filter = "Project files (.rbxl)|*.rbxl";
+					ofd.Title = "Select destination NBXL file";
+					ofd.Filter = "Project files (.nbxl)|*.nbxl";
 
 					if (ofd.ShowDialog(nw) == DialogResult.OK)
 					{
