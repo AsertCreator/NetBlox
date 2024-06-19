@@ -5,8 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>NetBlox.Client</RootNamespace>
-    <AssemblyName>NetBloxClient</AssemblyName>
+    <AssemblyName>NetBloxDuoHost</AssemblyName>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -20,23 +19,11 @@
   <ItemGroup>
     <ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
   </ItemGroup>
-	
-  <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-  	<DefineConstants>_WINDOWS</DefineConstants>
-  </PropertyGroup>
-	
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);STUDIO</DefineConstants>
-  </PropertyGroup>
-	
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>$(DefineConstants);STUDIO</DefineConstants>
-  </PropertyGroup>
-	
-  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
-	
-  <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
-	
+
   <Import Project="..\Qu3eSharp\Qu3eSharp.projitems" Label="Shared" />
+
+  <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
+
+  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
 
 </Project>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "UniversalDuoHost": {
+      "commandName": "Project",
+      "commandLineArgs": "--guest"
+    }
+  }
+}

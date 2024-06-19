@@ -17,6 +17,9 @@ ones. entire networking is managed by `NetworkManager` object, reference to whic
 `GameManager`. entire rendering is managed by `RenderManager`, which referenced the same way.
 nothing else to describe.
 
+that UniversalDuoHost project you see is not meant to be played by the player, its for development
+only. it hosts both server and client.
+
 ## System requirements
 anything that can run raylib and .net. it consumes a bunch of memory becuse of everything,
 around ~196 MB, so make sure you have enough.

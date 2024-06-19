@@ -47,7 +47,7 @@ namespace NetBlox.Instances.Services
 			System.Diagnostics.Process.Start(psi);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public string FormatVersion() => $"NetBlox {(IsStudio ? "Studio" : "Client")}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";
+		public string FormatVersion() => $"{GameManager.ManagerName}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";
 		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableStatusPipe()
 		{
