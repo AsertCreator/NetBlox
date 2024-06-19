@@ -13,7 +13,6 @@ namespace UniversalDuoHost
 		internal static int Main(string[] args)
 		{
 			LogManager.LogInfo($"NetBlox DuoHost ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
-			LogManager.LogInfo("Initializing server...");
 
 			Raylib.SetTraceLogLevel((int)TraceLogLevel.LOG_NONE);
 
@@ -23,6 +22,38 @@ namespace UniversalDuoHost
 				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
 				return 1;
 			}
+
+			bool running = true;
+			bool runclient = true;
+			bool runserver = true;
+
+			Raylib.SetConfigFlags(ConfigFlags.FLAG_WINDOW_RESIZABLE | ConfigFlags.FLAG_MSAA_4X_HINT);
+			Raylib.InitWindow(1600, 900, "netblox");
+			Raylib.SetTargetFPS(AppManager.PreferredFPS);
+			Raylib.SetExitKey(KeyboardKey.KEY_NULL);
+
+			while (running)
+			{
+				Raylib.BeginDrawing();
+				Raylib.ClearBackground(Raylib.WHITE);
+				RayGui.GuiSetFont(ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf"));
+				RayGui.GuiSetStyle((int)GuiControl.DEFAULT, (int)GuiDefaultProperty.TEXT_SIZE, 22);
+				RayGui.GuiSetIconScale(2);
+
+				RayGui.GuiLabel(new Rectangle(10, 10 + 25 * 0, 1600, 16), "Setup DuoHost:");
+				runclient = RayGui.GuiCheckBox(new Rectangle(10, 10 + 25 * 1, 16, 16), "Run network client", runclient);
+				runserver = RayGui.GuiCheckBox(new Rectangle(10, 10 + 25 * 2, 16, 16), "Run network server", runserver);
+
+				RayGui.GuiLabel(new Rectangle(10, 10 + 25 * 4, 1600, 16), "Content folder: " + AppManager.ContentFolder);
+				RayGui.GuiLabel(new Rectangle(10, 10 + 25 * 5, 1600, 16), "Library folder: " + AppManager.LibraryFolder);
+
+				if (RayGui.GuiButton(new Rectangle(10, Raylib.GetScreenHeight() - 30 - 10, 200, 30), "#131#Start"))
+					running = false;
+
+				Raylib.EndDrawing();
+			}
+
+			LogManager.LogInfo("Initializing server...");
 
 			var g = AppManager.CreateGame(new()
 			{
@@ -113,7 +144,8 @@ namespace UniversalDuoHost
 
 				gm.CurrentRoot.Name = gm.CurrentIdentity.PlaceName;
 
-				Task.Run(gm.NetworkManager.StartServer);
+				if (runserver)
+					Task.Run(gm.NetworkManager.StartServer);
 #if _WINDOWS
 				AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");
 #endif
@@ -126,7 +158,8 @@ namespace UniversalDuoHost
 					{
 						try
 						{
-							gmc.NetworkManager.ConnectToServer(IPAddress.Loopback);
+							if (runclient)
+								gmc.NetworkManager.ConnectToServer(IPAddress.Loopback);
 							return new object();
 						}
 						catch (Exception ex)
@@ -140,6 +173,7 @@ namespace UniversalDuoHost
 				GameManager cg = AppManager.CreateGame(new()
 				{
 					AsClient = true,
+					SkipWindowCreation = true,
 					GameName = "NetBlox Client (duohosted)"
 				},
 				args, (x, y) => { });

@@ -24,7 +24,7 @@ namespace NetBlox.Instances.GUIs
 		[Lua([Security.Capability.None])]
 		public LuaSignal MouseButton1Click { get; init; } = new();
 		[Lua([Security.Capability.None])]
-		public float BackgroundTransparency { get; set; } = 1;
+		public float BackgroundTransparency { get; set; } = 0;
 		private string fp = "";
 		private Color[,] colors = new Color[0,0];
 		private int width = 0;
@@ -59,7 +59,7 @@ namespace NetBlox.Instances.GUIs
 					for (int x = 0; x < width; x++)
 					{
 						var c = colors[x, y];
-						c.a = (byte)(BackgroundTransparency * 255);
+						c.a = ((byte)(c.a * (1 - BackgroundTransparency)));
 						Raylib.DrawPixel((int)(x + p.X), (int)(y + p.Y), c);
 					}
 			}

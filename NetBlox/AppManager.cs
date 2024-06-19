@@ -19,8 +19,8 @@ namespace NetBlox
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
-		public static string ContentFolder = "content/";
-		public static string LibraryFolder = "tmp/";
+		public static string ContentFolder = Path.GetFullPath("./content/");
+		public static string LibraryFolder = Path.GetFullPath("./tmp/");
 		public static int VersionMajor => Common.Version.VersionMajor;
 		public static int VersionMinor => Common.Version.VersionMinor;
 		public static int VersionPatch => Common.Version.VersionPatch;
