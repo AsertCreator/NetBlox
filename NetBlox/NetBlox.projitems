@@ -139,11 +139,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)content\textures\somethingidontlike.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)content\scripts\Modules\" />
     <Folder Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\" />
   </ItemGroup>
