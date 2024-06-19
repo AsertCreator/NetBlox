@@ -8,10 +8,12 @@ namespace NetBlox.Client
 	{
 		public static int Main(string[] args)
 		{
-			var v = RlGl.GetVersion();
-			Raylib.SetTraceLogLevel(TraceLogLevel.None);
+			LogManager.LogInfo($"NetBlox Client ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
-			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
+			Raylib.SetTraceLogLevel((int)TraceLogLevel.LOG_NONE);
+
+			var v = (rlGlVersion)RlGl.rlGetVersion();
+			if (v == rlGlVersion.RL_OPENGL_11 || v == rlGlVersion.RL_OPENGL_21)
 			{
 				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
 				return 1;
@@ -21,7 +23,6 @@ namespace NetBlox.Client
 			AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");
 #endif
 
-			LogManager.LogInfo($"NetBlox Client ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 			PlatformService.QueuedTeleport = (xo) =>
 			{
 				var gm = AppManager.GameManagers[0];
@@ -49,6 +50,7 @@ namespace NetBlox.Client
 			}, 
 			args, (x, y) => { });
 			cg.MainManager = true;
+			AppManager.LoadFastFlags(args);
 			AppManager.SetRenderTarget(cg);
 			AppManager.Start();
 

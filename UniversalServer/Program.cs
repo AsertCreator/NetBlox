@@ -4,6 +4,7 @@ using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Server;
 using NetBlox.Structs;
+using Raylib_CsLo;
 
 namespace NetBlox.Server
 {
@@ -46,7 +47,7 @@ namespace NetBlox.Server
 				Part part = new(gm)
 				{
 					Parent = ws,
-					Color = Color.DarkGreen,
+					Color = Raylib.DARKGREEN,
 					Position = new(0, -4.5f, 0),
 					Size = new(2048, 2, 2048),
 					TopSurface = SurfaceType.Studs,
@@ -56,7 +57,7 @@ namespace NetBlox.Server
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.DarkBlue,
+					Color = Raylib.DARKBLUE,
 					Position = new(0, -3f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -65,7 +66,7 @@ namespace NetBlox.Server
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.DarkBlue,
+					Color = Raylib.DARKBLUE,
 					Position = new(-1, -3f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -74,7 +75,7 @@ namespace NetBlox.Server
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.Red,
+					Color = Raylib.RED,
 					Position = new(-0.5f, -1f, 0),
 					Size = new(2, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -83,7 +84,7 @@ namespace NetBlox.Server
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.Yellow,
+					Color = Raylib.YELLOW,
 					Position = new(-2f, -1f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -92,7 +93,7 @@ namespace NetBlox.Server
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.Yellow,
+					Color = Raylib.YELLOW,
 					Position = new(1f, -1f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -118,6 +119,7 @@ namespace NetBlox.Server
 				Task.Run(gm.NetworkManager.StartServer);
 			});
 			g.MainManager = true;
+			AppManager.LoadFastFlags(args);
 			AppManager.SetRenderTarget(g);
 			AppManager.Start();
 		}

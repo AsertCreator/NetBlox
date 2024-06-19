@@ -180,6 +180,7 @@ namespace UniversalDuoHost
 				cg.MainManager = true;
 				AppManager.SetRenderTarget(cg);
 			});
+			AppManager.LoadFastFlags(args);
 			AppManager.Start();
 			return 0;
 		}
