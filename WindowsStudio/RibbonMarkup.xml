@@ -2,35 +2,29 @@
 <Application xmlns="http://schemas.microsoft.com/windows/2009/Ribbon">
 	<Application.Commands>
 		<Command Name="cmdEdit" LabelTitle="Edit"/>
-		<Command Name="cmdPlayback" LabelTitle="Playback">
-			<Command.LargeImages>
-				<Image Id="251" MinDPI="96">
-					<Image.Source>res/sizeAndColor_96.bmp</Image.Source>
-				</Image>
-				<Image Id="252" MinDPI="120">
-					<Image.Source>res/sizeAndColor_120.bmp</Image.Source>
-				</Image>
-				<Image Id="253" MinDPI="144">
-					<Image.Source>res/sizeAndColor_144.bmp</Image.Source>
-				</Image>
-				<Image Id="254" MinDPI="192">
-					<Image.Source>res/sizeAndColor_192.bmp</Image.Source>
-				</Image>
-			</Command.LargeImages>
-		</Command>
+		<Command Name="cmdPlayback" LabelTitle="Playback" />
 		<Command Name="cmdControls" LabelTitle="Controls" />
-		<Command Name="cmdExit" LabelTitle="Exit application" />
+		<Command Name="cmdSelect" LabelTitle="Select" />
+		<Command Name="cmdMove" LabelTitle="Move" />
+		<Command Name="cmdScale" LabelTitle="Scale" />
+		<Command Name="cmdRotate" LabelTitle="Rotate" />
+		<Command Name="cmdPlay" LabelTitle="Play" />
+		<Command Name="cmdStop" LabelTitle="Stop" />
 	</Application.Commands>
 	
 	<Application.Views>
 		<Ribbon>
 			<Ribbon.Tabs>
 				<Tab CommandName="cmdEdit">
-					<Group CommandName="cmdControls">
-						<Button CommandName="cmdExit" />
+					<Group CommandName="cmdControls" SizeDefinition="FourButtons">
+						<ToggleButton CommandName="cmdSelect" />
+						<ToggleButton CommandName="cmdMove" />
+						<ToggleButton CommandName="cmdScale" />
+						<ToggleButton CommandName="cmdRotate" />
 					</Group>
-					<Group CommandName="cmdPlayback">
-						<Button CommandName="cmdExit" />
+					<Group CommandName="cmdPlayback" SizeDefinition="TwoButtons">
+						<Button CommandName="cmdPlay" />
+						<Button CommandName="cmdStop" />
 					</Group>
 				</Tab>
 			</Ribbon.Tabs>
