@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+﻿using Raylib_CsLo;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -8,13 +8,13 @@ namespace NetBlox
 {
 	public static class RenderUtils
 	{
-		public static void DrawCubeTextureRec(Texture2D texture, Vector3 position, Vector3 rotation, float width, float height, float length, Color color, Faces f, bool tile = false)
+		public static void DrawCubeTextureRec(Texture texture, Vector3 position, Vector3 rotation, float width, float height, float length, Color color, Faces f, bool tile = false)
 		{
-			Rlgl.PushMatrix();
-			Rlgl.Rotatef(rotation.X, 1, 0, 0);
-			Rlgl.Rotatef(rotation.Y, 0, 1, 0);
-			Rlgl.Rotatef(rotation.Z, 0, 0, 1);
-			Rlgl.Translatef(position.X, position.Y, position.Z);
+			RlGl.rlPushMatrix();
+			RlGl.rlRotatef(rotation.X, 1, 0, 0);
+			RlGl.rlRotatef(rotation.Y, 0, 1, 0);
+			RlGl.rlRotatef(rotation.Z, 0, 0, 1);
+			RlGl.rlTranslatef(position.X, position.Y, position.Z);
 			// im not willing to rewrite the whole shit
 			position = Vector3.Zero;
 
@@ -24,169 +24,169 @@ namespace NetBlox
 				float y = position.Y;
 				float z = position.Z;
 
-				Rlgl.SetTexture(texture.Id);
+				RlGl.rlSetTexture(texture.id);
 
-				Rlgl.Begin(7);
-				Rlgl.Color4ub(color.R, color.G, color.B, color.A);
+				RlGl.rlBegin(7);
+				RlGl.rlColor4ub(color.r, color.g, color.b, color.a);
 
-				Rlgl.TextureParameters(0, Rlgl.TEXTURE_WRAP_S, Rlgl.TEXTURE_WRAP_REPEAT);
-				Rlgl.TextureParameters(0, Rlgl.TEXTURE_WRAP_T, Rlgl.TEXTURE_WRAP_REPEAT);
+				RlGl.rlTextureParameters(0, RlGl.RL_TEXTURE_WRAP_S, RlGl.RL_TEXTURE_WRAP_REPEAT);
+				RlGl.rlTextureParameters(0, RlGl.RL_TEXTURE_WRAP_T, RlGl.RL_TEXTURE_WRAP_REPEAT);
 
 				// NOTE: Enable texture 1 for Front, Back
-				Rlgl.EnableTexture(texture.Id);
+				RlGl.rlEnableTexture(texture.id);
 
 				if (f.HasFlag(Faces.Front))
 				{
 					// Front Face
 					// Normal Pointing Towards Viewer
-					Rlgl.Normal3f(0.0f, 0.0f, 1.0f);
+					RlGl.rlNormal3f(0.0f, 0.0f, 1.0f);
 
 					// Bottom Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, 0.0f);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(0.0f, 0.0f);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
 
 					// Bottom Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, 0.0f);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, 0.0f);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
 
 					// Top Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
 
 					// Top Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(0.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
 				}
 
 				if (f.HasFlag(Faces.Back))
 				{
 					// Back Face
 					// Normal Pointing Away From Viewer
-					Rlgl.Normal3f(0.0f, 0.0f, -1.0f);
+					RlGl.rlNormal3f(0.0f, 0.0f, -1.0f);
 
 					// Bottom Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, 0.0f);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, 0.0f);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
 
 					// Top Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
 
 					// Top Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(0.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
 
 					// Bottom Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, 0.0f);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(0.0f, 0.0f);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
 				}
 
 				if (f.HasFlag(Faces.Top))
 				{
 					// Top Face
 					// Normal Pointing Up
-					Rlgl.Normal3f(0.0f, 1.0f, 0.0f);
+					RlGl.rlNormal3f(0.0f, 1.0f, 0.0f);
 
 					// Top Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, tile ? -length : -1.0f);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(0.0f, tile ? -length : -1.0f);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
 
 					// Bottom Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, 0.0f);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(0.0f, 0.0f);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
 
 					// Bottom Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, 0.0f);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, 0.0f);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
 
 					// Top Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, tile ? -length : -1.0f);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, tile ? -length : -1.0f);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
 				}
 
 				if (f.HasFlag(Faces.Bottom))
 				{
 					// Bottom Face
 					// Normal Pointing Down
-					Rlgl.Normal3f(0.0f, -1.0f, 0.0f);
+					RlGl.rlNormal3f(0.0f, -1.0f, 0.0f);
 
 					// Top Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, tile ? -length : -1.0f);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, tile ? -length : -1.0f);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
 
 					// Top Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, tile ? -length : -1.0f);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(0.0f, tile ? -length : -1.0f);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
 
 					// Bottom Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, 0.0f);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(0.0f, 0.0f);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
 
 					// Bottom Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? width : 1.0f, 0.0f);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(tile ? width : 1.0f, 0.0f);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
 				}
 
 				if (f.HasFlag(Faces.Right))
 				{
 					// Right face
 					// Normal Pointing Right
-					Rlgl.Normal3f(1.0f, 0.0f, 0.0f);
+					RlGl.rlNormal3f(1.0f, 0.0f, 0.0f);
 
 					// Bottom Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? length : 1.0f, 0.0f);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(tile ? length : 1.0f, 0.0f);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
 
 					// Top Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? length : 1.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(tile ? length : 1.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
 
 					// Top Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(0.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
 
 					// Bottom Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, 0.0f);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(0.0f, 0.0f);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
 				}
 
 				if (f.HasFlag(Faces.Left))
 				{
 					// Left Face
 					// Normal Pointing Left
-					Rlgl.Normal3f(-1.0f, 0.0f, 0.0f);
+					RlGl.rlNormal3f(-1.0f, 0.0f, 0.0f);
 
 					// Bottom Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, 0.0f);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(0.0f, 0.0f);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
 
 					// Bottom Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? length : 1.0f, 0.0f);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(tile ? length : 1.0f, 0.0f);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
 
 					// Top Right Of The Texture and Quad
-					Rlgl.TexCoord2f(tile ? length : 1.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
+					RlGl.rlTexCoord2f(tile ? length : 1.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
 
 					// Top Left Of The Texture and Quad
-					Rlgl.TexCoord2f(0.0f, tile ? -height : -1.0f);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
+					RlGl.rlTexCoord2f(0.0f, tile ? -height : -1.0f);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
 				}
 
-				Rlgl.End();
+				RlGl.rlEnd();
 
-				Rlgl.DisableTexture();
+				RlGl.rlDisableTexture();
 			}
 
-			Rlgl.PopMatrix();
+			RlGl.rlPopMatrix();
 		}
 		public static void DrawCubeFaced(Vector3 position, Vector3 rotation, float width, float height, float length, Color color, Faces f)
 		{
-			Rlgl.PushMatrix();
-			Rlgl.Translatef(position.X, position.Y, position.Z);
-			Rlgl.Rotatef(rotation.X, 1, 0, 0);
-			Rlgl.Rotatef(rotation.Y, 0, 1, 0);
-			Rlgl.Rotatef(rotation.Z, 0, 0, 1);
+			RlGl.rlPushMatrix();
+			RlGl.rlTranslatef(position.X, position.Y, position.Z);
+			RlGl.rlRotatef(rotation.X, 1, 0, 0);
+			RlGl.rlRotatef(rotation.Y, 0, 1, 0);
+			RlGl.rlRotatef(rotation.Z, 0, 0, 1);
 			// im not willing to rewrite the whole shit
 			position = Vector3.Zero;
 
@@ -196,73 +196,73 @@ namespace NetBlox
 				float y = position.Y;
 				float z = position.Z;
 
-				Rlgl.Begin(7);
-				Rlgl.Color4ub(color.R, color.G, color.B, color.A);
+				RlGl.rlBegin(7);
+				RlGl.rlColor4ub(color.r, color.g, color.b, color.a);
 
 				if (f.HasFlag(Faces.Front))
 				{
-					Rlgl.Normal3f(0.0f, 0.0f, 1.0f);
+					RlGl.rlNormal3f(0.0f, 0.0f, 1.0f);
 
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
 				}
 
 				if (f.HasFlag(Faces.Back))
 				{
-					Rlgl.Normal3f(0.0f, 0.0f, -1.0f);
+					RlGl.rlNormal3f(0.0f, 0.0f, -1.0f);
 
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
 				}
 
 				if (f.HasFlag(Faces.Top))
 				{
-					Rlgl.Normal3f(0.0f, 1.0f, 0.0f);
+					RlGl.rlNormal3f(0.0f, 1.0f, 0.0f);
 
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
 				}
 
 				if (f.HasFlag(Faces.Bottom))
 				{
-					Rlgl.Normal3f(0.0f, -1.0f, 0.0f);
+					RlGl.rlNormal3f(0.0f, -1.0f, 0.0f);
 
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
 				}
 
 				if (f.HasFlag(Faces.Right))
 				{
-					Rlgl.Normal3f(1.0f, 0.0f, 0.0f);
+					RlGl.rlNormal3f(1.0f, 0.0f, 0.0f);
 
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
-					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
-					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
+					RlGl.rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
+					RlGl.rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
 				}
 
 				if (f.HasFlag(Faces.Left))
 				{
-					Rlgl.Normal3f(-1.0f, 0.0f, 0.0f);
+					RlGl.rlNormal3f(-1.0f, 0.0f, 0.0f);
 
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
-					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
-					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
+					RlGl.rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
+					RlGl.rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
 				}
 
-				Rlgl.End();
+				RlGl.rlEnd();
 			}
 
-			Rlgl.PopMatrix();
+			RlGl.rlPopMatrix();
 		}
 		public static float DistanceFrom(Vector3 vect, Vector3 vect2)
 		{

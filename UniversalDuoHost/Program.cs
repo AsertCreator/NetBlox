@@ -3,7 +3,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Structs;
-using Raylib_cs;
+using Raylib_CsLo;
 using System.Net;
 
 namespace UniversalDuoHost
@@ -15,10 +15,10 @@ namespace UniversalDuoHost
 			LogManager.LogInfo($"NetBlox DuoHost ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 			LogManager.LogInfo("Initializing server...");
 
-			Raylib.SetTraceLogLevel(TraceLogLevel.None);
+			Raylib.SetTraceLogLevel((int)TraceLogLevel.LOG_NONE);
 
-			var v = Rlgl.GetVersion();
-			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
+			var v = (rlGlVersion)RlGl.rlGetVersion();
+			if (v == rlGlVersion.RL_OPENGL_11 || v == rlGlVersion.RL_OPENGL_21)
 			{
 				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
 				return 1;
@@ -44,7 +44,7 @@ namespace UniversalDuoHost
 				Part part = new(gm)
 				{
 					Parent = ws,
-					Color = Color.DarkGreen,
+					Color = Raylib.DARKGREEN,
 					Position = new(0, -4.5f, 0),
 					Size = new(32, 2, 32),
 					TopSurface = SurfaceType.Studs,
@@ -54,7 +54,7 @@ namespace UniversalDuoHost
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.DarkBlue,
+					Color = Raylib.DARKBLUE,
 					Position = new(0, -3f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -63,7 +63,7 @@ namespace UniversalDuoHost
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.DarkBlue,
+					Color = Raylib.DARKBLUE,
 					Position = new(-1, -3f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -72,7 +72,7 @@ namespace UniversalDuoHost
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.Red,
+					Color = Raylib.RED,
 					Position = new(-0.5f, -1f, 0),
 					Size = new(2, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -81,7 +81,7 @@ namespace UniversalDuoHost
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.Yellow,
+					Color = Raylib.YELLOW,
 					Position = new(-2f, -1f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,
@@ -90,7 +90,7 @@ namespace UniversalDuoHost
 				new Part(gm)
 				{
 					Parent = ws,
-					Color = Color.Yellow,
+					Color = Raylib.YELLOW,
 					Position = new(1f, -1f, 0),
 					Size = new(1, 2, 1),
 					TopSurface = SurfaceType.Studs,

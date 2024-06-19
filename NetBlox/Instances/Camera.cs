@@ -1,5 +1,5 @@
 ﻿using NetBlox.Runtime;
-using Raylib_cs;
+using Raylib_CsLo;
 using System.Numerics;
 
 namespace NetBlox.Instances
@@ -15,7 +15,7 @@ namespace NetBlox.Instances
 		{ }
 
 		public override void Process()
-		{
+		{/*
 			if (CameraSubject == null || !CameraSubject.IsA("BasePart"))
 			{
 				GameManager.RenderManager.MainCamera.Position = new Vector3(50, 40, 0);
@@ -26,10 +26,10 @@ namespace NetBlox.Instances
 				var subject = CameraSubject as BasePart ?? throw new Exception("CameraSubject is not BasePart");
 
 				// Camera rotation
-				if (Raylib.IsKeyDown(KeyboardKey.Down)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, 0.03f, true, true, false);
-				if (Raylib.IsKeyDown(KeyboardKey.Up)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, -0.03f, true, true, false);
-				if (Raylib.IsKeyDown(KeyboardKey.Right)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, 0.03f, true);
-				if (Raylib.IsKeyDown(KeyboardKey.Left)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, -0.03f, true);
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_DOWN)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, 0.03f, true, true, false);
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_UP)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, -0.03f, true, true, false);
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, 0.03f, true);
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_LEFT)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, -0.03f, true);
 
 				if (Raylib.IsMouseButtonDown(MouseButton.Right))
 				{
@@ -49,7 +49,7 @@ namespace NetBlox.Instances
 
 				GameManager.RenderManager.MainCamera.Position = subject.Position - diff;
 				GameManager.RenderManager.MainCamera.Target = subject.Position;
-			}
+			}*/
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

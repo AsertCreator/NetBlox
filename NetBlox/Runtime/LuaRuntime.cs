@@ -142,7 +142,7 @@ namespace NetBlox.Runtime
 			{
 				try
 				{
-					return SerializationManager.LuaSerializers["Raylib_cs.Color"]
+					return SerializationManager.LuaSerializers["Raylib_CsLo.Color"]
 						(new Color(
 							Convert.ToInt32(y[0].Number * 255),
 							Convert.ToInt32(y[1].Number * 255),

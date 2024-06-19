@@ -1,6 +1,6 @@
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using Raylib_cs;
+using Raylib_CsLo;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
@@ -58,7 +58,7 @@ namespace NetBlox.Instances.GUIs
 					for (int x = 0; x < width; x++)
 					{
 						var c = colors[x, y];
-						c.A = (byte)(BackgroundTransparency * 255);
+						c.a = (byte)(BackgroundTransparency * 255);
 						Raylib.DrawPixel((int)(x + p.X), (int)(y + p.Y), c);
 					}
 			}

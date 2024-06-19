@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+﻿using Raylib_CsLo;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using NetBlox.Instances;
@@ -25,8 +25,7 @@ namespace NetBlox.Instances
 
 		public Character(GameManager gm) : base(gm)
 		{
-			var c = Color.White;
-			c.A = 255;
+			var c = Raylib.WHITE;
 			Color = c;
 			Anchored = false;
 			Size = new Vector3(1, 1, 1);
@@ -36,7 +35,7 @@ namespace NetBlox.Instances
 		{
 			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer))
 			{
-				if (Raylib.IsKeyPressed(KeyboardKey.G))
+				if (Raylib.IsKeyPressed(KeyboardKey.KEY_G))
 				{
 					Part prt = new(GameManager);
 
@@ -44,7 +43,7 @@ namespace NetBlox.Instances
 					prt.Position = Position;
 					prt.Size = Vector3.One;
 					prt.TopSurface = SurfaceType.Studs;
-					prt.Color = Color.DarkPurple;
+					prt.Color = Raylib.DARKPURPLE;
 					prt.Parent = this;
 				}
 			}
@@ -55,32 +54,32 @@ namespace NetBlox.Instances
 		{
 			if (GameManager.RenderManager == null) return;
 			var cam = GameManager.RenderManager.MainCamera;
-			var x1 = cam.Position.X;
-			var y1 = cam.Position.Z;
-			var x2 = cam.Target.X;
-			var y2 = cam.Target.Z;
+			var x1 = cam.position.X;
+			var y1 = cam.position.Z;
+			var x2 = cam.target.X;
+			var y2 = cam.target.Z;
 			var angle = MathF.Atan2(y2 - y1, x2 - x1);
 
 			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer) && Health > 0)
 			{
 				bool dot = false;
 
-				if (Raylib.IsKeyDown(KeyboardKey.W))
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_W))
 				{
 					Position = Position + new Vector3(0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle));
 					dot = true;
 				}
-				if (Raylib.IsKeyDown(KeyboardKey.A))
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_A))
 				{
 					Position = Position + new Vector3(0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f));
 					dot = true;
 				}
-				if (Raylib.IsKeyDown(KeyboardKey.S))
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_S))
 				{
 					Position = Position + new Vector3(-0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle));
 					dot = true;
 				}
-				if (Raylib.IsKeyDown(KeyboardKey.D))
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_D))
 				{
 					Position = Position + new Vector3(-0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f));
 					dot = true;
@@ -107,7 +106,7 @@ namespace NetBlox.Instances
 			var siz = Vector2.Zero; 
 
 			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, Name, 14, 1.4f);
-			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
+			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Raylib.WHITE);
 
 			if (Health < 100)
 			{

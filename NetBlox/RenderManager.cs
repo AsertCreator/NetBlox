@@ -1,8 +1,8 @@
-﻿global using Font = Raylib_cs.Font;
+﻿global using Font = Raylib_CsLo.Font;
 using NetBlox.Instances;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using Raylib_cs;
+using Raylib_CsLo;
 #if STUDIO
 using rlImGui_cs;
 #endif
@@ -26,7 +26,7 @@ namespace NetBlox
 		public bool DoPostProcessing = true;
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
-		public Texture2D StudTexture;
+		public Texture StudTexture;
 		public Font MainFont;
 		public long Framecount;
 		private DataModel Root => GameManager.CurrentRoot;
@@ -41,7 +41,7 @@ namespace NetBlox
 				Initialize(render);
 			else
 			{
-				MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
+				MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.CAMERA_PERSPECTIVE);
 				RenderAtAll = render;
 
 				if (render)
@@ -54,16 +54,16 @@ namespace NetBlox
 		}
 		public unsafe void Initialize(bool render)
 		{
-			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
+			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.CAMERA_PERSPECTIVE);
 			RenderAtAll = render;
 
 			if (render)
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
-				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint);
+				Raylib.SetConfigFlags(ConfigFlags.FLAG_WINDOW_RESIZABLE | ConfigFlags.FLAG_MSAA_4X_HINT);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
 				Raylib.SetTargetFPS(AppManager.PreferredFPS);
-				Raylib.SetExitKey(KeyboardKey.Null);
+				Raylib.SetExitKey(KeyboardKey.KEY_NULL);
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
 
 				MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
@@ -88,25 +88,26 @@ namespace NetBlox
 			{
 				if (RenderAtAll)
 				{
-					if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
+					if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.MOUSE_BUTTON_RIGHT))
 					{
-						Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
-						if (Raylib.IsKeyDown(KeyboardKey.Space))
+						fixed(Camera3D* c3d = &MainCamera)
+							Raylib.UpdateCamera(c3d);
+						if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
 						{
-							MainCamera.Target.Y += 0.1f;
-							MainCamera.Position.Y += 0.1f;
+							MainCamera.target.Y += 0.1f;
+							MainCamera.position.Y += 0.1f;
 						}
-						if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+						if (Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT))
 						{
-							MainCamera.Target.Y -= 0.1f;
-							MainCamera.Position.Y -= 0.1f;
+							MainCamera.target.Y -= 0.1f;
+							MainCamera.position.Y -= 0.1f;
 						}
 					}
 
 					// render world
 					Raylib.BeginDrawing();
 					{
-						Raylib.ClearBackground(Color.SkyBlue);
+						Raylib.ClearBackground(Raylib.SKYBLUE);
 						Raylib.BeginMode3D(MainCamera);
 
 						int a = Raylib.GetKeyPressed();
@@ -137,7 +138,7 @@ namespace NetBlox
 								RenderInstanceUI(Root.GetService<CoreGui>());
 							}
 
-							Raylib.DrawTextEx(MainFont, Status, new Vector2(20, 20), 16, 0, Color.White);
+							Raylib.DrawTextEx(MainFont, Status, new Vector2(20, 20), 16, 0, Raylib.WHITE);
 						}
 
 						if (PostRender != null)
@@ -197,29 +198,29 @@ namespace NetBlox
 		{
 			if (CurrentSkybox == null) return;
 
-			var pos = MainCamera.Position;
+			var pos = MainCamera.position;
 			var ss = CurrentSkybox.SkyboxSize;
 			var ass = CurrentSkybox.SkyboxSize * 0.9965f; // hehe
 
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Back, new Vector3(ass, 0, 0) + pos, Vector3.Zero, ss, ss, ss, Color.White, Faces.Left);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Front, new Vector3(-ass, 0, 0) + pos, Vector3.Zero, ss, ss, ss, Color.White, Faces.Right);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Top, new Vector3(0, ass, 0) + pos, Vector3.Zero, ss, ss, ss, Color.White, Faces.Bottom);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Bottom, new Vector3(0, -ass, 0) + pos, Vector3.Zero, ss, ss, ss, Color.White, Faces.Top);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Left, new Vector3(0, 0, -ass) + pos, Vector3.Zero, ss, ss, ss, Color.White, Faces.Front);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Right, new Vector3(0, 0, ass) + pos, Vector3.Zero, ss, ss, ss, Color.White, Faces.Back);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Back, new Vector3(ass, 0, 0) + pos, Vector3.Zero, ss, ss, ss, Raylib.WHITE, Faces.Left);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Front, new Vector3(-ass, 0, 0) + pos, Vector3.Zero, ss, ss, ss, Raylib.WHITE, Faces.Right);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Top, new Vector3(0, ass, 0) + pos, Vector3.Zero, ss, ss, ss, Raylib.WHITE, Faces.Bottom);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Bottom, new Vector3(0, -ass, 0) + pos, Vector3.Zero, ss, ss, ss, Raylib.WHITE, Faces.Top);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Left, new Vector3(0, 0, -ass) + pos, Vector3.Zero, ss, ss, ss, Raylib.WHITE, Faces.Front);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Right, new Vector3(0, 0, ass) + pos, Vector3.Zero, ss, ss, ss, Raylib.WHITE, Faces.Back);
 		}
 		public void RenderWorld()
 		{
 			// i should probably avoid using ifs in these moments, but who cares if its like 5 nanoseconds?
 			if (Root == null) return;
 
-			var skypos = MainCamera.Position;
+			var skypos = MainCamera.position;
 			var works = Root.FindFirstChild("Workspace");
 
 			RenderSkybox();
 
 			if (CurrentSkybox != null && CurrentSkybox.SkyboxWires)
-				Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Color.Blue);
+				Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Raylib.BLUE);
 
 			if (works != null)
 				RenderInstance(works);

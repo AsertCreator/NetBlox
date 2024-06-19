@@ -1,4 +1,4 @@
-﻿global using Color = Raylib_cs.Color;
+﻿global using Color = Raylib_CsLo.Color;
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.GUIs;

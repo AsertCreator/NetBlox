@@ -1,6 +1,6 @@
 ﻿using NetBlox.Runtime;
 using NetBlox.Structs;
-using Raylib_cs;
+using Raylib_CsLo;
 using System.Numerics;
 
 namespace NetBlox.Instances.GUIs

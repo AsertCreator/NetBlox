@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+﻿using Raylib_CsLo;
 using System.Numerics;
 
 namespace NetBlox.Structs

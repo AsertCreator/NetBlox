@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Network" Version="6.2.5.23" />
-    <PackageReference Include="Raylib-cs" Version="6.0.0" />
+    <PackageReference Include="Raylib-CsLo" Version="4.2.0.9" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
   </ItemGroup>
 

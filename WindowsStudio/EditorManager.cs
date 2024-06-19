@@ -3,7 +3,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
-using Raylib_cs;
+using Raylib_CsLo;
 using rlImGui_cs;
 using System;
 using System.Collections.Generic;

@@ -1,7 +1,7 @@
 using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
-using Raylib_cs;
+using Raylib_CsLo;
 using System;
 using System.Security.Cryptography;
 

@@ -3,7 +3,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
-using Raylib_cs;
+using Raylib_CsLo;
 using rlImGui_cs;
 using System.Net;
 using System.Numerics;
@@ -30,7 +30,7 @@ namespace NetBlox.Studio
 			Raylib.SetTraceLogLevel(TraceLogLevel.None);
 			AppManager.LoadFastFlags(args);
 
-			var v = Rlgl.GetVersion();
+			var v = RlGl.GetVersion();
 
 			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
 			{

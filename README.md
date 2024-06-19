@@ -31,7 +31,7 @@ with this project. the thing lies in `docs` folder
 ## Licenses
 netblox. Copyright (c) 2024, AsertCreator. <br/>
 raylib. Copyright (c) 2013-2024, Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))<br/>
-raylib_cs. Copyright (c) 2018-2024, ChrisDill (check [license](https://github.com/ChrisDill/Raylib-cs/blob/master/LICENSE))<br/>
+raylib-cslo. Copyright (c) 2018-2024, NotNotTech (check [license](https://github.com/NotNotTech/Raylib-CsLo/blob/main/LICENSE))<br/>
 MoonSharp. Copyright (c) 2014-2016, Marco Mastropaolo (check [license](https://github.com/moonsharp-devs/moonsharp/blob/master/LICENSE))<br/>
 Qu3e-Sharp. Copyright (c) 2017, Wildan M (check [license](https://github.com/willnode/Qu3e-Sharp))<br/>
 Network. Copyright (c) 2024, Toemsel (check [license](https://github.com/Toemsel/Network/blob/main/LICENSE))<br/>

@@ -2,7 +2,7 @@
 using NetBlox.Instances;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using Raylib_cs;
+using Raylib_CsLo;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
@@ -148,7 +148,7 @@ namespace NetBlox
 			Deserializers.Add("System.Guid", x => Guid.Parse(x));
 			Deserializers.Add("System.Numerics.Vector2", x => new Vector2(Deserialize<float>(x.Split(' ')[0]), Deserialize<float>(x.Split(' ')[1])));
 			Deserializers.Add("System.Numerics.Vector3", x => new Vector3(Deserialize<float>(x.Split(' ')[0]), Deserialize<float>(x.Split(' ')[1]), Deserialize<float>(x.Split(' ')[2])));
-			Deserializers.Add("Raylib_cs.Color", x => new Color(Deserialize<byte>(x.Split(' ')[0]), Deserialize<byte>(x.Split(' ')[1]), Deserialize<byte>(x.Split(' ')[2]), Deserialize<byte>(x.Split(' ')[3])));
+			Deserializers.Add("Raylib_CsLo.Color", x => new Color(Deserialize<byte>(x.Split(' ')[0]), Deserialize<byte>(x.Split(' ')[1]), Deserialize<byte>(x.Split(' ')[2]), Deserialize<byte>(x.Split(' ')[3])));
 			Deserializers.Add("NetBlox.Structs.Shape", x => (Shape)Deserialize<int>(x));
 			Deserializers.Add("NetBlox.Structs.SurfaceType", x => (SurfaceType)Deserialize<int>(x));
 
@@ -168,7 +168,7 @@ namespace NetBlox
 			Serializers.Add("System.Guid", x => x.ToString());
 			Serializers.Add("System.Numerics.Vector2", x => $"{Serialize(((Vector2)x).X)} {Serialize(((Vector2)x).Y)}");
 			Serializers.Add("System.Numerics.Vector3", x => $"{Serialize(((Vector3)x).X)} {Serialize(((Vector3)x).Y)} {Serialize(((Vector3)x).Z)}");
-			Serializers.Add("Raylib_cs.Color", x => $"{Serialize(((Color)x).R)} {Serialize(((Color)x).G)} {Serialize(((Color)x).B)} {Serialize(((Color)x).A)}");
+			Serializers.Add("Raylib_CsLo.Color", x => $"{Serialize(((Color)x).r)} {Serialize(((Color)x).g)} {Serialize(((Color)x).b)} {Serialize(((Color)x).a)}");
 			Serializers.Add("NetBlox.Structs.Shape", x => (int)(Shape)x + "");
 			Serializers.Add("NetBlox.Structs.SurfaceType", x => (int)(SurfaceType)x + "");
 
@@ -188,7 +188,7 @@ namespace NetBlox
 			NetworkDeserializers.Add("System.Guid", (x, y) => new Guid(x));
 			NetworkDeserializers.Add("System.Numerics.Vector2", (x, y) => new Vector2(BitConverter.ToSingle(x[0..4]), BitConverter.ToSingle(x[4..8])));
 			NetworkDeserializers.Add("System.Numerics.Vector3", (x, y) => new Vector3(BitConverter.ToSingle(x[0..4]), BitConverter.ToSingle(x[4..8]), BitConverter.ToSingle(x[8..12])));
-			NetworkDeserializers.Add("Raylib_cs.Color", (x, y) => new Color(x[0], x[1], x[2], x[3]));
+			NetworkDeserializers.Add("Raylib_CsLo.Color", (x, y) => new Color(x[0], x[1], x[2], x[3]));
 			NetworkDeserializers.Add("NetBlox.Structs.Shape", (x, y) => (Shape)BitConverter.ToInt32(x));
 			NetworkDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)BitConverter.ToInt32(x));
 			NetworkDeserializers.Add("NetBlox.Instances.Instance", (x, y) => y.GetInstance(new Guid(x)));
@@ -224,7 +224,7 @@ namespace NetBlox
 				lb.AddRange(NetworkSerialize(v3.Z, y));
 				return lb.ToArray();
 			});
-			NetworkSerializers.Add("Raylib_cs.Color",             (x, y) => [((Color)x).R, ((Color)x).G, ((Color)x).B, ((Color)x).A]);
+			NetworkSerializers.Add("Raylib_CsLo.Color",             (x, y) => [((Color)x).r, ((Color)x).g, ((Color)x).b, ((Color)x).a]);
 			NetworkSerializers.Add("NetBlox.Structs.Shape",       (x, y) => NetworkSerialize((int)(Shape)x, y));
 			NetworkSerializers.Add("NetBlox.Structs.SurfaceType", (x, y) => NetworkSerialize((int)(SurfaceType)x, y));
 			NetworkSerializers.Add("NetBlox.Instances.Instance",  (x, y) => (x as Instance).UniqueID.ToByteArray());
@@ -281,11 +281,11 @@ namespace NetBlox
 				["Y"] = ((Vector3)x).Y,
 				["Z"] = ((Vector3)x).Z
 			}));
-			LuaSerializers.Add("Raylib_cs.Color", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
+			LuaSerializers.Add("Raylib_CsLo.Color", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 			{
-				["R"] = ((Color)x).R / 255f,
-				["G"] = ((Color)x).G / 255f,
-				["B"] = ((Color)x).B / 255f
+				["R"] = ((Color)x).r / 255f,
+				["G"] = ((Color)x).g / 255f,
+				["B"] = ((Color)x).b / 255f
 			}));
 			LuaSerializers.Add("NetBlox.Structs.UDim2", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
 			{
@@ -321,7 +321,7 @@ namespace NetBlox
 				(float)x.Table["X"], 
 				(float)x.Table["Y"], 
 				(float)x.Table["Z"]));
-			LuaDeserializers.Add("Raylib_cs.Color", (x, y) => new Color(
+			LuaDeserializers.Add("Raylib_CsLo.Color", (x, y) => new Color(
 				(int)(Convert.ToSingle(x.Table["R"]) * 255), 
 				(int)(Convert.ToSingle(x.Table["G"]) * 255), 
 				(int)(Convert.ToSingle(x.Table["B"]) * 255), 
@@ -350,7 +350,7 @@ namespace NetBlox
 			LuaDataTypes.Add("NetBlox.Instances.Instance", DataType.Table);
 			LuaDataTypes.Add("System.Numerics.Vector2", DataType.Table);
 			LuaDataTypes.Add("System.Numerics.Vector3", DataType.Table);
-			LuaDataTypes.Add("Raylib_cs.Color", DataType.Table);
+			LuaDataTypes.Add("Raylib_CsLo.Color", DataType.Table);
 			LuaDataTypes.Add("NetBlox.Structs.UDim2", DataType.Table);
 		}
 	}

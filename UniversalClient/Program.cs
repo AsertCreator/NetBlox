@@ -1,5 +1,5 @@
 ﻿using NetBlox.Instances.Services;
-using Raylib_cs;
+using Raylib_CsLo;
 using System.Net;
 
 namespace NetBlox.Client
@@ -8,7 +8,7 @@ namespace NetBlox.Client
 	{
 		public static int Main(string[] args)
 		{
-			var v = Rlgl.GetVersion();
+			var v = RlGl.GetVersion();
 			Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
 			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
