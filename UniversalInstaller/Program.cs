@@ -91,7 +91,7 @@ namespace UniversalInstaller
 				req.Headers.Add("User-Agent", "NetBloxInstallerv" +
 					NetBlox.Common.Version.VersionMajor + "." + NetBlox.Common.Version.VersionMinor + "." + NetBlox.Common.Version.VersionPatch);
 				req.Headers.Add("Accept", "application/vnd.github+json");
-				req.Headers.Add("Authorization", "Bearer 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"); // it doesn't have any scopes.
+				req.Headers.Add("Authorization", "Bearer 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"); // it doesn't have any scopes.
 				req.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
 
 				var data = await ((await hc.SendAsync(req)).Content.ReadAsStringAsync());
@@ -110,7 +110,7 @@ namespace UniversalInstaller
 					req.Headers.Add("User-Agent", "NetBloxInstallerv" +
 						NetBlox.Common.Version.VersionMajor + "." + NetBlox.Common.Version.VersionMinor + "." + NetBlox.Common.Version.VersionPatch);
 					req.Headers.Add("Accept", "application/vnd.github+json");
-					req.Headers.Add("Authorization", "Bearer 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");
+					req.Headers.Add("Authorization", "Bearer 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");
 					req.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
 
 					var str = (await hc.SendAsync(req)).Content.ReadAsStream();
