@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Some Solution Items", "Some
 	ProjectSection(SolutionItems) = preProject
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		.github\workflows\dotnet-desktop.yml = .github\workflows\dotnet-desktop.yml
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 	EndProjectSection
@@ -34,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalInstaller", "Unive
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MoonSharp.Interpreter", "MoonSharp.Interpreter\MoonSharp.Interpreter.csproj", "{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniversalDuoHost", "UniversalDuoHost\UniversalDuoHost.csproj", "{237FED22-581B-4767-9D33-667E88AF609D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalDuoHost", "UniversalDuoHost\UniversalDuoHost.csproj", "{237FED22-581B-4767-9D33-667E88AF609D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -182,6 +183,7 @@ Global
 		NetBlox.Common\NetBlox.Common.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
 		Qu3eSharp\Qu3eSharp.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
+		NetBlox.Common\NetBlox.Common.projitems*{a270e5e9-bb42-47f2-8929-54c9b975f980}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		Qu3eSharp\Qu3eSharp.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5

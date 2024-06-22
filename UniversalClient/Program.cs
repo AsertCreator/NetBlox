@@ -1,6 +1,8 @@
 ﻿using NetBlox.Instances.Services;
 using Raylib_CsLo;
+using System.Diagnostics;
 using System.Net;
+using System.Text.Json;
 
 namespace NetBlox.Client
 {
@@ -22,6 +24,24 @@ namespace NetBlox.Client
 #if _WINDOWS
 			AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");
 #endif
+
+			if (args.Length == 1 && args[0] == "check")
+			{
+				return 0;
+			}
+			if (args.Length == 0)
+			{
+				LogManager.LogInfo("No arguments given, redirecting to Public Service's website...");
+				if (!File.Exists("./ReferenceData.json"))
+					return 1;
+				Process.Start(new ProcessStartInfo()
+				{
+					FileName = JsonSerializer.Deserialize<Dictionary<string, string>>(
+						File.ReadAllText("./ReferenceData.json"))!["PublicServiceAddress"],
+					UseShellExecute = true
+				});
+				return 0;
+			}
 
 			PlatformService.QueuedTeleport = (xo) =>
 			{

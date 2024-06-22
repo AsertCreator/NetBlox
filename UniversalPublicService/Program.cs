@@ -9,6 +9,7 @@ namespace NetBlox.PublicService
 	public static class Program
 	{
 		public static List<Service> Services = new();
+		public static string PSName = "";
 
 		public static void Main(string[] args)
 		{
@@ -16,6 +17,7 @@ namespace NetBlox.PublicService
 				.WriteTo.Console()
 				.CreateLogger();
 			Log.Information($"Starting NetBlox public service (v{Version.VersionMajor}.{Version.VersionMinor}.{Version.VersionPatch})...");
+
 			GetService<ServerService>().Start();
 			GetService<WebService>().Start();
 			WaitForAll();

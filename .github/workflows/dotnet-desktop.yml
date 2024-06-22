@@ -14,5 +14,10 @@ jobs:
       - name: Upload NetBlox Client for Windows
         uses: actions/upload-artifact@v4.3.3
         with:
-          name: NetBloxClientWindows.zip
+          name: NetBloxClientWindows
           path: ./UniversalClient/bin/Release/net8.0/
+      - name: Upload NetBlox Installer for Windows
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: NetBloxInstallerWindows
+          path: ./UniversalInstaller/bin/Release/net8.0/

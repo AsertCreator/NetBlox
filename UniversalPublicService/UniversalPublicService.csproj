@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="content\gamepage.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="content\index.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

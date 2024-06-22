@@ -1,11 +1,7 @@
 ﻿using NetBlox.Common;
 using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace NetBlox.PublicService
 {
@@ -23,34 +19,39 @@ namespace NetBlox.PublicService
 				i = 403;
 				return File.ReadAllText("./content/forbidden.html");
 			}
+
 			if (uri == "/") return File.ReadAllText("./content/index.html");
-			if (uri.StartsWith("/cdn/")) // its not cdn actually but idc
-			{
-				return File.ReadAllText("./content/" + uri.Split('/')[2]);
-			}
-			if (uri.StartsWith("/game/"))
-			{
-				return File.ReadAllText("./content/gamepage.html");
-			}
-			if (uri == "/join" || uri == "/join/")
-			{
-				return File.ReadAllText("./content/joingame.html");
-			}
-			if (uri.StartsWith("/api/"))
-			{
-				return ServeAPI(cl, uri, ref i);
-			}
+			else if (uri.StartsWith("/check")) return $"";
+			else if (uri.StartsWith("/cdn"))  return File.ReadAllText("./content/" + uri.Split('/')[2]);
+			else if (uri.StartsWith("/game")) return File.ReadAllText("./content/gamepage.html");
+			else if (uri.StartsWith("/join")) return File.ReadAllText("./content/joingame.html");
+			else if (uri.StartsWith("/api"))  return ServeAPI(cl, uri, ref i);
+
 			i = 404;
 			return File.ReadAllText("./content/notfound.html");
 		}
 		private string? ServeAPI(HttpListenerContext cl, string uri, ref int i)
-		{ 
-			if (uri == "/api/login")
+		{
+			try
 			{
-				string data = cl.Request.InputStream.ReadToEnd();
-				// idk what to do
+				string data = "";
+				using (StreamReader sr = new(cl.Request.InputStream))
+					data = sr.ReadToEnd();
+
+				if (uri == "/api/query/placecount") return 0.ToString();
+				if (uri == "/api/query/usercount") return Program.GetService<UserService>().AmountOfUsers.ToString();
+				if (uri == "/api/query/name") return Program.PSName;
+
+				if (uri == "/api/users/exists") return (Program.GetService<UserService>().GetUserByID(int.Parse(data)) != null).ToString();
+				if (uri == "/api/users/name") return Program.GetService<UserService>().GetUserByID(int.Parse(data))!.Name;
+
+				return "{}";
 			}
-			return "{}";
+			catch
+			{
+				i = 500;
+				return "Internal Server Error";
+			}
 		}
 		public override void Start()
 		{
