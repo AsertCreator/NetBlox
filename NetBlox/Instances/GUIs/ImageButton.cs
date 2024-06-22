@@ -1,5 +1,5 @@
 ﻿using NetBlox.Runtime;
-using Raylib_CsLo;
+using Raylib_cs;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
@@ -59,7 +59,7 @@ namespace NetBlox.Instances.GUIs
 					for (int x = 0; x < width; x++)
 					{
 						var c = colors[x, y];
-						c.a = ((byte)(c.a * (1 - BackgroundTransparency)));
+						c.A = ((byte)(c.A * (1 - BackgroundTransparency)));
 						Raylib.DrawPixel((int)(x + p.X), (int)(y + p.Y), c);
 					}
 			}
@@ -67,7 +67,7 @@ namespace NetBlox.Instances.GUIs
 		}
 		public override void Activate(MouseButton mb)
 		{
-			if (mb == MouseButton.MOUSE_BUTTON_LEFT)
+			if (mb == MouseButton.Left)
 				MouseButton1Click.Fire();
 		}
 	}

@@ -27,8 +27,8 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public void ZoomToExtents()
 		{
-			GameManager.RenderManager.MainCamera.position = new Vector3(50, 40, 0);
-			GameManager.RenderManager.MainCamera.target = Vector3.Zero;
+			GameManager.RenderManager.MainCamera.Position = new Vector3(50, 40, 0);
+			GameManager.RenderManager.MainCamera.Target = Vector3.Zero;
 		}
 	}
 }

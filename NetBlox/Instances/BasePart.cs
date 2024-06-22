@@ -1,7 +1,6 @@
 ﻿using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using Raylib_CsLo;
 using System.Numerics;
 
 namespace NetBlox.Instances
@@ -25,7 +24,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public SurfaceType RightSurface { get; set; }
 		[Lua([Security.Capability.None])]
-		public Color Color { get; set; } = Raylib.GRAY;
+		public Color Color { get; set; } = Color.Gray;
 		[Lua([Security.Capability.None])]
 		public Vector3 Position { get => Origin.Position; set => Origin.Position = value; }
 		[Lua([Security.Capability.None])]

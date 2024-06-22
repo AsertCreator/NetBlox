@@ -1,6 +1,6 @@
 ﻿using Microsoft.Web.WebView2.Wpf;
 using NetBlox;
-using Raylib_CsLo;
+using Raylib_cs;
 using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Forms.Integration;
@@ -71,7 +71,7 @@ public partial class MainWindow : System.Windows.Window
 			{
 				AsServer = true,
 				AsStudio = true,
-				CustomFlags = ConfigFlags.FLAG_WINDOW_UNDECORATED | ConfigFlags.FLAG_WINDOW_MAXIMIZED | ConfigFlags.FLAG_WINDOW_HIDDEN,
+				CustomFlags = ConfigFlags.UndecoratedWindow | ConfigFlags.MaximizedWindow | ConfigFlags.HiddenWindow,
 				ProhibitScripts = true,
 				GameName = "NetBlox Studio - Title"
 			}, [], (x, y) => { });

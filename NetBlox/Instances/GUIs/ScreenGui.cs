@@ -1,5 +1,5 @@
 ﻿using NetBlox.Runtime;
-using Raylib_CsLo;
+using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -32,11 +32,11 @@ namespace NetBlox.Instances.GUIs
 				{
 					GuiObject go = (GuiObject)tor.ElementAt(i);
 					go.RenderGUI(Vector2.Zero, ssz);
-					if (Raylib.IsMouseButtonPressed(MouseButton.MOUSE_BUTTON_LEFT))
+					if (Raylib.IsMouseButtonPressed(MouseButton.Left))
 					{
 						var act = go.HitTest(Vector2.Zero, ssz);
 						if (act != null)
-							act.Activate(MouseButton.MOUSE_BUTTON_LEFT);
+							act.Activate(MouseButton.Left);
 					}
 				}
 			}

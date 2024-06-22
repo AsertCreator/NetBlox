@@ -1,6 +1,5 @@
 ﻿using NetBlox.Instances.Services;
-using Raylib_CsLo;
-using System;
+using Raylib_cs;
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
@@ -13,13 +12,13 @@ namespace NetBlox.Client
 		{
 			LogManager.LogInfo($"NetBlox Client ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
-			Raylib.SetTraceLogLevel((int)TraceLogLevel.LOG_NONE);
+			Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
-			var v = (rlGlVersion)RlGl.rlGetVersion();
-			if (v == rlGlVersion.RL_OPENGL_11 || v == rlGlVersion.RL_OPENGL_21)
+			var v = Rlgl.GetVersion();
+			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
 			{
 				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
-				return 1;
+				Environment.Exit(1);
 			}
 
 #if _WINDOWS

@@ -1,4 +1,4 @@
-﻿global using Color = Raylib_CsLo.Color;
+﻿global using Color = Raylib_cs.Color;
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.GUIs;
@@ -6,7 +6,7 @@ using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using Raylib_CsLo;
+using Raylib_cs;
 using System.Net;
 using System.Reflection;
 using System.Runtime;
@@ -241,9 +241,9 @@ namespace NetBlox
 			Part part = new(this)
 			{
 				Parent = ws,
-				Color = Raylib.DARKGREEN,
+				Color = Color.DarkGreen,
 				Position = new(0, -4.5f, 0),
-				Size = new(2048, 2, 2048),
+				Size = new(32, 2, 32),
 				TopSurface = SurfaceType.Studs,
 				Anchored = true
 			};
@@ -251,7 +251,7 @@ namespace NetBlox
 			new Part(this)
 			{
 				Parent = ws,
-				Color = Raylib.DARKBLUE,
+				Color = Color.DarkBlue,
 				Position = new(0, -3f, 0),
 				Size = new(1, 2, 1),
 				TopSurface = SurfaceType.Studs,
@@ -260,7 +260,7 @@ namespace NetBlox
 			new Part(this)
 			{
 				Parent = ws,
-				Color = Raylib.DARKBLUE,
+				Color = Color.DarkBlue,
 				Position = new(-1, -3f, 0),
 				Size = new(1, 2, 1),
 				TopSurface = SurfaceType.Studs,
@@ -269,7 +269,7 @@ namespace NetBlox
 			new Part(this)
 			{
 				Parent = ws,
-				Color = Raylib.RED,
+				Color = Color.Red,
 				Position = new(-0.5f, -1f, 0),
 				Size = new(2, 2, 1),
 				TopSurface = SurfaceType.Studs,
@@ -278,7 +278,7 @@ namespace NetBlox
 			new Part(this)
 			{
 				Parent = ws,
-				Color = Raylib.YELLOW,
+				Color = Color.Yellow,
 				Position = new(-2f, -1f, 0),
 				Size = new(1, 2, 1),
 				TopSurface = SurfaceType.Studs,
@@ -287,7 +287,7 @@ namespace NetBlox
 			new Part(this)
 			{
 				Parent = ws,
-				Color = Raylib.YELLOW,
+				Color = Color.Yellow,
 				Position = new(1f, -1f, 0),
 				Size = new(1, 2, 1),
 				TopSurface = SurfaceType.Studs,
