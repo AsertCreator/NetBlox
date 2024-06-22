@@ -9,6 +9,15 @@ same, but a lot better, netblox is very poorly made. also there's physics engine
 which i believe is licensed same as qu3e, so zlib. the lua engine used is a modified version of
 moonsharp (so no luau for you)
 
+## System requirements
+anything that can run raylib and .net. it consumes a bunch of memory becuse of everything,
+around ~196 MB, so make sure you have enough.
+
+## How to play?
+a weird question you have there, but to play this, you need to download installer, good luck
+finding it tho. jk, its in github actions section, you unpack it, start it, then client should
+open. the hard part is finding with who to play with.
+
 ## Architecture
 `AppManager` class is static and holds within task scheduler (i.e. game processor), a lot
 of common things. `GameManager` is some sort of sandboxed game, it holds one `DataModel`, and
@@ -19,10 +28,6 @@ nothing else to describe.
 
 that UniversalDuoHost project you see is not meant to be played by the player, its for development
 only. it hosts both server and client.
-
-## System requirements
-anything that can run raylib and .net. it consumes a bunch of memory becuse of everything,
-around ~196 MB, so make sure you have enough.
 
 ## Contributing
 all contributions should ideally adhere to the "constitution" thing i wrote bc idk what to do

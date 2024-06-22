@@ -2,6 +2,7 @@
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using System.Diagnostics;
+using System.Net.Http;
 
 namespace NetBlox.Instances
 {

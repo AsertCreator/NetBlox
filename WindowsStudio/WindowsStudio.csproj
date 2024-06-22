@@ -1,47 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>NetBloxStudio</AssemblyName>
-    <RootNamespace>NetBlox.Studio</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-	  <UseWindowsForms>true</UseWindowsForms>
-	  <ApplicationIcon>favicon.ico</ApplicationIcon>
+    <AssemblyName>NetBloxStudio</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>$(DefineConstants);STUDIO</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>$(DefineConstants);STUDIO</DefineConstants>
-  </PropertyGroup>
-
-  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
-
-  <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
 
   <Import Project="..\Qu3eSharp\Qu3eSharp.projitems" Label="Shared" />
 
+  <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
+
+  <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
+
   <ItemGroup>
-    <None Remove="RibbonMarkup.ribbon" />
+    <None Remove="content\studio\icon16.png" />
+    <None Remove="content\studio\icon32.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="favicon.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="RibbonMarkup.ribbon" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2646-prerelease" />
     <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="Raylib-CsLo" Version="4.2.0.9" />
-    <PackageReference Include="RibbonLib" Version="2.7.9" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
   </ItemGroup>
 
@@ -50,15 +34,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="RibbonLib">
-      <HintPath>RibbonLib.dll</HintPath>
-    </Reference>
+    <Resource Include="content\studio\icon16.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="content\studio\icon32.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="RibbonLib.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Using Include="System.IO" />
+    <Using Include="System.Net.Http" />
   </ItemGroup>
 
 </Project>

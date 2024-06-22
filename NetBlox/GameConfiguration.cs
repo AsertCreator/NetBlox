@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Raylib_CsLo;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -14,6 +15,7 @@ namespace NetBlox
 		public bool AsServer = false;
 		public bool AsClient = false;
 		public bool AsStudio = false;
+		public ConfigFlags CustomFlags;
 		public int VersionMargin = 0;
 	}
 }

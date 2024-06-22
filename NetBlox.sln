@@ -18,8 +18,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalClient", "Universa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalServer", "UniversalServer\UniversalServer.csproj", "{BC56B34A-8200-4966-B065-94A593B0072F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStudio\WindowsStudio.csproj", "{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}"
-EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.Common", "NetBlox.Common\NetBlox.Common.shproj", "{FA4E3BA7-1080-4AB5-925C-9BE6C4A9CD1F}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Qu3eSharp", "Qu3eSharp\Qu3eSharp.shproj", "{41572111-4627-464D-87BD-BE48FC33FF51}"
@@ -36,6 +34,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MoonSharp.Interpreter", "MoonSharp.Interpreter\MoonSharp.Interpreter.csproj", "{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalDuoHost", "UniversalDuoHost\UniversalDuoHost.csproj", "{237FED22-581B-4767-9D33-667E88AF609D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStudio\WindowsStudio.csproj", "{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,22 +81,6 @@ Global
 		{BC56B34A-8200-4966-B065-94A593B0072F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BC56B34A-8200-4966-B065-94A593B0072F}.Release|x86.ActiveCfg = Release|Any CPU
 		{BC56B34A-8200-4966-B065-94A593B0072F}.Release|x86.Build.0 = Release|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Debug|x86.Build.0 = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Dev|Any CPU.Build.0 = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Dev|x86.ActiveCfg = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Dev|x86.Build.0 = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Devp4|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Devp4|Any CPU.Build.0 = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Devp4|x86.ActiveCfg = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Devp4|x86.Build.0 = Debug|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|x86.ActiveCfg = Release|Any CPU
-		{8C560BD0-EE17-47C8-B3EE-3D1CAF55F4C9}.Release|x86.Build.0 = Release|Any CPU
 		{DDD41AE9-8F20-4187-ADC9-C1302549291C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DDD41AE9-8F20-4187-ADC9-C1302549291C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDD41AE9-8F20-4187-ADC9-C1302549291C}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -161,6 +145,22 @@ Global
 		{237FED22-581B-4767-9D33-667E88AF609D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{237FED22-581B-4767-9D33-667E88AF609D}.Release|x86.ActiveCfg = Release|Any CPU
 		{237FED22-581B-4767-9D33-667E88AF609D}.Release|x86.Build.0 = Release|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Debug|x86.Build.0 = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Dev|Any CPU.Build.0 = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Dev|x86.ActiveCfg = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Dev|x86.Build.0 = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Devp4|Any CPU.ActiveCfg = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Devp4|Any CPU.Build.0 = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Devp4|x86.ActiveCfg = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Devp4|x86.Build.0 = Debug|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Release|x86.ActiveCfg = Release|Any CPU
+		{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -180,9 +180,9 @@ Global
 		NetBlox\NetBlox.projitems*{237fed22-581b-4767-9d33-667e88af609d}*SharedItemsImports = 5
 		Qu3eSharp\Qu3eSharp.projitems*{237fed22-581b-4767-9d33-667e88af609d}*SharedItemsImports = 5
 		Qu3eSharp\Qu3eSharp.projitems*{41572111-4627-464d-87bd-be48fc33ff51}*SharedItemsImports = 13
-		NetBlox.Common\NetBlox.Common.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
-		NetBlox\NetBlox.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
-		Qu3eSharp\Qu3eSharp.projitems*{8c560bd0-ee17-47c8-b3ee-3d1caf55f4c9}*SharedItemsImports = 5
+		NetBlox.Common\NetBlox.Common.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
+		NetBlox\NetBlox.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
+		Qu3eSharp\Qu3eSharp.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{a270e5e9-bb42-47f2-8929-54c9b975f980}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5

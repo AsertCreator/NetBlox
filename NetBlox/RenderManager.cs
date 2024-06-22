@@ -18,6 +18,7 @@ namespace NetBlox
 		public int VersionMargin = 0;
 		public double TimeOfDay = 12;
 		public string Status = string.Empty;
+		public bool DebugInformation = false;
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;
 		public bool DoPostProcessing = true;
@@ -57,7 +58,7 @@ namespace NetBlox
 			if (render)
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
-				Raylib.SetConfigFlags(ConfigFlags.FLAG_WINDOW_RESIZABLE | ConfigFlags.FLAG_MSAA_4X_HINT);
+				Raylib.SetConfigFlags(ConfigFlags.FLAG_WINDOW_RESIZABLE | ConfigFlags.FLAG_MSAA_4X_HINT | GameManager.CustomFlags);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
 				Raylib.SetTargetFPS(AppManager.PreferredFPS);
 				Raylib.SetExitKey(KeyboardKey.KEY_NULL);
@@ -83,8 +84,7 @@ namespace NetBlox
 				{
 					if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.MOUSE_BUTTON_RIGHT))
 					{
-						fixed(Camera3D* c3d = &MainCamera)
-							Raylib.UpdateCamera(c3d);
+						Raylib.UpdateCamera(ref MainCamera);
 						if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
 						{
 							MainCamera.target.Y += 0.1f;
@@ -120,6 +120,11 @@ namespace NetBlox
 							TimeOfDay = TimeOfDay % 24;
 							if (TimeOfDay != 12)
 								Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255) * 0.8 + 255 * 0.2))));
+						}
+
+						if (DebugInformation)
+						{
+							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count, new(5, 5), 16, 0, Raylib.WHITE);
 						}
 
 						// render all guis

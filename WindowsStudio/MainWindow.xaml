@@ -1,0 +1,41 @@
+﻿<Window x:Class="WindowsStudio.MainWindow"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:local="clr-namespace:WindowsStudio"
+		mc:Ignorable="d"
+		Title="netblox studio" Height="900" Width="1600" WindowStartupLocation="CenterScreen">
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="116"/>
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
+		<Ribbon Grid.Row="0" Margin="0,-23,0,0">
+			<Ribbon.ApplicationMenu>
+				<RibbonApplicationMenu>
+					<RibbonApplicationMenuItem Header="Open a place" Icon="/NetBloxStudio;component/content/studio/icon32.png"/>
+				</RibbonApplicationMenu>
+			</Ribbon.ApplicationMenu>
+			<RibbonTab Header="Home">
+				<RibbonGroup Header="Transform">
+					<RibbonToggleButton Label="Select" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+					<RibbonToggleButton Label="Move"   LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+					<RibbonToggleButton Label="Resize" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+					<RibbonToggleButton Label="Rotate" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+				</RibbonGroup>
+				<RibbonGroup Header="Playback">
+					<RibbonButton Label="Play" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+					<RibbonButton Label="Stop" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+				</RibbonGroup>
+				<RibbonGroup Header="Insert">
+					<RibbonButton Label="Part" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+					<RibbonButton Label="Color" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+				</RibbonGroup>
+			</RibbonTab>
+		</Ribbon>
+		<Grid Grid.Row="1">
+            <TabControl x:Name="tabs"/>
+        </Grid>
+	</Grid>
+</Window>

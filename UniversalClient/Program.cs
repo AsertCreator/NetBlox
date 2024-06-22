@@ -1,5 +1,6 @@
 ﻿using NetBlox.Instances.Services;
 using Raylib_CsLo;
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
@@ -70,6 +71,13 @@ namespace NetBlox.Client
 			}, 
 			args, (x, y) => { });
 			cg.MainManager = true;
+			AppManager.PlatformOpenBrowser = x =>
+			{
+				ProcessStartInfo psi = new();
+				psi.FileName = x;
+				psi.UseShellExecute = true;
+				Process.Start(psi);
+			};
 			AppManager.LoadFastFlags(args);
 			AppManager.SetRenderTarget(cg);
 			AppManager.Start();

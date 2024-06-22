@@ -6,6 +6,7 @@ using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using Raylib_CsLo;
 using System.Net;
 using System.Reflection;
 using System.Runtime;
@@ -26,6 +27,7 @@ namespace NetBlox
 		public PhysicsManager? PhysicsManager;
 		public NetworkManager? NetworkManager;
 		public DataModel CurrentRoot = null!;
+		public ConfigFlags CustomFlags;
 		public bool IsStudio = false;
 		public bool IsRunning = true;
 		public bool ShuttingDown = false;
@@ -140,6 +142,7 @@ namespace NetBlox
 
 				LogManager.LogInfo("Initializing verbs...");
 				Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
+				Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
 
 				LogManager.LogInfo("Initializing internal scripts...");
 				CurrentRoot = new DataModel(this);
@@ -177,6 +180,7 @@ namespace NetBlox
 				LogManager.LogInfo("Initializing PhysicsManager...");
 				PhysicsManager = new(this);
 
+				CustomFlags = gc.CustomFlags;
 				LogManager.LogInfo("Initializing RenderManager...");
 				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
 
@@ -220,6 +224,91 @@ namespace NetBlox
 
 			if (MainManager)
 				Environment.Exit(0);
+		}
+		public void LoadDefault()
+		{
+			LogManager.LogInfo("Loading default place...");
+
+			Workspace ws = CurrentRoot.GetService<Workspace>();
+			ReplicatedStorage rs = CurrentRoot.GetService<ReplicatedStorage>();
+			ReplicatedFirst ri = CurrentRoot.GetService<ReplicatedFirst>();
+			Players pl = CurrentRoot.GetService<Players>();
+			LocalScript ls = new(this);
+
+			ws.ZoomToExtents();
+			ws.Parent = CurrentRoot;
+
+			Part part = new(this)
+			{
+				Parent = ws,
+				Color = Raylib.DARKGREEN,
+				Position = new(0, -4.5f, 0),
+				Size = new(2048, 2, 2048),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
+
+			new Part(this)
+			{
+				Parent = ws,
+				Color = Raylib.DARKBLUE,
+				Position = new(0, -3f, 0),
+				Size = new(1, 2, 1),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
+			new Part(this)
+			{
+				Parent = ws,
+				Color = Raylib.DARKBLUE,
+				Position = new(-1, -3f, 0),
+				Size = new(1, 2, 1),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
+			new Part(this)
+			{
+				Parent = ws,
+				Color = Raylib.RED,
+				Position = new(-0.5f, -1f, 0),
+				Size = new(2, 2, 1),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
+			new Part(this)
+			{
+				Parent = ws,
+				Color = Raylib.YELLOW,
+				Position = new(-2f, -1f, 0),
+				Size = new(1, 2, 1),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
+			new Part(this)
+			{
+				Parent = ws,
+				Color = Raylib.YELLOW,
+				Position = new(1f, -1f, 0),
+				Size = new(1, 2, 1),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
+
+			ls.Parent = ri;
+			ls.Source = "print(\"HIIIIII\"); printidentity();";
+
+			rs.Parent = CurrentRoot;
+			ri.Parent = CurrentRoot;
+			pl.Parent = CurrentRoot;
+
+			CurrentIdentity.MaxPlayerCount = 8;
+			CurrentIdentity.PlaceName = "Default Place";
+			CurrentIdentity.UniverseName = "NetBlox Defaults";
+			CurrentIdentity.Author = "The Lord";
+			CurrentIdentity.PlaceID = 47384;
+			CurrentIdentity.UniverseID = 47384;
+
+			CurrentRoot.Name = CurrentIdentity.PlaceName;
 		}
 		public Instance? GetInstance(Guid id)
 		{

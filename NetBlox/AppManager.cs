@@ -16,6 +16,7 @@ namespace NetBlox
 		public static Dictionary<string, bool> FastFlags = [];
 		public static Dictionary<string, string> FastStrings = [];
 		public static Dictionary<string, int> FastInts = [];
+		public static Action<string> PlatformOpenBrowser = x => { };
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??

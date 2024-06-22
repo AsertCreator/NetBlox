@@ -40,13 +40,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public string GetPreference(string key) => AppManager.GetPreference(key);
 		[Lua([Security.Capability.CoreSecurity])]
-		public void OpenBrowserWindow(string url)
-		{
-			ProcessStartInfo psi = new();
-			psi.FileName = url;
-			psi.UseShellExecute = true;
-			System.Diagnostics.Process.Start(psi);
-		}
+		public void OpenBrowserWindow(string url) => AppManager.PlatformOpenBrowser(url);
 		[Lua([Security.Capability.CoreSecurity])]
 		public string FormatVersion() => $"{GameManager.ManagerName}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";
 		[Lua([Security.Capability.CoreSecurity])]
