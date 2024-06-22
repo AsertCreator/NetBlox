@@ -239,6 +239,22 @@ namespace NetBlox.Runtime
 			{
 				ac();
 			}
+			catch (SyntaxErrorException ex)
+			{
+				var ct = CurrentThread;
+				{
+					LogManager.LogError(ex.Message);
+					for (int i = 0; i < ex.CallStack.Count; i++)
+						LogManager.LogError($"    at {ct.Value.Name}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
+				}
+
+				if (remthread && CurrentThread != null)
+					if (Threads.Contains(CurrentThread.Value))
+					{
+						CurrentThread.Value.IsDead = true;
+						Threads.Remove(CurrentThread);
+					}
+			}
 			catch (ScriptRuntimeException ex)
 			{
 				var ct = CurrentThread;

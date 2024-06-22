@@ -9,8 +9,9 @@
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="116"/>
-			<RowDefinition Height="*"/>
-		</Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="22"/>
+        </Grid.RowDefinitions>
 		<Ribbon Grid.Row="0" Margin="0,-23,0,0">
 			<Ribbon.ApplicationMenu>
 				<RibbonApplicationMenu>
@@ -25,11 +26,11 @@
 					<RibbonToggleButton Label="Rotate" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
 				</RibbonGroup>
 				<RibbonGroup Header="Playback">
-					<RibbonButton Label="Play" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
-					<RibbonButton Label="Stop" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+					<RibbonButton x:Name="play" Label="Play" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="StartPlaybackClick"/>
+					<RibbonButton x:Name="stop" Label="Stop" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" IsEnabled="false"/>
 				</RibbonGroup>
 				<RibbonGroup Header="Insert">
-					<RibbonButton Label="Part" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
+					<RibbonButton Label="Part" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="PartButtonClick"/>
 					<RibbonButton Label="Color" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
 				</RibbonGroup>
 			</RibbonTab>
@@ -37,5 +38,8 @@
 		<Grid Grid.Row="1">
             <TabControl x:Name="tabs"/>
         </Grid>
+        <Border Grid.Row="2">
+            <TextBox x:Name="commandBar" AutomationProperties.HelpText="Enter code here and it will be executed" KeyDown="commandBar_KeyDown" FontFamily="Lucida Console" FontSize="16"/>
+        </Border>
 	</Grid>
 </Window>

@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text.Json;
 using System.Text;
+using System.Xml.Linq;
 
 namespace NetBlox
 {
@@ -33,24 +34,11 @@ namespace NetBlox
 
 		public static string SerializeJson<T>(T obj) => JsonSerializer.Serialize(obj, DefaultJSON);
 		public static T? DeserializeJson<T>(string d) => JsonSerializer.Deserialize<T>(d, DefaultJSON);
-		public static SerializationType GetSerializationType(object obj, string prop)
+		public static bool IsReadonly(object obj, string prop)
 		{
 			var type = obj.GetType();
-			var pi = type.GetProperty(prop);
-			if (pi.PropertyType.IsEnum)
-				return SerializationType.Enum;
-			switch (pi.PropertyType.FullName)
-			{
-				case "System.String": return SerializationType.String;
-				case "System.Int32": return SerializationType.Int32;
-				case "System.Int64": return SerializationType.Int64;
-				case "System.Single": return SerializationType.Single;
-				case "System.Double": return SerializationType.Double;
-				case "System.Boolean": return (bool)pi.GetValue(obj)! ? SerializationType.True : SerializationType.False;
-				case "System.Numerics.Vector3": return SerializationType.Vector3;
-				case "Raylib_cs.Color": return SerializationType.Color3;
-				default: return SerializationType.Unknown;
-			}
+			var fi = type.GetRuntimeProperty(prop);
+			return !fi.CanWrite;
 		}
 		public static string[] GetAccessibleProperties(object obj)
 		{
@@ -83,6 +71,12 @@ namespace NetBlox
 			var name = type.FullName;
 			var val = Deserializers[name](data);
 			return (T)val;
+		}
+		public static Type GetPropertyType(object data, string prop)
+		{
+			var type = data.GetType();
+			var pro = type.GetProperty(prop);
+			return pro.PropertyType;
 		}
 		public static T NetworkDeserialize<T>(byte[] data, GameManager gm)
 		{

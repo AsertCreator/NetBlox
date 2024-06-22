@@ -21,5 +21,11 @@ namespace NetBlox.Instances.Scripts
 			if (nameof(BaseScript) == classname) return true;
 			return base.IsA(classname);
 		}
+		public override Instance Clone()
+		{
+			var inst = (BaseScript)base.Clone();
+			inst.HadExecuted = false;
+			return inst;
+		}
 	}
 }

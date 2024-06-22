@@ -1,6 +1,7 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using Qu3e;
 using System.Text.Json.Serialization;
 
 namespace NetBlox.Instances
@@ -51,13 +52,13 @@ namespace NetBlox.Instances
 		public Guid UniqueID { get; set; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal ChildAdded { get; set; } = new();
+		public LuaSignal ChildAdded { get; init; } = new();
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal ChildRemoved { get; set; } = new();
+		public LuaSignal ChildRemoved { get; init; } = new();
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal Destroying { get; set; } = new();
+		public LuaSignal Destroying { get; init; } = new();
 		public virtual Security.Capability[] RequiredCapabilities => [];
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
@@ -105,20 +106,125 @@ namespace NetBlox.Instances
 				Tags.Add(tag);
 		}
 		[Lua([Security.Capability.None])]
-		public virtual Instance Clone()
+		public virtual Instance? Clone()
 		{
-			var clone = new Instance(GameManager)
+			if (!Archivable)
+				return null;
+			// i tried
+			// maybe i did it
+			Dictionary<Instance, Instance> clonemapping = new();
+			List<Instance> dolater = new();
+
+			Instance? DoClone(Instance? inst)
 			{
-				Name = Name,
-				Parent = null!,
-				Archivable = Archivable
-			};
+				var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
+				var props = SerializationManager.GetAccessibleProperties(clone);
+				for (int i = 0; i < props.Length; i++)
+				{
+					var prop = SerializationManager.GetProperty(inst, props[i]);
+					var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
+					if (SerializationManager.IsReadonly(clone, props[i]))
+						continue;
+					if (ptyp.IsAssignableTo(typeof(Script))) continue;
+					if (ptyp.IsAssignableTo(typeof(Scene))) continue; 
+					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					{
+						var ogval = (Instance)prop;
+						if (clonemapping.ContainsKey(ogval))
+							SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+						else
+							dolater.Add(clone);
+					}
+					else
+						SerializationManager.SetProperty(clone, props[i], prop);
+				}
 
-			for (int i = 0; i < Children.Count; i++)
-				if (Children[i].Archivable)
-					clone.Children.Add(Children[i].Clone());
+				clonemapping[inst] = clone;
 
-			return clone;
+				for (int i = 0; i < inst.Children.Count; i++)
+					if (inst.Children[i].Archivable)
+						DoClone(inst.Children[i]).Parent = clone;
+
+				return clone;
+			}
+
+			for (int i = 0; i < dolater.Count; i++)
+			{
+				var inst = dolater[i];
+				var props = SerializationManager.GetAccessibleProperties(inst);
+				for (int j = 0; j < props.Length; j++)
+				{
+					var prop = SerializationManager.GetProperty(inst, props[j]);
+					var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
+					if (SerializationManager.IsReadonly(inst, props[j]))
+						continue;
+					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					{
+						var ogval = (Instance)prop;
+						SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
+					}
+				}
+			}
+
+			return DoClone(this);
+		}
+		[Lua([Security.Capability.None])]
+		public virtual Instance ForceClone()
+		{
+			// i tried
+			// maybe i did it
+			Dictionary<Instance, Instance> clonemapping = new();
+			List<Instance> dolater = new();
+
+			Instance DoClone(Instance inst)
+			{
+				var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
+				var props = SerializationManager.GetAccessibleProperties(clone);
+				for (int i = 0; i < props.Length; i++)
+				{
+					var prop = SerializationManager.GetProperty(inst, props[i]);
+					var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
+					if (SerializationManager.IsReadonly(clone, props[i]))
+						continue;
+					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					{
+						var ogval = (Instance)prop;
+						if (clonemapping.ContainsKey(ogval))
+							SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+						else
+							dolater.Add(clone);
+					}
+					else
+						SerializationManager.SetProperty(clone, props[i], prop);
+				}
+
+				clonemapping[inst] = clone;
+
+				for (int i = 0; i < inst.Children.Count; i++)
+					DoClone(inst.Children[i]).Parent = clone;
+
+				return clone;
+			}
+
+			for (int i = 0; i < dolater.Count; i++)
+			{
+				var inst = dolater[i];
+				var props = SerializationManager.GetAccessibleProperties(inst);
+				for (int j = 0; j < props.Length; j++)
+				{
+					var prop = SerializationManager.GetProperty(inst, props[j]);
+					var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
+					if (SerializationManager.IsReadonly(inst, props[j]))
+						continue;
+					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					{
+						var ogval = (Instance)prop;
+						SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
+					}
+				}
+			}
+
+			return DoClone(this);
 		}
 		[Lua([Security.Capability.None])]
 		public virtual void ClearAllChildren()
@@ -263,6 +369,25 @@ namespace NetBlox.Instances
 		public virtual void RemoveTag(string tag) => Tags.Remove(tag);
 		[Lua([Security.Capability.None])]
 		public virtual bool IsA(string classname) => nameof(Instance) == classname;
+		private void ChangeOwnershipImpl(GameManager gm)
+		{
+			GameManager.AllInstances.Remove(this);
+			GameManager = gm;
+			NetworkOwner = null;
+			WasReplicated = false;
+			WasDestroyed = false;
+			GameManager.AllInstances.Add(this);
+
+			for (int i = 0; i < Children.Count; i++)
+			{
+				Children[i].ChangeOwnershipImpl(gm);
+			}
+		}
+		public void ChangeOwnership(GameManager gm)
+		{
+			Parent = null;
+			ChangeOwnershipImpl(gm);
+		}
 		public int CountDescendants()
 		{
 			lock (Children)

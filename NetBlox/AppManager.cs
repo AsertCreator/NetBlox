@@ -169,11 +169,6 @@ namespace NetBlox
 								return;
 						}
 
-						if (thread.GameManager.ProhibitScripts)
-						{
-							LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
-							return;
-						}
 						LuaRuntime.ReportedExecute(() =>
 						{
 							if (thread.ScrInst != null)

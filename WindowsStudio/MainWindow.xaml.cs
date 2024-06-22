@@ -1,6 +1,10 @@
 ﻿using Microsoft.Web.WebView2.Wpf;
 using NetBlox;
+using NetBlox.Instances;
+using NetBlox.Instances.Services;
+using NetBlox.Runtime;
 using Raylib_cs;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Forms.Integration;
@@ -12,13 +16,14 @@ namespace WindowsStudio;
 /// </summary>
 public partial class MainWindow : System.Windows.Window
 {
+	public static GameManager? Baseplate;
 	public static MainWindow? Instance;
 
 	public MainWindow()
 	{
 		Instance = this;
 		InitializeComponent();
-		System.Windows.Forms.Application.EnableVisualStyles();
+		Application.EnableVisualStyles();
 		OpenStartupTab();
 	}
 	public TabItem OpenTab(string title)
@@ -52,12 +57,12 @@ public partial class MainWindow : System.Windows.Window
 		};
 		wb.openBaseplate.Click += (x, y) =>
 		{
-			OpenGameTab();
+			OpenEditorTab();
 		};
 	}
-	public unsafe void OpenGameTab()
+	public unsafe void OpenEditorTab()
 	{
-		var ti = OpenTab("Game");
+		var ti = OpenTab("Baseplate (edit)");
 		var wfh = new WindowsFormsHost();
 		ti.Content = wfh;
 		var pan = new System.Windows.Forms.Panel();
@@ -67,15 +72,15 @@ public partial class MainWindow : System.Windows.Window
 
 		Task.Run(() =>
 		{
-			var tgm = AppManager.CreateGame(new GameConfiguration()
+			Baseplate = AppManager.CreateGame(new GameConfiguration()
 			{
 				AsServer = true,
 				AsStudio = true,
 				CustomFlags = ConfigFlags.UndecoratedWindow | ConfigFlags.MaximizedWindow | ConfigFlags.HiddenWindow,
 				ProhibitScripts = true,
-				GameName = "NetBlox Studio - Title"
+				GameName = "NetBlox Studio - Baseplate"
 			}, [], (x, y) => { });
-			tgm.LoadDefault();
+			Baseplate.LoadDefault();
 			AppManager.PlatformOpenBrowser = x =>
 			{
 				Dispatcher.Invoke(() =>
@@ -83,14 +88,16 @@ public partial class MainWindow : System.Windows.Window
 					OpenBrowserTab("Browser, opened by user code", x);
 				});
 			};
-			AppManager.SetRenderTarget(tgm);
+			AppManager.SetRenderTarget(Baseplate);
 			while (true)
 			{
 				var h = (nint)Raylib.GetWindowHandle();
 				if (h < 0) continue;
 				SetParent(h, panh);
+				// SetWindowLongPtr(h, -16, 1342177280); it doesnt fucking work because keyboard doesnt passthrough help my ass
 				ShowWindow(h, 3);
-				MoveWindow((nint)Raylib.GetWindowHandle(), 0, 0, pan.Width, pan.Height, true);
+				MoveWindow(h, 0, 0, pan.Width, pan.Height, true);
+				// EnableWindow(h, true);
 				break;
 			}
 
@@ -116,9 +123,99 @@ public partial class MainWindow : System.Windows.Window
 		ti.Content = wb;
 	}
 	[DllImport("user32.dll", SetLastError = true)]
-	static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
+	static extern IntPtr SetWindowLongPtr(nint hWnd, int nIndex, nint dwNewLong);
+	[DllImport("user32.dll", SetLastError = true)]
+	static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent); 
+	[DllImport("user32.dll")]
+	static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
 	[DllImport("user32.dll", SetLastError = true)]
 	static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
 	[DllImport("user32.dll")]
 	static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+	private void PartButtonClick(object sender, System.Windows.RoutedEventArgs e)
+	{
+		if (Baseplate != null) 
+		{
+			Workspace works = Baseplate.CurrentRoot.GetService<Workspace>();
+			Part part = new(Baseplate);
+
+			part.Size = new System.Numerics.Vector3(4, 1, 2);
+			part.Position = Baseplate.RenderManager.MainCamera.Position;
+			part.Color = Color.Gray;
+			part.Parent = works;
+		}
+	}
+	private void StartPlaybackClick(object sender, System.Windows.RoutedEventArgs e)
+	{
+		if (Baseplate != null)
+		{
+			// first we clone the datamodel
+			// then we reassign it to new server gamemanager
+			// then we start a server
+			// then we start a client (basically a duohost)
+
+			play.IsEnabled = false;
+			stop.IsEnabled = true;
+
+			DataModel dm = (DataModel)Baseplate.CurrentRoot.ForceClone();
+			GameManager gms = AppManager.CreateGame(new GameConfiguration()
+			{
+				AsServer = true,
+				AsStudio = true,
+				SkipWindowCreation = true,
+				DoNotRenderAtAll = true,
+				GameName = "NetBlox Server (studio)"
+			}, [], (x, gm) =>
+			{
+				gm.CurrentRoot.ClearAllChildren();
+
+				gm.CurrentIdentity.PlaceName = "";
+				gm.CurrentIdentity.UniverseName = "";
+				gm.CurrentIdentity.Author = "";
+
+				for (int i = 0; i < dm.GetChildren().Length; i++)
+				{
+					var d = dm.GetChildren()[i];
+					d.ChangeOwnership(gm);
+					d.Parent = gm.CurrentRoot;
+				}
+
+				Task.Run(gm.NetworkManager.StartServer);
+
+				GameManager gmc = null!;
+				PlatformService.QueuedTeleport = (xo) =>
+				{
+					gmc.NetworkManager.ClientReplicator = Task.Run(async delegate ()
+					{
+						try
+						{
+							gmc.NetworkManager.ConnectToServer(IPAddress.Loopback);
+							return new object();
+						}
+						catch (Exception ex)
+						{
+							gmc.RenderManager.Status = "Could not connect to the server: " + ex.Message;
+							return new();
+						}
+					}).AsCancellable(gmc.NetworkManager.ClientReplicatorCanceller.Token);
+				};
+				gmc = AppManager.CreateGame(new GameConfiguration()
+				{
+					AsClient = true,
+					AsStudio = true,
+					SkipWindowCreation = true,
+					GameName = "NetBlox Client (studio)"
+				}, ["--guest"], (x, y) => { });
+				AppManager.SetRenderTarget(gmc);
+			});
+		}
+	}
+	private void commandBar_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+	{
+		if (Baseplate != null && e.Key == System.Windows.Input.Key.Return)
+		{
+			LuaRuntime.Execute(commandBar.Text, 4, Baseplate, null);
+		}
+    }
 }

@@ -8,7 +8,7 @@ namespace NetBlox.Instances.Services
 	public class Chat : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public LuaSignal Chatted { get; set; } = new();
+		public LuaSignal Chatted { get; init; } = new();
 
 		public Chat(GameManager ins) : base(ins) { }
 

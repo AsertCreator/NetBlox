@@ -16,6 +16,7 @@ namespace NetBlox
 				Log.AppendLine(fm);
 				Console.ForegroundColor = ConsoleColor.White;
 				Console.WriteLine(fm);
+				Debug.WriteLine(fm);
 				Console.ResetColor();
 			}
 		}
@@ -27,6 +28,7 @@ namespace NetBlox
 				Log.AppendLine(fm);
 				Console.ForegroundColor = ConsoleColor.Yellow;
 				Console.WriteLine(fm);
+				Debug.WriteLine(fm);
 				Console.ResetColor();
 			}
 		}
@@ -38,6 +40,7 @@ namespace NetBlox
 				Log.AppendLine(fm);
 				Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine(fm);
+				Debug.WriteLine(fm);
 				Console.ResetColor();
 			}
 		}

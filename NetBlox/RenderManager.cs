@@ -41,6 +41,10 @@ namespace NetBlox
 			{
 				MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
 				RenderAtAll = render;
+
+				MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
+				StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
+				CurrentSkybox = Skybox.LoadSkybox("bluecloud");
 			}
 		}
 		public unsafe void Initialize(bool render)
