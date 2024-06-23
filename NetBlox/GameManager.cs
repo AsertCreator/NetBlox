@@ -242,7 +242,7 @@ namespace NetBlox
 			{
 				Parent = ws,
 				Color = Color.DarkGreen,
-				Position = new(0, -4.5f, 0),
+				Position = new(0, -45f, 0),
 				Size = new(32, 2, 32),
 				TopSurface = SurfaceType.Studs,
 				Anchored = true
@@ -254,8 +254,7 @@ namespace NetBlox
 				Color = Color.DarkBlue,
 				Position = new(0, -3f, 0),
 				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
+				TopSurface = SurfaceType.Studs
 			};
 			new Part(this)
 			{
@@ -263,8 +262,7 @@ namespace NetBlox
 				Color = Color.DarkBlue,
 				Position = new(-1, -3f, 0),
 				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
+				TopSurface = SurfaceType.Studs
 			};
 			new Part(this)
 			{
@@ -272,8 +270,7 @@ namespace NetBlox
 				Color = Color.Red,
 				Position = new(-0.5f, -1f, 0),
 				Size = new(2, 2, 1),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
+				TopSurface = SurfaceType.Studs
 			};
 			new Part(this)
 			{
@@ -281,8 +278,7 @@ namespace NetBlox
 				Color = Color.Yellow,
 				Position = new(-2f, -1f, 0),
 				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
+				TopSurface = SurfaceType.Studs
 			};
 			new Part(this)
 			{
@@ -290,8 +286,7 @@ namespace NetBlox
 				Color = Color.Yellow,
 				Position = new(1f, -1f, 0),
 				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
+				TopSurface = SurfaceType.Studs
 			};
 
 			ls.Parent = ri;

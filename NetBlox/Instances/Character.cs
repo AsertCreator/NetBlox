@@ -28,7 +28,7 @@ namespace NetBlox.Instances
 			var c = Color.White;
 			c.A = 255;
 			Color = c;
-			Anchored = false;
+			Anchored = true;
 			Size = new Vector3(1, 1, 1);
 		}
 

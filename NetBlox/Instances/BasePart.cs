@@ -8,7 +8,16 @@ namespace NetBlox.Instances
 	public class BasePart : PVInstance
 	{
 		[Lua([Security.Capability.None])]
-		public bool Anchored { get; set; }
+		public bool Anchored 
+		{
+			get => _anchored;
+			set 
+			{ 
+				_anchored = value;
+				if (Actor != null)
+					Actor.Downdate();
+			} 
+		}
 		[Lua([Security.Capability.None])]
 		public bool Locked { get; set; }
 		[Lua([Security.Capability.None])]
@@ -26,7 +35,16 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Color Color { get; set; } = Color.Gray;
 		[Lua([Security.Capability.None])]
-		public Vector3 Position { get => Origin.Position; set => Origin.Position = value; }
+		public Vector3 Position 
+		{ 
+			get => _position;
+			set
+			{
+				_position = value;
+				if (Actor != null)
+					Actor.Downdate(); // I REALLY DONT KNOW TO NAME THIS :P
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public Vector3 Rotation { get; set; }
 		[Lua([Security.Capability.None])]
@@ -44,7 +62,8 @@ namespace NetBlox.Instances
 
 		public BasePart(GameManager ins) : base(ins) 
 		{
-			// Actor = new(this);
+			Actor = new(this);
+			Actor.Downdate();
 		}
 
 		public virtual void Render()

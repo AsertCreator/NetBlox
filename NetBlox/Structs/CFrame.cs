@@ -11,6 +11,11 @@ namespace NetBlox.Structs
 	{
 		public Vector3 Position { get; set; }
 
+		public CFrame(Vector3 pos)
+		{
+			Position = pos;
+		}
+
 		public static CFrame operator +(CFrame a, CFrame b) => new () { Position = a.Position + b.Position };
 		public static CFrame operator -(CFrame a, CFrame b) => new () { Position = a.Position - b.Position };
 		public static CFrame operator *(CFrame a, CFrame b) => new () { Position = a.Position * b.Position };

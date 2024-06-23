@@ -44,8 +44,30 @@ namespace NetBlox.Structs
 				boxDef.Set(Transform.Identity, Size);
 				Box = body.AddBox(boxDef);
 				Body = body;
+
+				BasePart.GameManager.PhysicsManager.Actors.Add(this);
 			}
 		}
+		/// <summary>
+		/// Used, when the <seealso cref="Instances.BasePart"/> is the source of truth, and <seealso cref="Actor"/> needs to update
+		/// </summary>
+		public void Downdate()
+		{
+			CanCollide = BasePart.CanCollide;
+			Anchored = BasePart.Anchored;
+
+			if (!Anchored)
+				Body.Flags &= ~BodyFlags.eStatic;
+			else
+				Body.Flags &= ~BodyFlags.eDynamic;
+
+			Position = BasePart._position;
+			Rotation = BasePart._rotation;
+			Velocity = BasePart.Velocity;
+		}
+		/// <summary>
+		/// Used, when the <seealso cref="Actor"/> is the source of truth, and <seealso cref="Instances.BasePart"/> needs to update
+		/// </summary>
 		public void Update()
 		{
 			CanCollide = BasePart.CanCollide;
@@ -56,12 +78,13 @@ namespace NetBlox.Structs
 			else
 				Body.Flags &= ~BodyFlags.eDynamic;
 
-			BasePart.Position = Position;
-			BasePart.Rotation = Rotation;
+			BasePart._position = Position;
+			BasePart._rotation = Rotation;
 			BasePart.Velocity = Velocity;
 		}
 		public void Remove()
 		{
+			BasePart.GameManager.PhysicsManager.Actors.Remove(this);
 			Scene sc = BasePart.GameManager.CurrentRoot.GetService<Workspace>().Scene;
 			lock (sc)
 			{
