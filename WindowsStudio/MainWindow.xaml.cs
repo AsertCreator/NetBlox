@@ -66,6 +66,12 @@ public partial class MainWindow : System.Windows.Window
 		var wfh = new WindowsFormsHost();
 		ti.Content = wfh;
 		var pan = new System.Windows.Forms.Panel();
+		var label = new System.Windows.Forms.Label();
+		label.Parent = pan;
+		label.Location = new Point(50, 50);
+		label.AutoSize = true;
+		label.Text = "NetBlox is loading, please wait...";
+		label.ForeColor = System.Drawing.Color.White;
 		pan.BackColor = System.Drawing.Color.Black;
 		wfh.Child = pan;
 		var panh = pan.Handle;
@@ -112,14 +118,7 @@ public partial class MainWindow : System.Windows.Window
 	public void OpenBrowserTab(string header, string url)
 	{
 		var ti = OpenTab(header);
-		var wb = new WebView2();
-		wb.Source = new Uri(url);
-		wb.CoreWebView2InitializationCompleted += (x, y) =>
-		{
-			wb.CoreWebView2.Settings.AreDevToolsEnabled = false;
-			wb.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
-			wb.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-		};
+		var wb = new BrowserTabView(url);
 		ti.Content = wb;
 	}
 	[DllImport("user32.dll", SetLastError = true)]
