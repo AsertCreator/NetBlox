@@ -24,5 +24,12 @@ namespace NetBlox
 			"netblox is worst game ever"
 		]; // i know so much things lol
 		// i hope github wont kill me for this lol
+		public static string Filter(string msg)
+		{
+			string cleany = msg;
+			for (int i = 0; i < Words.Count; i++)
+				cleany = cleany.Replace(Words[i], new string('#', Words[i].Length));
+			return cleany;
+		}
 	}
 }

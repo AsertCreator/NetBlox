@@ -1,5 +1,6 @@
 ﻿#define DISABLE_EME
 using MoonSharp.Interpreter;
+using NetBlox.Instances;
 using NetBlox.Runtime;
 using System.Runtime;
 
@@ -80,11 +81,11 @@ namespace NetBlox
 			if (!FastStrings.TryGetValue(fflag, out var _))
 				FastStrings[fflag] = def;
 		}
-		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<string, GameManager> callback)
+		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<string, GameManager> callback, Action<DataModel>? dmc = null)
 		{
 			GameManager manager = new GameManager();
 			manager.ManagerName = gc.GameName;
-			manager.Start(gc, args, callback);
+			manager.Start(gc, args, callback, dmc);
 			GameManagers.Add(manager);
 			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
 			return manager;
@@ -96,9 +97,6 @@ namespace NetBlox
 		{
 			if (!Directory.Exists(LibraryFolder))
 				Directory.CreateDirectory(LibraryFolder);
-
-			LogManager.LogInfo("Initializing SerializationManager...");
-			SerializationManager.Initialize();
 
 			DefineFastFlag("FFlagShowCoreGui", true);
 			DefineFastInt("FIntDefaultUIVariant", 1);
@@ -237,7 +235,7 @@ namespace NetBlox
 				BlockReplication = false;
 			}
 		}
-		public static string ResolveUrl(string url) => ContentFolder + url.Split("//")[1];
+		public static string ResolveUrl(string url) => (ContentFolder + url.Split("//")[1]).Replace('\\', '/'); // microsoft i hate you
 	}
 	public class RollbackException : Exception { }
 }

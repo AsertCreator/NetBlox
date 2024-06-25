@@ -79,7 +79,7 @@ namespace NetBlox
 			ss.Source = File.ReadAllText(ssurl);
 			ss.Parent = sg;
 		}
-		public void Start(GameConfiguration gc, string[] args, Action<string, GameManager> servercallback)
+		public void Start(GameConfiguration gc, string[] args, Action<string, GameManager> servercallback, Action<DataModel>? dmc = null)
 		{
 			try
 			{
@@ -146,6 +146,10 @@ namespace NetBlox
 
 				LogManager.LogInfo("Initializing internal scripts...");
 				CurrentRoot = new DataModel(this);
+				if (dmc != null)
+					dmc(CurrentRoot);
+
+				LuaRuntime.Setup(this, CurrentRoot);
 
 				ProhibitProcessing = gc.ProhibitProcessing;
 				ProhibitScripts = gc.ProhibitScripts;
@@ -171,8 +175,6 @@ namespace NetBlox
 				var cg = CurrentRoot.GetService<CoreGui>();
 				rs.Parent = CurrentRoot;
 				cg.Parent = CurrentRoot;
-
-				LuaRuntime.Setup(this, CurrentRoot);
 
 				LogManager.LogInfo("Initializing user interface...");
 				SetupCoreGui();

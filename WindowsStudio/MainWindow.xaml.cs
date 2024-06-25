@@ -63,57 +63,8 @@ public partial class MainWindow : System.Windows.Window
 	public unsafe void OpenEditorTab()
 	{
 		var ti = OpenTab("Baseplate (edit)");
-		var wfh = new WindowsFormsHost();
+		var wfh = new EditorTabView(this);
 		ti.Content = wfh;
-		var pan = new System.Windows.Forms.Panel();
-		var label = new System.Windows.Forms.Label();
-		label.Parent = pan;
-		label.Location = new Point(50, 50);
-		label.AutoSize = true;
-		label.Text = "NetBlox is loading, please wait...";
-		label.ForeColor = System.Drawing.Color.White;
-		pan.BackColor = System.Drawing.Color.Black;
-		wfh.Child = pan;
-		var panh = pan.Handle;
-
-		Task.Run(() =>
-		{
-			Baseplate = AppManager.CreateGame(new GameConfiguration()
-			{
-				AsServer = true,
-				AsStudio = true,
-				CustomFlags = ConfigFlags.UndecoratedWindow | ConfigFlags.MaximizedWindow | ConfigFlags.HiddenWindow,
-				ProhibitScripts = true,
-				GameName = "NetBlox Studio - Baseplate"
-			}, [], (x, y) => { });
-			Baseplate.LoadDefault();
-			AppManager.PlatformOpenBrowser = x =>
-			{
-				Dispatcher.Invoke(() =>
-				{
-					OpenBrowserTab("Browser, opened by user code", x);
-				});
-			};
-			AppManager.SetRenderTarget(Baseplate);
-			while (true)
-			{
-				var h = (nint)Raylib.GetWindowHandle();
-				if (h < 0) continue;
-				SetParent(h, panh);
-				// SetWindowLongPtr(h, -16, 1342177280); it doesnt fucking work because keyboard doesnt passthrough help my ass
-				ShowWindow(h, 3);
-				MoveWindow(h, 0, 0, pan.Width, pan.Height, true);
-				// EnableWindow(h, true);
-				break;
-			}
-
-			pan.Resize += (x, y) =>
-			{
-				MoveWindow((nint)Raylib.GetWindowHandle(), 0, 0, pan.Width, pan.Height, true);
-			};
-
-			AppManager.Start();
-		});
 	}
 	public void OpenBrowserTab(string header, string url)
 	{
@@ -121,16 +72,6 @@ public partial class MainWindow : System.Windows.Window
 		var wb = new BrowserTabView(url);
 		ti.Content = wb;
 	}
-	[DllImport("user32.dll", SetLastError = true)]
-	static extern IntPtr SetWindowLongPtr(nint hWnd, int nIndex, nint dwNewLong);
-	[DllImport("user32.dll", SetLastError = true)]
-	static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent); 
-	[DllImport("user32.dll")]
-	static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
-	[DllImport("user32.dll", SetLastError = true)]
-	static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
-	[DllImport("user32.dll")]
-	static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
 	private void PartButtonClick(object sender, System.Windows.RoutedEventArgs e)
 	{

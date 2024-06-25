@@ -121,7 +121,7 @@ namespace NetBlox
 			}
 			return l.ToArray();
 		}
-		public static void Initialize()
+		static SerializationManager()
 		{
 			if (init) return;
 			init = true;

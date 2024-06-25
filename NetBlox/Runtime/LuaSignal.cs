@@ -6,6 +6,7 @@ namespace NetBlox.Runtime
 	public class LuaSignal
 	{
 		public List<LuaConnection> Attached = new();
+		public List<Action<DynValue[]>> NativeAttached = new();
 		public int FireCount = 0;
 
 		[Lua([Security.Capability.None])]
@@ -31,6 +32,8 @@ namespace NetBlox.Runtime
 			{
 				for (int i = 0; i < Attached.Count; i++)
 					LuaRuntime.Execute(Attached[i].Function, Attached[i].Level, Attached[i].Manager, Attached[i].Script, dvs);
+				for (int i = 0; i < NativeAttached.Count; i++)
+					NativeAttached[i](dvs);
 				FireCount++;
 			}
 		}

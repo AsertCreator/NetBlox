@@ -27,7 +27,10 @@ namespace NetBlox.Instances
 				{
 					parent.Children.Remove(this);
 					if (Root.MainEnv != null)
+					{
 						parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
+						RaiseDescendantRemoved(this);
+					}
 				}
 				if (value != null)
 				{
@@ -35,7 +38,10 @@ namespace NetBlox.Instances
 					ParentID = parent.UniqueID;
 					value.Children.Add(this);
 					if (Root.MainEnv != null)
+					{
 						value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
+						RaiseDescendantAdded(this);
+					}
 				}
 				else
 				{
@@ -50,6 +56,12 @@ namespace NetBlox.Instances
 		public Guid ParentID { get; set; }
 		[NotReplicated]
 		public Guid UniqueID { get; set; }
+		[Lua([Security.Capability.None])]
+		[NotReplicated]
+		public LuaSignal DescendantAdded { get; init; } = new();
+		[Lua([Security.Capability.None])]
+		[NotReplicated]
+		public LuaSignal DescendantRemoved { get; init; } = new();
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
 		public LuaSignal ChildAdded { get; init; } = new();
@@ -90,7 +102,22 @@ namespace NetBlox.Instances
 			gm.AllInstances.Add(this);
 			gm.InvokeAddedEvent(this);
 		}
-
+		public void RaiseDescendantAdded(Instance descendantInQuestion) // thats the longest named variable in the entire solution
+		{
+			if (parent != null) 
+			{
+				Parent.DescendantAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(descendantInQuestion, GameManager)));
+				Parent.RaiseDescendantAdded(descendantInQuestion);
+			}
+		}
+		public void RaiseDescendantRemoved(Instance descendantInQuestion) // thats the longest named variable in the entire solution
+		{
+			if (parent != null)
+			{
+				Parent.DescendantRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(descendantInQuestion, GameManager)));
+				Parent.RaiseDescendantRemoved(descendantInQuestion);
+			}
+		}
 		public virtual void Process()
 		{
 			// process nothing
