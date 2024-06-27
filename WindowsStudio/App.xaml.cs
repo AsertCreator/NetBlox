@@ -5,13 +5,14 @@ using System.Data;
 using System.Windows;
 using Application = System.Windows.Application;
 
-namespace WindowsStudio;
+namespace NetBlox.Studio;
 
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
 public partial class App : Application
 {
+	public static GameManager? EditorGame;
 	public App()
 	{
 		LogManager.LogInfo($"NetBlox DuoHost ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");

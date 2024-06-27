@@ -21,32 +21,43 @@ namespace NetBlox.Instances
 			get => parent;
 			set
 			{
-				if (WasDestroyed) return;
+				lock (this)
+				{
+					if (WasDestroyed) return;
 
-				if (parent != null)
-				{
-					parent.Children.Remove(this);
-					if (Root.MainEnv != null)
+					if (parent != null)
 					{
-						parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
-						RaiseDescendantRemoved(this);
+						lock (parent)
+						{
+							lock (parent.Children)
+								parent.Children.Remove(this);
+							if (Root.MainEnv != null)
+							{
+								parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
+								RaiseDescendantRemoved(this);
+							}
+						}
 					}
-				}
-				if (value != null)
-				{
-					parent = value;
-					ParentID = parent.UniqueID;
-					value.Children.Add(this);
-					if (Root.MainEnv != null)
+					if (value != null)
 					{
-						value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
-						RaiseDescendantAdded(this);
+						lock (value)
+						{
+							parent = value;
+							ParentID = parent.UniqueID;
+							lock (value.Children)
+								value.Children.Add(this);
+							if (Root.MainEnv != null)
+							{
+								value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
+								RaiseDescendantAdded(this);
+							}
+						}
 					}
-				}
-				else
-				{
-					parent = null;
-					ParentID = Guid.Empty;
+					else
+					{
+						parent = null;
+						ParentID = Guid.Empty;
+					}
 				}
 			}
 		}
@@ -85,21 +96,27 @@ namespace NetBlox.Instances
 
 		public Instance(GameManager gm)
 		{
-			Name = ClassName;
-			UniqueID = Guid.NewGuid();
-			GameManager = gm;
+			lock (this)
+			{
+				Name = ClassName;
+				UniqueID = Guid.NewGuid();
+				GameManager = gm;
 
-			gm.AllInstances.Add(this);
+				gm.AllInstances.Add(this);
+			}
 			gm.InvokeAddedEvent(this);
 		}
 		public Instance(GameManager gm, Guid guid)
 		{
-			Name = ClassName;
-			UniqueID = guid;
-			WasReplicated = true;
-			GameManager = gm;
+			lock (this)
+			{
+				Name = ClassName;
+				UniqueID = guid;
+				WasReplicated = true;
+				GameManager = gm;
 
-			gm.AllInstances.Add(this);
+				gm.AllInstances.Add(this);
+			}
 			gm.InvokeAddedEvent(this);
 		}
 		public void RaiseDescendantAdded(Instance descendantInQuestion) // thats the longest named variable in the entire solution
@@ -129,135 +146,147 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public virtual void AddTag(string tag)
 		{
-			if (!Tags.Contains(tag))
-				Tags.Add(tag);
+			lock (Tags)
+				if (!Tags.Contains(tag))
+					Tags.Add(tag);
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? Clone()
 		{
-			if (!Archivable)
-				return null;
-			// i tried
-			// maybe i did it
-			Dictionary<Instance, Instance> clonemapping = new();
-			List<Instance> dolater = new();
-
-			Instance? DoClone(Instance? inst)
+			lock (this)
 			{
-				var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
-				var props = SerializationManager.GetAccessibleProperties(clone);
-				for (int i = 0; i < props.Length; i++)
+				if (!Archivable)
+					return null;
+				// i tried
+				// maybe i did it
+				Dictionary<Instance, Instance> clonemapping = new();
+				List<Instance> dolater = new();
+
+				Instance? DoClone(Instance? inst)
 				{
-					var prop = SerializationManager.GetProperty(inst, props[i]);
-					var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
-					if (SerializationManager.IsReadonly(clone, props[i]))
-						continue;
-					if (ptyp.IsAssignableTo(typeof(Script))) continue;
-					if (ptyp.IsAssignableTo(typeof(Scene))) continue; 
-					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
+					var props = SerializationManager.GetAccessibleProperties(clone);
+					for (int i = 0; i < props.Length; i++)
 					{
-						var ogval = (Instance)prop;
-						if (clonemapping.ContainsKey(ogval))
-							SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+						var prop = SerializationManager.GetProperty(inst, props[i]);
+						var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
+						if (SerializationManager.IsReadonly(clone, props[i]))
+							continue;
+						if (ptyp.IsAssignableTo(typeof(Script))) continue;
+						if (ptyp.IsAssignableTo(typeof(Scene))) continue;
+						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+						{
+							var ogval = (Instance)prop;
+							if (clonemapping.ContainsKey(ogval))
+								SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+							else
+								dolater.Add(clone);
+						}
 						else
-							dolater.Add(clone);
+							SerializationManager.SetProperty(clone, props[i], prop);
 					}
-					else
-						SerializationManager.SetProperty(clone, props[i], prop);
+
+					clonemapping[inst] = clone;
+
+					for (int i = 0; i < inst.Children.Count; i++)
+						if (inst.Children[i].Archivable)
+							DoClone(inst.Children[i]).Parent = clone;
+
+					return clone;
 				}
 
-				clonemapping[inst] = clone;
-
-				for (int i = 0; i < inst.Children.Count; i++)
-					if (inst.Children[i].Archivable)
-						DoClone(inst.Children[i]).Parent = clone;
-
-				return clone;
-			}
-
-			for (int i = 0; i < dolater.Count; i++)
-			{
-				var inst = dolater[i];
-				var props = SerializationManager.GetAccessibleProperties(inst);
-				for (int j = 0; j < props.Length; j++)
+				for (int i = 0; i < dolater.Count; i++)
 				{
-					var prop = SerializationManager.GetProperty(inst, props[j]);
-					var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
-					if (SerializationManager.IsReadonly(inst, props[j]))
-						continue;
-					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					var inst = dolater[i];
+					var props = SerializationManager.GetAccessibleProperties(inst);
+					for (int j = 0; j < props.Length; j++)
 					{
-						var ogval = (Instance)prop;
-						SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
+						var prop = SerializationManager.GetProperty(inst, props[j]);
+						var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
+						if (SerializationManager.IsReadonly(inst, props[j]))
+							continue;
+						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+						{
+							var ogval = (Instance)prop;
+							SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
+						}
 					}
 				}
-			}
 
-			return DoClone(this);
+				return DoClone(this);
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance ForceClone()
 		{
 			// i tried
 			// maybe i did it
-			Dictionary<Instance, Instance> clonemapping = new();
-			List<Instance> dolater = new();
-
-			Instance DoClone(Instance inst)
+			lock (this)
 			{
-				var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
-				var props = SerializationManager.GetAccessibleProperties(clone);
-				for (int i = 0; i < props.Length; i++)
+				Dictionary<Instance, Instance> clonemapping = new();
+				List<Instance> dolater = new();
+
+				Instance DoClone(Instance inst)
 				{
-					var prop = SerializationManager.GetProperty(inst, props[i]);
-					var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
-					if (SerializationManager.IsReadonly(clone, props[i]))
-						continue;
-					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
+					var props = SerializationManager.GetAccessibleProperties(clone);
+					for (int i = 0; i < props.Length; i++)
 					{
-						var ogval = (Instance)prop;
-						if (clonemapping.ContainsKey(ogval))
-							SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+						var prop = SerializationManager.GetProperty(inst, props[i]);
+						var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
+						if (SerializationManager.IsReadonly(clone, props[i]))
+							continue;
+						if (ptyp.IsAssignableTo(typeof(LuaSignal)))
+							continue;
+						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+						{
+							var ogval = (Instance)prop;
+							if (clonemapping.ContainsKey(ogval))
+								SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+							else
+								dolater.Add(clone);
+						}
 						else
-							dolater.Add(clone);
+							SerializationManager.SetProperty(clone, props[i], prop);
 					}
-					else
-						SerializationManager.SetProperty(clone, props[i], prop);
+
+					clonemapping[inst] = clone;
+
+					for (int i = 0; i < inst.Children.Count; i++)
+						DoClone(inst.Children[i]).Parent = clone;
+
+					return clone;
 				}
 
-				clonemapping[inst] = clone;
-
-				for (int i = 0; i < inst.Children.Count; i++)
-					DoClone(inst.Children[i]).Parent = clone;
-
-				return clone;
-			}
-
-			for (int i = 0; i < dolater.Count; i++)
-			{
-				var inst = dolater[i];
-				var props = SerializationManager.GetAccessibleProperties(inst);
-				for (int j = 0; j < props.Length; j++)
+				for (int i = 0; i < dolater.Count; i++)
 				{
-					var prop = SerializationManager.GetProperty(inst, props[j]);
-					var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
-					if (SerializationManager.IsReadonly(inst, props[j]))
-						continue;
-					if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+					var inst = dolater[i];
+					var props = SerializationManager.GetAccessibleProperties(inst);
+					for (int j = 0; j < props.Length; j++)
 					{
-						var ogval = (Instance)prop;
-						SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
+						var prop = SerializationManager.GetProperty(inst, props[j]);
+						var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
+						if (SerializationManager.IsReadonly(inst, props[j]))
+							continue;
+						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null && ptyp.Name != "Parent")
+						{
+							var ogval = (Instance)prop;
+							SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
+						}
 					}
 				}
-			}
 
-			return DoClone(this);
+				return DoClone(this);
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual void ClearAllChildren()
 		{
-			for (int i = 0; i < Children.Count; i++) Children[i].Destroy();
-			Children.Clear();
+			lock (Children)
+			{
+				for (int i = 0; i < Children.Count; i++) Children[i].Destroy();
+				Children.Clear();
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual void Destroy()
@@ -277,56 +306,70 @@ namespace NetBlox.Instances
 		public virtual Instance? FindFirstAncestor(string name)
 		{
 			if (Parent == null) return null;
-			if (Parent.Name == name) return Parent;
-			else return Parent.FindFirstAncestor(name);
+			lock (Parent)
+			{
+				if (Parent.Name == name) return Parent;
+				else return Parent.FindFirstAncestor(name);
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstAncestorOfClass(string cl)
 		{
 			if (Parent == null) return null;
-			if (Parent.ClassName == cl) return Parent;
-			else return Parent.FindFirstAncestorOfClass(cl);
+			lock (Parent)
+			{
+				if (Parent.ClassName == cl) return Parent;
+				else return Parent.FindFirstAncestorOfClass(cl);
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstAncestorWhichIsA(string cl)
 		{
 			if (Parent == null) return null;
-			if (Parent.IsA(cl)) return Parent;
-			else return Parent.FindFirstAncestorWhichIsA(cl);
+			lock (Parent)
+			{
+				if (Parent.IsA(cl)) return Parent;
+				else return Parent.FindFirstAncestorWhichIsA(cl);
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChild(string name)
 		{
-			for (int i = 0; i < Children.Count; i++)
-				if (Children[i].Name == name)
-					return Children[i];
-
+			lock (Children)
+			{
+				for (int i = 0; i < Children.Count; i++)
+					if (Children[i].Name == name)
+						return Children[i];
+			}
 			return null;
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChildOfClass(string cl)
 		{
-			for (int i = 0; i < Children.Count; i++)
-				if (Children[i].ClassName == cl)
-					return Children[i];
+			lock (Children)
+				for (int i = 0; i < Children.Count; i++)
+					if (Children[i].ClassName == cl)
+						return Children[i];
 
 			return null;
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChildWhichIsA(string cl)
 		{
-			for (int i = 0; i < Children.Count; i++)
-				if (Children[i].IsA(cl))
-					return Children[i];
+			lock (Children)
+				for (int i = 0; i < Children.Count; i++)
+					if (Children[i].IsA(cl))
+						return Children[i];
 
 			return null;
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstDescendant(string name)
 		{
-			for (int i = 0; i < Children.Count; i++)
-				if (Children[i].Name == name)
-					return Children[i];
+			lock (Children)
+				for (int i = 0; i < Children.Count; i++)
+					if (Children[i].Name == name)
+						return Children[i];
 
 			for (int i = 0; i < Children.Count; i++)
 			{
@@ -342,28 +385,34 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetDescendants()
 		{
-			var list = new List<Instance>(Children);
+			lock (Children)
+			{
+				var list = new List<Instance>(Children);
 
-			for (int i = 0; i < Children.Count; i++)
-				list.AddRange(Children[i].GetDescendants());
+				for (int i = 0; i < Children.Count; i++)
+					list.AddRange(Children[i].GetDescendants());
 
-			return list.ToArray();
+				return list.ToArray();
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetAncestors()
 		{
 			if (Parent == null) return [];
 
-			var list = new List<Instance>();
-			var inst = Parent;
-
-			while (inst != null)
+			lock (parent)
 			{
-				list.Add(inst);
-				inst = inst.Parent!;
-			}
+				var list = new List<Instance>();
+				var inst = Parent;
 
-			return list.ToArray();
+				while (inst != null)
+				{
+					list.Add(inst);
+					inst = inst.Parent!;
+				}
+
+				return list.ToArray();
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual string GetFullName()

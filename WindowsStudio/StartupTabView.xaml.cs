@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WindowsStudio
+namespace NetBlox.Studio
 {
     /// <summary>
     /// Interaction logic for StartupTabView.xaml

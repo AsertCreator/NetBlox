@@ -1,7 +1,7 @@
-﻿<Application x:Class="WindowsStudio.App"
+﻿<Application x:Class="NetBlox.Studio.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:WindowsStudio"
+             xmlns:local="clr-namespace:NetBlox.Studio"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

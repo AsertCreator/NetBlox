@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>NetBloxBootstrapper</AssemblyName>
+    <RootNamespace>NetBlox.Installer</RootNamespace>
   </PropertyGroup>
 
   <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />

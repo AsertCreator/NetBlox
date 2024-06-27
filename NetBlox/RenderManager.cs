@@ -27,13 +27,27 @@ namespace NetBlox
 		public Texture2D StudTexture;
 		public Font MainFont;
 		public long Framecount;
+		private bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
+
+		public static Queue<(string, Action<Texture2D>)> TextureLoadQueue = [];
+		public static Queue<(string, Action<Shader>)> ShaderLoadQueue = [];
+		public static Queue<(string, Action<Sound>)> SoundLoadQueue = [];
+		public static Queue<(string, Action<Font>)> FontLoadQueue = [];
+
+		public static Dictionary<string, Texture2D> TextureCache = [];
+		public static Dictionary<string, Shader> ShaderCache = [];
+		public static Dictionary<string, Sound> SoundCache = [];
+		public static Dictionary<string, Font> FontCache = [];
+
+		public int LoadBatchSize = 5;
 
 		public unsafe RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
 		{
 			GameManager = gm;
 			VersionMargin = vm;
 			GameManager.RenderManager = this;
+			SkipWindowCreation = skiprinit;
 
 			if (!skiprinit)
 				Initialize(render);
@@ -44,9 +58,9 @@ namespace NetBlox
 
 				if (render)
 				{
-					MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
-					StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
-					CurrentSkybox = Skybox.LoadSkybox("bluecloud");
+					LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
+					LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
+					CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
 				}
 			}
 		}
@@ -64,9 +78,9 @@ namespace NetBlox
 				Raylib.SetExitKey(KeyboardKey.Null);
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
 
-				MainFont = ResourceManager.GetFont(AppManager.ContentFolder + "fonts/arialbd.ttf");
-				StudTexture = ResourceManager.GetTexture(AppManager.ContentFolder + "textures/stud.png");
-				CurrentSkybox = Skybox.LoadSkybox("bluecloud");
+				LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
+				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
+				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
 			}
 		}
 		public unsafe void RenderFrame()
@@ -96,6 +110,8 @@ namespace NetBlox
 							MainCamera.Position.Y -= 0.1f;
 						}
 					}
+
+					PerformResourceLoading();
 
 					// render world
 					Raylib.BeginDrawing();
@@ -146,7 +162,7 @@ namespace NetBlox
 							Raylib.EndDrawing();
 					}
 
-					if (Raylib.WindowShouldClose())
+					if (Raylib.WindowShouldClose() && !SkipWindowCreation)
 						GameManager.Shutdown();
 				}
 
@@ -229,6 +245,100 @@ namespace NetBlox
 		public void ShowKickMessage(string msg)
 		{
 			Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
+		}
+		public void PerformResourceLoading() // e F f I c I e N t  resource loader
+		{
+			for (int i = 0; i < LoadBatchSize; i++)
+			{
+				if (TextureLoadQueue.Count > 0)
+				{
+					var el = TextureLoadQueue.Dequeue();
+					try
+					{
+						var tex = Raylib.LoadTexture(AppManager.ResolveUrl(el.Item1));
+						TextureCache[el.Item1] = tex;
+						el.Item2(tex);
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load texture from " + el.Item1);
+						return;
+					}
+				}
+				if (FontLoadQueue.Count > 0)
+				{
+					var el = FontLoadQueue.Dequeue();
+					try
+					{
+						var font = Raylib.LoadFont(AppManager.ResolveUrl(el.Item1));
+						FontCache[el.Item1] = font;
+						el.Item2(font);
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load font from " + el.Item1);
+						return;
+					}
+				}
+				if (ShaderLoadQueue.Count > 0)
+				{
+					var el = ShaderLoadQueue.Dequeue();
+					try
+					{
+						var shader = Raylib.LoadShader(AppManager.ResolveUrl(el.Item1) + ".vs", AppManager.ResolveUrl(el.Item1) + ".fs");
+						ShaderCache[el.Item1] = shader;
+						el.Item2(shader);
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load shader from " + el.Item1);
+						return;
+					}
+				}
+				if (SoundLoadQueue.Count > 0)
+				{
+					var el = SoundLoadQueue.Dequeue();
+					try
+					{
+						var tex = Raylib.LoadSound(AppManager.ResolveUrl(el.Item1));
+						SoundCache[el.Item1] = tex;
+						el.Item2(tex);
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load sound from " + el.Item1);
+						return;
+					}
+				}
+			}
+		}
+		public static void LoadTexture(string path, Action<Texture2D> callback)
+		{
+			if (TextureCache.TryGetValue(path, out var tex))
+				callback(tex);
+			else
+				TextureLoadQueue.Enqueue((path, callback));
+		}
+		public static void LoadFont(string path, Action<Font> callback)
+		{
+			if (FontCache.TryGetValue(path, out var tex))
+				callback(tex);
+			else
+				FontLoadQueue.Enqueue((path, callback));
+		}
+		public static void LoadShader(string path, Action<Shader> callback)
+		{
+			if (ShaderCache.TryGetValue(path, out var tex))
+				callback(tex);
+			else
+				ShaderLoadQueue.Enqueue((path, callback));
+		}
+		public static void LoadSound(string path, Action<Sound> callback)
+		{
+			if (SoundCache.TryGetValue(path, out var tex))
+				callback(tex);
+			else
+				SoundLoadQueue.Enqueue((path, callback));
 		}
 	}
 	[Flags]

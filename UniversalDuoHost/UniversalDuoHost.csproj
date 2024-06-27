@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>NetBloxDuoHost</AssemblyName>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <RootNamespace>NetBlox.DuoHost</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

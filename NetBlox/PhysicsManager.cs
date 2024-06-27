@@ -15,6 +15,7 @@ namespace NetBlox
 		public Vector3 Gravity { get => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity; set => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity = value; }
 		public Scene Scene { get => (Workspace ?? throw new Exception("No workspace is loaded")).Scene; set => (Workspace ?? throw new Exception("No workspace is loaded")).Scene = value; }
 		public List<Actor> Actors = new();
+		public bool DisablePhysics = true; // not now
 		private DateTime LastTime;
 
 		public PhysicsManager(GameManager gameManager)
@@ -24,7 +25,7 @@ namespace NetBlox
 		public void Begin() => LastTime = DateTime.Now;
 		public void Step()
 		{
-			if (Workspace == null || Scene == null)
+			if (Workspace == null || Scene == null || DisablePhysics)
 				return;
 			lock (Scene)
 			{

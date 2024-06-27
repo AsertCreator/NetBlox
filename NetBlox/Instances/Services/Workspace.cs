@@ -11,6 +11,7 @@ namespace NetBlox.Instances.Services
 		public Instance? MainCamera { get; set; }
 		[Lua([Security.Capability.None])]
 		public Vector3 Gravity { get; set; } = new Vector3(0, -9.8f, 0);
+		public SpawnLocation? SpawnLocation;
 		public Scene Scene;
 
 		public Workspace(GameManager ins) : base(ins) 

@@ -17,6 +17,7 @@ namespace NetBlox.Structs
 		public bool Anchored = false;
 		public bool CanCollide = true;
 		public BasePart BasePart;
+		public BoxDef BoxDef;
 		public Body Body;
 		public Box Box;
 
@@ -40,9 +41,9 @@ namespace NetBlox.Structs
 				else
 					bodyDef.bodyType = BodyType.eStaticBody;
 				Body body = sc.CreateBody(bodyDef);
-				BoxDef boxDef = new BoxDef();
-				boxDef.Set(Transform.Identity, Size);
-				Box = body.AddBox(boxDef);
+				BoxDef = new BoxDef();
+				BoxDef.Set(Transform.Identity, Size);
+				Box = body.AddBox(BoxDef);
 				Body = body;
 
 				BasePart.GameManager.PhysicsManager.Actors.Add(this);

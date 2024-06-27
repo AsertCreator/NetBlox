@@ -139,7 +139,7 @@ namespace NetBlox
 						nc.Player = pl;
 
 						pl.Reload();
-						pl.LoadCharacter();
+						pl.LoadCharacterOld();
 
 						sh.Author = GameManager.CurrentIdentity.Author;
 						sh.PlaceName = GameManager.CurrentIdentity.PlaceName;

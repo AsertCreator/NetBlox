@@ -17,19 +17,20 @@ namespace NetBlox.Structs
 
 		private Skybox() { }
 
-		public static Skybox LoadSkybox(string fp)
+		public static Skybox LoadSkybox(GameManager gm, string fp)
 		{
-			Skybox sb = new()
-			{
-				Back = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_bk.png"),
-				Bottom = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_dn.png"),
-				Front = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_ft.png"),
-				Left = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_lf.png"),
-				Right = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_rt.png"),
-				Top = ResourceManager.GetTexture(AppManager.ContentFolder + $"skybox/{fp}_up.png")
-			};
+			if (gm.RenderManager == null) return new();
 
-			return sb;
+			Skybox sk = new();
+
+			RenderManager.LoadTexture($"rbxasset://skybox/{fp}_bk.png", x => sk.Back = x);
+			RenderManager.LoadTexture($"rbxasset://skybox/{fp}_dn.png", x => sk.Bottom = x);
+			RenderManager.LoadTexture($"rbxasset://skybox/{fp}_ft.png", x => sk.Front = x);
+			RenderManager.LoadTexture($"rbxasset://skybox/{fp}_lf.png", x => sk.Left = x);
+			RenderManager.LoadTexture($"rbxasset://skybox/{fp}_rt.png", x => sk.Right = x);
+			RenderManager.LoadTexture($"rbxasset://skybox/{fp}_up.png", x => sk.Top = x);
+
+			return sk;
 		}
 		public void Unload()
 		{

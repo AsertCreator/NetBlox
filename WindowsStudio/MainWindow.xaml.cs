@@ -1,22 +1,24 @@
 ﻿using Microsoft.Web.WebView2.Wpf;
 using NetBlox;
 using NetBlox.Instances;
+using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using Raylib_cs;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Security.Policy;
 using System.Windows.Controls;
 using System.Windows.Forms.Integration;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace WindowsStudio;
+namespace NetBlox.Studio;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
 public partial class MainWindow : System.Windows.Window
 {
-	public static GameManager? Baseplate;
 	public static MainWindow? Instance;
 
 	public MainWindow()
@@ -62,7 +64,7 @@ public partial class MainWindow : System.Windows.Window
 	}
 	public unsafe void OpenEditorTab()
 	{
-		var ti = OpenTab("Baseplate (edit)");
+		var ti = OpenTab("EditorGame (edit)");
 		var wfh = new EditorTabView(this);
 		ti.Content = wfh;
 	}
@@ -72,23 +74,28 @@ public partial class MainWindow : System.Windows.Window
 		var wb = new BrowserTabView(url);
 		ti.Content = wb;
 	}
-
+	public void OpenScriptTab(BaseScript bs)
+	{
+		var ti = OpenTab(bs.GetFullName() + " (script)");
+		var wb = new ScriptEditorView(bs);
+		ti.Content = wb;
+	}
 	private void PartButtonClick(object sender, System.Windows.RoutedEventArgs e)
 	{
-		if (Baseplate != null) 
+		if (App.EditorGame != null) 
 		{
-			Workspace works = Baseplate.CurrentRoot.GetService<Workspace>();
-			Part part = new(Baseplate);
+			Workspace works = App.EditorGame.CurrentRoot.GetService<Workspace>();
+			Part part = new(App.EditorGame);
 
 			part.Size = new System.Numerics.Vector3(4, 1, 2);
-			part.Position = Baseplate.RenderManager.MainCamera.Position;
+			part.Position = App.EditorGame.RenderManager.MainCamera.Position;
 			part.Color = Color.Gray;
 			part.Parent = works;
 		}
 	}
 	private void StartPlaybackClick(object sender, System.Windows.RoutedEventArgs e)
 	{
-		if (Baseplate != null)
+		if (App.EditorGame != null)
 		{
 			// first we clone the datamodel
 			// then we reassign it to new server gamemanager
@@ -98,7 +105,7 @@ public partial class MainWindow : System.Windows.Window
 			play.IsEnabled = false;
 			stop.IsEnabled = true;
 
-			DataModel dm = (DataModel)Baseplate.CurrentRoot.ForceClone();
+			DataModel dm = (DataModel)App.EditorGame.CurrentRoot.ForceClone();
 			GameManager gms = AppManager.CreateGame(new GameConfiguration()
 			{
 				AsServer = true,
@@ -153,9 +160,9 @@ public partial class MainWindow : System.Windows.Window
 	}
 	private void commandBar_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
 	{
-		if (Baseplate != null && e.Key == System.Windows.Input.Key.Return)
+		if (App.EditorGame != null && e.Key == System.Windows.Input.Key.Return)
 		{
-			LuaRuntime.Execute(commandBar.Text, 4, Baseplate, null);
+			LuaRuntime.Execute(commandBar.Text, 4, App.EditorGame, null);
 		}
     }
 }

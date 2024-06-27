@@ -44,7 +44,7 @@ namespace NetBlox.Instances
 			LogManager.LogInfo("Reloaded " + Name + "'s backpack and GUI!");
 		}
 		[Lua([Security.Capability.None])]
-		public void LoadCharacter()
+		public void LoadCharacterOld()
 		{
 			var ch = new Character(GameManager);
 			var workspace = Root.GetService<Workspace>();
@@ -60,6 +60,14 @@ namespace NetBlox.Instances
 				(workspace.MainCamera as Camera)!.CameraSubject = ch;
 
 			Character = ch;
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void LoadCharacter()
+		{
+			var chmodel = new Model(GameManager);
+			var humanoid = new Humanoid(GameManager);
+			chmodel.Name = Name;
+
 		}
 		[Lua([Security.Capability.None])]
 		public void Kick(string msg) => GameManager.NetworkManager.PerformKick(Client, msg, IsLocalPlayer);

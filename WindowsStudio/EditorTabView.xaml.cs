@@ -1,5 +1,8 @@
 ﻿using NetBlox;
 using NetBlox.Instances;
+using NetBlox.Instances.Scripts;
+using NetBlox.Instances.Services;
+using NetBlox.Runtime;
 using Raylib_cs;
 using System.Runtime.InteropServices;
 using System.Windows.Controls;
@@ -7,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
-namespace WindowsStudio
+namespace NetBlox.Studio
 {
 	/// <summary>
 	/// Interaction logic for EditorTabView.xaml
@@ -15,6 +18,7 @@ namespace WindowsStudio
 	public partial class EditorTabView : System.Windows.Controls.UserControl
 	{
 		public static Dictionary<Instance, TreeViewItem> Items = [];
+		public PropertyGrid propertyGridWF = new();
 		public EditorTabView()
 		{
 			InitializeComponent();
@@ -34,15 +38,42 @@ namespace WindowsStudio
 			wfh.Child = pan;
 			var panh = pan.Handle;
 
+			propertyGrid.Child = propertyGridWF;
+			propertyGridWF.Visible = true;
+			propertyGridWF.CommandsVisibleIfAvailable = true;
+			propertyGridWF.Location = new Point(0, 0);
+			propertyGridWF.Size = new Size((int)propertyGrid.ActualWidth, (int)propertyGrid.ActualHeight);
+			propertyGrid.SizeChanged += (x, y) => propertyGridWF.Size = new Size((int)propertyGrid.ActualWidth, (int)propertyGrid.ActualHeight);
+			explorerTree.SelectedItemChanged += (x, y) =>
+			{
+				var inst = Items.FirstOrDefault(x => x.Value == y.NewValue).Key;
+				DynamicTypeDescriptor dt = new DynamicTypeDescriptor(inst.GetType());
+				dt.RemoveProperty("RequiredCapabilities");
+				dt.RemoveProperty("DescendantRemoved");
+				dt.RemoveProperty("DescendantAdded");
+				dt.RemoveProperty("ChildRemoved");
+				dt.RemoveProperty("ChildAdded");
+				dt.RemoveProperty("UniqueID");
+				dt.RemoveProperty("ParentID");
+				dt.RemoveProperty("Source");
+				for (int i = 0; i < dt.Properties.Count; i++)
+				{
+					var prop = dt.Properties[i];
+					if (prop.PropertyType.IsAssignableTo(typeof(LuaSignal)))
+						dt.RemoveProperty(prop.Name);
+				}
+				propertyGridWF.SelectedObject = dt.FromComponent(inst);
+			};
+
 			Task.Run(() =>
 			{
-				MainWindow.Baseplate = AppManager.CreateGame(new GameConfiguration()
+				App.EditorGame = AppManager.CreateGame(new GameConfiguration()
 				{
 					AsServer = true,
 					AsStudio = true,
 					CustomFlags = ConfigFlags.UndecoratedWindow | ConfigFlags.MaximizedWindow | ConfigFlags.HiddenWindow,
 					ProhibitScripts = true,
-					GameName = "NetBlox Studio - Baseplate"
+					GameName = "NetBlox Studio - EditorGame"
 				}, [], (x, y) => { }, x =>
 				{
 					TreeViewItem MakeItem(Instance inst)
@@ -66,21 +97,46 @@ namespace WindowsStudio
 						stack.Children.Add(image);
 						stack.Children.Add(block);
 						tvi.Header = stack;
-						MenuItem MakeItem(string text, Action act)
+						MenuItem MakeItem(string text, bool enabled, Action act)
 						{
 							MenuItem mi = new();
 							mi.Header = text;
 							mi.Click += (x, y) => act();
+							mi.IsEnabled = enabled;
+							return mi;
+						}
+						MenuItem MakeInsertItem()
+						{
+							MenuItem mi = new();
+							mi.Header = "Insert";
+							Type[] typs = InstanceCreator.CreatableInstanceTypes;
+							for (int i = 0; i < typs.Length; i++)
+							{
+								int j = i;
+								MenuItem ins = new();
+								ins.Header = typs[i].Name;
+								ins.Click += (x, y) =>
+								{
+									Instance ins = (Instance)Activator.CreateInstance(typs[j], App.EditorGame);
+									ins.Parent = inst;
+								};
+								mi.Items.Add(ins);
+							}
 							return mi;
 						}
 						tvi.ContextMenu = new ContextMenu()
 						{
 							Items =
 							{
-								MakeItem("Destroy", () =>
+								MakeItem("Destroy", true, () =>
 								{
 									inst.Destroy();
-								})
+								}),
+								MakeItem("Edit script", inst is BaseScript, () =>
+								{
+									MainWindow.Instance.OpenScriptTab(inst as BaseScript);
+								}),
+								MakeInsertItem()
 							}
 						};
 						return tvi;
@@ -158,7 +214,7 @@ namespace WindowsStudio
 						});
 					});
 				});
-				MainWindow.Baseplate.LoadDefault();
+				App.EditorGame.LoadDefault();
 				AppManager.PlatformOpenBrowser = x =>
 				{
 					Dispatcher.Invoke(() =>
@@ -166,7 +222,7 @@ namespace WindowsStudio
 						mw.OpenBrowserTab("Browser, opened by user code", x);
 					});
 				};
-				AppManager.SetRenderTarget(MainWindow.Baseplate);
+				AppManager.SetRenderTarget(App.EditorGame);
 				while (true)
 				{
 					var h = (nint)Raylib.GetWindowHandle();

@@ -249,6 +249,13 @@ namespace NetBlox
 				TopSurface = SurfaceType.Studs,
 				Anchored = true
 			};
+			new SpawnLocation(this)
+			{
+				Parent = ws,
+				Position = new(0, -45f + 2, 0),
+				TopSurface = SurfaceType.Studs,
+				Anchored = true
+			};
 
 			new Part(this)
 			{
