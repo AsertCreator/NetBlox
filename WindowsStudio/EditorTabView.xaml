@@ -7,38 +7,38 @@
 			 mc:Ignorable="d" 
 			 d:DesignHeight="450" d:DesignWidth="800">
 	<Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <WindowsFormsHost x:Name="wfh" Grid.Column="0"/>
-        <GridSplitter Grid.Column="1" Width="4" ShowsPreview="False" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
-        <Grid x:Name="explorerAndProps" Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="2*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Grid x:Name="explorerContainer" Grid.Row="0">
-                <Border Height="20" Padding="2" VerticalAlignment="Top" Background="#FFF0F0F0">
-                    <TextBlock>Explorer</TextBlock>
-                </Border>
-                <Border x:Name="explorer" Margin="0,20,0,0" BorderBrush="Gray" BorderThickness="1">
-                    <TreeView x:Name="explorerTree" BorderThickness="0">
-                        
-                    </TreeView>
-                </Border>
-            </Grid>
-            <GridSplitter Grid.Row="1" Height="4" ShowsPreview="False" HorizontalAlignment="Stretch" VerticalAlignment="Center" />
-            <Grid x:Name="propertiesContainer" Grid.Row="2" Background="#FFCCCCCC">
-                <Border Height="20" Padding="2" VerticalAlignment="Top" Background="#FFF0F0F0">
-                    <TextBlock>Properties</TextBlock>
-                </Border>
-                <Border x:Name="properties" Margin="0,20,0,0" BorderBrush="Gray" BorderThickness="1">
-                    <WindowsFormsHost x:Name="propertyGrid"/>
-                </Border>
-            </Grid>
-        </Grid>
-    </Grid>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="2*"/>
+			<ColumnDefinition Width="Auto"/>
+			<ColumnDefinition Width="*"/>
+		</Grid.ColumnDefinitions>
+		<WindowsFormsHost x:Name="wfh" Grid.Column="0"/>
+		<GridSplitter Grid.Column="1" Width="4" ShowsPreview="False" HorizontalAlignment="Center" VerticalAlignment="Stretch" />
+		<Grid x:Name="explorerAndProps" Grid.Column="2">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="2*"/>
+				<RowDefinition Height="Auto"/>
+				<RowDefinition Height="*"/>
+			</Grid.RowDefinitions>
+			<Grid x:Name="explorerContainer" Grid.Row="0">
+				<Border Height="20" Padding="2" VerticalAlignment="Top" Background="#FFF0F0F0">
+					<TextBlock>Explorer</TextBlock>
+				</Border>
+				<Border x:Name="explorer" Margin="0,20,0,0" BorderBrush="Gray" BorderThickness="1">
+					<TreeView x:Name="explorerTree" BorderThickness="0">
+						
+					</TreeView>
+				</Border>
+			</Grid>
+			<GridSplitter Grid.Row="1" Height="4" ShowsPreview="False" HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+			<Grid x:Name="propertiesContainer" Grid.Row="2" Background="#FFCCCCCC">
+				<Border Height="20" Padding="2" VerticalAlignment="Top" Background="#FFF0F0F0">
+					<TextBlock>Properties</TextBlock>
+				</Border>
+				<Border x:Name="properties" Margin="0,20,0,0" BorderBrush="Gray" BorderThickness="1">
+					<WindowsFormsHost x:Name="propertyGrid"/>
+				</Border>
+			</Grid>
+		</Grid>
+	</Grid>
 </UserControl>
