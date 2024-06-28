@@ -68,11 +68,12 @@ namespace NetBlox
 		public Queue<Replication> ReplicationQueue = [];
 		public bool IsServer;
 		public bool IsClient;
-		public int ServerPort = 25570; // apparently that port was forbidden
+		public bool OnlyInternalConnections = false;
+        public int ServerPort = 25570; // apparently that port was forbidden
 		public Connection? RemoteConnection;
-		public ServerConnectionContainer Server;
+		public ServerConnectionContainer? Server;
 		public CancellationTokenSource ClientReplicatorCanceller = new();
-		public Task<object> ClientReplicator;
+		public Task<object>? ClientReplicator;
 		private object replock = new();
 		private static Type LST = typeof(LuaSignal);
 		private DataModel Root => GameManager.CurrentRoot;
@@ -124,46 +125,70 @@ namespace NetBlox
 					}
 
 					ServerHandshake sh = new();
-					NetworkClient nc;
+					NetworkClient nc = null!;
 
 					// here we do a lot of shit
 					{
-						Player pl = new(GameManager);
-						pl.IsLocalPlayer = false;
-						pl.Parent = Root.GetService<Players>();
-
-						nc = new(new(ch.Username), nextpid++, x, pl);
-
-						pl.Name = nc.Username;
-						pl.Client = nc;
-						nc.Player = pl;
-
-						pl.Reload();
-						pl.LoadCharacterOld();
-
 						sh.Author = GameManager.CurrentIdentity.Author;
 						sh.PlaceName = GameManager.CurrentIdentity.PlaceName;
 						sh.UniverseName = GameManager.CurrentIdentity.UniverseName;
-						sh.PlayerInstance = pl.UniqueID.ToString();
-						sh.CharacterInstance = pl.Character!.UniqueID.ToString();
-						sh.DataModelInstance = Root.UniqueID.ToString();
 
-						sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
-						sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
-						sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
-						sh.UniquePlayerID = nc.UniquePlayerID;
-						sh.InstanceCount = 2; // idk lol
+						sh.ErrorCode = 0;
 
-						Clients.Add(nc);
+						bool stoppls = false;
+						string str = x.IPRemoteEndPoint.Address.ToString();
+
+                        if (OnlyInternalConnections && str != "::ffff:127.0.0.1")
+                        {
+                            sh.ErrorCode = 101;
+                            stoppls = true;
+                        }
+						if (Clients.Count < GameManager.CurrentIdentity.MaxPlayerCount && !stoppls)
+                        {
+                            Player pl = new(GameManager);
+                            pl.IsLocalPlayer = false;
+                            pl.Parent = Root.GetService<Players>();
+
+                            nc = new(new(ch.Username), nextpid++, x, pl);
+
+                            pl.Name = nc.Username;
+                            pl.Client = nc;
+                            nc.Player = pl;
+
+                            pl.Reload();
+                            pl.LoadCharacterOld();
+
+                            sh.PlayerInstance = pl.UniqueID.ToString();
+                            sh.CharacterInstance = pl.Character!.UniqueID.ToString();
+                            sh.DataModelInstance = Root.UniqueID.ToString();
+                            sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
+							sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
+							sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
+							sh.UniquePlayerID = nc.UniquePlayerID;
+							sh.InstanceCount = 2; // idk lol
+
+							Clients.Add(nc);
+						}
+						else if (!stoppls)
+						{
+							sh.ErrorCode = 100;
+						}
 					}
 
 					x.SendRawData("nb2-placeinfo", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(sh)));
 					x.UnRegisterRawDataHandler("nb2-handshake");
 
+					if (sh.ErrorCode != 0)
+					{
+						x.Close(CloseReason.ServerClosed);
+						return;
+					}
+
 					void OnClose(CloseReason cr, Connection c)
 					{
 						LogManager.LogInfo(nc.Username + " had disconnected");
-						nc.Player.Character.Destroy();
+						if (nc.Player.Character != null)
+							nc.Player.Character.Destroy();
 						nc.Player.Destroy();
 						Clients.Remove(nc);
 
@@ -297,7 +322,7 @@ namespace NetBlox
 				ServerHandshake sh = SerializationManager.DeserializeJson<ServerHandshake>(Encoding.UTF8.GetString(x.Data));
 
 				if (sh.ErrorCode != 0)
-					throw new Exception("Weird thing happened");
+					throw new Exception(TranslateErrorCode(sh.ErrorCode));
 
 				tcp.ConnectionClosed += OnClose;
 
@@ -422,7 +447,7 @@ namespace NetBlox
 				}
 			}
 		}
-		public void PerformKick(NetworkClient nc, string msg, bool islocal)
+		public void PerformKick(NetworkClient? nc, string msg, bool islocal)
 		{
 			// it's not really constitutionally defined, but idc.
 			if (RemoteConnection == null) return;
@@ -434,7 +459,9 @@ namespace NetBlox
 				if (GameManager.RenderManager != null)
 					GameManager.RenderManager.ShowKickMessage(msg);
 			}
+
 			// we are on server
+			if (nc == null) throw new Exception("NetworkClient object not preserved!");
 			nc.Connection.SendRawData("nb2-kick", Encoding.UTF8.GetBytes(msg));
 			nc.Connection.Close(CloseReason.ServerClosed);
 		}
@@ -517,7 +544,7 @@ namespace NetBlox
 						continue;
 
 					var ptyp = prop.PropertyType;
-					var pnam = ptyp.FullName;
+					var pnam = ptyp.FullName ?? "";
 					var bc = br.ReadInt16();
 					var pbytes = br.ReadBytes(bc);
 
@@ -567,5 +594,23 @@ namespace NetBlox
 				for (int i = 0; i < inst.Children.Count; i++)
 					AddReplicationImpl(inst.Children[i], m, w, true, nc);
 		}
-	}
+		public static string TranslateErrorCode(int ec)
+		{
+			switch (ec)
+			{
+				case 100:
+					return "The server is full";
+				case 101:
+					return "Server only accepts internal connections";
+                case 102:
+                    return "Authorization failed";
+                case 103:
+                    return "A player with same name is already playing";
+                case 104:
+                    return "Server is just being weird";
+                default:
+					return "Unknown connection failure";
+			}
+		}
+    }
 }

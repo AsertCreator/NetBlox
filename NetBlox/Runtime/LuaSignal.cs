@@ -12,6 +12,8 @@ namespace NetBlox.Runtime
 		[Lua([Security.Capability.None])]
 		public void Connect(DynValue dv)
 		{
+			if (LuaRuntime.CurrentThread == null)
+				return;
 			lock (this) Attached.Add(new LuaConnection()
 			{
 				Function = dv,

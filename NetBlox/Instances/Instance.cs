@@ -121,7 +121,7 @@ namespace NetBlox.Instances
 		}
 		public void RaiseDescendantAdded(Instance descendantInQuestion) // thats the longest named variable in the entire solution
 		{
-			if (parent != null) 
+			if (Parent != null) 
 			{
 				Parent.DescendantAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(descendantInQuestion, GameManager)));
 				Parent.RaiseDescendantAdded(descendantInQuestion);
@@ -129,7 +129,7 @@ namespace NetBlox.Instances
 		}
 		public void RaiseDescendantRemoved(Instance descendantInQuestion) // thats the longest named variable in the entire solution
 		{
-			if (parent != null)
+			if (Parent != null)
 			{
 				Parent.DescendantRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(descendantInQuestion, GameManager)));
 				Parent.RaiseDescendantRemoved(descendantInQuestion);
@@ -164,6 +164,7 @@ namespace NetBlox.Instances
 
 				Instance? DoClone(Instance? inst)
 				{
+					if (inst == null) return null;
 					var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
 					var props = SerializationManager.GetAccessibleProperties(clone);
 					for (int i = 0; i < props.Length; i++)
@@ -190,7 +191,11 @@ namespace NetBlox.Instances
 
 					for (int i = 0; i < inst.Children.Count; i++)
 						if (inst.Children[i].Archivable)
-							DoClone(inst.Children[i]).Parent = clone;
+                        {
+							var cl = DoClone(inst.Children[i]);
+							if (cl == null) continue;
+							cl.Parent = clone;
+                        }
 
 					return clone;
 				}
@@ -400,7 +405,7 @@ namespace NetBlox.Instances
 		{
 			if (Parent == null) return [];
 
-			lock (parent)
+			lock (Parent)
 			{
 				var list = new List<Instance>();
 				var inst = Parent;

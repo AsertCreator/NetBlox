@@ -10,8 +10,6 @@ namespace NetBlox.Instances
 	[NotReplicated]
 	public class CoreGui : Instance
 	{
-		private DynValue? showTeleportGui;
-		private DynValue? hideTeleportGui;
 		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
 		[Lua([Security.Capability.CoreSecurity])]

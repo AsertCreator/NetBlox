@@ -172,8 +172,6 @@ namespace NetBlox
 					Func<int> cor = Coroutines[i];
 					if (cor() == -1) Coroutines.RemoveAt(i--);
 				}
-
-				GameManager.ProcessInstance(Root);
 			}
 			catch (Exception ex)
 			{
@@ -185,7 +183,8 @@ namespace NetBlox
 			if (RenderAtAll)
 			{
 				Raylib.CloseWindow();
-				CurrentSkybox.Unload();
+				if (CurrentSkybox != null)
+					CurrentSkybox.Unload();
 			}
 
 			foreach (var shader in Shaders)

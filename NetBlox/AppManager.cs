@@ -83,9 +83,8 @@ namespace NetBlox
 		}
 		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<string, GameManager> callback, Action<DataModel>? dmc = null)
 		{
-			GameManager manager = new GameManager();
+			GameManager manager = new GameManager(gc, args, callback, dmc);
 			manager.ManagerName = gc.GameName;
-			manager.Start(gc, args, callback, dmc);
 			GameManagers.Add(manager);
 			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
 			return manager;

@@ -15,7 +15,7 @@ public partial class App : Application
 	public static GameManager? EditorGame;
 	public App()
 	{
-		LogManager.LogInfo($"NetBlox DuoHost ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
+		LogManager.LogInfo($"NetBlox Studio ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
 		Raylib.SetTraceLogLevel(TraceLogLevel.None);
 

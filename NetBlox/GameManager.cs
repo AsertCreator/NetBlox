@@ -23,9 +23,9 @@ namespace NetBlox
 		public List<Instance> AllInstances = [];
 		public Dictionary<char, Action> Verbs = [];
 		public NetworkIdentity CurrentIdentity = new();
-		public RenderManager? RenderManager;
-		public PhysicsManager? PhysicsManager;
-		public NetworkManager? NetworkManager;
+		public RenderManager RenderManager;
+		public PhysicsManager PhysicsManager;
+		public NetworkManager NetworkManager;
 		public DataModel CurrentRoot = null!;
 		public ConfigFlags CustomFlags;
 		public bool IsStudio = false;
@@ -43,47 +43,10 @@ namespace NetBlox
 		public event InstanceEventHandler? AddedInstance;
 		public bool AllowReplication = false;
 
-		public void InvokeAddedEvent(Instance inst)
-		{
-			if (AddedInstance != null && AllowReplication)
-				AddedInstance(inst);
-		}
-		public void SetupCoreGui()
-		{
-			CoreGui cg = CurrentRoot.GetService<CoreGui>();
-			ScreenGui sg = new(this);
-			sg.Name = "RobloxGui"; // i love breaking copyright :D
-			sg.Parent = cg;
-
-			// apparently roblox does not just load all corescritps on bulk.
-			var scrurl = AppManager.ResolveUrl("rbxasset://scripts/Modules/");
-			var ssurl = AppManager.ResolveUrl("rbxasset://scripts/StarterScript.lua");
-			if (!File.Exists(ssurl))
-				throw new Exception("No StarterScript found in content directory!");
-
-			var Modules = new Folder(this);
-			Modules.Name = "Modules";
-			Modules.Parent = sg;
-			var files = Directory.GetFiles(scrurl);
-
-			for (int i = 0; i < files.Length; i++)
-			{
-				ModuleScript ms = new(this);
-				ms.Name = Path.GetFileNameWithoutExtension(files[i]);
-				ms.Source = File.ReadAllText(files[i]);
-				ms.Parent = Modules;
-			}
-
-			CoreScript ss = new(this);
-			ss.Name = "StarterScript";
-			ss.Source = File.ReadAllText(ssurl);
-			ss.Parent = sg;
-		}
-		public void Start(GameConfiguration gc, string[] args, Action<string, GameManager> servercallback, Action<DataModel>? dmc = null)
+		public GameManager(GameConfiguration gc, string[] args, Action<string, GameManager> servercallback, Action<DataModel>? dmc = null)
 		{
 			try
 			{
-				ulong pid = ulong.MaxValue;
 				string rbxlinit = "";
 				LogManager.LogInfo("Initializing NetBlox...");
 
@@ -140,10 +103,6 @@ namespace NetBlox
 				if (gc.AsClient)
 					LogManager.LogInfo("Logged in as " + Username);
 
-				LogManager.LogInfo("Initializing verbs...");
-				Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
-				Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
-
 				LogManager.LogInfo("Initializing internal scripts...");
 				CurrentRoot = new DataModel(this);
 				if (dmc != null)
@@ -186,7 +145,11 @@ namespace NetBlox
 				LogManager.LogInfo("Initializing RenderManager...");
 				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
 
-				if (NetworkManager.IsClient)
+                LogManager.LogInfo("Initializing verbs...");
+                Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
+                Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
+
+                if (NetworkManager.IsClient)
 				{
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
 					QueuedTeleportAddress = rbxlinit;
@@ -207,8 +170,45 @@ namespace NetBlox
 			{
 				LogManager.LogError("A fatal error had occurred during NetBlox initialization! " + ex.GetType() + ", msg: " + ex.Message + ", stacktrace: " + ex.StackTrace);
 				Environment.Exit(ex.GetHashCode());
-				for (;;); // perhaps platform we're running on does not support exiting.
+				for (; ; ); // perhaps platform we're running on does not support exiting.
 			}
+		}
+
+		public void InvokeAddedEvent(Instance inst)
+		{
+			if (AddedInstance != null && AllowReplication)
+				AddedInstance(inst);
+		}
+		public void SetupCoreGui()
+		{
+			CoreGui cg = CurrentRoot.GetService<CoreGui>();
+			ScreenGui sg = new(this);
+			sg.Name = "RobloxGui"; // i love breaking copyright :D
+			sg.Parent = cg;
+
+			// apparently roblox does not just load all corescritps on bulk.
+			var scrurl = AppManager.ResolveUrl("rbxasset://scripts/Modules/");
+			var ssurl = AppManager.ResolveUrl("rbxasset://scripts/StarterScript.lua");
+			if (!File.Exists(ssurl))
+				throw new Exception("No StarterScript found in content directory!");
+
+			var Modules = new Folder(this);
+			Modules.Name = "Modules";
+			Modules.Parent = sg;
+			var files = Directory.GetFiles(scrurl);
+
+			for (int i = 0; i < files.Length; i++)
+			{
+				ModuleScript ms = new(this);
+				ms.Name = Path.GetFileNameWithoutExtension(files[i]);
+				ms.Source = File.ReadAllText(files[i]);
+				ms.Parent = Modules;
+			}
+
+			CoreScript ss = new(this);
+			ss.Name = "StarterScript";
+			ss.Source = File.ReadAllText(ssurl);
+			ss.Parent = sg;
 		}
 		public void Shutdown()
 		{

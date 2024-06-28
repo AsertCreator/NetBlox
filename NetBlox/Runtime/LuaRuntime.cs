@@ -49,7 +49,6 @@ namespace NetBlox.Runtime
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 700;
 		private static Type dvt = typeof(DynValue);
-		private static bool init = false;
 
 		public static void Setup(GameManager gm, DataModel dm)
 		{
@@ -75,10 +74,10 @@ namespace NetBlox.Runtime
 				var table = y[0];
 				var inst = SerializationManager.LuaDeserialize<Instance>(table, gm);
 
-				if (inst is not ModuleScript)
+				var ms = inst as ModuleScript;
+				if (ms == null)
 					throw new Exception("Expected a ModuleScript");
 
-				var ms = inst as ModuleScript;
 				if (gm.CurrentRoot.LoadedModules.TryGetValue(ms, out var dv)) return dv;
 
 				var lt = GetThreadFor(x.GetCallingCoroutine());
@@ -242,6 +241,7 @@ namespace NetBlox.Runtime
 			catch (SyntaxErrorException ex)
 			{
 				var ct = CurrentThread;
+				if (ct != null)
 				{
 					LogManager.LogError(ex.Message);
 					for (int i = 0; i < ex.CallStack.Count; i++)
@@ -258,6 +258,7 @@ namespace NetBlox.Runtime
 			catch (ScriptRuntimeException ex)
 			{
 				var ct = CurrentThread;
+				if (ct != null)
 				{
 					LogManager.LogError(ex.Message);
 					for (int i = 0; i < ex.CallStack.Count; i++)
@@ -289,9 +290,7 @@ namespace NetBlox.Runtime
 			var scr = gm.CurrentRoot.MainEnv;
 
 			// i want to bulge out my eyes
-			if (inst.Tables.TryGetValue(scr, out Table t)) return t;
-
-			var excs = gm.NetworkManager.IsServer ? LuaSpace.ServerOnly : LuaSpace.ClientOnly;
+			if (inst.Tables.TryGetValue(scr, out Table? t)) return t;
 			var type = inst.GetType();
 
 			var table = new Table(scr)
@@ -302,12 +301,8 @@ namespace NetBlox.Runtime
 			var props = (IEnumerable<PropertyInfo?>)type.GetProperties();
 			var meths = (IEnumerable<MethodInfo?>)type.GetMethods();
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-
-			props = from x in props where x.GetCustomAttribute<LuaAttribute>() != null ? (x.GetCustomAttribute<LuaAttribute>().Space == LuaSpace.Both || x.GetCustomAttribute<LuaAttribute>().Space == excs) : false select x;
-			meths = from x in meths where x.GetCustomAttribute<LuaAttribute>() != null ? (x.GetCustomAttribute<LuaAttribute>().Space == LuaSpace.Both || x.GetCustomAttribute<LuaAttribute>().Space == excs) : false select x;
-
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+			props = from x in props where x.GetCustomAttribute<LuaAttribute>() != null select x;
+			meths = from x in meths where x.GetCustomAttribute<LuaAttribute>() != null select x;
 
 			table.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
 			{
@@ -336,6 +331,9 @@ namespace NetBlox.Runtime
 					{
 						var sec = meth.GetCustomAttribute<LuaAttribute>();
 
+						if (CurrentThread == null || sec == null)
+							throw new Exception("Any access to an Instance from lua-space should be from running thread");
+
 						if (Security.IsCompatible(CurrentThread.Value.Level, sec.Capabilities))
 							return DynValue.NewCallback((a, b) =>
 							{
@@ -351,7 +349,7 @@ namespace NetBlox.Runtime
 
 										if (t != dvt)
 										{
-											if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName, out var ld))
+											if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName ?? "", out var ld))
 												return DynValue.Nil;
 
 											if (b[i + 1] == DynValue.Nil)
@@ -376,7 +374,7 @@ namespace NetBlox.Runtime
 									}
 									if (!rett.IsArray)
 									{
-										if (!SerializationManager.LuaSerializers.TryGetValue(rett.FullName, out var ls))
+										if (!SerializationManager.LuaSerializers.TryGetValue(rett.FullName ?? "", out var ls))
 											return DynValue.Nil;
 
 										if (ret != null)
@@ -388,8 +386,11 @@ namespace NetBlox.Runtime
 									{
 										Table res = new(scr);
 										Array arr = (ret as Array)!;
+										Type? elt = rett.GetElementType();
 
-										if (SerializationManager.LuaSerializers.TryGetValue(rett.GetElementType().FullName, out var ls))
+										if (elt == null) return DynValue.Nil;
+
+										if (SerializationManager.LuaSerializers.TryGetValue(elt.FullName ?? "", out var ls))
 										{
 											for (int i = 0; i < arr.Length; i++)
 											{
@@ -401,7 +402,7 @@ namespace NetBlox.Runtime
 										return DynValue.NewTable(res);
 									}
 								}
-								catch (TargetInvocationException ex)
+								catch (TargetInvocationException)
 								{
 									throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
 								}
@@ -416,6 +417,8 @@ namespace NetBlox.Runtime
 
 						if (prop == null && meth == null && child == null)
 							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"");
+						if (child == null)
+							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\""); // so vs COULD STFU
 
 						return DynValue.NewTable(MakeInstanceTable(child, gm));
 					}
@@ -457,12 +460,12 @@ namespace NetBlox.Runtime
 							}
 							else
 							{
-								if (!SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName, out var ld))
+								if (!SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName ?? "", out var ld))
 									return DynValue.Nil;
 								else
 								{
 									var ret = ld(val, gm);
-									var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName];
+									var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName ?? ""];
 
 									if (val.Type != exc)
 										throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");

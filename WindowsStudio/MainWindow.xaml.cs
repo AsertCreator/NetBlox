@@ -117,9 +117,10 @@ public partial class MainWindow : System.Windows.Window
 			{
 				gm.CurrentRoot.ClearAllChildren();
 
-				gm.CurrentIdentity.PlaceName = "";
-				gm.CurrentIdentity.UniverseName = "";
-				gm.CurrentIdentity.Author = "";
+				gm.CurrentIdentity.PlaceName = "Personal Place";
+				gm.CurrentIdentity.UniverseName = "NetBlox Studio";
+				gm.CurrentIdentity.Author = "NetBlox";
+				gm.CurrentIdentity.MaxPlayerCount = 5;
 
 				for (int i = 0; i < dm.GetChildren().Length; i++)
 				{
@@ -128,6 +129,7 @@ public partial class MainWindow : System.Windows.Window
 					d.Parent = gm.CurrentRoot;
 				}
 
+				gm.NetworkManager.OnlyInternalConnections = true;
 				Task.Run(gm.NetworkManager.StartServer);
 
 				GameManager gmc = null!;
@@ -137,6 +139,7 @@ public partial class MainWindow : System.Windows.Window
 					{
 						try
 						{
+							await Task.Delay(0);
 							gmc.NetworkManager.ConnectToServer(IPAddress.Loopback);
 							return new object();
 						}

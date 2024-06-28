@@ -40,7 +40,7 @@ namespace UniversalInstaller
 					}
 					else
 					{
-						GetLatestVersion(ver);
+						await GetLatestVersion(ver);
 					}
 				}
 				else

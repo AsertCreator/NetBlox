@@ -17,6 +17,8 @@ namespace NetBlox
 	{
 		String, Enum, Int32, Int64, Single, Double, True, False, Vector3, Color3, Unknown
 	}
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8604 // Possible null reference argument.
 	public static class SerializationManager
 	{
 		public static Dictionary<string, Func<string, object>> Deserializers = new();
@@ -46,7 +48,7 @@ namespace NetBlox
 			var pi = type.GetProperties();
 			return (from x in pi where x.GetMethod.IsPublic select x.Name).ToArray();
 		}
-		public static object GetProperty(object obj, string name)
+		public static object? GetProperty(object obj, string name)
 		{
 			var type = obj.GetType();
 			var fi = type.GetRuntimeProperty(name);
@@ -159,7 +161,7 @@ namespace NetBlox
 			Serializers.Add("System.Double", x => ((Double)x).ToString(CultureInfo.InvariantCulture));
 			Serializers.Add("System.String", x => (string)x);
 			Serializers.Add("System.Char", x => ((char)x).ToString());
-			Serializers.Add("System.Guid", x => x.ToString());
+			Serializers.Add("System.Guid", x => x.ToString() ?? "");
 			Serializers.Add("System.Numerics.Vector2", x => $"{Serialize(((Vector2)x).X)} {Serialize(((Vector2)x).Y)}");
 			Serializers.Add("System.Numerics.Vector3", x => $"{Serialize(((Vector3)x).X)} {Serialize(((Vector3)x).Y)} {Serialize(((Vector3)x).Z)}");
 			Serializers.Add("Raylib_cs.Color", x => $"{Serialize(((Color)x).R)} {Serialize(((Color)x).G)} {Serialize(((Color)x).B)} {Serialize(((Color)x).A)}");
@@ -349,3 +351,6 @@ namespace NetBlox
 		}
 	}
 }
+
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.

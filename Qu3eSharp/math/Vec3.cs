@@ -65,7 +65,7 @@ namespace Qu3e
                     case 0: return x;
                     case 1: return y;
                     case 2: return z;
-                    default: throw null;
+                    default: throw new Exception("Invalid plane");
                 }
             }
             set
@@ -75,7 +75,7 @@ namespace Qu3e
                     case 0: x = value; break;
                     case 1: y = value; break;
                     case 2: z = value; break;
-                    default: throw null;
+                    default: throw new Exception("Invalid plane");
                 }
             }
         }

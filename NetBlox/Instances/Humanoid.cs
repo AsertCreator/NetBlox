@@ -35,17 +35,15 @@ namespace NetBlox.Instances
 		public override void Process()
 		{
 			base.Process();
-			if (Parent == null) ;
+			if (Parent == null) return;
+
 			var parent = Parent;
-			if (parent is not Model)
-			{
-				LogManager.LogWarn("Humanoid instance must be parented to a Model!");
-				return;
-			}
-			var head = parent.FindFirstChild("Head");
+			var model = parent as Model;
+			if (model == null) return;
+			var head = model.FindFirstChild("Head");
 			if (head == null)
 				Health = 0;
-			var model = parent as Model;
+
 			if (GameManager.RenderManager == null) return;
 			var cam = GameManager.RenderManager.MainCamera;
 			var x1 = cam.Position.X;
@@ -53,6 +51,8 @@ namespace NetBlox.Instances
 			var x2 = cam.Target.X;
 			var y2 = cam.Target.Z;
 			var angle = MathF.Atan2(y2 - y1, x2 - x1);
+
+			if (GameManager.NetworkManager == null) return;
 
 			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer) && Health > 0)
 			{
@@ -93,14 +93,19 @@ namespace NetBlox.Instances
 		}
 		public override void RenderUI()
 		{
-			if (Parent == null) ;
+			if (Parent == null) return;
+
 			var parent = Parent;
 			if (parent is not Model)
 			{
 				LogManager.LogWarn("Humanoid instance must be parented to a Model!");
 				return;
 			}
+			if (GameManager.RenderManager == null) return;
+
 			var head = parent.FindFirstChild("Head") as BasePart;
+			if (head == null) return;
+
 			var cam = GameManager.RenderManager.MainCamera;
 			var pos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 1f, 0), cam);
 			var siz = Vector2.Zero;

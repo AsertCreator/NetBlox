@@ -31,6 +31,7 @@ namespace NetBlox.Instances
 			for (int i = 0; i < sg.Length; i++)
 			{
 				var cl = sg[i].Clone();
+				if (cl == null) return;
 				cl.Parent = pg;
 			}
 
@@ -38,6 +39,7 @@ namespace NetBlox.Instances
 			for (int i = 0; i < sp.Length; i++)
 			{
 				var cl = sp[i].Clone();
+				if (cl == null) return;
 				cl.Parent = bc;
 			}
 
