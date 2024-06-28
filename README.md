@@ -1,4 +1,4 @@
-﻿# netblox
+﻿# netblox [![.github/workflows/dotnet-desktop.yml](https://github.com/AsertCreator/NetBlox/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/AsertCreator/NetBlox/actions/workflows/dotnet-desktop.yml)
 i f̵̞̼͈́͐̉̀͘ų̵͙͉̩̳̝̜̈́͂͐c̶͇̀͌̚͝k̸͍̈̓̌̅̀ȉ̷̦̙̦̝͖̾̀n̷͓̠͆g̵͕͋͌ love roblox. thats why i decided to 
 dedicate my two weeks school break on creating the clone of it on c#. it lowkey
 looks like some "pixel gun 3d" type of game you would find on play store.
