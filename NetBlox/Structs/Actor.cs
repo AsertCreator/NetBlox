@@ -85,13 +85,16 @@ namespace NetBlox.Structs
 		}
 		public void Remove()
 		{
-			BasePart.GameManager.PhysicsManager.Actors.Remove(this);
-			Scene sc = BasePart.GameManager.CurrentRoot.GetService<Workspace>().Scene;
-			lock (sc)
+			if (Body != null)
 			{
-				sc.RemoveBody(Body);
-				Body = null!;
-				Box = null!;
+				BasePart.GameManager.PhysicsManager.Actors.Remove(this);
+				Scene sc = BasePart.GameManager.CurrentRoot.GetService<Workspace>().Scene;
+				lock (sc)
+				{
+					sc.RemoveBody(Body);
+					Body = null!;
+					Box = null!;
+				}
 			}
 		}
 	}

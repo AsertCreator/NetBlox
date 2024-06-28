@@ -103,15 +103,26 @@ namespace NetBlox
 				if (gc.AsClient)
 					LogManager.LogInfo("Logged in as " + Username);
 
+				ProhibitProcessing = gc.ProhibitProcessing;
+				ProhibitScripts = gc.ProhibitScripts;
+
+				LogManager.LogInfo("Initializing PhysicsManager...");
+				PhysicsManager = new(this);
+
+				CustomFlags = gc.CustomFlags;
+				LogManager.LogInfo("Initializing RenderManager...");
+				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
+
+                LogManager.LogInfo("Initializing verbs...");
+                Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
+                Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
+
+				// we dont want corescripts to run before engine is initialized
+
 				LogManager.LogInfo("Initializing internal scripts...");
 				CurrentRoot = new DataModel(this);
 				if (dmc != null)
 					dmc(CurrentRoot);
-
-				LuaRuntime.Setup(this, CurrentRoot);
-
-				ProhibitProcessing = gc.ProhibitProcessing;
-				ProhibitScripts = gc.ProhibitScripts;
 
 				if (NetworkManager.IsServer)
 				{
@@ -130,26 +141,17 @@ namespace NetBlox
 					CurrentRoot.GetService<Debris>();
 				}
 
+				LogManager.LogInfo("Initializing user interface...");
+				SetupCoreGui();
+
 				var rs = CurrentRoot.GetService<RunService>();
 				var cg = CurrentRoot.GetService<CoreGui>();
 				rs.Parent = CurrentRoot;
 				cg.Parent = CurrentRoot;
 
-				LogManager.LogInfo("Initializing user interface...");
-				SetupCoreGui();
+				LuaRuntime.Setup(this, CurrentRoot);
 
-				LogManager.LogInfo("Initializing PhysicsManager...");
-				PhysicsManager = new(this);
-
-				CustomFlags = gc.CustomFlags;
-				LogManager.LogInfo("Initializing RenderManager...");
-				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
-
-                LogManager.LogInfo("Initializing verbs...");
-                Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
-                Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
-
-                if (NetworkManager.IsClient)
+				if (NetworkManager.IsClient)
 				{
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
 					QueuedTeleportAddress = rbxlinit;

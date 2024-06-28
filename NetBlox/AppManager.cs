@@ -1,6 +1,7 @@
 ﻿#define DISABLE_EME
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using System.Runtime;
 
@@ -172,6 +173,13 @@ namespace NetBlox
 								thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
 							else
 								thread.Script.Globals["script"] = DynValue.Nil;
+
+							Instance? works = thread.GameManager.CurrentRoot.FindFirstChild("Workspace");
+
+							if (works != null)
+								thread.Script.Globals["workspace"] = LuaRuntime.MakeInstanceTable(works, thread.GameManager);
+							else
+								thread.Script.Globals["workspace"] = DynValue.Nil;
 
 							var res = DynValue.Nil;
 							if (thread.ToReturn.IsNil())

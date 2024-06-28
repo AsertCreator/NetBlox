@@ -82,6 +82,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Structs\UDim2.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)content\sounds\birdsambient.mp3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\sounds\grunt.mp3">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\menu.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -123,6 +123,7 @@ namespace NetBlox.Instances
 		{
 			LogManager.LogInfo("Character had died!");
 			Root.GetService<Debris>().AddItem(this, 4);
+			RenderManager.LoadSound("rbxasset://sounds/grunt.mp3", GameManager.RenderManager.PlaySound);
 			Task.Delay(4000).ContinueWith(_ =>
 			{
 				((Player)Root.GetService<Players>().LocalPlayer!).LoadCharacterOld();

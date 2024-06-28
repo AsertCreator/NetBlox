@@ -14,7 +14,7 @@ namespace UniversalDuoHost
 		{
 			LogManager.LogInfo($"NetBlox DuoHost ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
-			Raylib.SetTraceLogLevel(TraceLogLevel.None);
+			// Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
 			var v = Rlgl.GetVersion();
 			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)

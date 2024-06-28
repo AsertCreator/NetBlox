@@ -74,6 +74,7 @@ namespace NetBlox
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
 				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint | GameManager.CustomFlags);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "netblox");
+				Raylib.InitAudioDevice();
 				Raylib.SetTargetFPS(AppManager.PreferredFPS);
 				Raylib.SetExitKey(KeyboardKey.Null);
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
@@ -178,6 +179,9 @@ namespace NetBlox
 				Status = "Render error: " + ex.GetType().Name + ", " + ex.Message;
 			}
 		}
+		public void PlaySound(Sound sound) => Raylib.PlaySound(sound);
+		public void StopSound(Sound sound) => Raylib.StopSound(sound);
+		public bool IsSoundPlaying(Sound sound) => Raylib.IsSoundPlaying(sound);
 		public void Unload()
 		{
 			if (RenderAtAll)

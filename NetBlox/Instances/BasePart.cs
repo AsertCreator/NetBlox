@@ -81,10 +81,13 @@ namespace NetBlox.Instances
 		}
 		public override void Destroy()
 		{
-			if (Actor != null)
+			lock (Actor)
 			{
-				Actor.Remove();
-				Actor = null!;
+				if (Actor != null)
+				{
+					Actor.Remove();
+					Actor = null!;
+				}
 			}
 			base.Destroy();
 		}

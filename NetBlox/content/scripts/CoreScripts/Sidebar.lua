@@ -104,6 +104,23 @@ CloseButton.MouseButton1Click:Connect(function()
 	BlackOut.Visible = false;
 end)
 
+local MuteButton = Instance.new("TextButton");
+MuteButton.Parent = Sidebar;
+MuteButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 5);
+MuteButton.Size = UDim2.new(1, -60, 0, 35);
+MuteButton.BackgroundColor3 = Color3.new(1, 1, 1);
+MuteButton.TextColor3 = Color3.new(1, 1, 1);
+MuteButton.BackgroundTransparency = 0.7;
+MuteButton.Text = "Mute ambient sounds";
+MuteButton.MouseButton1Click:Connect(function()
+	if workspace.BirdAmbient then
+		MuteButton.Text = "Unmute ambient sounds"
+	else
+		MuteButton.Text = "Mute ambient sounds"
+	end;
+	workspace.BirdAmbient = not workspace.BirdAmbient;
+end)
+
 local VersionText = Instance.new("TextLabel");
 VersionText.Parent = Sidebar;
 VersionText.Position = UDim2.new(0, 0, 1, -30);
