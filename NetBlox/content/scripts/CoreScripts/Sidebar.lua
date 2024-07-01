@@ -6,7 +6,6 @@ local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
 local Sidebar = Instance.new("Frame");
 local BlackOut = Instance.new("Frame");
 local TopbarFrame = Instance.new("Frame");
-local MenuButton = Instance.new("ImageButton");
 
 BlackOut.Name = "NBGBlackOut";
 BlackOut.Parent = RobloxGui;
@@ -130,6 +129,7 @@ VersionText.Text = PlatformService:FormatVersion();
 
 -- here we stop init Sidebar
 
+local MenuButton = Instance.new("ImageButton");
 MenuButton.Parent = TopbarFrame;
 MenuButton.Position = UDim2.new(0, 0, 0, 0);
 MenuButton.Size = UDim2.new(0, 30, 0, 30);
@@ -140,3 +140,20 @@ MenuButton.MouseButton1Click:Connect(function()
 	Sidebar.Visible = not Sidebar.Visible;
 	BlackOut.Visible = Sidebar.Visible;
 end)
+
+local PlayerName = Instance.new("TextLabel");
+PlayerName.Parent = TopbarFrame;
+PlayerName.Position = UDim2.new(0, 33, 0, 0);
+PlayerName.Size = UDim2.new(0, 150, 1, 0);
+PlayerName.LeftAligned = true;
+PlayerName.TextColor3 = Color3.new(1, 1, 1);
+PlayerName.ZIndex = 4;
+
+while true do
+	if game:FindFirstChild("Players") then
+		if game.Players.LocalPlayer then
+			PlayerName.Text = game.Players.LocalPlayer.Name;
+		end
+	end
+	wait(1);
+end
