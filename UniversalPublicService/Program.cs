@@ -18,8 +18,11 @@ namespace NetBlox.PublicService
 				.CreateLogger();
 			Log.Information($"Starting NetBlox public service (v{Version.VersionMajor}.{Version.VersionMinor}.{Version.VersionPatch})...");
 
-			GetService<ServerService>().Start();
-			GetService<WebService>().Start();
+			GetService<ServerService>();
+			GetService<PlaceService>();
+			GetService<UserService>();
+			GetService<WebService>();
+
 			WaitForAll();
 		}
 		public static T GetService<T>() where T : Service, new()
@@ -62,8 +65,8 @@ namespace NetBlox.PublicService
 	{
 		public abstract string Name { get; }
 
-		public virtual void Start() => Log.Information("Service " + Name + " is starting");
-		public virtual void Stop() => Log.Information("Service " + Name + " is stopping");
+		public virtual void Start() { }
+		public virtual void Stop() { }
 		public abstract bool IsRunning();
 	}
 }

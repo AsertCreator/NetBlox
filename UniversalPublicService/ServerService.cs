@@ -20,6 +20,8 @@ namespace NetBlox.PublicService
 			Task = Task.Run(async () =>
 			{
 				Log.Information("ServerService: Successfully started!");
+
+				while (Running) ;
 			});
 			Running = true;
 		}

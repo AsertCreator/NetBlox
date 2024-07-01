@@ -1,20 +1,18 @@
 ﻿using Serilog;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace NetBlox.PublicService
 {
 	public class UserService : Service
 	{
-		public override string Name => nameof(ServerService);
+		public override string Name => nameof(UserService);
 		public TimeSpan AutoSaveInterval = TimeSpan.FromMinutes(30);
-		public int AmountOfUsers => PageCount * PAGE_SIZE + LastPageSize;
-		public const int PAGE_SIZE = 256;
+		public List<User> AllUsers = new();
 		private Task Task;
 		private bool Running = false;
-		private int PageCount = 0;
-		private int LastPageSize = 0;
-		private List<User> CachedUsers = new();
 
 		public override void Start()
 		{
@@ -25,13 +23,15 @@ namespace NetBlox.PublicService
 				LoadDatabase();
 				Log.Information("UserService: Successfully started!");
 
+				AppDomain.CurrentDomain.ProcessExit += (x, y) =>
+				{
+					SaveDatabase();
+				};
+
 				while (Running)
 				{
-					lock (CachedUsers)
-					{
-						Thread.Sleep(AutoSaveInterval);
-						SaveDatabase();
-					}
+					Thread.Sleep(AutoSaveInterval);
+					SaveDatabase();
 				}
 			});
 			Running = true;
@@ -43,107 +43,127 @@ namespace NetBlox.PublicService
 			base.Stop();
 		}
 		public override bool IsRunning() => Running;
-		public User? GetUserByID(int id)
+		public string CreateUser(string[] data, ref int code)
 		{
-			lock (CachedUsers)
+			string usern = data[0];
+			string passw = data[1];
+
+			if (GetUserByName(usern) != null)
 			{
-				var user = CachedUsers.Find(x => x.Id == id);
-				if (user != null) return user;
-				// we load users on demand
-				var page = id / PAGE_SIZE;
-				var str = File.OpenRead("./users/up" + page);
-
-				using (BinaryReader br = new(str))
-				{
-					int uc = br.ReadInt32();
-					if (uc > PAGE_SIZE)
-					{
-						Log.Error("User database's page #" + page + " is corrupted!");
-						return null;
-					}
-					for (int i = 0; i < uc; i++)
-					{
-						int uid = br.ReadInt32();
-						int mst = br.ReadInt32();
-						bool isadmin = br.ReadBoolean();
-						string name = br.ReadString();
-						string email = br.ReadString();
-						int aux = br.ReadInt32();
-						byte[] hash = br.ReadBytes(256 / 8);
-
-						if (uid == id)
-						{
-							User userobj = new()
-							{
-								Id = uid,
-								MembershipType = mst,
-								IsAdmin = isadmin,
-								Name = name,
-								Email = email,
-								Auxilary = aux
-							};
-							userobj.SetPassword(hash);
-							CachedUsers.Add(userobj);
-							return user;
-						}
-					}
-				}
-				// we didn't find fortunately.
-				return null;
+				code = 400;
+				return "Username already taken";
 			}
+
+			for (int i = 0; i < usern.Length; i++)
+			{
+				char ch = usern[i];
+				if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '.') { }
+				else
+				{
+					code = 400;
+					return "Invalid username";
+				}
+			}
+
+			User? user = new();
+			user.Id = AllUsers.Count;
+			user.Name = usern;
+			user.SetPassword(passw);
+			user.CurrentLoginToken = Guid.NewGuid();
+			AllUsers.Add(user);
+			return user.CurrentLoginToken.ToString();
 		}
+		public string Login(string[] data, ref int code)
+		{
+			string usern = data[0];
+			string phash = data[1];
+			User? user = GetUserByName(usern);
+			if (user == null)
+			{
+				code = 400;
+				return "Could not login";
+			}
+			if (!user.CheckPasswordHash(phash))
+			{
+				code = 400;
+				return "Could not login";
+			}
+			user.CurrentLoginToken = Guid.NewGuid();
+			return user.CurrentLoginToken.ToString();
+		}
+		public string SetPresence(string[] data, ref int code)
+		{
+			Guid token = Guid.Parse(data[0]);
+			User? user = GetUserByToken(token);
+			if (user == null)
+			{
+				code = 400;
+				return "Could not set presence";
+			}
+			user.CurrentPresence = (OnlineMode)int.Parse(data[1]);
+			return user.CurrentPresence.ToString();
+		}
+		public User? GetUserByToken(Guid token) => (from x in AllUsers where x.CurrentLoginToken == token select x).FirstOrDefault();
+		public User? GetUserByName(string name) => (from x in AllUsers where x.Name == name select x).FirstOrDefault();
+		public User? GetUserByID(long id) => (from x in AllUsers where x.Id == id select x).FirstOrDefault();
 		public User? RegisterUser(string name, string password)
 		{
-			lock (CachedUsers)
-			{
-				User user = new();
-				user.Id = AmountOfUsers;
-				user.Name = name;
-				user.SetPassword(password);
+			User user = new();
+			user.Id = AllUsers.Count;
+			user.Name = name;
+			user.SetPassword(password);
 
-				if (++LastPageSize > PAGE_SIZE)
-					LastPageSize = 0;
-
-				CachedUsers.Add(user);
-				return user;
-			}
+			AllUsers.Add(user);
+			return user;
 		}
 		public void LoadDatabase()
 		{
-			PageCount = Directory.GetFiles("./users/").Length;
-			var str = File.OpenRead("./users/up" + (PageCount - 1));
-
-			using (BinaryReader br = new(str))
-				LastPageSize = br.ReadInt32();
+			if (File.Exists("users"))
+				AllUsers = JsonSerializer.Deserialize<User[]>(File.ReadAllText("users"), new JsonSerializerOptions()
+				{
+					IncludeFields = true
+				})!.ToList();
 		}
 		public void SaveDatabase()
 		{
-			// no
+			File.WriteAllText("users", JsonSerializer.Serialize<User[]>(AllUsers.ToArray(), new JsonSerializerOptions()
+			{
+				IncludeFields = true
+			}));
 		}
 	}
 	public class User
 	{
-		public int Id;
+		[JsonPropertyName("id")]
+		public long Id;
+		[JsonPropertyName("mtype")]
 		public int MembershipType;
-		public bool IsAdmin;
+		[JsonPropertyName("name")]
 		public string Name = "";
+		[JsonPropertyName("email")]
 		public string Email = "";
-		public int Auxilary;
-		private byte[]? PasswordHash;
+		[JsonPropertyName("phash")]
+		public string PasswordHash;
+		[JsonIgnore]
+		public Guid CurrentLoginToken;
+		[JsonIgnore]
+		public OnlineMode CurrentPresence;
 
 		// idk why i am doing this
 		public const int TYPE_BANNED = -1;
 		public const int TYPE_NORMAL = 0;
 		public const int TYPE_PREMIUM = 1;
+		public const int TYPE_ADMIN = 2;
 
-		public void SetPassword(string password) => PasswordHash = SHA256.HashData(Encoding.UTF8.GetBytes(password));
-		public void SetPassword(byte[] hash) => PasswordHash = hash;
+		public void SetPassword(string password) => PasswordHash = string.Join("", SHA256.HashData(Encoding.UTF8.GetBytes(password)));
+		public void SetPassword(byte[] hash) => PasswordHash = string.Join("", hash);
 		public bool HasPassword() => PasswordHash != null;
 		public bool CheckPassword(string password)
 		{
-			var p1 = SHA256.HashData(Encoding.UTF8.GetBytes(password));
+			var p1 = string.Join("", SHA256.HashData(Encoding.UTF8.GetBytes(password)));
 			var p0 = PasswordHash;
-			return Enumerable.SequenceEqual(p1, p0);
+			return p1 == p0;
 		}
+		public bool CheckPasswordHash(string hash) => PasswordHash == hash;
 	}
 }
