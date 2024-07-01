@@ -7,7 +7,7 @@ looks like some "pixel gun 3d" type of game you would find on play store.
 well there are instances, scripting(maybe), networking, physics(maybe). roblox offers the 
 same, but a lot better, netblox is very poorly made. also there's physics engine named qu3e-sharp,
 which i believe is licensed same as qu3e, so zlib. the lua engine used is a modified version of
-moonsharp (so no luau for you)
+moonsharp (so no luau for you). you can read my "blog" [here](https://asertcreator.github.io/netblox-blog/)
 
 ## System requirements
 anything that can run raylib and .net. it consumes a bunch of memory becuse of everything,
