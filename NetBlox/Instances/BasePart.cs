@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace NetBlox.Instances
 {
-	public class BasePart : PVInstance
+	public class BasePart : PVInstance, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]
 		public bool Anchored 

@@ -120,9 +120,14 @@ namespace NetBlox
 				// we dont want corescripts to run before engine is initialized
 
 				LogManager.LogInfo("Initializing internal scripts...");
+
 				CurrentRoot = new DataModel(this);
 				if (dmc != null)
 					dmc(CurrentRoot);
+
+				LuaRuntime.Setup(this, CurrentRoot);
+				LogManager.LogInfo("Initializing user interface...");
+				SetupCoreGui();
 
 				if (NetworkManager.IsServer)
 				{
@@ -141,15 +146,10 @@ namespace NetBlox
 					CurrentRoot.GetService<Debris>();
 				}
 
-				LogManager.LogInfo("Initializing user interface...");
-				SetupCoreGui();
-
 				var rs = CurrentRoot.GetService<RunService>();
 				var cg = CurrentRoot.GetService<CoreGui>();
 				rs.Parent = CurrentRoot;
 				cg.Parent = CurrentRoot;
-
-				LuaRuntime.Setup(this, CurrentRoot);
 
 				if (NetworkManager.IsClient)
 				{

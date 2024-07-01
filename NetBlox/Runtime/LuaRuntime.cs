@@ -285,9 +285,12 @@ namespace NetBlox.Runtime
 		{
 			LogManager.LogError(msg);
 		}
-		public static Table MakeInstanceTable(Instance inst, GameManager gm)
+		public static Table MakeInstanceTable(Instance? inst, GameManager gm)
 		{
 			var scr = gm.CurrentRoot.MainEnv;
+
+			if (inst == null)
+				return new Table(scr);
 
 			// i want to bulge out my eyes
 			if (inst.Tables.TryGetValue(scr, out Table? t)) return t;

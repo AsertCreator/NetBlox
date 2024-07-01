@@ -117,8 +117,17 @@ namespace NetBlox.Studio
 								ins.Header = typs[i].Name;
 								ins.Click += (x, y) =>
 								{
-									Instance ins = (Instance)Activator.CreateInstance(typs[j], App.EditorGame);
-									ins.Parent = inst;
+									var fabm = typs[j].GetMethod("Fabricate");
+									if (fabm != null)
+									{
+										var ins = (Instance)fabm.Invoke(null, [App.EditorGame]);
+										ins.Parent = inst;
+									}
+									else
+									{
+										Instance ins = (Instance)Activator.CreateInstance(typs[j], App.EditorGame);
+										ins.Parent = inst;
+									}
 								};
 								mi.Items.Add(ins);
 							}
@@ -131,6 +140,10 @@ namespace NetBlox.Studio
 								MakeItem("Destroy", true, () =>
 								{
 									inst.Destroy();
+								}),
+								MakeItem("Clear all children", true, () =>
+								{
+									inst.ClearAllChildren();
 								}),
 								MakeItem("Edit script", inst is BaseScript, () =>
 								{

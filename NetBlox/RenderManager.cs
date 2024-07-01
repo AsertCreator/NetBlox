@@ -240,8 +240,8 @@ namespace NetBlox
 		}
 		public void RenderInstance(Instance instance)
 		{
-			if (instance is BasePart)
-				(instance as BasePart)!.Render();
+			if (instance is I3DRenderable)
+				(instance as I3DRenderable)!.Render();
 			for (int i = 0; i < instance.GetChildren().Length; i++)
 				RenderInstance(instance.GetChildren()[i]!);
 		}

@@ -8,7 +8,7 @@ using System.Text;
 namespace NetBlox.Instances
 {
 	[Creatable]
-	public class Decal : Instance
+	public class Decal : Instance, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]
 		public string Texture
@@ -29,23 +29,23 @@ namespace NetBlox.Instances
 		public Texture2D? ActualTexture;
 		private string texture = "";
 
-		public Decal(GameManager ins) : base(ins) { Debugger.Break(); }
+		public Decal(GameManager ins) : base(ins) { }
 
-		public override void RenderUI()
+		[Lua([Security.Capability.None])]
+		public override bool IsA(string classname)
+		{
+			if (nameof(Folder) == classname) return true;
+			return base.IsA(classname);
+		}
+		public void Render()
 		{
 			if (Parent == null) return;
 			if (Parent is not BasePart) return;
 			var bp = (BasePart)Parent;
 			base.RenderUI();
 			if (ActualTexture != null)
-				RenderUtils.DrawCubeTextureRec((Texture2D)ActualTexture, bp.Position, bp.Rotation, 
-					bp.Size.X + float.Epsilon, bp.Size.Y + float.Epsilon, bp.Size.Z + float.Epsilon, Color.White, Face); // just so it could render
-		}
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(Folder) == classname) return true;
-			return base.IsA(classname);
+				RenderUtils.DrawCubeTextureRec((Texture2D)ActualTexture, bp.Position, bp.Rotation,
+					bp.Size.X + 0.001f, bp.Size.Y + 0.001f, bp.Size.Z + 0.001f, Color.White, Face); // just so it could render
 		}
 	}
 }

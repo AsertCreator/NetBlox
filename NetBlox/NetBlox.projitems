@@ -26,6 +26,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)instances\Humanoid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\I3DRenderable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
@@ -89,6 +90,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\menu.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\smile.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\spawn.png">

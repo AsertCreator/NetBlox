@@ -10,6 +10,7 @@ using System.Reflection.Metadata;
 using System.Text.Json;
 using System.Text;
 using System.Xml.Linq;
+using System.Linq;
 
 namespace NetBlox
 {
@@ -122,6 +123,97 @@ namespace NetBlox
 				l.Add(LuaDeserialize(et, dv.Table.Get(i), sc));
 			}
 			return l.ToArray();
+		}
+		public static byte[] SerializeObject(DynValue dv, GameManager gm)
+		{
+			if (dv.Type == DataType.Function || dv.Type == DataType.ClrFunction)
+				return []; // we dont do that
+
+			List<byte> bytes = [];
+
+			void DoObject(DynValue dval)
+			{
+				switch (dval.Type)
+				{
+					case DataType.Nil:
+					case DataType.Void:
+					case DataType.Function: // no
+					case DataType.ClrFunction: // no
+						break;
+					case DataType.Boolean:
+						bytes.Add((byte)(0x80 + (dv.Boolean ? 1 : 0)));
+						break;
+					case DataType.Number:
+						bytes.Add(0x82);
+						bytes.AddRange(BitConverter.GetBytes(dv.Number));
+						break;
+					case DataType.String:
+						bytes.Add(0x83);
+						byte[] byt = Encoding.UTF8.GetBytes(dv.String);
+						bytes.AddRange(BitConverter.GetBytes((short)byt.Length));
+						bytes.AddRange(byt);
+						break;
+					case DataType.Table:
+						if (dv.Table.MetaTable["__handle"] != null)
+						{
+							Guid guid = Guid.Parse(dv.Table.MetaTable["__handle"].ToString());
+							bytes.Add(0x85);
+							bytes.AddRange(guid.ToByteArray());
+						}
+						else
+						{
+							bytes.Add(0x84);
+							bytes.AddRange(BitConverter.GetBytes(dv.Table.Length));
+							for (int i = 0; i < dv.Table.Length; i++)
+							{
+								DoObject(dv.Table.Keys.ElementAt(i));
+								DoObject(dv.Table.Values.ElementAt(i));
+							}
+						}
+						break;
+				}
+			}
+			DoObject(dv);
+
+			return bytes.ToArray();
+		}
+		public static DynValue DeserializeObject(byte[] bytes, GameManager gm)
+		{
+			using MemoryStream ms = new(bytes);
+			using BinaryReader br = new(ms);
+
+			DynValue GetObject() 
+			{
+				switch (br.ReadByte())
+				{
+					case 0x80:
+						return DynValue.False;
+					case 0x81:
+						return DynValue.True;
+					case 0x82:
+						return DynValue.NewNumber(br.ReadDouble());
+					case 0x83:
+						return DynValue.NewString(Encoding.UTF8.GetString(br.ReadBytes(br.ReadInt16())));
+					case 0x84:
+						Table table = new Table(gm.CurrentRoot.MainEnv);
+						DynValue dv = DynValue.NewTable(table);
+						int len = br.ReadInt32();
+
+						for (int i = 0; i < len; i++)
+						{
+							DynValue key = GetObject();
+							DynValue val = GetObject();
+							table[key] = val;
+						}
+						return dv;
+					case 0x85:
+						return DynValue.NewTable(LuaRuntime.MakeInstanceTable(gm.GetInstance(new Guid(br.ReadBytes(16))), gm));
+					default:
+						return DynValue.Nil;
+				}
+			}
+
+			return GetObject();
 		}
 		static SerializationManager()
 		{

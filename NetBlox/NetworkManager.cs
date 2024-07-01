@@ -7,7 +7,6 @@ using Network;
 using Network.Enums;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using CloseReason = Network.Enums.CloseReason;
 
@@ -62,10 +61,17 @@ namespace NetBlox
 				Target = t;
 			}
 		}
+		public class RemoteEventPacket
+		{
+			public Guid RemoteEventId;
+			public NetworkClient[] Recievers = [];
+			public byte[] Data = [];
+		}
 
 		public GameManager GameManager;
 		public List<NetworkClient> Clients = [];
 		public Queue<Replication> ReplicationQueue = [];
+		public Queue<RemoteEventPacket> RemoteEventQueue = [];
 		public bool IsServer;
 		public bool IsClient;
 		public bool OnlyInternalConnections = false;
@@ -250,41 +256,54 @@ namespace NetBlox
 
 			while (!GameManager.ShuttingDown)
 			{
-				while (ReplicationQueue.Count == 0 || AppManager.BlockReplication) ;
+				while (AppManager.BlockReplication) ;
 
-				lock (ReplicationQueue)
-				{
-					var rq = ReplicationQueue.Dequeue();
-					var rc = rq.Recievers;
-					var ins = rq.Target;
-
-					switch (rq.Mode)
+				if (RemoteEventQueue.Count != 0)
+					lock (RemoteEventQueue)
 					{
-						case Replication.REPM_TOALL:
-							rc = Clients.ToArray();
-							break;
-						case Replication.REPM_BUTOWNER:
-							rc = (NetworkClient[])Clients.ToArray().Clone();
-							if (ins.NetworkOwner != null)
-								rc.ToList().Remove(ins.NetworkOwner);
-							break;
-						case Replication.REPM_TORECIEVERS:
-							break;
-					}
+						var re = RemoteEventQueue.Dequeue();
+						var rc = re.Recievers;
 
-					switch (rq.What)
-					{
-						case Replication.REPW_NEWINST:
-							PerformReplicationNew(ins, rc); // not as per constitution, constitution is wrong, this cannot be implemented really
-							break;
-						case Replication.REPW_PROPCHG:
-							PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
-							break;
-						case Replication.REPW_REPARNT:
-							PerformReplicationReparent(ins, rc);
-							break;
+						for (int i = 0; i < rc.Length; i++)
+						{
+							var c = rc[i];
+							c.Connection.SendRawData("nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
+						}
 					}
-				}
+				if (ReplicationQueue.Count != 0)
+					lock (ReplicationQueue)
+					{
+						var rq = ReplicationQueue.Dequeue();
+						var rc = rq.Recievers;
+						var ins = rq.Target;
+
+						switch (rq.Mode)
+						{
+							case Replication.REPM_TOALL:
+								rc = Clients.ToArray();
+								break;
+							case Replication.REPM_BUTOWNER:
+								rc = (NetworkClient[])Clients.ToArray().Clone();
+								if (ins.NetworkOwner != null)
+									rc.ToList().Remove(ins.NetworkOwner);
+								break;
+							case Replication.REPM_TORECIEVERS:
+								break;
+						}
+
+						switch (rq.What)
+						{
+							case Replication.REPW_NEWINST:
+								PerformReplicationNew(ins, rc); // not as per constitution, constitution is wrong, this cannot be implemented really
+								break;
+							case Replication.REPW_PROPCHG:
+								PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
+								break;
+							case Replication.REPW_REPARNT:
+								PerformReplicationReparent(ins, rc);
+								break;
+						}
+					}
 			}
 		}
 		public unsafe void ConnectToServer(IPAddress ipa)
@@ -411,40 +430,54 @@ namespace NetBlox
 
 			while (!GameManager.ShuttingDown)
 			{
-				while (ReplicationQueue.Count == 0 || AppManager.BlockReplication) ;
+				while (AppManager.BlockReplication) ;
 
-				lock (ReplicationQueue)
-				{
-					var rq = ReplicationQueue.Dequeue();
-					var rc = rq.Recievers;
-					var ins = rq.Target;
-
-					switch (rq.Mode)
+				if (RemoteEventQueue.Count != 0)
+					lock (RemoteEventQueue)
 					{
-						case Replication.REPM_TOALL:
-							rc = Clients.ToArray();
-							break;
-						case Replication.REPM_BUTOWNER:
-							rc = (NetworkClient[])Clients.ToArray().Clone();
-							if (ins.NetworkOwner != null)
-								rc.ToList().Remove(ins.NetworkOwner);
-							break;
-						case Replication.REPM_TORECIEVERS:
-							break;
-					}
+						var re = RemoteEventQueue.Dequeue();
+						var rc = re.Recievers;
 
-					switch (rq.What)
-					{
-						case Replication.REPW_NEWINST:
-							Task.Delay(12).ContinueWith(x => PerformReplicationNew(ins, rc)); // as per constitution
-							break;
-						case Replication.REPW_PROPCHG:
-							PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
-							break;
-						case Replication.REPW_REPARNT: // nuh-uh
-							break;
+						for (int i = 0; i < rc.Length; i++)
+						{
+							var c = rc[i];
+							c.Connection.SendRawData("nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
+						}
 					}
-				}
+				if (ReplicationQueue.Count != 0)
+					lock (ReplicationQueue)
+					{
+						var rq = ReplicationQueue.Dequeue();
+						var rc = rq.Recievers;
+						var ins = rq.Target;
+
+						switch (rq.Mode)
+						{
+							case Replication.REPM_TOALL:
+								rc = Clients.ToArray();
+								break;
+							case Replication.REPM_BUTOWNER:
+								rc = (NetworkClient[])Clients.ToArray().Clone();
+								if (ins.NetworkOwner != null)
+									rc.ToList().Remove(ins.NetworkOwner);
+								break;
+							case Replication.REPM_TORECIEVERS:
+								break;
+						}
+
+						switch (rq.What)
+						{
+							case Replication.REPW_NEWINST:
+								PerformReplicationNew(ins, rc); // not as per constitution, constitution is wrong, this cannot be implemented really
+								break;
+							case Replication.REPW_PROPCHG:
+								PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
+								break;
+							case Replication.REPW_REPARNT:
+								PerformReplicationReparent(ins, rc);
+								break;
+						}
+					}
 			}
 		}
 		public void PerformKick(NetworkClient? nc, string msg, bool islocal)
@@ -548,7 +581,7 @@ namespace NetBlox
 					var bc = br.ReadInt16();
 					var pbytes = br.ReadBytes(bc);
 
-					if (SerializationManager.NetworkDeserializers.TryGetValue(pnam, out var x) && prop.CanWrite) 
+					if (SerializationManager.NetworkDeserializers.TryGetValue(pnam, out var x) && prop.CanWrite)
 						prop.SetValue(ins, x(pbytes, GameManager));
 				}
 

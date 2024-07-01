@@ -49,14 +49,18 @@ namespace NetBlox.Instances
 		public void LoadCharacterOld()
 		{
 			var ch = new Character(GameManager);
+			var face = new Decal(GameManager);
 			var workspace = Root.GetService<Workspace>();
 
 			if (Character != null)
 				Character.Destroy();
 
+			ch.Name = Name;
 			ch.IsLocalPlayer = true;
 			ch.Parent = workspace;
-			ch.Name = Name;
+			face.Texture = "rbxasset://textures/smile.png";
+			face.Face = Faces.Front;
+			face.Parent = ch;
 
 			if (workspace.MainCamera != null)
 				(workspace.MainCamera as Camera)!.CameraSubject = ch;
