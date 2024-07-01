@@ -23,34 +23,46 @@ namespace NetBlox.Instances
 					var st = GameManager.RenderManager.StudTexture;
 
 					if (TopSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Top, true);
+						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R), (byte)(Color.G), (byte)(Color.B), Color.A), Faces.Top, true);
 					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Top);
+						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R), (byte)(Color.G), (byte)(Color.B), Color.A), Faces.Top);
 
 					if (LeftSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Left, true);
+						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.5f), (byte)(Color.G * 0.5f), (byte)(Color.B * 0.5f), Color.A), Faces.Left, true);
 					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Left);
+						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.5f), (byte)(Color.G * 0.5f), (byte)(Color.B * 0.5f), Color.A), Faces.Left);
 
 					if (RightSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Right, true);
+						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.4f), (byte)(Color.G * 0.4f), (byte)(Color.B * 0.4f), Color.A), Faces.Right, true);
 					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Right);
+						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.4f), (byte)(Color.G * 0.4f), (byte)(Color.B * 0.4f), Color.A), Faces.Right);
 
 					if (BottomSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Bottom, true);
+						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.2f), (byte)(Color.G * 0.2f), (byte)(Color.B * 0.2f), Color.A), Faces.Bottom, true);
 					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Bottom);
+						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, 
+							new Color((byte)(Color.R * 0.2f), (byte)(Color.G * 0.2f), (byte)(Color.B * 0.2f), Color.A), Faces.Bottom);
 
 					if (FrontSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Front, true);
+						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.4f), (byte)(Color.G * 0.4f), (byte)(Color.B * 0.4f), Color.A), Faces.Front, true);
 					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Front);
+						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.4f), (byte)(Color.G * 0.4f), (byte)(Color.B * 0.4f), Color.A), Faces.Front);
 
 					if (BackSurface == SurfaceType.Studs)
-						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Back, true);
+						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.7f), (byte)(Color.G * 0.7f), (byte)(Color.B * 0.7f), Color.A), Faces.Back, true);
 					else
-						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z, Color, Faces.Back);
+						RenderUtils.DrawCubeFaced(Position, Rotation, Size.X, Size.Y, Size.Z,
+							new Color((byte)(Color.R * 0.7f), (byte)(Color.G * 0.7f), (byte)(Color.B * 0.7f), Color.A), Faces.Back);
 					break;
 				case Shape.Cylinder:
 					break;
