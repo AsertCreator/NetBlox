@@ -42,6 +42,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\UserInputService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)instances\SpawnLocation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\Color3Value.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)instances\values\IntValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\NumberValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\ObjectValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\StringValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\Vector3Value.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)instances\Weld.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
@@ -66,6 +72,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Actor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\BrickColor.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />

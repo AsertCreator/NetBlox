@@ -17,6 +17,7 @@ namespace NetBlox
 		private unsafe struct ClientHandshake
 		{
 			public string Username;
+			public string Authorization;
 			public ushort VersionMajor;
 			public ushort VersionMinor;
 			public ushort VersionPatch;
@@ -142,9 +143,30 @@ namespace NetBlox
 						sh.ErrorCode = 0;
 
 						bool stoppls = false;
+						bool isguest = false;
+						long userid = -1;
 						string str = x.IPRemoteEndPoint.Address.ToString();
 
-                        if (OnlyInternalConnections && str != "::ffff:127.0.0.1")
+						Dictionary<string, string> authdata = SerializationManager.DeserializeJson<Dictionary<string, string>>(ch.Authorization);
+						if (authdata == null)
+						{
+							LogManager.LogWarn(x.IPRemoteEndPoint.Address + " didn't pass authorization data! disconnecting...");
+							sh.ErrorCode = 102;
+							stoppls = true;
+							return;
+						}
+						if (authdata.TryGetValue("isguest", out string val) && bool.Parse(val)) isguest = true;
+						if (authdata.TryGetValue("userid", out string uid)) userid = long.Parse(uid);
+
+						if (!(isguest ^ (userid != -1)))
+						{
+							LogManager.LogWarn(x.IPRemoteEndPoint.Address + "'s authorization data contains both guest and account data! disconnecting...");
+							sh.ErrorCode = 102;
+							stoppls = true;
+							return;
+						}
+
+						if (OnlyInternalConnections && str != "::ffff:127.0.0.1")
                         {
                             sh.ErrorCode = 101;
                             stoppls = true;
@@ -158,6 +180,8 @@ namespace NetBlox
                             nc = new(new(ch.Username), nextpid++, x, pl);
 
                             pl.Name = nc.Username;
+							pl.Guest = isguest;
+							pl.UserId = isguest ? Random.Shared.Next(-100000, -1) : userid;
                             pl.Client = nc;
                             nc.Player = pl;
 
@@ -320,6 +344,11 @@ namespace NetBlox
 
 			ClientHandshake ch;
 			ch.Username = GameManager.Username;
+			ch.Authorization = SerializationManager.SerializeJson<Dictionary<string, string>>(new ()
+			{
+				["isguest"] = Profile.IsOffline ? "true" : "false",
+				["userid"] = Profile.UserId.ToString()
+			});
 			ch.VersionMajor = Common.Version.VersionMajor;
 			ch.VersionMinor = Common.Version.VersionMinor;
 			ch.VersionPatch = Common.Version.VersionPatch;

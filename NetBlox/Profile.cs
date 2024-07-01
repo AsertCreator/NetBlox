@@ -6,8 +6,8 @@ namespace NetBlox
 	public static class Profile
 	{
 		public static string? Username;
-		public static int UserId;
-		public static int ApperanceId;
+		public static long UserId = -1;
+		public static long ApperanceId = -1;
 		public static bool IsTouchDevice;
 		public static bool IsMouseDevice;
 		public static bool IsGamepadDevice;

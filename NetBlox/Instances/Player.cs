@@ -10,13 +10,15 @@ namespace NetBlox.Instances
 	public class Player : Instance
 	{
 		[Lua([Security.Capability.None])]
-		[NotReplicated]
 		public Instance? Character { get; set; }
+		[Lua([Security.Capability.None])]
+		public bool Guest { get; set; }
+		[Lua([Security.Capability.None])]
+		public long UserId { get; set; }
 		public bool IsLocalPlayer = false;
 		public NetworkClient? Client;
 
 		public Player(GameManager ins) : base(ins) { }
-
 
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Reload()

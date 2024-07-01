@@ -1,6 +1,7 @@
 ﻿-- gui version A (sidebar one)
 
 local PlatformService = game:GetService("PlatformService");
+local UserInputService = game:GetService("UserInputService");
 local CoreGui = game:GetService("CoreGui");
 local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
 local Sidebar = Instance.new("Frame");
@@ -13,7 +14,7 @@ BlackOut.Position = UDim2.new(0, 0, 0, 0);
 BlackOut.Size = UDim2.new(1, 0, 1, 0);
 BlackOut.BackgroundColor3 = Color3.new(0, 0, 0);
 BlackOut.BackgroundTransparency = 0.6;
-BlackOut.ZIndex = 2;
+BlackOut.ZIndex = 0;
 BlackOut.Visible = false;
 
 Sidebar.Name = "NBGSidebar";
@@ -36,10 +37,12 @@ TopbarFrame.BackgroundTransparency = 0.5;
 
 local TitleLabel = Instance.new("TextLabel");
 TitleLabel.Parent = Sidebar;
-TitleLabel.Position = UDim2.new(0, 30, 0, 30 + 40 * 0);
-TitleLabel.Size = UDim2.new(1, -60, 0, 35);
+TitleLabel.Position = UDim2.new(0, 30, 0, 0);
+TitleLabel.Size = UDim2.new(1, -60, 0, 70);
+TitleLabel.FontSize = TitleLabel.FontSize * 1.25;
 TitleLabel.BackgroundColor3 = Color3.new(1, 1, 1);
 TitleLabel.TextColor3 = Color3.new(1, 1, 1);
+TitleLabel.LeftAligned = true;
 TitleLabel.Text = game.Name;
 
 local ExitButton = Instance.new("TextButton");
@@ -122,9 +125,10 @@ end)
 
 local VersionText = Instance.new("TextLabel");
 VersionText.Parent = Sidebar;
-VersionText.Position = UDim2.new(0, 0, 1, -30);
+VersionText.Position = UDim2.new(0, 10, 1, -35);
 VersionText.Size = UDim2.new(1, 0, 0, 30);
 VersionText.TextColor3 = Color3.new(1, 1, 1);
+VersionText.LeftAligned = true;
 VersionText.Text = PlatformService:FormatVersion();
 
 -- here we stop init Sidebar
@@ -149,10 +153,31 @@ PlayerName.LeftAligned = true;
 PlayerName.TextColor3 = Color3.new(1, 1, 1);
 PlayerName.ZIndex = 4;
 
+local PlayerType = Instance.new("TextLabel");
+PlayerType.Parent = TopbarFrame;
+PlayerType.Position = UDim2.new(0, 153, 0, 0);
+PlayerType.Size = UDim2.new(0, 150, 1, 0);
+PlayerType.LeftAligned = true;
+PlayerType.TextColor3 = Color3.new(0.75, 0.75, 0.75);
+PlayerType.ZIndex = 4;
+
+UserInputService.KeyboardPress:Connect(function(x) 
+	if x == 256 then
+		TitleLabel.Text = game.Name; -- lol
+		Sidebar.Visible = not Sidebar.Visible;
+		BlackOut.Visible = Sidebar.Visible;
+	end
+end)
+
 while true do
 	if game:FindFirstChild("Players") then
 		if game.Players.LocalPlayer then
 			PlayerName.Text = game.Players.LocalPlayer.Name;
+			if game.Players.LocalPlayer.Guest then
+				PlayerType.Text = "a guest account";
+			else -- not really lol
+				PlayerType.Text = ">13 account";
+			end
 		end
 	end
 	wait(1);
