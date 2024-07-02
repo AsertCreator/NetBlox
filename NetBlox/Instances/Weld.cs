@@ -28,13 +28,13 @@ namespace NetBlox.Instances
 				}
 				if (value && !enabled)
 				{
-					b0.Actor.Body.AddBox(b1.Actor.BoxDef);
-					b1.Actor.Body.RemoveBox(b1.Actor.Box);
+					b0.Body.AddBox(b1.BoxDef);
+					b1.Body.RemoveBox(b1.Box);
 				}
 				if (!value && enabled)
 				{
-					b1.Actor.Body.AddBox(b1.Actor.BoxDef);
-					b0.Actor.Body.RemoveBox(b1.Actor.Box);
+					b1.Body.AddBox(b1.BoxDef);
+					b0.Body.RemoveBox(b1.Box);
 				}
 				enabled = value;
 			}

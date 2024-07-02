@@ -1,8 +1,10 @@
 ﻿using MoonSharp.Interpreter;
+using NetBlox.Common;
 using NetBlox.Runtime;
 using Raylib_cs;
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Text;
 
 namespace NetBlox.Instances.Services
 {
@@ -44,39 +46,6 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public string FormatVersion() => $"{GameManager.ManagerName}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";
 		[Lua([Security.Capability.CoreSecurity])]
-		public void EnableStatusPipe()
-		{
-			if (!GameManager.NetworkManager.IsServer)
-				throw new Exception("Cannot start status pipe in client");
-
-			Process pr = System.Diagnostics.Process.GetCurrentProcess();
-
-			Task.Run(() =>
-			{
-				while (GameManager.IsRunning)
-				{
-					using (NamedPipeServerStream ss = new("netblox.index" + pr.Id, PipeDirection.Out))
-					{
-						ss.WaitForConnection();
-						using (StreamWriter sw = new StreamWriter(ss))
-						{
-							sw.WriteLine(GameManager.CurrentIdentity.PlaceName);
-							sw.WriteLine(GameManager.CurrentIdentity.UniverseName);
-							sw.WriteLine(GameManager.CurrentIdentity.Author);
-							sw.WriteLine("");
-							sw.WriteLine(GameManager.CurrentIdentity.PlaceID);
-							sw.WriteLine(GameManager.CurrentIdentity.PlaceID);
-							sw.WriteLine(-1);
-							sw.WriteLine(GameManager.NetworkManager.Clients.Count);
-							sw.WriteLine(GameManager.CurrentIdentity.MaxPlayerCount);
-
-							sw.Flush();
-						}
-					}
-				}
-			});
-		}
-		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableRctlPipe()
 		{
 			if (!GameManager.NetworkManager.IsServer)
@@ -88,24 +57,65 @@ namespace NetBlox.Instances.Services
 			{
 				while (GameManager.IsRunning)
 				{
-					using (NamedPipeServerStream ss = new("netblox.rctl" + pr.Id, PipeDirection.In))
+					using (NamedPipeServerStream ss = new("netblox.rctl" + pr.Id, PipeDirection.InOut))
 					{
-						ss.WaitForConnection();
-						using (StreamReader sw = new StreamReader(ss))
+						try
 						{
-							string what = sw.ReadLine()!;
-							switch (what)
+							ss.WaitForConnection();
+							string str = ss.ReadToEnd();
+							string[] blobs = str.Split('\n');
+							string cmdblob = blobs[0];
+							string argblob = blobs[1];
+
+							using (StreamWriter sw = new(ss))
 							{
-								case "runlua":
-									LuaRuntime.Execute(sw.ReadToEnd(), 8, GameManager, null);
-									break;
-								case "kickall":
-									var pl = Root.GetService<Players>();
-									pl.KickAll(sw.ReadToEnd());
-									break;
-								case "sysmsg":
-									throw new NotImplementedException("no");
+								switch (cmdblob)
+								{
+									case "nb2-rctrl-kick":
+										{
+											Players plrs = Root.GetService<Players>();
+											Instance[] plrc = plrs.GetChildren();
+											long uid = long.Parse(argblob.Split(';')[0]);
+											string msg = argblob.Split(';')[1];
+											for (int i = 0; i < plrc.Length; i++)
+											{
+												Player plr = plrc[i] as Player;
+												if (plr.UserId == uid)
+												{
+													plr.Kick(msg);
+													break;
+												}
+											}
+											sw.Write("");
+											break;
+										}
+									case "nb2-rctrl-getuids":
+										{
+											Players plrs = Root.GetService<Players>();
+											Instance[] plrc = plrs.GetChildren();
+
+											sw.Write(string.Join(';', from x in plrc select ((Player)x).UserId));
+											break;
+										}
+									case "nb2-rctrl-runlua":
+										{
+											LogManager.LogWarn("A Lua code is about to be run, originated from Public Service!");
+
+											string luablob = str.Substring(str.IndexOf('\n'));
+											LuaRuntime.Execute(luablob, 8, GameManager, null);
+
+											sw.Write("");
+											break;
+										}
+									default:
+										sw.Write("");
+										break;
+								}
 							}
+						}
+						catch
+						{
+							LogManager.LogError("Invalid data got in Remote Control Pipe, server might be hijacked");
 						}
 					}
 				}

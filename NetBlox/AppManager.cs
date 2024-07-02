@@ -115,8 +115,7 @@ namespace NetBlox
 						if (gm != null && gm.CurrentRoot != null && gm.IsRunning && !gm.ProhibitProcessing)
 						{
 							gm.ProcessInstance(gm.CurrentRoot);
-							if (gm.NetworkManager.IsClient)
-								gm.PhysicsManager.Step();
+							gm.PhysicsManager.Step();
 						}
 					}
 

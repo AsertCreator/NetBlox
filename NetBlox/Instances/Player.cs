@@ -59,6 +59,7 @@ namespace NetBlox.Instances
 
 			ch.Name = Name;
 			ch.IsLocalPlayer = true;
+			ch.Anchored = true;
 			ch.Parent = workspace;
 			face.Texture = "rbxasset://textures/smile.png";
 			face.Face = Faces.Front;

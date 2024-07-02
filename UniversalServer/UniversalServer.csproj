@@ -8,6 +8,7 @@
     <AssemblyName>NetBloxServer</AssemblyName>
     <RootNamespace>NetBlox.Server</RootNamespace>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <BaseOutputPath>../UniversalPublicService/bin/</BaseOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" />

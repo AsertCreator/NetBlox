@@ -65,6 +65,16 @@ namespace NetBlox.Instances
 			{
 				bool dot = false;
 
+				if (Raylib.IsKeyDown(KeyboardKey.Space))
+				{
+					Position = Position + new Vector3(0, 0.1f * WalkSpeed / 12, 0);
+					dot = true;
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+				{
+					Position = Position + new Vector3(0, 0.1f * -WalkSpeed / 12, 0);
+					dot = true;
+				}
 				if (Raylib.IsKeyDown(KeyboardKey.W))
 				{
 					Position = Position + new Vector3(0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle));

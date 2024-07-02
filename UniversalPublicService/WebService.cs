@@ -22,7 +22,7 @@ namespace NetBlox.PublicService
 
 			if (uri == "/") return File.ReadAllText("./content/index.html");
 			else if (uri.StartsWith("/check")) return $"";
-			else if (uri.StartsWith("/cdn")) return File.ReadAllText("./content/" + uri.Split('/')[2]);
+			else if (uri.StartsWith("/cdn")) return ServeContent(cl, uri.Split('/')[2], ref i, ref mime);
 			else if (uri.StartsWith("/game")) return ServeGamePage(long.Parse(uri.Substring(6))); 
 			else if (uri.StartsWith("/join")) return File.ReadAllText("./content/joingame.html");
 			else if (uri.StartsWith("/api"))  return ServeAPI(cl, uri, ref i, ref mime);
@@ -36,36 +36,84 @@ namespace NetBlox.PublicService
 			raw = raw.Replace("$$GAMENAME$$", "Crossroads");
 			return raw;
 		}
+		private string ServeContent(HttpListenerContext cl, string uri, ref int i, ref string mime)
+		{
+			mime = "text/plain";
+			uri = "content/" + uri;
+			if (uri.Contains(".."))
+			{
+				i = 403;
+				return "Forbidden";
+			}
+			if (!File.Exists(uri))
+			{
+				i = 404;
+				return "Not found";
+			}
+			if (uri.EndsWith(".png"))
+				mime = "image/png";
+			if (uri.EndsWith(".jpg"))
+				mime = "image/jpeg";
+			if (uri.EndsWith(".css"))
+				mime = "text/css";
+			if (uri.EndsWith(".js"))
+				mime = "text/javascript";
+			if (uri.EndsWith(".html"))
+			{
+				i = 403;
+				return "Forbidden";
+			}
+
+			return File.ReadAllText(uri);
+		}
 		private string? ServeAPI(HttpListenerContext cl, string uri, ref int i, ref string mime)
 		{
 			try
 			{
 				mime = "application/json";
-				string data = "";
-				using (StreamReader sr = new(cl.Request.InputStream))
-					data = sr.ReadToEnd();
+				string data = cl.Request.InputStream.ReadToEnd();
 
-				if (uri == "/api/users/login") return "{\"token\":" + Program.GetService<UserService>().Login(data.Split('\n'), ref i) + "}";
-				if (uri == "/api/users/create") return "{\"token\":" + Program.GetService<UserService>().CreateUser(data.Split('\n'), ref i) + "}";
-				if (uri == "/api/users/setpresence") return "{\"onlineMode\":\"" + Program.GetService<UserService>().SetPresence(data.Split('\n'), ref i) + "\"}";
+				if (uri == "/api/query/placecount") 
+					return "{\"value\":" + Program.GetService<PlaceService>().AllPlaces.Count + "}";
+				if (uri == "/api/query/usercount") 
+					return "{\"value\":" + Program.GetService<UserService>().AllUsers.Count + "}";
+				if (uri == "/api/query/name") 
+					return Program.PSName;
 
-				if (uri == "/api/query/placecount") return "{\"value\":" + Program.GetService<PlaceService>().AllPlaces.Count + "}";
-				if (uri == "/api/query/usercount") return "{\"value\":" + Program.GetService<UserService>().AllUsers.Count + "}";
-				if (uri == "/api/query/name") return Program.PSName;
+				if (uri == "/api/users/exists") 
+					return "{\"value\":" + ((Program.GetService<UserService>().GetUserByID(long.Parse(data)) != null) ? "true" : "false") + "}";
+				if (uri == "/api/users/name") 
+					return "{\"name\":\"" + Program.GetService<UserService>().GetUserByID(long.Parse(data))!.Name + "\"}";
+				if (uri == "/api/users/id") 
+					return "{\"id\":" + Program.GetService<UserService>().GetUserByName(data)!.Id.ToString() + "}";
+				if (uri == "/api/users/login") 
+					return "{\"token\":\"" + Program.GetService<UserService>().Login(data.Split('\n'), ref i) + "\"}";
+				if (uri == "/api/users/create") 
+					return "{\"token\":\"" + Program.GetService<UserService>().CreateUser(data.Split('\n'), ref i) + "\"}";
+				if (uri == "/api/users/getpresence") 
+					return "{\"onlineMode\":\"" + Program.GetService<UserService>().GetUserByName(data)!.CurrentPresence.ToString() + "\"}";
+				if (uri == "/api/users/setpresence") 
+					return "{\"onlineMode\":\"" + Program.GetService<UserService>().SetPresence(data.Split('\n'), ref i) + "\"}";
 
-				if (uri == "/api/users/exists") return "{\"value\":" + ((Program.GetService<UserService>().GetUserByID(long.Parse(data)) != null) ? "true" : "false") + "}";
-				if (uri == "/api/users/name") return "{\"name\":" + Program.GetService<UserService>().GetUserByID(long.Parse(data))!.Name + "}";
-				if (uri == "/api/users/id") return "{\"id\":" + Program.GetService<UserService>().GetUserByName(data)!.Id.ToString() + "}";
-				if (uri == "/api/users/presence") return "{\"onlineMode\":\"" + Program.GetService<UserService>().GetUserByName(data)!.CurrentPresence.ToString() + "\"}";
-
-				if (uri == "/api/places/exists") return "{\"value\":" + ((Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data)) != null) ? "true" : "false") + "}";
+				if (uri == "/api/places/exists") 
+					return "{\"value\":" + ((Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data)) != null) ? "true" : "false") + "}";
 				if (uri == "/api/places/icon")
 				{
 					mime = "image/png";
 					return Encoding.ASCII.GetString(File.ReadAllBytes(Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data))!.IconFilePath));
 				}
-				if (uri == "/api/places/name") return "{\"name\":" + Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data))!.Name + "}";
-				if (uri == "/api/places/random") return "{\"id\":" + Program.GetService<PlaceService>().AllPlaces[Random.Shared.Next(0, Program.GetService<PlaceService>().AllPlaces.Count - 1)].Id + "}";
+				if (uri == "/api/places/update/content") 
+					return "{\"success\":" + (Program.GetService<PlaceService>().UpdatePlaceContent(data.Split('\n'), ref i) ? "true" : "false") + "}";
+				if (uri == "/api/places/update/info") 
+					return "{\"success\":" + Program.GetService<PlaceService>().UpdatePlaceInfo(data.Split('\n'), ref i) + "}";
+				if (uri == "/api/places/create") 
+					return "{\"id\":\"" + Program.GetService<PlaceService>().CreatePlace(data.Split('\n'), ref i) + "\"}";
+				if (uri == "/api/places/shutdown")
+					return "{\"success\":\"" + Program.GetService<PlaceService>().ShutdownPlaceServers(data.Split('\n'), ref i) + "\"}";
+				if (uri == "/api/places/name") 
+					return "{\"name\":\"" + Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data))!.Name + "\"}";
+				if (uri == "/api/places/random") 
+					return "{\"id\":" + Program.GetService<PlaceService>().AllPlaces[Random.Shared.Next(0, Program.GetService<PlaceService>().AllPlaces.Count - 1)].Id + "}";
 
 				i = 404;
 				return "Not found";

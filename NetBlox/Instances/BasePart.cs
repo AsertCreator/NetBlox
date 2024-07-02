@@ -1,6 +1,7 @@
 ﻿using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using Qu3e;
 using System.Numerics;
 
 namespace NetBlox.Instances
@@ -14,8 +15,11 @@ namespace NetBlox.Instances
 			set 
 			{ 
 				_anchored = value;
-				if (Actor != null)
-					Actor.Downdate();
+
+				if (!_anchored)
+					Body.Flags &= ~BodyFlags.eStatic;
+				else
+					Body.Flags &= ~BodyFlags.eDynamic;
 			} 
 		}
 		[Lua([Security.Capability.None])]
@@ -41,8 +45,8 @@ namespace NetBlox.Instances
 			set
 			{
 				_position = value;
-				if (Actor != null)
-					Actor.Downdate(); // I REALLY DONT KNOW TO NAME THIS :P
+				if (Body != null)
+					Body.SetTransform(value);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -57,13 +61,27 @@ namespace NetBlox.Instances
 		public bool CanTouch { get; set; } = true;
 		[Lua([Security.Capability.None])]
 		public Vector3 Velocity { get; set; }
-		public Actor Actor;
 		public bool IsGrounded = false;
+		public BoxDef BoxDef;
+		public Body Body;
+		public Box Box;
 
 		public BasePart(GameManager ins) : base(ins) 
 		{
-			Actor = new(this);
-			Actor.Downdate();
+			Scene sc = Root.GetService<Workspace>().Scene;
+			BodyDef bodyDef = new BodyDef();
+			bodyDef.position.Set(Position.X, Position.Y, Position.Z);
+			if (!Anchored)
+				bodyDef.bodyType = BodyType.eDynamicBody;
+			else
+				bodyDef.bodyType = BodyType.eStaticBody;
+			Body body = sc.CreateBody(bodyDef);
+			BoxDef = new BoxDef();
+			BoxDef.Set(Transform.Identity, Size);
+			Box = body.AddBox(BoxDef);
+			Body = body;
+
+			GameManager.PhysicsManager.Actors.Add(this);
 		}
 
 		public virtual void Render()
@@ -81,12 +99,15 @@ namespace NetBlox.Instances
 		}
 		public override void Destroy()
 		{
-			lock (Actor)
+			if (Body != null)
 			{
-				if (Actor != null)
+				GameManager.PhysicsManager.Actors.Remove(this);
+				Scene sc = GameManager.CurrentRoot.GetService<Workspace>().Scene;
+				lock (sc)
 				{
-					Actor.Remove();
-					Actor = null!;
+					sc.RemoveBody(Body);
+					Body = null!;
+					Box = null!;
 				}
 			}
 			base.Destroy();

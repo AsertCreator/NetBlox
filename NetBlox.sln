@@ -24,6 +24,9 @@ EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Qu3eSharp", "Qu3eSharp\Qu3eSharp.shproj", "{41572111-4627-464D-87BD-BE48FC33FF51}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalPublicService", "UniversalPublicService\UniversalPublicService.csproj", "{DDD41AE9-8F20-4187-ADC9-C1302549291C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BC56B34A-8200-4966-B065-94A593B0072F} = {BC56B34A-8200-4966-B065-94A593B0072F}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{62300AC6-A657-43D0-8AAF-7BEE4B5A5B05}"
 	ProjectSection(SolutionItems) = preProject

@@ -11,7 +11,7 @@ namespace NetBlox.Instances.Scripts
 
 		public override void Process()
 		{
-			if (!HadExecuted && GameManager.NetworkManager.IsClient && Enabled && !GameManager.ProhibitScripts) // we can only execute 
+			if (!HadExecuted && Enabled && !GameManager.ProhibitScripts) // we can only execute 
 			{
 				LuaRuntime.Execute(Source, 3, GameManager, this);
 				HadExecuted = true;

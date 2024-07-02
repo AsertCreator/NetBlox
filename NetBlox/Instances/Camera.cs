@@ -18,7 +18,7 @@ namespace NetBlox.Instances
 		{
 			if (CameraSubject == null || !CameraSubject.IsA("BasePart"))
 			{
-				GameManager.RenderManager.MainCamera.Position = new Vector3(50, 40, 0);
+				GameManager.RenderManager.MainCamera.Position = new Vector3(0, 5, -6);
 				GameManager.RenderManager.MainCamera.Target = Vector3.Zero;
 			}
 			else

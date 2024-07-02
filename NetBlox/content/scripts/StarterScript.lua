@@ -47,13 +47,6 @@ function sendNotification(title, msg)
 	Debris:AddItem(NotifyGui, 4);
 end
 
--- initializes server communication with public service
-function initStatus()
-	if PlatformService:IsServer() then
-		PlatformService:EnableStatusPipe();
-		PlatformService:EnableRctlPipe();
-	end
-end
 -- initializes notifications
 function initNotify()
 	StarterGui:RegisterSetCore("SendNotification", function(tabl)
@@ -74,7 +67,6 @@ function initTUI()
 	CoreGui.OnTeleportEnds:Connect(telgui.hide);
 end
 
-initStatus();
 initNotify();
 initIGG();
 initTUI();

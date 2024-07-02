@@ -53,7 +53,7 @@ namespace NetBlox
 				Initialize(render);
 			else
 			{
-				MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
+				MainCamera = new(new Vector3(0, 15, 15), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
 				RenderAtAll = render;
 
 				if (render)

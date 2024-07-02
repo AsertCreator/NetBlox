@@ -191,6 +191,9 @@ namespace NetBlox
 			// apparently roblox does not just load all corescritps on bulk.
 			var scrurl = AppManager.ResolveUrl("rbxasset://scripts/Modules/");
 			var ssurl = AppManager.ResolveUrl("rbxasset://scripts/StarterScript.lua");
+			if (NetworkManager.IsServer)
+				ssurl = AppManager.ResolveUrl("rbxasset://scripts/ServerStarterScript.lua");
+
 			if (!File.Exists(ssurl))
 				throw new Exception("No StarterScript found in content directory!");
 
@@ -255,8 +258,7 @@ namespace NetBlox
 			{
 				Parent = ws,
 				Position = new(0, -45f + 2, 0),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
+				TopSurface = SurfaceType.Studs
 			};
 
 			new Part(this)

@@ -70,6 +70,7 @@ namespace NetBlox.PublicService
 			user.Name = usern;
 			user.SetPassword(passw);
 			user.CurrentLoginToken = Guid.NewGuid();
+			Program.GetService<PlaceService>().CreatePlace(user.Name + "'s place", "", user);
 			AllUsers.Add(user);
 			return user.CurrentLoginToken.ToString();
 		}

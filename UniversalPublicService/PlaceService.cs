@@ -56,6 +56,91 @@ namespace NetBlox.PublicService
 			AllPlaces.Add(place);
 			return place;
 		}
+		public string CreatePlace(string[] data, ref int i)
+		{
+			Guid loginToken = Guid.Parse(data[0]);
+			string name = data[1];
+			string desc = data[2];
+
+			User? user = Program.GetService<UserService>().GetUserByToken(loginToken);
+			if (user == null)
+			{
+				i = 403;
+				return "Forbidden";
+			}
+			Place place = new Place();
+			place.Name = name;
+			place.Description = desc;
+			place.Id = AllPlaces.Count;
+			place.UserId = user.Id;
+			place.IconFilePath = "content/defaultPlace.png";
+			AllPlaces.Add(place);
+			return place.Id.ToString();
+		}
+		public bool UpdatePlaceContent(string[] data, ref int i)
+		{
+			Guid loginToken = Guid.Parse(data[0]);
+			long pid = long.Parse(data[1]);
+			string content = string.Join('\n', data.Skip(2));
+
+			User? user = Program.GetService<UserService>().GetUserByToken(loginToken);
+			if (user == null)
+			{
+				i = 403;
+				return false;
+			}
+			Place? pl = (from x in AllPlaces where x.Id == pid select x).FirstOrDefault();
+			if (pl == null)
+			{
+				i = 404;
+				return false;
+			}
+			pl.SetContent(content);
+			return true;
+		}
+		public bool UpdatePlaceInfo(string[] data, ref int i)
+		{
+			Guid loginToken = Guid.Parse(data[0]);
+			long pid = long.Parse(data[1]);
+			string name = data[2];
+			string desc = string.Join('\n', data.Skip(3));
+
+			User? user = Program.GetService<UserService>().GetUserByToken(loginToken);
+			if (user == null)
+			{
+				i = 403;
+				return false;
+			}
+			Place? pl = (from x in AllPlaces where x.Id == pid select x).FirstOrDefault();
+			if (pl == null)
+			{
+				i = 404;
+				return false;
+			}
+			pl.Name = name;
+			pl.Description = desc;
+			return true;
+		}
+		public bool ShutdownPlaceServers(string[] data, ref int i)
+		{
+			Guid loginToken = Guid.Parse(data[0]);
+			long pid = long.Parse(data[1]);
+
+			User? user = Program.GetService<UserService>().GetUserByToken(loginToken);
+			if (user == null)
+			{
+				i = 403;
+				return false;
+			}
+			Place? pl = (from x in AllPlaces where x.Id == pid select x).FirstOrDefault();
+			if (pl == null)
+			{
+				i = 404;
+				return false;
+			}
+			Program.GetService<ServerService>().ShutdownMatching(x => x.PlaceId == pl.Id);
+			return true;
+		}
 		public void LoadDatabase()
 		{
 			if (File.Exists("places"))
@@ -78,6 +163,8 @@ namespace NetBlox.PublicService
 		public long Id;
 		[JsonPropertyName("name")]
 		public string Name = "";
+		[JsonPropertyName("desc")]
+		public string Description = "";
 		[JsonPropertyName("content")]
 		public string ContentFilePath = "";
 		[JsonPropertyName("icon")]

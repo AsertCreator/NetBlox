@@ -71,7 +71,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structs\Actor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\BrickColor.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
@@ -112,6 +111,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\TeleportGui.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\ServerStarterScript.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\StarterScript.lua">
