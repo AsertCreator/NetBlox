@@ -2,6 +2,7 @@
 using Serilog;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace NetBlox.PublicService
 {
@@ -73,21 +74,51 @@ namespace NetBlox.PublicService
 				mime = "application/json";
 				string data = cl.Request.InputStream.ReadToEnd();
 
-				if (uri == "/api/query/placecount") 
-					return "{\"value\":" + Program.GetService<PlaceService>().AllPlaces.Count + "}";
-				if (uri == "/api/query/usercount") 
-					return "{\"value\":" + Program.GetService<UserService>().AllUsers.Count + "}";
-				if (uri == "/api/query/name") 
-					return Program.PSName;
+				string EncodeJson(Dictionary<string, object> enc) => JsonSerializer.Serialize(enc);
 
-				if (uri == "/api/users/exists") 
-					return "{\"value\":" + ((Program.GetService<UserService>().GetUserByID(long.Parse(data)) != null) ? "true" : "false") + "}";
+				if (uri == "/api/query/general") 
+					return EncodeJson(new() {
+						["placeCount"] = Program.GetService<PlaceService>().AllPlaces.Count,
+						["userCount"] = Program.GetService<UserService>().AllUsers.Count,
+						["name"] = Program.PSName
+					});
+
+				if (uri == "/api/users/exists")
+					return EncodeJson(new()
+					{
+						["value"] = Program.GetService<UserService>().GetUserByID(long.Parse(data)) != null
+					});
 				if (uri == "/api/users/name") 
-					return "{\"name\":\"" + Program.GetService<UserService>().GetUserByID(long.Parse(data))!.Name + "\"}";
-				if (uri == "/api/users/id") 
-					return "{\"id\":" + Program.GetService<UserService>().GetUserByName(data)!.Id.ToString() + "}";
-				if (uri == "/api/users/login") 
-					return "{\"token\":\"" + Program.GetService<UserService>().Login(data.Split('\n'), ref i) + "\"}";
+					return EncodeJson(new()
+					{
+						["value"] = Program.GetService<UserService>().GetUserByID(long.Parse(data))!.Name
+					});
+				if (uri == "/api/users/id")
+					return EncodeJson(new()
+					{
+						["id"] = Program.GetService<UserService>().GetUserByName(data)!.Id
+					});
+				if (uri == "/api/users/login")
+				{
+					try
+					{
+						string[] credentials = data.Split('\n');
+						User? user = Program.GetService<UserService>().Login(credentials[0], credentials[1]);
+						if (user != null)
+							return EncodeJson(new()
+							{
+								["id"] = user.Id,
+								["token"] = user.CurrentLoginToken.ToString()
+							});
+						i = 400;
+						return "No such user!";
+					}
+					catch (Exception ex)
+					{
+						i = 400;
+						return ex.Message;
+					}
+				}
 				if (uri == "/api/users/create") 
 					return "{\"token\":\"" + Program.GetService<UserService>().CreateUser(data.Split('\n'), ref i) + "\"}";
 				if (uri == "/api/users/getpresence") 
@@ -110,8 +141,11 @@ namespace NetBlox.PublicService
 					return "{\"id\":\"" + Program.GetService<PlaceService>().CreatePlace(data.Split('\n'), ref i) + "\"}";
 				if (uri == "/api/places/shutdown")
 					return "{\"success\":\"" + Program.GetService<PlaceService>().ShutdownPlaceServers(data.Split('\n'), ref i) + "\"}";
-				if (uri == "/api/places/name") 
-					return "{\"name\":\"" + Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data))!.Name + "\"}";
+				if (uri == "/api/places/info")
+				{
+					var place = Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data))!;
+					return "{\"name\":\"" + place.Name + "\",\"author\":" + place.UserId + ",\"desc\":\"" +  + "\"}";
+				}
 				if (uri == "/api/places/random") 
 					return "{\"id\":" + Program.GetService<PlaceService>().AllPlaces[Random.Shared.Next(0, Program.GetService<PlaceService>().AllPlaces.Count - 1)].Id + "}";
 

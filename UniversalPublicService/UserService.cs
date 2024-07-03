@@ -43,16 +43,10 @@ namespace NetBlox.PublicService
 			base.Stop();
 		}
 		public override bool IsRunning() => Running;
-		public string CreateUser(string[] data, ref int code)
+		public User? CreateUser(string usern, string passw)
 		{
-			string usern = data[0];
-			string passw = data[1];
-
 			if (GetUserByName(usern) != null)
-			{
-				code = 400;
-				return "Username already taken";
-			}
+				throw new Exception("Username already taken");
 
 			for (int i = 0; i < usern.Length; i++)
 			{
@@ -60,8 +54,7 @@ namespace NetBlox.PublicService
 				if ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' || ch == '.') { }
 				else
 				{
-					code = 400;
-					return "Invalid username";
+					throw new Exception("Invalid username format");
 				}
 			}
 
@@ -72,35 +65,24 @@ namespace NetBlox.PublicService
 			user.CurrentLoginToken = Guid.NewGuid();
 			Program.GetService<PlaceService>().CreatePlace(user.Name + "'s place", "", user);
 			AllUsers.Add(user);
-			return user.CurrentLoginToken.ToString();
+			return user;
 		}
-		public string Login(string[] data, ref int code)
+		public User? Login(string usern, string phash)
 		{
-			string usern = data[0];
-			string phash = data[1];
 			User? user = GetUserByName(usern);
 			if (user == null)
-			{
-				code = 400;
-				return "Could not login";
-			}
+				throw new Exception("No such user");
 			if (!user.CheckPasswordHash(phash))
-			{
-				code = 400;
-				return "Could not login";
-			}
+				throw new Exception("Wrong password");
 			user.CurrentLoginToken = Guid.NewGuid();
-			return user.CurrentLoginToken.ToString();
+			return user;
 		}
 		public string SetPresence(string[] data, ref int code)
 		{
 			Guid token = Guid.Parse(data[0]);
 			User? user = GetUserByToken(token);
 			if (user == null)
-			{
-				code = 400;
-				return "Could not set presence";
-			}
+				throw new Exception("No such user");
 			user.CurrentPresence = (OnlineMode)int.Parse(data[1]);
 			return user.CurrentPresence.ToString();
 		}
