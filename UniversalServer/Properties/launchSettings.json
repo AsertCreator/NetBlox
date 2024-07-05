@@ -2,7 +2,7 @@
   "profiles": {
     "UniversalServer": {
       "commandName": "Project",
-      "commandLineArgs": "--rbxl ./Crossroads.rbxl"
+      "commandLineArgs": "-ss {}"
     }
   }
 }

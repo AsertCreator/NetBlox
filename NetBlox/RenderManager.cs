@@ -18,7 +18,7 @@ namespace NetBlox
 		public int VersionMargin = 0;
 		public double TimeOfDay = 12;
 		public string Status = string.Empty;
-		public bool DebugInformation = false;
+		public bool DebugInformation = true;
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;
 		public bool DoPostProcessing = true;
@@ -26,7 +26,6 @@ namespace NetBlox
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
 		public Font MainFont;
-		public long Framecount;
 		private bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
 
@@ -91,8 +90,6 @@ namespace NetBlox
 				ScreenSizeX = Raylib.GetScreenWidth();
 				ScreenSizeY = Raylib.GetScreenHeight();
 			}
-
-			Framecount++;
 			try
 			{
 				if (RenderAtAll)
@@ -139,11 +136,6 @@ namespace NetBlox
 								Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255) * 0.8 + 255 * 0.2))));
 						}
 
-						if (DebugInformation)
-						{
-							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count, new(5, 5), 16, 0, Color.White);
-						}
-
 						// render all guis
 						if (!DisableAllGuis)
 						{
@@ -158,6 +150,13 @@ namespace NetBlox
 
 						if (PostRender != null)
 							PostRender();
+
+						if (DebugInformation)
+						{
+							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
+								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")", 
+								new(5, 5), 16, 0, Color.White);
+						}
 
 						if (!GameManager.ShuttingDown)
 							Raylib.EndDrawing();
@@ -256,62 +255,78 @@ namespace NetBlox
 				if (TextureLoadQueue.Count > 0)
 				{
 					var el = TextureLoadQueue.Dequeue();
-					try
+					var x = AppManager.ResolveUrlAsync(el.Item1, true);
+					x.Wait();
 					{
-						var tex = Raylib.LoadTexture(AppManager.ResolveUrl(el.Item1));
-						TextureCache[el.Item1] = tex;
-						el.Item2(tex);
-					}
-					catch
-					{
-						LogManager.LogWarn("Could not load texture from " + el.Item1);
-						return;
-					}
+						try
+						{
+							var tex = Raylib.LoadTexture(x.Result);
+							TextureCache[el.Item1] = tex;
+							el.Item2(tex);
+						}
+						catch
+						{
+							LogManager.LogWarn("Could not load texture from " + el.Item1);
+							return;
+						}
+					};
 				}
 				if (FontLoadQueue.Count > 0)
 				{
 					var el = FontLoadQueue.Dequeue();
-					try
+					var x = AppManager.ResolveUrlAsync(el.Item1, true);
+					x.Wait();
 					{
-						var font = Raylib.LoadFont(AppManager.ResolveUrl(el.Item1));
-						FontCache[el.Item1] = font;
-						el.Item2(font);
-					}
-					catch
-					{
-						LogManager.LogWarn("Could not load font from " + el.Item1);
-						return;
-					}
+						try
+						{
+							var font = Raylib.LoadFont(x.Result);
+							FontCache[el.Item1] = font;
+							el.Item2(font);
+						}
+						catch
+						{
+							LogManager.LogWarn("Could not load font from " + el.Item1);
+							return;
+						}
+					};
 				}
 				if (ShaderLoadQueue.Count > 0)
 				{
 					var el = ShaderLoadQueue.Dequeue();
-					try
+					var x = AppManager.ResolveUrlAsync(el.Item1, true);
+					x.Wait();
 					{
-						var shader = Raylib.LoadShader(AppManager.ResolveUrl(el.Item1) + ".vs", AppManager.ResolveUrl(el.Item1) + ".fs");
-						ShaderCache[el.Item1] = shader;
-						el.Item2(shader);
-					}
-					catch
-					{
-						LogManager.LogWarn("Could not load shader from " + el.Item1);
-						return;
-					}
+						try
+						{
+							var shader = Raylib.LoadShader(x.Result + ".vs", x.Result + ".fs");
+							ShaderCache[el.Item1] = shader;
+							el.Item2(shader);
+						}
+						catch
+						{
+							LogManager.LogWarn("Could not load shader from " + el.Item1);
+							return;
+						}
+					};
 				}
 				if (SoundLoadQueue.Count > 0)
 				{
 					var el = SoundLoadQueue.Dequeue();
-					try
+					var x = AppManager.ResolveUrlAsync(el.Item1, true);
+					x.Wait();
 					{
-						var tex = Raylib.LoadSound(AppManager.ResolveUrl(el.Item1));
-						SoundCache[el.Item1] = tex;
-						el.Item2(tex);
-					}
-					catch
-					{
-						LogManager.LogWarn("Could not load sound from " + el.Item1);
-						return;
-					}
+						try
+						{
+							var snd = Raylib.LoadSound(x.Result);
+							SoundCache[el.Item1] = snd;
+							el.Item2(snd);
+						}
+						catch
+						{
+							LogManager.LogWarn("Could not load sound from " + el.Item1);
+							return;
+						}
+					};
 				}
 			}
 		}

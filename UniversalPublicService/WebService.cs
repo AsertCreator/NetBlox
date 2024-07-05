@@ -120,7 +120,7 @@ namespace NetBlox.PublicService
 					}
 				}
 				if (uri == "/api/users/create") 
-					return "{\"token\":\"" + Program.GetService<UserService>().CreateUser(data.Split('\n'), ref i) + "\"}";
+					return "{\"token\":\"" + Program.GetService<UserService>().CreateUser(data.Split('\n')[0], data.Split('\n')[1]) + "\"}";
 				if (uri == "/api/users/getpresence") 
 					return "{\"onlineMode\":\"" + Program.GetService<UserService>().GetUserByName(data)!.CurrentPresence.ToString() + "\"}";
 				if (uri == "/api/users/setpresence") 
@@ -144,7 +144,7 @@ namespace NetBlox.PublicService
 				if (uri == "/api/places/info")
 				{
 					var place = Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data))!;
-					return "{\"name\":\"" + place.Name + "\",\"author\":" + place.UserId + ",\"desc\":\"" +  + "\"}";
+					return "{\"name\":\"" + place.Name + "\",\"author\":" + place.UserId + ",\"desc\":\"" + place.Description + "\"}";
 				}
 				if (uri == "/api/places/random") 
 					return "{\"id\":" + Program.GetService<PlaceService>().AllPlaces[Random.Shared.Next(0, Program.GetService<PlaceService>().AllPlaces.Count - 1)].Id + "}";

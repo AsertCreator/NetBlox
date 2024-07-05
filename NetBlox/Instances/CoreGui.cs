@@ -34,7 +34,7 @@ namespace NetBlox.Instances
 		{
 			try
 			{
-				Root.GetService<StarterGui>().SetCore("SendNotification", DynValue.NewTable(new Table(Root.MainEnv)
+				Root.GetService<StarterGui>().SetCore("SendNotification", DynValue.NewTable(new Table(GameManager.MainEnvironment)
 				{
 					["Title"] = title,
 					["Text"] = message,

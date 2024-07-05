@@ -31,10 +31,10 @@ namespace UniversalDuoHost
 				DoNotRenderAtAll = true,
 				SkipWindowCreation = true,
 				GameName = "NetBlox Server (duohosted)"
-			}, args, (x, gm) =>
+			}, args, (x) =>
 			{
-				gm.LoadDefault();
-				Task.Run(gm.NetworkManager.StartServer);
+				x.LoadDefault();
+				Task.Run(x.NetworkManager.StartServer);
 #if _WINDOWS
 				AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");
 #endif
@@ -63,11 +63,10 @@ namespace UniversalDuoHost
 					AsClient = true,
 					GameName = "NetBlox Client (duohosted)"
 				},
-				args, (x, y) => { });
+				args, (x) => { });
 				cg.MainManager = true;
 				AppManager.SetRenderTarget(cg);
 			});
-			AppManager.LoadFastFlags(args);
 			AppManager.Start();
 			return 0;
 		}

@@ -33,13 +33,12 @@ namespace NetBlox.Server
 				DoNotRenderAtAll = true,
 				SkipWindowCreation = true,
 				GameName = "NetBlox Server"
-			}, args, (x, gm) =>
+			}, args, (x) =>
 			{
-				gm.LoadDefault();
-				Task.Run(gm.NetworkManager.StartServer);
+				x.LoadDefault();
+				Task.Run(x.NetworkManager.StartServer);
 			});
 			g.MainManager = true;
-			AppManager.LoadFastFlags(args);
 			AppManager.SetRenderTarget(g);
 			AppManager.Start();
 		}

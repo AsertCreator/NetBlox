@@ -14,9 +14,9 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsStudio => GameManager.IsStudio;
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool IsOffline => Profile.IsOffline;
+		public bool IsOffline => GameManager.CurrentProfile.IsOffline;
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool LoggedIn => Profile.LastLogin != null;
+		public bool LoggedIn => GameManager.CurrentProfile.LastLogin != null;
 		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
 		public PlatformService(GameManager ins) : base(ins) { }
@@ -102,7 +102,7 @@ namespace NetBlox.Instances.Services
 											LogManager.LogWarn("A Lua code is about to be run, originated from Public Service!");
 
 											string luablob = str.Substring(str.IndexOf('\n'));
-											LuaRuntime.Execute(luablob, 8, GameManager, null);
+											TaskScheduler.ScheduleScript(GameManager, luablob, 8, null);
 
 											sw.Write("");
 											break;

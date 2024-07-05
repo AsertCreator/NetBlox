@@ -12,15 +12,16 @@ namespace NetBlox.Runtime
 		[Lua([Security.Capability.None])]
 		public void Connect(DynValue dv)
 		{
-			if (LuaRuntime.CurrentThread == null)
+			if (TaskScheduler.CurrentJob == null)
 				return;
-			lock (this) Attached.Add(new LuaConnection()
-			{
-				Function = dv,
-				Level = LuaRuntime.CurrentThread.Value.Level,
-				Manager = LuaRuntime.CurrentThread.Value.GameManager,
-				Script = LuaRuntime.CurrentThread.Value.ScrInst
-			});
+			lock (this) 
+				Attached.Add(new LuaConnection()
+				{
+					Function = dv,
+					Level = (int)TaskScheduler.CurrentJob.AssociatedObject1,
+					Manager = ((BaseScript)TaskScheduler.CurrentJob.AssociatedObject2).GameManager,
+					Script = (BaseScript)TaskScheduler.CurrentJob.AssociatedObject2
+				});
 		}
 		[Lua([Security.Capability.None])]
 		public void Wait()
@@ -33,7 +34,8 @@ namespace NetBlox.Runtime
 			lock (this)
 			{
 				for (int i = 0; i < Attached.Count; i++)
-					LuaRuntime.Execute(Attached[i].Function, Attached[i].Level, Attached[i].Manager, Attached[i].Script, dvs);
+					TaskScheduler.ScheduleScript(Attached[i].Manager, Attached[i].Function, Attached[i].Level, Attached[i].Script)
+						.AssociatedObject4 = dvs;
 				for (int i = 0; i < NativeAttached.Count; i++)
 					NativeAttached[i](dvs);
 				FireCount++;

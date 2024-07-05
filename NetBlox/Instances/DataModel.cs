@@ -8,10 +8,6 @@ namespace NetBlox.Instances
 {
 	public class DataModel : ServiceProvider
 	{
-		public Dictionary<Scripts.ModuleScript, DynValue> LoadedModules = new();
-		public static HttpClient HttpClient = new();
-		public Script MainEnv = null!;
-
 		public DataModel(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
@@ -43,14 +39,9 @@ namespace NetBlox.Instances
 			GameManager.Shutdown();
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public string HttpGet(string url)
-		{
-			var task = HttpClient.GetAsync(url);
-			task.Wait();
-			var task2 = task.Result.Content.ReadAsStringAsync();
-			task2.Wait();
-			return task2.Result;
-		}
+		public string HttpGet(string url) => File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult());
+		[Lua([Security.Capability.CoreSecurity])]
+		public Instance[] GetObjects(string url) => [];
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

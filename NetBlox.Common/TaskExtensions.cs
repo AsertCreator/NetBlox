@@ -2,6 +2,11 @@ namespace NetBlox
 {
 	public static class TaskExtensions
 	{
+		public static T WaitAndGetResult<T>(this Task<T> task)
+		{
+			task.Wait();
+			return task.Result;
+		}
 		public static Task<T> AsCancellable<T>(this Task<T> task, CancellationToken token)
 		{
 			if (!token.CanBeCanceled)
@@ -31,7 +36,7 @@ namespace NetBlox
 			},
 				CancellationToken.None,
 				TaskContinuationOptions.ExecuteSynchronously,
-				TaskScheduler.Default);
+				System.Threading.Tasks.TaskScheduler.Default);
 
 			return tcs.Task;
 		}

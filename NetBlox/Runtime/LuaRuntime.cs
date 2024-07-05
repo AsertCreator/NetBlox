@@ -7,69 +7,36 @@ using System.ComponentModel;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime;
+using System.Text;
 using System.Threading;
 using Script = MoonSharp.Interpreter.Script;
 
 namespace NetBlox.Runtime
 {
-	public class LuaThread
-	{
-		public int Level;
-		public int SwitchCount;
-		public bool IsDead = false;
-		public GameManager GameManager;
-		public DynValue MsThread;
-		public Coroutine Coroutine;
-		public DynValue[] StartArgs = [];
-		public DynValue ToReturn = DynValue.Nil;
-		public Script Script;
-		public BaseScript? ScrInst;
-		public DateTime WaitUntil;
-		public LuaThread? JoinedTo;
-		public Action<DynValue>? FinishCallback;
-		public string Name = string.Empty;
-
-		public LuaThread(GameManager gm, DataModel dm, BaseScript? bs, DynValue d, int sl, DynValue[]? dv = null, Action<DynValue>? fc = null)
-		{
-			GameManager = gm;
-			Script = dm.MainEnv;
-			ScrInst = bs;
-			WaitUntil = default;
-			Coroutine = d.Coroutine;
-			Level = sl;
-			MsThread = d;
-			FinishCallback = fc;
-			StartArgs = dv ?? [];
-		}
-	}
 	public static class LuaRuntime
 	{
-		public static LinkedListNode<LuaThread>? CurrentThread;
-		public static LinkedList<LuaThread> Threads = new();
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 700;
 		private static Type dvt = typeof(DynValue);
 
-		public static void Setup(GameManager gm, DataModel dm)
+		public static void Setup(GameManager gm)
 		{
-			var works = dm.GetService<Workspace>(true);
-
-			dm.MainEnv = new Script(
+			Script tenv;
+			tenv = new Script(
 				CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
 				CoreModules.TableIterators | CoreModules.Table | CoreModules.String | CoreModules.ErrorHandling |
 				CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
+			gm.MainEnvironment = tenv;
 
-			dm.MainEnv.Globals["game"] = MakeInstanceTable(dm, gm);
-			if (works != null)
-				dm.MainEnv.Globals["workspace"] = MakeInstanceTable(works, gm);
+			tenv.Globals["game"] = MakeInstanceTable(gm.CurrentRoot, gm);
 
-			dm.MainEnv.Globals["wait"] = DynValue.NewCallback((x, y) =>
+			tenv.Globals["wait"] = DynValue.NewCallback((x, y) =>
 			{
 				var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
-				GetThreadFor(x.GetCallingCoroutine()).WaitUntil = wa;
+				TaskScheduler.CurrentJob.JoinedUntil = wa;
 				return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
 			});
-			dm.MainEnv.Globals["require"] = DynValue.NewCallback((x, y) =>
+			tenv.Globals["require"] = DynValue.NewCallback((x, y) =>
 			{
 				var table = y[0];
 				var inst = SerializationManager.LuaDeserialize<Instance>(table, gm);
@@ -78,38 +45,60 @@ namespace NetBlox.Runtime
 				if (ms == null)
 					throw new Exception("Expected a ModuleScript");
 
-				if (gm.CurrentRoot.LoadedModules.TryGetValue(ms, out var dv)) return dv;
+				if (gm.LoadedModules.TryGetValue(ms, out var dv)) return dv;
 
-				var lt = GetThreadFor(x.GetCallingCoroutine());
-				lt.JoinedTo = Execute(ms.Source, lt.Level, gm, ms, x =>
+				var lt = TaskScheduler.CurrentJob;
+				lt.JoinedTo = TaskScheduler.ScheduleScript(gm, ms.Source, (int)lt.AssociatedObject1, ms, x =>
 				{
-					lt.ToReturn = x;
+					DynValue dv = (DynValue)x.AssociatedObject5;
+					lt.AssociatedObject4 = dv.Type == DataType.Tuple ? dv.Tuple : [dv];
+					return JobResult.CompletedSuccess;
 				});
 
 				return DynValue.NewYieldReq([]);
 			});
-			dm.MainEnv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
+			tenv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintOut("Current identity is " + GetThreadFor(x.GetCallingCoroutine()).Level);
+				if (y.Count != 0)
+				{
+					string prefix = y.AsStringUsingMeta(x, 0, "printidentity");
+					PrintOut(prefix + " " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
+				}
+				else
+					PrintOut("Current identity is " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
 				return DynValue.Void;
 			});
-			dm.MainEnv.Globals["print"] = DynValue.NewCallback((x, y) =>
+			tenv.Globals["print"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintOut(y.AsStringUsingMeta(x, 0, "print"));
+				List<string> strs = [];
+				for (int i = 0; i < y.Count; i++)
+					strs.Add(y.AsStringUsingMeta(x, i, "print"));
+				PrintOut(string.Join(' ', strs));
 				return DynValue.Void;
 			});
-			dm.MainEnv.Globals["warn"] = DynValue.NewCallback((x, y) =>
+			tenv.Globals["warn"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintWarn(y.AsStringUsingMeta(x, 0, "warn"));
+				List<string> strs = [];
+				for (int i = 0; i < y.Count; i++)
+					strs.Add(y.AsStringUsingMeta(x, i, "warn"));
+				PrintWarn(string.Join(' ', strs));
 				return DynValue.Void;
 			});
-			dm.MainEnv.Globals["error"] = DynValue.NewCallback((x, y) =>
+			tenv.Globals["error"] = DynValue.NewCallback((x, y) =>
 			{
-				PrintError(y.AsStringUsingMeta(x, 0, "error"));
+				List<string> strs = [];
+				for (int i = 0; i < y.Count; i++)
+					strs.Add(y.AsStringUsingMeta(x, i, "error"));
+				PrintError(string.Join(' ', strs));
 				throw new Exception(y[0].ToString());
 			});
+			tenv.Globals["spawn"] = DynValue.NewCallback((x, y) =>
+			{
+				TaskScheduler.ScheduleScript(gm, y[0], 8, null);
+				return DynValue.Void;
+			});
 
-			MakeDataType(dm, "Instance", (x, y) =>
+			MakeDataType(gm, "Instance", (x, y) =>
 			{
 				try
 				{
@@ -121,7 +110,7 @@ namespace NetBlox.Runtime
 					return DynValue.Void;
 				}
 			});
-			MakeDataType(dm, "UDim2", (x, y) =>
+			MakeDataType(gm, "UDim2", (x, y) =>
 			{
 				try
 				{
@@ -130,14 +119,14 @@ namespace NetBlox.Runtime
 							Convert.ToSingle(y[0].Number), 
 							Convert.ToSingle(y[1].Number), 
 							Convert.ToSingle(y[2].Number), 
-							Convert.ToSingle(y[3].Number)), dm.GameManager);
+							Convert.ToSingle(y[3].Number)), gm);
 				}
 				catch
 				{
 					return DynValue.Void;
 				}
 			});
-			MakeDataType(dm, "Color3", (x, y) =>
+			MakeDataType(gm, "Color3", (x, y) =>
 			{
 				try
 				{
@@ -146,132 +135,25 @@ namespace NetBlox.Runtime
 							Convert.ToInt32(y[0].Number * 255),
 							Convert.ToInt32(y[1].Number * 255),
 							Convert.ToInt32(y[2].Number * 255),
-							255), dm.GameManager);
+							255), gm);
 				}
 				catch
 				{
 					return DynValue.Void;
 				}
 			});
-
-			Execute(string.Empty, 0, dm.GameManager, null); // we will run nothing to initialize lua
 		}
-		public static void MakeDataType(DataModel dm, string name, Func<ScriptExecutionContext, CallbackArguments, DynValue> func)
+		public static void MakeDataType(GameManager gm, string name, Func<ScriptExecutionContext, CallbackArguments, DynValue> func)
 		{
-			var it = new Table(dm.MainEnv);
+			var it = new Table(gm.MainEnvironment);
 			it["new"] = DynValue.NewCallback(func);
-			dm.MainEnv.Globals[name] = DynValue.NewTable(it);
-		}
-		public static LuaThread GetThreadFor(Coroutine c)
-		{
-			return (from x in Threads where x.Coroutine == c select x).First();
-		}
-		public static LuaThread Execute(string code, int sl, GameManager gm, BaseScript? bs, Action<DynValue>? fc = null)
-		{
-			try
-			{
-				var d = gm.CurrentRoot.MainEnv.CreateCoroutine(gm.CurrentRoot.MainEnv.LoadString(code));
-				var lt = new LuaThread(gm, gm.CurrentRoot, bs, d, sl, [], fc);
-
-				d.Coroutine.AutoYieldCounter = 0;
-
-				if (bs != null)
-					lt.Name = bs.GetFullName();
-
-				Threads.AddLast(lt);
-				return lt;
-			}
-			catch (Exception ex)
-			{
-				LastException = ex; // for the sake of overcomplification
-				throw;
-			}
-		}
-		public static LuaThread Execute(DynValue fun, int sl, GameManager gm, BaseScript? bs, DynValue[]? dva, Action<DynValue>? fc = null)
-		{
-			try
-			{
-				var d = gm.CurrentRoot.MainEnv.CreateCoroutine(fun);
-				var lt = new LuaThread(gm, gm.CurrentRoot, bs, d, sl, dva, fc);
-
-				d.Coroutine.AutoYieldCounter = 100000;
-
-				if (bs != null)
-					lt.Name = bs.GetFullName();
-
-				Threads.AddLast(lt);
-				return lt;
-			}
-			catch (Exception ex)
-			{
-				LastException = ex; // for the sake of overcomplification
-				throw;
-			}
-		}
-		public static DynValue ImmediateExecute(string code, GameManager gm, BaseScript? bs)
-		{
-			try
-			{
-				var g = ShallowCloneTable(gm.CurrentRoot.MainEnv.Globals);
-				if (bs != null)
-					g["script"] = MakeInstanceTable(bs, bs.GameManager);
-				else
-					g["script"] = null;
-				var v = gm.CurrentRoot.MainEnv.DoString(code, g);
-				return v;
-			}
-			catch (Exception ex)
-			{
-				LastException = ex; // for the sake of overcomplification
-				throw;
-			}
+			gm.MainEnvironment.Globals[name] = DynValue.NewTable(it);
 		}
 		public static Table ShallowCloneTable(Table t)
 		{
 			Table ta = new Table(t.OwnerScript);
 			t.Pairs.ToList().ForEach(x => ta.Set(x.Key, x.Value));
 			return ta;
-		}
-		public static void ReportedExecute(Action ac, string name, bool remthread)
-		{
-			try
-			{
-				ac();
-			}
-			catch (SyntaxErrorException ex)
-			{
-				var ct = CurrentThread;
-				if (ct != null)
-				{
-					LogManager.LogError(ex.Message);
-					for (int i = 0; i < ex.CallStack.Count; i++)
-						LogManager.LogError($"    at {ct.Value.Name}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
-				}
-
-				if (remthread && CurrentThread != null)
-					if (Threads.Contains(CurrentThread.Value))
-					{
-						CurrentThread.Value.IsDead = true;
-						Threads.Remove(CurrentThread);
-					}
-			}
-			catch (ScriptRuntimeException ex)
-			{
-				var ct = CurrentThread;
-				if (ct != null)
-				{
-					LogManager.LogError(ex.Message);
-					for (int i = 0; i < ex.CallStack.Count; i++)
-						LogManager.LogError($"    at {ct.Value.Name}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
-				}
-
-				if (remthread && CurrentThread != null)
-					if (Threads.Contains(CurrentThread.Value))
-					{
-						CurrentThread.Value.IsDead = true;
-						Threads.Remove(CurrentThread);
-					}
-			}
 		}
 		public static void PrintOut(string msg)
 		{
@@ -287,7 +169,7 @@ namespace NetBlox.Runtime
 		}
 		public static Table MakeInstanceTable(Instance? inst, GameManager gm)
 		{
-			var scr = gm.CurrentRoot.MainEnv;
+			var scr = gm.MainEnvironment;
 
 			if (inst == null)
 				return new Table(scr);
@@ -334,10 +216,13 @@ namespace NetBlox.Runtime
 					{
 						var sec = meth.GetCustomAttribute<LuaAttribute>();
 
-						if (CurrentThread == null || sec == null)
-							throw new Exception("Any access to an Instance from lua-space should be from running thread");
+						if (TaskScheduler.CurrentJob.Type != JobType.Script)
+							throw new Exception("Attempted to access an Instance as a table from native code");
 
-						if (Security.IsCompatible(CurrentThread.Value.Level, sec.Capabilities))
+						if (sec == null) // we lie
+							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"");
+
+						if (Security.IsCompatible((int)TaskScheduler.CurrentJob.AssociatedObject1!, sec.Capabilities))
 							return DynValue.NewCallback((a, b) =>
 							{
 								try

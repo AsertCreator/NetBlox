@@ -3,23 +3,23 @@ using System.Net;
 
 namespace NetBlox
 {
-	public static class Profile
+	public class Profile
 	{
-		public static string? Username;
-		public static long UserId = -1;
-		public static long ApperanceId = -1;
-		public static bool IsTouchDevice;
-		public static bool IsMouseDevice;
-		public static bool IsGamepadDevice;
-		public static bool IsOffline = true;
-		public static IPAddress LoginServer = IPAddress.Any;
-		public static Guid? LastLogin;
-		public static string LoginUrl => "http://" + LoginServer.ToString() + ":455";
+		public string Username = "Unauthorized";
+		public long UserId = -1;
+		public long ApperanceId = -1;
+		public bool IsTouchDevice;
+		public bool IsMouseDevice;
+		public bool IsGamepadDevice;
+		public bool IsOffline = true;
+		public IPAddress LoginServer = IPAddress.Any;
+		public Guid? LastLogin;
+		public string LoginUrl => "http://" + LoginServer.ToString() + ":455";
 
 		/// <summary>
 		/// Returns login token and sets it in <seealso cref="LastLogin"/>, if Public Service allowed to login such way, or null if login failed.
 		/// </summary>
-		public static async Task<Guid?> LoginAsync(string user, string passw)
+		public async Task<Guid?> LoginAsync(string user, string passw)
 		{
 			LogManager.LogInfo("Trying to login with " + user + "...");
 			IsOffline = true;
@@ -47,13 +47,13 @@ namespace NetBlox
 				return Guid.Parse(result["token"]);
 			}
 		}
-		public static void LoginAsGuest()
+		public void LoginAsGuest()
 		{
 			IsOffline = true;
 			LastLogin = null;
 			Username = "Guest " + Random.Shared.Next(100, 9999);
 		}
-		public static async Task<bool> SetOnlineModeAsync(OnlineMode pm)
+		public async Task<bool> SetOnlineModeAsync(OnlineMode pm)
 		{
 			if (LastLogin == null) return false;
 

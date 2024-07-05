@@ -195,7 +195,7 @@ namespace NetBlox
 					case 0x83:
 						return DynValue.NewString(Encoding.UTF8.GetString(br.ReadBytes(br.ReadInt16())));
 					case 0x84:
-						Table table = new Table(gm.CurrentRoot.MainEnv);
+						Table table = new Table(gm.MainEnvironment);
 						DynValue dv = DynValue.NewTable(table);
 						int len = br.ReadInt32();
 
@@ -333,12 +333,12 @@ namespace NetBlox
 			LuaSerializers.Add("NetBlox.Structs.Shape", (x, y) => DynValue.NewNumber((double)(Shape)x));
 			LuaSerializers.Add("NetBlox.Structs.SurfaceType", (x, y) => DynValue.NewNumber((double)(SurfaceType)x));
 			LuaSerializers.Add("NetBlox.Instances.Instance", (x, y) => DynValue.NewTable(LuaRuntime.MakeInstanceTable((Instance)x, y)));
-			LuaSerializers.Add("System.Numerics.Vector2", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv) {
+			LuaSerializers.Add("System.Numerics.Vector2", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment) {
 				["X"] = ((Vector2)x).X,
 				["Y"] = ((Vector2)x).Y
 			}));
 			LuaSerializers.Add("NetBlox.Runtime.LuaSignal", (x, y) => 
-				DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
+				DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["Connect"] = DynValue.NewCallback((_x, _y) =>
 				{
@@ -347,7 +347,7 @@ namespace NetBlox
 					lock (s) 
 						s.Connect(_y[1]);
 
-					return DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
+					return DynValue.NewTable(new Table(y.MainEnvironment)
 					{
 						["Disconnect"] = DynValue.NewCallback((x2, y2) =>
 						{
@@ -363,19 +363,19 @@ namespace NetBlox
 					return DynValue.Void;
 				})
 			}));
-			LuaSerializers.Add("System.Numerics.Vector3", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
+			LuaSerializers.Add("System.Numerics.Vector3", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["X"] = ((Vector3)x).X,
 				["Y"] = ((Vector3)x).Y,
 				["Z"] = ((Vector3)x).Z
 			}));
-			LuaSerializers.Add("Raylib_cs.Color", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
+			LuaSerializers.Add("Raylib_cs.Color", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["R"] = ((Color)x).R / 255f,
 				["G"] = ((Color)x).G / 255f,
 				["B"] = ((Color)x).B / 255f
 			}));
-			LuaSerializers.Add("NetBlox.Structs.UDim2", (x, y) => DynValue.NewTable(new Table(y.CurrentRoot.MainEnv)
+			LuaSerializers.Add("NetBlox.Structs.UDim2", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["X"] = ((UDim2)x).X,
 				["Y"] = ((UDim2)x).Y,

@@ -276,6 +276,8 @@ namespace NetBlox
 			Server.Start();
 			GameManager.AllowReplication = true;
 
+			LogManager.LogInfo($"Listening at {Server.IPAddress}:{ServerPort}");
+
 			// but actually we are not done
 
 			while (!GameManager.ShuttingDown)
@@ -346,8 +348,8 @@ namespace NetBlox
 			ch.Username = GameManager.Username;
 			ch.Authorization = SerializationManager.SerializeJson<Dictionary<string, string>>(new ()
 			{
-				["isguest"] = Profile.IsOffline ? "true" : "false",
-				["userid"] = Profile.UserId.ToString()
+				["isguest"] = GameManager.CurrentProfile.IsOffline ? "true" : "false",
+				["userid"] = GameManager.CurrentProfile.UserId.ToString()
 			});
 			ch.VersionMajor = Common.Version.VersionMajor;
 			ch.VersionMinor = Common.Version.VersionMinor;

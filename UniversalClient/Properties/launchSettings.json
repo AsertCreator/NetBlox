@@ -2,8 +2,9 @@
   "profiles": {
     "UniversalClient": {
       "commandName": "Project",
-      "commandLineArgs": "--rbxl 127.0.0.1 --guest",
-      "nativeDebugging": true
+      "commandLineArgs": "-cs {^^e^^:true,^^g^^:^^127.0.0.1^^}",
+      "nativeDebugging": false,
+      "remoteDebugEnabled": false
     }
   }
 }

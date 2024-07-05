@@ -25,8 +25,6 @@ public partial class App : Application
 			System.Windows.Forms.MessageBox.Show("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
 			Environment.Exit(1);
 		}
-
-		AppManager.LoadFastFlags(Environment.GetCommandLineArgs());
 	}
 }
 

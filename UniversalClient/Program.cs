@@ -68,7 +68,7 @@ namespace NetBlox.Client
 				AsClient = true,
 				GameName = "NetBlox Client"
 			}, 
-			args, (x, y) => { });
+			args, (x) => { });
 			cg.MainManager = true;
 			AppManager.PlatformOpenBrowser = x =>
 			{
@@ -77,7 +77,6 @@ namespace NetBlox.Client
 				psi.UseShellExecute = true;
 				Process.Start(psi);
 			};
-			AppManager.LoadFastFlags(args);
 			AppManager.SetRenderTarget(cg);
 			AppManager.Start();
 

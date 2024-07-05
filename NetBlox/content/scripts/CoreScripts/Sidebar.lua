@@ -123,6 +123,26 @@ MuteButton.MouseButton1Click:Connect(function()
 	workspace.BirdAmbient = not workspace.BirdAmbient;
 end)
 
+local PressButton = Instance.new("TextButton");
+PressButton.Parent = Sidebar;
+PressButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 6);
+PressButton.Size = UDim2.new(1, -60, 0, 35);
+PressButton.BackgroundColor3 = Color3.new(1, 1, 1);
+PressButton.TextColor3 = Color3.new(1, 1, 1);
+PressButton.BackgroundTransparency = 0.7;
+PressButton.Text = "Create new dummy TS job";
+PressButton.MouseButton1Click:Connect(function()
+	for i = 1,10 do
+		spawn(function()
+			print("Hi, from a dummy")
+			while true do
+				printidentity()
+				wait(1)
+			end
+		end)
+	end
+end)
+
 local VersionText = Instance.new("TextLabel");
 VersionText.Parent = Sidebar;
 VersionText.Position = UDim2.new(0, 10, 1, -35);
@@ -137,7 +157,7 @@ local MenuButton = Instance.new("ImageButton");
 MenuButton.Parent = TopbarFrame;
 MenuButton.Position = UDim2.new(0, 0, 0, 0);
 MenuButton.Size = UDim2.new(0, 30, 0, 30);
-MenuButton.FilePath = "rbxasset://textures/menu.png";
+MenuButton.Image = "rbxasset://textures/menu.png";
 MenuButton.ZIndex = 4;
 MenuButton.MouseButton1Click:Connect(function()
 	TitleLabel.Text = game.Name; -- lol

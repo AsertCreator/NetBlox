@@ -43,7 +43,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)instances\SpawnLocation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\Color3Value.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\values\IntValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\IntValue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\NumberValue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\ObjectValue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\StringValue.cs" />
@@ -72,6 +72,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\BrickColor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\ServerStartupInfo.cs" />
+    <Compile Include="..\NetBlox\Structs\ClientStartupInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="..\NetBlox\NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
@@ -95,6 +98,7 @@
     <Content Include="$(MSBuildThisFileDirectory)content\sounds\grunt.mp3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\blank.png" />
     <Content Include="$(MSBuildThisFileDirectory)content\textures\menu.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

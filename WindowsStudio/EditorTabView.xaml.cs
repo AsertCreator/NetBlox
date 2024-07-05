@@ -74,7 +74,7 @@ namespace NetBlox.Studio
 					CustomFlags = ConfigFlags.UndecoratedWindow | ConfigFlags.MaximizedWindow | ConfigFlags.HiddenWindow,
 					ProhibitScripts = true,
 					GameName = "NetBlox Studio - EditorGame"
-				}, [], (x, y) => { }, x =>
+				}, ["-ss", "{}"], (x) => { }, x =>
 				{
 					TreeViewItem MakeItem(Instance inst)
 					{
@@ -86,11 +86,11 @@ namespace NetBlox.Studio
 						block.Text = inst.Name;
 						block.Margin = new System.Windows.Thickness(5, 0, 0, 0);
 						logo.BeginInit();
-						var classpng = AppManager.ResolveUrl("rbxasset://studio/classes/" + inst.ClassName + ".png");
+						var classpng = AppManager.ResolveUrlAsync("rbxasset://studio/classes/" + inst.ClassName + ".png", false).WaitAndGetResult();
 						if (File.Exists(classpng))
 							logo.UriSource = new Uri(classpng);
 						else
-							logo.UriSource = new Uri(AppManager.ResolveUrl("rbxasset://studio/classes/Instance.png"));
+							logo.UriSource = new Uri(AppManager.ResolveUrlAsync("rbxasset://studio/classes/Instance.png", false).WaitAndGetResult());
 						logo.EndInit();
 						image.Source = logo;
 						stack.Orientation = System.Windows.Controls.Orientation.Horizontal;

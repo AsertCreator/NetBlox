@@ -31,7 +31,7 @@ namespace NetBlox.Instances
 						{
 							lock (parent.Children)
 								parent.Children.Remove(this);
-							if (Root.MainEnv != null)
+							if (GameManager.MainEnvironment != null)
 							{
 								parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
 								RaiseDescendantRemoved(this);
@@ -46,7 +46,7 @@ namespace NetBlox.Instances
 							ParentID = parent.UniqueID;
 							lock (value.Children)
 								value.Children.Add(this);
-							if (Root.MainEnv != null)
+							if (GameManager.MainEnvironment != null)
 							{
 								value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
 								RaiseDescendantAdded(this);

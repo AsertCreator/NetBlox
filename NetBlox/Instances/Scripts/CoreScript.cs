@@ -13,7 +13,7 @@ namespace NetBlox.Instances.Scripts
 		{
 			if (!HadExecuted && Enabled && !GameManager.ProhibitScripts) // we can only execute 
 			{
-				LuaRuntime.Execute(Source, 3, GameManager, this);
+				TaskScheduler.ScheduleScript(GameManager, Source, 3, this);
 				HadExecuted = true;
 			}
 		}

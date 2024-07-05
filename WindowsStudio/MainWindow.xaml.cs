@@ -113,7 +113,7 @@ public partial class MainWindow : System.Windows.Window
 				SkipWindowCreation = true,
 				DoNotRenderAtAll = true,
 				GameName = "NetBlox Server (studio)"
-			}, [], (x, gm) =>
+			}, [], (gm) =>
 			{
 				gm.CurrentRoot.ClearAllChildren();
 
@@ -156,7 +156,7 @@ public partial class MainWindow : System.Windows.Window
 					AsStudio = true,
 					SkipWindowCreation = true,
 					GameName = "NetBlox Client (studio)"
-				}, ["--guest"], (x, y) => { });
+				}, ["--guest"], (x) => { });
 				AppManager.SetRenderTarget(gmc);
 			});
 		}
@@ -165,7 +165,7 @@ public partial class MainWindow : System.Windows.Window
 	{
 		if (App.EditorGame != null && e.Key == System.Windows.Input.Key.Return)
 		{
-			LuaRuntime.Execute(commandBar.Text, 4, App.EditorGame, null);
+			TaskScheduler.ScheduleScript(App.EditorGame, commandBar.Text, 4, null);
 		}
     }
 }

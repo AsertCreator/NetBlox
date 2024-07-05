@@ -19,51 +19,17 @@ namespace NetBlox
 		public static Dictionary<string, string> FastStrings = [];
 		public static Dictionary<string, int> FastInts = [];
 		public static Action<string> PlatformOpenBrowser = x => { };
+		public static HttpClient HttpClient = new();
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
 		public static string ContentFolder = Path.GetFullPath("./content/");
 		public static string LibraryFolder = Path.GetFullPath("./tmp/");
+		public static string PublicServiceAPI = "";
 		public static int VersionMajor => Common.Version.VersionMajor;
 		public static int VersionMinor => Common.Version.VersionMinor;
 		public static int VersionPatch => Common.Version.VersionPatch;
 
-		public static void LoadFastFlags(string[] args)
-		{
-			for (int i = 0; i < args.Length; i++)
-			{
-				switch (args[i]) 
-				{
-					case "--fast-flag":
-						{
-							var key = args[++i];
-							var bo = int.Parse(args[++i]) == 1;
-
-							FastFlags[key] = bo;
-							LogManager.LogInfo($"Setting fast flag {key} to {bo}");
-							break;
-						}
-					case "--fast-string":
-						{
-							var key = args[++i];
-							var st = args[++i];
-
-							FastStrings[key] = st;
-							LogManager.LogInfo($"Setting fast stirng {key} to \"{st}\"");
-							break;
-						}
-					case "--fast-number":
-						{
-							var key = args[++i];
-							var nu = int.Parse(args[++i]);
-
-							FastInts[key] = nu;
-							LogManager.LogInfo($"Setting fast number {key} to {nu}");
-							break;
-						}
-				}
-			}
-		}
 		/// <summary>
 		/// Defines a fast flag, must be called after loading current fast flags
 		/// </summary>
@@ -82,9 +48,9 @@ namespace NetBlox
 			if (!FastStrings.TryGetValue(fflag, out var _))
 				FastStrings[fflag] = def;
 		}
-		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<string, GameManager> callback, Action<DataModel>? dmc = null)
+		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
-			GameManager manager = new GameManager(gc, args, callback, dmc);
+			GameManager manager = new GameManager(gc, args, loadcallback, dmc);
 			manager.ManagerName = gc.GameName;
 			GameManagers.Add(manager);
 			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
@@ -101,31 +67,28 @@ namespace NetBlox
 			DefineFastFlag("FFlagShowCoreGui", true);
 			DefineFastInt("FIntDefaultUIVariant", 1);
 
-			while (!ShuttingDown)
+			TaskScheduler.ScheduleRender(x =>
 			{
-				try
+				if (CurrentRenderManager != null)
 				{
-					if (CurrentRenderManager != null)
-						CurrentRenderManager.RenderFrame();
-
-					// perform processing
-					for (int i = 0; i < GameManagers.Count; i++)
-					{
-						var gm = GameManagers[i];
-						if (gm != null && gm.CurrentRoot != null && gm.IsRunning && !gm.ProhibitProcessing)
-						{
-							gm.ProcessInstance(gm.CurrentRoot);
-							gm.PhysicsManager.Step();
-						}
-					}
-
-					Schedule();
+					CurrentRenderManager.RenderFrame();
+					if (CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager)
+						return JobResult.CompletedSuccess;
+					return JobResult.NotCompleted;
 				}
-				catch (RollbackException)
+				return JobResult.NotCompleted;
+			});
+			TaskScheduler.ScheduleMisc(x =>
+			{
+				for (int i = 0; i < GameManagers.Count; i++)
 				{
-					// a rollback happened
+					var gm = GameManagers[i];
+					gm.ProcessInstance(gm.CurrentRoot);
 				}
-			}
+				return JobResult.NotCompleted;
+			});
+
+			while (!ShuttingDown) TaskScheduler.Step();
 		}
 		public static void Shutdown()
 		{
@@ -134,114 +97,44 @@ namespace NetBlox
 			ShuttingDown = true;
 			throw new RollbackException();
 		}
-		public static void Schedule()
+		public static async Task<string> DownloadAssetAsync(long aid) => 
+			await DownloadFileAsync(PublicServiceAPI + "/api/asset/get?aid=" + aid, PublicServiceAPI.GetHashCode() + "_" + aid + ".nas");
+		public static async Task<string> DownloadFileAsync(string from, string to)
 		{
-			BlockReplication = true;
-			try
-			{
-				if (LuaRuntime.CurrentThread != null)
-				{
-					var thread = LuaRuntime.CurrentThread.Value;
-					if (thread.Coroutine == null)
-					{
-						thread.IsDead = true;
-						LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-					}
-					else if (DateTime.Now >= thread.WaitUntil && !(thread.JoinedTo != null && thread.JoinedTo.IsDead) &&
-						thread.Coroutine.State != CoroutineState.Dead)
-					{
-						var cst = new CancellationTokenSource();
-#if !DISABLE_EME
-#pragma warning disable SYSLIB0046 // Type or member is obsolete
-						var tsk = Task.Run(() =>
-						{
-							ControlledExecution.Run(() =>
-							{
-#endif
-						if (LuaRuntime.CurrentThread == null)
-						{
-							if (LuaRuntime.Threads.Count > 0)
-								LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-							else
-								return;
-						}
-
-						LuaRuntime.ReportedExecute(() =>
-						{
-							if (thread.ScrInst != null)
-								thread.Script.Globals["script"] = LuaRuntime.MakeInstanceTable(thread.ScrInst, thread.GameManager);
-							else
-								thread.Script.Globals["script"] = DynValue.Nil;
-
-							Instance? works = thread.GameManager.CurrentRoot.FindFirstChild("Workspace");
-
-							if (works != null)
-								thread.Script.Globals["workspace"] = LuaRuntime.MakeInstanceTable(works, thread.GameManager);
-							else
-								thread.Script.Globals["workspace"] = DynValue.Nil;
-
-							var res = DynValue.Nil;
-							if (thread.ToReturn.IsNil())
-								res = thread.Coroutine.Resume(thread.StartArgs);
-							else
-								res = thread.Coroutine.Resume(thread.ToReturn);
-							thread.JoinedTo = null;
-							thread.ToReturn = DynValue.Nil;
-							if (thread.Coroutine.State == CoroutineState.Suspended || thread.Coroutine.State == CoroutineState.ForceSuspended || res == null)
-								return;
-							else
-							{
-								if (LuaRuntime.Threads.Contains(thread))
-								{
-									var ac = thread.FinishCallback;
-									if (ac != null) ac(res);
-									thread.IsDead = true;
-									LuaRuntime.Threads.Remove(LuaRuntime.CurrentThread);
-								}
-							}
-						}, thread.Name, true);
-#if !DISABLE_EME
-#pragma warning restore SYSLIB0046 // Type or member is obsolete
-							}, cst.Token);
-						});
-						if (!tsk.Wait(LuaRuntime.ScriptExecutionTimeout * 1000))
-						{
-							LuaRuntime.PrintError("Exhausted maximum script execution time!");
-							var ac = LuaRuntime.CurrentThread.Value.FinishCallback;
-							if (ac != null) ac(DynValue.Nil);
-							cst.Cancel();
-						}
-#endif
-					}
-
-					if (LuaRuntime.CurrentThread == null)
-					{
-						if (LuaRuntime.Threads.Count > 0)
-							LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-						else
-							return;
-					}
-
-					if (LuaRuntime.Threads.Count > 0)
-						LuaRuntime.CurrentThread = LuaRuntime.CurrentThread.Next;
-					else
-						LuaRuntime.CurrentThread = null;
-				}
-				else
-				{
-					LuaRuntime.CurrentThread = LuaRuntime.Threads.First;
-				}
-			}
-			catch(Exception ex)
-			{
-				LogManager.LogError("Severe scheduling failure! " + ex.GetType() + ", msg: " + ex.Message);
-			}
-			finally
-			{
-				BlockReplication = false;
-			}
+			Directory.CreateDirectory("downloads");
+			string path = "downloads/" + to;
+			if (File.Exists(path))
+				return path;
+			using var stream = await HttpClient.GetStreamAsync(from);
+			using var file = File.OpenWrite(path);
+			byte[] bytes = new byte[stream.Length];
+			stream.Read(bytes);
+			file.Write(bytes);
+			file.Flush();
+			return Path.GetFullPath(path).Replace('\\', '/');
 		}
-		public static string ResolveUrl(string url) => (ContentFolder + url.Split("//")[1]).Replace('\\', '/'); // microsoft i hate you
+		/// <summary>
+		/// Resolves a URL used within this whole game, always returns local path (downloads files from internet when necessary)
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="allowremote"></param>
+		/// <returns></returns>
+		public static async Task<string> ResolveUrlAsync(string url, bool allowremote)
+		{
+			url = url.TrimStart().TrimEnd();
+			if (url.Contains("..")) return ""; // no
+			else if ((url.StartsWith("http://") || url.StartsWith("https://")) && allowremote)
+				return await DownloadFileAsync(url, url.GetHashCode() + ".ffl");
+			else if (url.StartsWith("rbxasset://"))
+			{
+				Uri uri = new Uri(url);
+				if (long.TryParse(uri.LocalPath, out long assetid) && allowremote)
+					return await DownloadAssetAsync(assetid);
+				else
+					return Path.Combine(Path.GetFullPath(ContentFolder), uri.Authority + uri.LocalPath).Replace('\\', '/');
+			}
+			return "";
+		}
 	}
 	public class RollbackException : Exception { }
 }

@@ -10,6 +10,7 @@ using Raylib_cs;
 using System.Net;
 using System.Reflection;
 using System.Runtime;
+using System.Xml.Linq;
 
 namespace NetBlox
 {
@@ -27,6 +28,7 @@ namespace NetBlox
 		public PhysicsManager PhysicsManager;
 		public NetworkManager NetworkManager;
 		public DataModel CurrentRoot = null!;
+		public Profile CurrentProfile = new();
 		public ConfigFlags CustomFlags;
 		public bool IsStudio = false;
 		public bool IsRunning = true;
@@ -38,67 +40,42 @@ namespace NetBlox
 		public bool FilteringEnabled = true;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
-		public string Username => Profile.Username; // bye bye DevDevDev
+		public ClientStartupInfo? ClientStartupInfo;
+		public ServerStartupInfo? ServerStartupInfo;
+		public Dictionary<ModuleScript, DynValue> LoadedModules = new();
+		public MoonSharp.Interpreter.Script MainEnvironment = null!;
+		public string Username => CurrentProfile.Username; // bye bye DevDevDev
 		public event EventHandler? ShutdownEvent;
 		public event InstanceEventHandler? AddedInstance;
 		public bool AllowReplication = false;
 
-		public GameManager(GameConfiguration gc, string[] args, Action<string, GameManager> servercallback, Action<DataModel>? dmc = null)
+		public GameManager(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
 			try
 			{
-				string rbxlinit = "";
 				LogManager.LogInfo("Initializing NetBlox...");
+
+				string? csdata = args[args.ToList().IndexOf("-cs") + 1].Replace("^^", "\"");
+				string? ssdata = args[args.ToList().IndexOf("-ss") + 1].Replace("^^", "\"");
+
+				if (gc.AsClient)
+					ClientStartupInfo = csdata != null ? SerializationManager.DeserializeJson<ClientStartupInfo>(csdata) : null;
+				if (gc.AsServer)
+					ServerStartupInfo = ssdata != null ? SerializationManager.DeserializeJson<ServerStartupInfo>(ssdata) : null;
+
+				if (ClientStartupInfo == null && gc.AsClient)
+					throw new Exception("Missing startup info");
+				if (ServerStartupInfo == null && gc.AsServer)
+					throw new Exception("Missing startup info");
+
+				AppManager.PublicServiceAPI = gc.AsServer ? ServerStartupInfo.PublicServiceAPI : ClientStartupInfo.PublicServiceAPI;
 
 				NetworkManager = new(this, gc.AsServer, gc.AsClient);
 				CurrentIdentity.Reset();
 				IsStudio = gc.AsStudio;
 
-				// common thingies
-				for (int i = 0; i < args.Length; i++)
-				{
-					switch (args[i])
-					{
-						case "--placeor":
-							{
-								CurrentIdentity.PlaceName = args[++i];
-								break;
-							}
-						case "--univor":
-							{
-								CurrentIdentity.UniverseName = args[++i];
-								break;
-							}
-						case "--maxplayers":
-							{
-								CurrentIdentity.MaxPlayerCount = uint.Parse(args[++i]);
-								break;
-							}
-						case "--rbxl":
-							{
-								rbxlinit = args[++i];
-								break;
-							}
-						case "--guest":
-							{
-								Profile.LoginAsGuest();
-								break;
-							}
-						case "--login":
-							{
-								var user = args[++i];
-								var pass = args[++i];
-								var task = Profile.LoginAsync(user, pass);
-								task.Wait();
-								if (task.Result == null)
-								{
-									LogManager.LogWarn("Login failed, logging as guest...");
-									Profile.LoginAsGuest();
-								}
-								break;
-							}
-					}
-				}
+				if (gc.AsClient && ClientStartupInfo.IsGuest)
+					CurrentProfile.LoginAsGuest();
 
 				if (gc.AsClient)
 					LogManager.LogInfo("Logged in as " + Username);
@@ -125,7 +102,7 @@ namespace NetBlox
 				if (dmc != null)
 					dmc(CurrentRoot);
 
-				LuaRuntime.Setup(this, CurrentRoot);
+				LuaRuntime.Setup(this);
 				LogManager.LogInfo("Initializing user interface...");
 				SetupCoreGui();
 
@@ -154,7 +131,7 @@ namespace NetBlox
 				if (NetworkManager.IsClient)
 				{
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-					QueuedTeleportAddress = rbxlinit;
+					QueuedTeleportAddress = ClientStartupInfo.PlaceLocation;
 				}
 				if (NetworkManager.IsServer)
 				{
@@ -166,13 +143,13 @@ namespace NetBlox
 							NetworkManager.AddReplication(x, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
 					};
 				}
-				servercallback(rbxlinit, this);
+				loadcallback(this);
 			}
 			catch (Exception ex)
 			{
 				LogManager.LogError("A fatal error had occurred during NetBlox initialization! " + ex.GetType() + ", msg: " + ex.Message + ", stacktrace: " + ex.StackTrace);
 				Environment.Exit(ex.GetHashCode());
-				for (; ; ); // perhaps platform we're running on does not support exiting.
+				for (;;); // perhaps platform we're running on does not support exiting.
 			}
 		}
 
@@ -189,10 +166,12 @@ namespace NetBlox
 			sg.Parent = cg;
 
 			// apparently roblox does not just load all corescritps on bulk.
-			var scrurl = AppManager.ResolveUrl("rbxasset://scripts/Modules/");
-			var ssurl = AppManager.ResolveUrl("rbxasset://scripts/StarterScript.lua");
+			var scrurl = AppManager.ResolveUrlAsync("rbxasset://scripts/Modules/", false).WaitAndGetResult();
+			string? ssurl;
 			if (NetworkManager.IsServer)
-				ssurl = AppManager.ResolveUrl("rbxasset://scripts/ServerStarterScript.lua");
+				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/ServerStarterScript.lua", false).WaitAndGetResult();
+			else
+				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/StarterScript.lua", false).WaitAndGetResult();
 
 			if (!File.Exists(ssurl))
 				throw new Exception("No StarterScript found in content directory!");
