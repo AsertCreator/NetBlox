@@ -38,7 +38,7 @@ namespace NetBlox.Instances.GUIs
 		public virtual GuiObject? HitTest(Vector2 cp, Vector2 cs)
 		{
 			if (!Visible) return null;
-			var tor = from x in Children where x is GuiObject orderby -((GuiObject)x).ZIndex select x;
+			var tor = from x in Children where x is GuiObject orderby ((GuiObject)x).ZIndex select x;
 			var esz = Size.Calculate(Vector2.Zero, cs);
 			var epo = Position.Calculate(cp, cs);
 			var c = tor.Count();

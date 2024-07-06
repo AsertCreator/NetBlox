@@ -75,6 +75,16 @@ namespace NetBlox.Instances
 					Position = Position + new Vector3(0, 0.1f * -WalkSpeed / 12, 0);
 					dot = true;
 				}
+				if (Raylib.IsKeyDown(KeyboardKey.Q))
+				{
+					Rotation += new Vector3(0, 0.1f * -WalkSpeed, 0);
+					dot = true;
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.E))
+				{
+					Rotation += new Vector3(0, -0.1f * -WalkSpeed, 0);
+					dot = true;
+				}
 				if (Raylib.IsKeyDown(KeyboardKey.W))
 				{
 					Position = Position + new Vector3(0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle));
@@ -97,7 +107,7 @@ namespace NetBlox.Instances
 				}
 
 				if (dot)
-					ReplicateProps();
+					ReplicateProps(false);
 			}
 
 			if (Health <= 0 && IsLocalPlayer && !isDying)

@@ -49,6 +49,25 @@ namespace NetBlox
 			var pi = type.GetProperties();
 			return (from x in pi where x.GetMethod.IsPublic select x.Name).ToArray();
 		}
+		public static SerializationType GetSerializationType(object obj, string prop)
+		{
+			var type = obj.GetType();
+			var pi = type.GetProperty(prop);
+			if (pi.PropertyType.IsEnum)
+				return SerializationType.Enum;
+			switch (pi.PropertyType.FullName)
+			{
+				case "System.String": return SerializationType.String;
+				case "System.Int32": return SerializationType.Int32;
+				case "System.Int64": return SerializationType.Int64;
+				case "System.Single": return SerializationType.Single;
+				case "System.Double": return SerializationType.Double;
+				case "System.Boolean": return (bool)pi.GetValue(obj)! ? SerializationType.True : SerializationType.False;
+				case "System.Numerics.Vector3": return SerializationType.Vector3;
+				case "Raylib_cs.Color": return SerializationType.Color3;
+				default: return SerializationType.Unknown;
+			}
+		}
 		public static object? GetProperty(object obj, string name)
 		{
 			var type = obj.GetType();

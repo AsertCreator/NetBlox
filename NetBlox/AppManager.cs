@@ -83,7 +83,8 @@ namespace NetBlox
 				for (int i = 0; i < GameManagers.Count; i++)
 				{
 					var gm = GameManagers[i];
-					gm.ProcessInstance(gm.CurrentRoot);
+					if (gm.IsRunning)
+						gm.ProcessInstance(gm.CurrentRoot);
 				}
 				return JobResult.NotCompleted;
 			});

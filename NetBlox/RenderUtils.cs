@@ -11,10 +11,10 @@ namespace NetBlox
 		public static void DrawCubeTextureRec(Texture2D texture, Vector3 position, Vector3 rotation, float width, float height, float length, Color color, Faces f, bool tile = false)
 		{
 			Rlgl.PushMatrix();
+			Rlgl.Translatef(position.X, position.Y, position.Z);
 			Rlgl.Rotatef(rotation.X, 1, 0, 0);
 			Rlgl.Rotatef(rotation.Y, 0, 1, 0);
 			Rlgl.Rotatef(rotation.Z, 0, 0, 1);
-			Rlgl.Translatef(position.X, position.Y, position.Z);
 			// im not willing to rewrite the whole shit
 			position = Vector3.Zero;
 

@@ -13,6 +13,10 @@ namespace NetBlox.Studio;
 public partial class App : Application
 {
 	public static GameManager? EditorGame;
+	public static GameManager? ClientGame;
+	public static GameManager? ServerGame;
+	public static Project? CurrentProject;
+
 	public App()
 	{
 		LogManager.LogInfo($"NetBlox Studio ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");

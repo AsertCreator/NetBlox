@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Instances.Scripts;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
@@ -142,12 +143,21 @@ namespace NetBlox
 				{
 					try
 					{
+						Workspace? works = gm.CurrentRoot.GetService<Workspace>(true);
+
+						if (works == null)
+							gm.MainEnvironment.Globals["workspace"] = DynValue.Nil;
+						else
+							gm.MainEnvironment.Globals["workspace"] = LuaRuntime.MakeInstanceTable(works, gm);
+
 						if (self == null)
 							gm.MainEnvironment.Globals["script"] = DynValue.Nil;
 						else
 							gm.MainEnvironment.Globals["script"] = LuaRuntime.MakeInstanceTable(self, gm);
+
 						var args = job.AssociatedObject4 as DynValue[];
 						var result = closure.Resume(args);
+
 						if (closure.State == CoroutineState.Suspended)
 							return JobResult.NotCompleted;
 						else

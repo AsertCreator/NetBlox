@@ -154,7 +154,8 @@ namespace NetBlox
 						if (DebugInformation)
 						{
 							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
-								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")", 
+								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", outgoing traffic in bytes/sec: " +
+								GameManager.NetworkManager.OutgoingTraffic, 
 								new(5, 5), 16, 0, Color.White);
 						}
 
@@ -183,15 +184,8 @@ namespace NetBlox
 		public bool IsSoundPlaying(Sound sound) => Raylib.IsSoundPlaying(sound);
 		public void Unload()
 		{
-			if (RenderAtAll)
-			{
+			if (!SkipWindowCreation)
 				Raylib.CloseWindow();
-				if (CurrentSkybox != null)
-					CurrentSkybox.Unload();
-			}
-
-			foreach (var shader in Shaders)
-				Raylib.UnloadShader(shader);
 		}
 		public void RenderInstanceUI(Instance? inst)
 		{

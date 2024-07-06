@@ -359,7 +359,7 @@ namespace NetBlox.Runtime
 										throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");
 
 									prop.SetValue(inst!, ret);
-									if (gm.NetworkManager.IsServer)
+									if (gm.NetworkManager.IsServer || gm.SelfOwnerships.Contains(inst))
 										gm.NetworkManager.AddReplication(inst, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_PROPCHG, false);
 								}
 							}

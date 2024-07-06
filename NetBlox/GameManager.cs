@@ -40,6 +40,8 @@ namespace NetBlox
 		public bool FilteringEnabled = true;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
+		public Dictionary<NetworkClient, Instance> Owners = [];
+		public List<Instance> SelfOwnerships = [];
 		public ClientStartupInfo? ClientStartupInfo;
 		public ServerStartupInfo? ServerStartupInfo;
 		public Dictionary<ModuleScript, DynValue> LoadedModules = new();
@@ -90,9 +92,9 @@ namespace NetBlox
 				LogManager.LogInfo("Initializing RenderManager...");
 				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
 
-                LogManager.LogInfo("Initializing verbs...");
-                Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
-                Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
+				LogManager.LogInfo("Initializing verbs...");
+				Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
+				Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
 
 				// we dont want corescripts to run before engine is initialized
 
@@ -308,21 +310,28 @@ namespace NetBlox
 		}
 		public void ProcessInstance(Instance inst)
 		{
-			if (inst != null)
-			{ // i was outsmarted
-				if (inst.DestroyAt < DateTime.Now)
-				{
-					inst.Destroy();
-					return;
-				}
+			try
+			{
+				if (inst != null)
+				{ // i was outsmarted
+					if (inst.DestroyAt < DateTime.Now)
+					{
+						inst.Destroy();
+						return;
+					}
 
-				inst.Process();
+					inst.Process();
 
-				var ch = inst.GetChildren();
-				for (int i = 0; i < ch.Length; i++)
-				{
-					ProcessInstance(ch[i]);
+					var ch = inst.GetChildren();
+					for (int i = 0; i < ch.Length; i++)
+					{
+						ProcessInstance(ch[i]);
+					}
 				}
+			}
+			catch
+			{
+				// no
 			}
 		}
 		public string FilterString(string text)

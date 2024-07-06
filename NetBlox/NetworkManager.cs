@@ -5,6 +5,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using Network;
 using Network.Enums;
+using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Text;
@@ -76,13 +77,20 @@ namespace NetBlox
 		public bool IsServer;
 		public bool IsClient;
 		public bool OnlyInternalConnections = false;
-        public int ServerPort = 25570; // apparently that port was forbidden
+		public int ServerPort = 25570; // apparently that port was forbidden
+		public int OutgoingTraffic = 0;
+		public int IncomingTraffic = 0;
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer? Server;
 		public CancellationTokenSource ClientReplicatorCanceller = new();
 		public Task<object>? ClientReplicator;
 		private object replock = new();
 		private static Type LST = typeof(LuaSignal);
+		private bool profilerDebug = false;
+		private int outgoingPacketsSent = 0;
+		private int incomingPacketsRecieved = 0;
+		private int outgoingTraffic = 0;
+		private int incomingTraffic = 0;
 		private DataModel Root => GameManager.CurrentRoot;
 		private uint nextpid = 0;
 		private bool init;
@@ -94,6 +102,7 @@ namespace NetBlox
 			{
 				IsServer = server;
 				IsClient = client;
+				StartProfiling(true);
 				init = true;
 			}
 		}
@@ -115,6 +124,8 @@ namespace NetBlox
 
 				x.RegisterRawDataHandler("nb2-handshake", (_x, _) =>
 				{
+					ProfileOutgoing(_x.Key, _x.Data);
+
 					byte[] data = _x.Data;
 					ClientHandshake ch = SerializationManager.DeserializeJson<ClientHandshake>(Encoding.UTF8.GetString(data));
 
@@ -133,6 +144,7 @@ namespace NetBlox
 
 					ServerHandshake sh = new();
 					NetworkClient nc = null!;
+					Player pl = null!;
 
 					// here we do a lot of shit
 					{
@@ -167,31 +179,31 @@ namespace NetBlox
 						}
 
 						if (OnlyInternalConnections && str != "::ffff:127.0.0.1")
-                        {
-                            sh.ErrorCode = 101;
-                            stoppls = true;
-                        }
+						{
+							sh.ErrorCode = 101;
+							stoppls = true;
+						}
 						if (Clients.Count < GameManager.CurrentIdentity.MaxPlayerCount && !stoppls)
-                        {
-                            Player pl = new(GameManager);
-                            pl.IsLocalPlayer = false;
-                            pl.Parent = Root.GetService<Players>();
+						{
+							pl = new(GameManager);
+							pl.IsLocalPlayer = false;
+							pl.Parent = Root.GetService<Players>();
 
-                            nc = new(new(ch.Username), nextpid++, x, pl);
+							nc = new(new(ch.Username), nextpid++, x, pl);
 
-                            pl.Name = nc.Username;
+							pl.Name = nc.Username;
 							pl.Guest = isguest;
 							pl.UserId = isguest ? Random.Shared.Next(-100000, -1) : userid;
-                            pl.Client = nc;
-                            nc.Player = pl;
+							pl.Client = nc;
+							nc.Player = pl;
 
-                            pl.Reload();
-                            pl.LoadCharacterOld();
+							pl.Reload();
+							pl.LoadCharacterOld();
 
-                            sh.PlayerInstance = pl.UniqueID.ToString();
-                            sh.CharacterInstance = pl.Character!.UniqueID.ToString();
-                            sh.DataModelInstance = Root.UniqueID.ToString();
-                            sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
+							sh.PlayerInstance = pl.UniqueID.ToString();
+							sh.CharacterInstance = pl.Character!.UniqueID.ToString();
+							sh.DataModelInstance = Root.UniqueID.ToString();
+							sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
 							sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
 							sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
 							sh.UniquePlayerID = nc.UniquePlayerID;
@@ -230,8 +242,10 @@ namespace NetBlox
 
 					bool acked = false;
 
-					x.RegisterRawDataHandler("nb2-init", (_, _) =>
+					x.RegisterRawDataHandler("nb2-init", (rep, _) =>
 					{
+						ProfileOutgoing(rep.Key, rep.Data);
+
 						acked = true;
 
 						AddReplication(Root.GetService<ReplicatedFirst>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
@@ -244,11 +258,31 @@ namespace NetBlox
 
 						x.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 						{ // here we get instances from owners. actually for now, from everyone
+							ProfileOutgoing(rep.Key, rep.Data);
+
 							var ins = RecieveNewInstance(rep.Data);
 							AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_NEWINST);
 						});
 
 						x.UnRegisterRawDataHandler("nb2-init"); // as per to constitution, we now do nothing lol
+					});
+					x.RegisterRawDataHandler("nb2-ownerreplicate", (data, _) =>
+					{
+						ProfileOutgoing(data.Key, data.Data);
+
+						Instance ins = RecieveNewInstance(data.Data);
+						AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_PROPCHG, false);
+					});
+					x.RegisterRawDataHandler("nb2-gotchar", (data, _) =>
+					{
+						ProfileOutgoing(data.Key, data.Data);
+
+						Guid inst = new Guid(data.Data);
+						Instance? actinst = GameManager.GetInstance(inst);
+						if (actinst != null)
+						{
+							actinst.SetNetworkOwner(pl);
+						}
 					});
 
 					Task.Delay(5000).ContinueWith(_ =>
@@ -309,9 +343,14 @@ namespace NetBlox
 								rc = Clients.ToArray();
 								break;
 							case Replication.REPM_BUTOWNER:
-								rc = (NetworkClient[])Clients.ToArray().Clone();
-								if (ins.NetworkOwner != null)
-									rc.ToList().Remove(ins.NetworkOwner);
+								rc = (NetworkClient[])(Clients.ToArray().Clone());
+								var oq = (from x in GameManager.Owners where x.Value == ins select x.Key).FirstOrDefault();
+								if (oq != null)
+								{
+									var lis = rc.ToList();
+									lis.Remove(oq);
+									rc = lis.ToArray();
+								}
 								break;
 							case Replication.REPM_TORECIEVERS:
 								break;
@@ -367,6 +406,8 @@ namespace NetBlox
 			tcp.SendRawData("nb2-handshake", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(ch)));
 			tcp.RegisterRawDataHandler("nb2-placeinfo", (x, _) =>
 			{
+				ProfileOutgoing(x.Key, x.Data);
+
 				gotpi = true;
 				tcp.UnRegisterRawDataHandler("nb2-placeinfo");
 				ServerHandshake sh = SerializationManager.DeserializeJson<ServerHandshake>(Encoding.UTF8.GetString(x.Data));
@@ -401,6 +442,8 @@ namespace NetBlox
 
 				tcp.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 				{
+					ProfileOutgoing(rep.Key, rep.Data);
+
 					if (++gotinsts >= actinstc)
 						Root.GetService<CoreGui>().HideTeleportGui();
 
@@ -417,7 +460,10 @@ namespace NetBlox
 						ch.IsLocalPlayer = true;
 						c.CameraSubject = ch;
 						if (lp != null)
+						{
 							lp.Character = ch;
+							tcp.SendRawData("nb2-gotchar", ch.UniqueID.ToByteArray());
+						}
 					}
 					if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
 					{
@@ -428,6 +474,8 @@ namespace NetBlox
 				});
 				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>
 				{
+					ProfileOutgoing(rep.Key, rep.Data);
+
 					Guid inst = new Guid(rep.Data[0..16]);
 					Guid newp = new Guid(rep.Data[16..32]);
 					Instance? actinst = GameManager.GetInstance(inst);
@@ -438,6 +486,28 @@ namespace NetBlox
 							actinst.Parent = parent;
 						else
 							actinst.Destroy();
+					}
+				});
+				tcp.RegisterRawDataHandler("nb2-setowner", (rep, _) =>
+				{
+					ProfileOutgoing(rep.Key, rep.Data);
+
+					Guid inst = new Guid(rep.Data);
+					Instance? actinst = GameManager.GetInstance(inst);
+					if (actinst != null)
+					{
+						GameManager.SelfOwnerships.Add(actinst);
+					}
+				});
+				tcp.RegisterRawDataHandler("nb2-confiscate", (rep, _) =>
+				{
+					ProfileOutgoing(rep.Key, rep.Data);
+
+					Guid inst = new Guid(rep.Data);
+					Instance? actinst = GameManager.GetInstance(inst);
+					if (actinst != null)
+					{
+						GameManager.SelfOwnerships.Remove(actinst);
 					}
 				});
 				tcp.RegisterRawDataHandler("nb2-kick", (rep, _) =>
@@ -479,37 +549,91 @@ namespace NetBlox
 					lock (ReplicationQueue)
 					{
 						var rq = ReplicationQueue.Dequeue();
-						var rc = rq.Recievers;
 						var ins = rq.Target;
-
-						switch (rq.Mode)
-						{
-							case Replication.REPM_TOALL:
-								rc = Clients.ToArray();
-								break;
-							case Replication.REPM_BUTOWNER:
-								rc = (NetworkClient[])Clients.ToArray().Clone();
-								if (ins.NetworkOwner != null)
-									rc.ToList().Remove(ins.NetworkOwner);
-								break;
-							case Replication.REPM_TORECIEVERS:
-								break;
-						}
 
 						switch (rq.What)
 						{
-							case Replication.REPW_NEWINST:
-								PerformReplicationNew(ins, rc); // not as per constitution, constitution is wrong, this cannot be implemented really
-								break;
 							case Replication.REPW_PROPCHG:
-								PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
-								break;
-							case Replication.REPW_REPARNT:
-								PerformReplicationReparent(ins, rc);
+								RequestOwnerReplication(ins);
 								break;
 						}
 					}
 			}
+		}
+		public void StartProfiling(bool dbg)
+		{
+			profilerDebug = dbg;
+			Task.Run(() =>
+			{
+				while (!GameManager.ShuttingDown)
+				{
+					Thread.Sleep(1000);
+					OutgoingTraffic = outgoingTraffic;
+					outgoingTraffic = 0;
+				}
+			});
+		}
+		public void ProfileOutgoing(string key, byte[] data)
+		{
+			var len = Encoding.ASCII.GetBytes(key).Length + data.Length;
+			Debug.WriteLine($"!! nmprofiler, OUTGOING #{outgoingPacketsSent++}, key: {key}, data len: {data.Length}, outgoing bytes/sec: {OutgoingTraffic} !!");
+			outgoingTraffic += len;
+		}
+		public void Confiscate(Instance ins)
+		{
+			var query = (from x in GameManager.Owners where x.Value == ins select x);
+			if (query.Any())
+			{
+				var ns = query.First().Key;
+				GameManager.Owners.Remove(ns);
+				ns.Connection.SendRawData("nb2-confiscate", ins.UniqueID.ToByteArray());
+			} 
+		}
+		public void SetOwner(NetworkClient nc, Instance ins)
+		{
+			GameManager.Owners[nc] = ins;
+			nc.Connection.SendRawData("nb2-setowner", ins.UniqueID.ToByteArray());
+		}
+		public void RequestOwnerReplication(Instance ins)
+		{
+			using MemoryStream ms = new();
+			using BinaryWriter bw = new(ms);
+			var gm = ins.GameManager;
+			var type = ins.GetType(); // apparently gettype caches type object but i dont believe
+			var props = type.GetProperties();
+
+			bw.Write(ins.UniqueID.ToByteArray());
+			bw.Write(ins.ParentID.ToByteArray());
+			bw.Write(ins.ClassName);
+
+			var c = 0;
+
+			for (int i = 0; i < props.Length; i++)
+			{
+				var prop = props[i];
+
+				if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
+					continue;
+				if (prop.PropertyType == LST)
+					continue;
+				if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName ?? "", out var x))
+					continue;
+
+				var v = prop.GetValue(ins);
+				if (v == null) continue;
+				c++;
+				var b = x(v, gm);
+
+				bw.Write(prop.Name);
+				bw.Write((short)b.Length);
+				bw.Write(b);
+			}
+
+			bw.Write((byte)c);
+
+			byte[] buf = ms.ToArray();
+
+			RemoteConnection.SendRawData("nb2-ownerreplicate", buf);
 		}
 		public void PerformKick(NetworkClient? nc, string msg, bool islocal)
 		{
@@ -593,12 +717,11 @@ namespace NetBlox
 					if (GameManager.FilteringEnabled && IsServer)
 						return null!; // we do not permit this shit.
 					ins = InstanceCreator.CreateReplicatedInstance(br.ReadString(), GameManager);
+					ins.Parent = GameManager.GetInstance(newp);
 				}
 				ins.UniqueID = guid;
 				ins.WasReplicated = true;
 				var type = ins.GetType();
-
-				ins.Parent = GameManager.GetInstance(newp);
 
 				for (int i = 0; i < propc; i++)
 				{
@@ -666,15 +789,15 @@ namespace NetBlox
 					return "The server is full";
 				case 101:
 					return "Server only accepts internal connections";
-                case 102:
-                    return "Authorization failed";
-                case 103:
-                    return "A player with same name is already playing";
-                case 104:
-                    return "Server is just being weird";
-                default:
+				case 102:
+					return "Authorization failed";
+				case 103:
+					return "A player with same name is already playing";
+				case 104:
+					return "Server is just being weird";
+				default:
 					return "Unknown connection failure";
 			}
 		}
-    }
+	}
 }

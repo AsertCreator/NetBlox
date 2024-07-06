@@ -80,7 +80,7 @@ namespace NetBlox.Instances
 				}
 
 				if (dot)
-					ReplicateProps();
+					ReplicateProps(false);
 			}
 
 			if (Health <= 0 && IsLocalPlayer && !isDying)

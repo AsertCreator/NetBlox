@@ -4,11 +4,14 @@ using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
+using NetBlox.Structs;
 using Raylib_cs;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
+using System.Text.Json;
 using System.Windows.Controls;
+using System.Windows.Controls.Ribbon;
 using System.Windows.Forms.Integration;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
@@ -106,14 +109,14 @@ public partial class MainWindow : System.Windows.Window
 			stop.IsEnabled = true;
 
 			DataModel dm = (DataModel)App.EditorGame.CurrentRoot.ForceClone();
-			GameManager gms = AppManager.CreateGame(new GameConfiguration()
+			App.ServerGame = AppManager.CreateGame(new GameConfiguration()
 			{
 				AsServer = true,
 				AsStudio = true,
 				SkipWindowCreation = true,
 				DoNotRenderAtAll = true,
 				GameName = "NetBlox Server (studio)"
-			}, [], (gm) =>
+			}, ["-ss", "{}"], (gm) =>
 			{
 				gm.CurrentRoot.ClearAllChildren();
 
@@ -132,40 +135,65 @@ public partial class MainWindow : System.Windows.Window
 				gm.NetworkManager.OnlyInternalConnections = true;
 				Task.Run(gm.NetworkManager.StartServer);
 
-				GameManager gmc = null!;
 				PlatformService.QueuedTeleport = (xo) =>
 				{
-					gmc.NetworkManager.ClientReplicator = Task.Run(async delegate ()
+					App.ClientGame.NetworkManager.ClientReplicator = Task.Run(async delegate ()
 					{
 						try
 						{
 							await Task.Delay(0);
-							gmc.NetworkManager.ConnectToServer(IPAddress.Loopback);
+							App.ClientGame.NetworkManager.ConnectToServer(IPAddress.Loopback);
 							return new object();
 						}
 						catch (Exception ex)
 						{
-							gmc.RenderManager.Status = "Could not connect to the server: " + ex.Message;
+							App.ClientGame.RenderManager.Status = "Could not connect to the internal server: " + ex.Message;
 							return new();
 						}
-					}).AsCancellable(gmc.NetworkManager.ClientReplicatorCanceller.Token);
+					}).AsCancellable(App.ClientGame.NetworkManager.ClientReplicatorCanceller.Token);
 				};
-				gmc = AppManager.CreateGame(new GameConfiguration()
+
+				App.ClientGame = AppManager.CreateGame(new GameConfiguration()
 				{
 					AsClient = true,
 					AsStudio = true,
 					SkipWindowCreation = true,
 					GameName = "NetBlox Client (studio)"
-				}, ["--guest"], (x) => { });
-				AppManager.SetRenderTarget(gmc);
+				}, ["-cs", SerializationManager.SerializeJson<ClientStartupInfo>(new() {
+					IsGuest = true
+				})], (x) => { });
+
+				AppManager.SetRenderTarget(App.ClientGame);
+				App.ClientGame.ShutdownEvent += (x, y) =>
+				{
+					App.ServerGame.Shutdown();
+					App.ClientGame = null;
+					App.ServerGame = null;
+					GC.Collect(); // to be unnecessary mean
+					AppManager.SetRenderTarget(App.EditorGame);
+					play.IsEnabled = true;
+					stop.IsEnabled = false;
+				};
 			});
 		}
 	}
 	private void commandBar_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
 	{
-		if (App.EditorGame != null && e.Key == System.Windows.Input.Key.Return)
+		if (AppManager.CurrentRenderManager != null && e.Key == System.Windows.Input.Key.Return)
 		{
-			TaskScheduler.ScheduleScript(App.EditorGame, commandBar.Text, 4, null);
+			TaskScheduler.ScheduleScript(AppManager.CurrentRenderManager.GameManager, commandBar.Text, 4, null);
 		}
-    }
+	}
+	private void ToggleDebugClick(object sender, System.Windows.RoutedEventArgs e)
+	{
+		if (AppManager.CurrentRenderManager != null)
+		{
+			AppManager.CurrentRenderManager.DebugInformation = (sender as RibbonToggleButton)!.IsChecked.Value;
+		}
+	}
+	private void StopButtonClick(object sender, System.Windows.RoutedEventArgs e)
+	{
+		if (App.ClientGame != null)
+			App.ClientGame.Shutdown();
+	}
 }

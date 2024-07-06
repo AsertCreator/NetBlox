@@ -27,13 +27,16 @@
 				</RibbonGroup>
 				<RibbonGroup Header="Playback">
 					<RibbonButton x:Name="play" Label="Play" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="StartPlaybackClick"/>
-					<RibbonButton x:Name="stop" Label="Stop" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" IsEnabled="false"/>
+                    <RibbonButton x:Name="stop" Label="Stop" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="StopButtonClick" IsEnabled="false"/>
 				</RibbonGroup>
 				<RibbonGroup Header="Insert">
 					<RibbonButton Label="Part" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="PartButtonClick"/>
 					<RibbonButton Label="Color" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png"/>
-				</RibbonGroup>
-			</RibbonTab>
+                </RibbonGroup>
+                <RibbonGroup Header="Debug">
+                    <RibbonToggleButton Label="Show Debug Information" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="ToggleDebugClick" Checked="ToggleDebugClick"/>
+                </RibbonGroup>
+            </RibbonTab>
 		</Ribbon>
 		<Grid Grid.Row="1">
             <TabControl x:Name="tabs"/>

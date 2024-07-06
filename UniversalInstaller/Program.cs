@@ -1,4 +1,5 @@
-﻿using NetBlox.Common;
+﻿using Microsoft.Win32;
+using NetBlox.Common;
 using System;
 using System.Diagnostics;
 using System.IO.Compression;
@@ -19,29 +20,31 @@ namespace UniversalInstaller
 				if (File.Exists("./NetBloxClient.exe"))
 				{
 					Console.WriteLine("[+] NetBlox is installed, checking its version...");
-					var proc = Process.Start(new ProcessStartInfo()
+					var proc = new Process()
 					{
-						FileName = Path.GetFullPath("./NetBloxClient.exe"),
-						Arguments = "check",
-						RedirectStandardOutput = true,
-						CreateNoWindow = true
-					});
+						StartInfo = new ProcessStartInfo()
+						{
+							FileName = Path.GetFullPath("./NetBloxClient.exe"),
+							Arguments = "check",
+							RedirectStandardOutput = true,
+							CreateNoWindow = true
+						}
+					};
 					var ver = "";
 					proc.OutputDataReceived += (x, y) =>
 					{
 						string target = y.Data;
 						ver = target.Substring(target.IndexOf('('), target.IndexOf('(') - target.IndexOf(')'));
 					};
-					if (!proc.WaitForExit(500))
+					proc.Start();
+					if (!proc.WaitForExit(10000))
 					{
 						proc.Kill();
 						Console.WriteLine("[+] NetBlox Client does not respond, downloading latest...");
 						await DownloadLatest();
 					}
-					else
-					{
-						await GetLatestVersion(ver);
-					}
+					while (ver == "") ;
+					GetLatestVersion(ver).Wait();
 				}
 				else
 				{
@@ -101,7 +104,7 @@ namespace UniversalInstaller
 				try
 				{
 					var artifacts = json.RootElement.GetProperty("artifacts");
-					var latest = artifacts[0].GetProperty("archive_download_url").GetString();
+					var latest = artifacts[1].GetProperty("archive_download_url").GetString();
 
 					Console.WriteLine($"[+] Downloading from {latest}...");
 					req = new HttpRequestMessage()
@@ -116,12 +119,18 @@ namespace UniversalInstaller
 
 					var str = (await hc.SendAsync(req)).Content.ReadAsStream();
 					ZipArchive za = new(str);
-					za.ExtractToDirectory(".");
+					za.ExtractToDirectory(".", true);
 					Console.WriteLine($"[+] Downloaded successfully!");
+					// we set some registry thingies
+
+					var rk = Registry.ClassesRoot.CreateSubKey("netblox-client"); // shut up vs we wont get here anyway
+					rk.SetValue(null, "URL:NetBlox");
+					rk.SetValue("URL Protocol", "");
+					rk.CreateSubKey("shell").CreateSubKey("open").CreateSubKey("command").SetValue(null, Path.GetFullPath("NetBloxClient.exe"));
 				}
-				catch
+				catch (Exception ex)
 				{
-					Console.WriteLine($"[-] Unable to download latest version, though link is known, exiting...");
+					Console.WriteLine($"[-] Unable to download latest version, though link is known, exception: {ex}, msg: {ex.Message}, exiting...");
 					Environment.Exit(1);
 				}
 			}

@@ -86,11 +86,10 @@ namespace NetBlox.Instances
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
 		public GameManager GameManager;
-		public NetworkClient? NetworkOwner;
-		public bool IAmOwner = false;
 		public List<Instance> Children = new();
 		public Dictionary<Script, Table> Tables = new();
 		public DateTime DestroyAt = DateTime.MaxValue;
+		public DateTime DoNotReplicateUntil = DateTime.MinValue;
 		private Instance? parent;
 		protected DataModel Root => GameManager.CurrentRoot;
 
@@ -191,11 +190,11 @@ namespace NetBlox.Instances
 
 					for (int i = 0; i < inst.Children.Count; i++)
 						if (inst.Children[i].Archivable)
-                        {
+						{
 							var cl = DoClone(inst.Children[i]);
 							if (cl == null) continue;
 							cl.Parent = clone;
-                        }
+						}
 
 					return clone;
 				}
@@ -439,6 +438,14 @@ namespace NetBlox.Instances
 			return string.Join('.', strings);
 		}
 		[Lua([Security.Capability.None])]
+		public virtual void SetNetworkOwner(Player player)
+		{
+			if (!GameManager.NetworkManager.IsServer)
+				throw new Exception("Cannot call Network Ownership API from client!");
+			GameManager.NetworkManager.Confiscate(this);
+			GameManager.NetworkManager.SetOwner(player.Client, this);
+		}
+		[Lua([Security.Capability.None])]
 		public virtual bool IsDescendantOf(Instance instance) => GetAncestors().Contains(instance);
 		[Lua([Security.Capability.None])]
 		public virtual bool IsAncestorOf(Instance instance) => GetDescendants().Contains(instance);
@@ -453,8 +460,11 @@ namespace NetBlox.Instances
 		private void ChangeOwnershipImpl(GameManager gm)
 		{
 			GameManager.AllInstances.Remove(this);
+			var item = GameManager.Owners.FirstOrDefault(kvp => kvp.Value == this);
+			if (!item.Equals(default(KeyValuePair<NetworkClient, Instance>)))
+				GameManager.Owners.Remove(item.Key);
+			GameManager.SelfOwnerships.Remove(this);
 			GameManager = gm;
-			NetworkOwner = null;
 			WasReplicated = false;
 			WasDestroyed = false;
 			GameManager.AllInstances.Add(this);
@@ -498,10 +508,16 @@ namespace NetBlox.Instances
 			n.Result = null;
 			return n;
 		}
-		public void ReplicateProps()
+		public void ReplicateProps(bool immediate)
 		{
 			if (GameManager.NetworkManager.RemoteConnection != null)
-				GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
+			{
+				if (DateTime.Now > DoNotReplicateUntil || immediate)
+				{
+					GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
+					DoNotReplicateUntil = DateTime.Now.AddMilliseconds(250); // it will be replicated only 4 times per second
+				}
+			}
 		}
 	}
 }

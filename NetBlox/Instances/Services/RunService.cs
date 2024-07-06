@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +10,14 @@ namespace NetBlox.Instances.Services
 {
 	public class RunService : Instance
 	{
+		[Lua([Security.Capability.None])]
+		public LuaSignal Heartbeat { get; init; } = new();
+
 		public RunService(GameManager gm) : base(gm) 
 		{
 			Name = "Run Service";
 		}
+
 		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void Pause() => GameManager.IsRunning = false;
 		[Lua([Security.Capability.RobloxScriptSecurity])]
@@ -28,6 +33,11 @@ namespace NetBlox.Instances.Services
 		{
 			if (nameof(RunService) == classname) return true;
 			return base.IsA(classname);
+		}
+		public override void Process()
+		{
+			base.Process();
+			Heartbeat.Fire(DynValue.NewNumber(TaskScheduler.LastCycleTime.TotalSeconds));
 		}
 	}
 }

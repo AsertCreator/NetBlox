@@ -40,8 +40,9 @@ namespace NetBlox.Studio
 
 			propertyGrid.Child = propertyGridWF;
 			propertyGridWF.Visible = true;
-			propertyGridWF.CommandsVisibleIfAvailable = true;
+			propertyGridWF.CommandsVisibleIfAvailable = false;
 			propertyGridWF.Location = new Point(0, 0);
+			propertyGridWF.HelpVisible = false;
 			propertyGridWF.Size = new Size((int)propertyGrid.ActualWidth, (int)propertyGrid.ActualHeight);
 			propertyGrid.SizeChanged += (x, y) => propertyGridWF.Size = new Size((int)propertyGrid.ActualWidth, (int)propertyGrid.ActualHeight);
 			explorerTree.SelectedItemChanged += (x, y) =>
