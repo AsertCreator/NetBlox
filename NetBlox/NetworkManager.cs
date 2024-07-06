@@ -125,7 +125,7 @@ namespace NetBlox
 
 				x.RegisterRawDataHandler("nb2-handshake", (_x, _) =>
 				{
-					ProfileOutgoing(_x.Key, _x.Data);
+					ProfileIncoming(_x.Key, _x.Data);
 
 					byte[] data = _x.Data;
 					ClientHandshake ch = SerializationManager.DeserializeJson<ClientHandshake>(Encoding.UTF8.GetString(data));
@@ -245,7 +245,7 @@ namespace NetBlox
 
 					x.RegisterRawDataHandler("nb2-init", (rep, _) =>
 					{
-						ProfileOutgoing(rep.Key, rep.Data);
+						ProfileIncoming(rep.Key, rep.Data);
 
 						acked = true;
 
@@ -262,7 +262,7 @@ namespace NetBlox
 
 						x.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 						{ // here we get instances from owners. actually for now, from everyone
-							ProfileOutgoing(rep.Key, rep.Data);
+							ProfileIncoming(rep.Key, rep.Data);
 
 							var ins = RecieveNewInstance(rep.Data);
 							AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_NEWINST);
@@ -272,14 +272,14 @@ namespace NetBlox
 					});
 					x.RegisterRawDataHandler("nb2-ownerreplicate", (data, _) =>
 					{
-						ProfileOutgoing(data.Key, data.Data);
+						ProfileIncoming(data.Key, data.Data);
 
 						Instance ins = RecieveNewInstance(data.Data);
 						AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_PROPCHG, false);
 					});
 					x.RegisterRawDataHandler("nb2-gotchar", (data, _) =>
 					{
-						ProfileOutgoing(data.Key, data.Data);
+						ProfileIncoming(data.Key, data.Data);
 
 						Guid inst = new Guid(data.Data);
 						Instance? actinst = GameManager.GetInstance(inst);
@@ -413,7 +413,7 @@ namespace NetBlox
 			tcp.SendRawData("nb2-handshake", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(ch)));
 			tcp.RegisterRawDataHandler("nb2-placeinfo", (x, _) =>
 			{
-				ProfileOutgoing(x.Key, x.Data);
+				ProfileIncoming(x.Key, x.Data);
 
 				gotpi = true;
 				tcp.UnRegisterRawDataHandler("nb2-placeinfo");
@@ -449,7 +449,7 @@ namespace NetBlox
 
 				tcp.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 				{
-					ProfileOutgoing(rep.Key, rep.Data);
+					ProfileIncoming(rep.Key, rep.Data);
 
 					if (++gotinsts >= actinstc)
 						Root.GetService<CoreGui>().HideTeleportGui();
@@ -481,7 +481,7 @@ namespace NetBlox
 				});
 				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>
 				{
-					ProfileOutgoing(rep.Key, rep.Data);
+					ProfileIncoming(rep.Key, rep.Data);
 
 					Guid inst = new Guid(rep.Data[0..16]);
 					Guid newp = new Guid(rep.Data[16..32]);
@@ -494,7 +494,7 @@ namespace NetBlox
 				});
 				tcp.RegisterRawDataHandler("nb2-destroy", (rep, _) =>
 				{
-					ProfileOutgoing(rep.Key, rep.Data);
+					ProfileIncoming(rep.Key, rep.Data);
 
 					Guid inst = new Guid(rep.Data);
 					Instance? actinst = GameManager.GetInstance(inst);
@@ -505,7 +505,7 @@ namespace NetBlox
 				});
 				tcp.RegisterRawDataHandler("nb2-setowner", (rep, _) =>
 				{
-					ProfileOutgoing(rep.Key, rep.Data);
+					ProfileIncoming(rep.Key, rep.Data);
 
 					Guid inst = new Guid(rep.Data);
 					Instance? actinst = GameManager.GetInstance(inst);
@@ -516,7 +516,7 @@ namespace NetBlox
 				});
 				tcp.RegisterRawDataHandler("nb2-confiscate", (rep, _) =>
 				{
-					ProfileOutgoing(rep.Key, rep.Data);
+					ProfileIncoming(rep.Key, rep.Data);
 
 					Guid inst = new Guid(rep.Data);
 					Instance? actinst = GameManager.GetInstance(inst);
@@ -585,14 +585,16 @@ namespace NetBlox
 					Thread.Sleep(1000);
 					OutgoingTraffic = outgoingTraffic;
 					outgoingTraffic = 0;
+					IncomingTraffic = incomingTraffic;
+					incomingTraffic = 0;
 				}
 			});
 		}
-		public void ProfileOutgoing(string key, byte[] data)
+		public void ProfileIncoming(string key, byte[] data)
 		{
 			var len = Encoding.ASCII.GetBytes(key).Length + data.Length;
-			Debug.WriteLine($"!! nmprofiler, OUTGOING #{outgoingPacketsSent++}, key: {key}, data len: {data.Length}, outgoing bytes/sec: {OutgoingTraffic} !!");
-			outgoingTraffic += len;
+			Debug.WriteLine($"!! nmprofiler, INCOMING #{incomingPacketsRecieved++}, key: {key}, data len: {data.Length}, incoming bytes/sec: {IncomingTraffic} !!");
+			incomingTraffic += len;
 		}
 		public void Confiscate(Instance ins)
 		{
