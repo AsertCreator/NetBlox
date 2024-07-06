@@ -304,6 +304,9 @@ namespace NetBlox.Instances
 				GameManager.AllInstances.Remove(this);
 
 				WasDestroyed = true;
+
+				if (GameManager.AllowReplication)
+					GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_DESTROY, false);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -515,7 +518,7 @@ namespace NetBlox.Instances
 				if (DateTime.Now > DoNotReplicateUntil || immediate)
 				{
 					GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
-					DoNotReplicateUntil = DateTime.Now.AddMilliseconds(250); // it will be replicated only 4 times per second
+					DoNotReplicateUntil = DateTime.Now.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
 				}
 			}
 		}

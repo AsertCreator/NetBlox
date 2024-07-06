@@ -33,11 +33,13 @@ namespace NetBlox.Instances
 
 				if (Raylib.IsMouseButtonDown(MouseButton.Right))
 				{
-					Vector2 mousePositionDelta = Raylib.GetMouseDelta();
+					Vector2 mousePositionDelta = Raylib.GetMousePosition() - LastMousePosition;
 
 					// Mouse support
 					Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, -mousePositionDelta.X * 0.003f, true);
 					Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, -mousePositionDelta.Y * 0.003f, true, true, false);
+
+					Raylib.SetMousePosition((int)LastMousePosition.X, (int)LastMousePosition.Y);
 				}
 
 				// Zoom target distance
@@ -49,6 +51,7 @@ namespace NetBlox.Instances
 
 				GameManager.RenderManager.MainCamera.Position = subject.Position - diff;
 				GameManager.RenderManager.MainCamera.Target = subject.Position;
+				LastMousePosition = Raylib.GetMousePosition();
 			}
 		}
 		[Lua([Security.Capability.None])]
