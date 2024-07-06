@@ -55,6 +55,7 @@ namespace NetBlox
 			public const int REPW_NEWINST = 0;
 			public const int REPW_PROPCHG = 1;
 			public const int REPW_REPARNT = 2;
+			public const int REPW_DESTROY = 3;
 
 			public Replication(int m, int w, Instance t)
 			{
@@ -256,6 +257,9 @@ namespace NetBlox
 						AddReplication(Root.GetService<StarterPack>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Workspace>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 
+						AddReplication(pl, Replication.REPM_TOALL, Replication.REPW_NEWINST, false);
+						AddReplication(pl.Character, Replication.REPM_TOALL, Replication.REPW_NEWINST, true);
+
 						x.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 						{ // here we get instances from owners. actually for now, from everyone
 							ProfileOutgoing(rep.Key, rep.Data);
@@ -366,6 +370,9 @@ namespace NetBlox
 								break;
 							case Replication.REPW_REPARNT:
 								PerformReplicationReparent(ins, rc);
+								break;
+							case Replication.REPW_DESTROY:
+								PerformReplicationDestroy(ins, rc);
 								break;
 						}
 					}
@@ -482,10 +489,18 @@ namespace NetBlox
 					if (actinst != null)
 					{
 						Instance? parent = GameManager.GetInstance(inst);
-						if (parent != null)
-							actinst.Parent = parent;
-						else
-							actinst.Destroy();
+						actinst.Parent = parent;
+					}
+				});
+				tcp.RegisterRawDataHandler("nb2-destroy", (rep, _) =>
+				{
+					ProfileOutgoing(rep.Key, rep.Data);
+
+					Guid inst = new Guid(rep.Data);
+					Instance? actinst = GameManager.GetInstance(inst);
+					if (actinst != null)
+					{
+						actinst.Destroy();
 					}
 				});
 				tcp.RegisterRawDataHandler("nb2-setowner", (rep, _) =>
@@ -761,6 +776,19 @@ namespace NetBlox
 				if (con == null) continue; // how did this happen
 
 				con.SendRawData("nb2-reparent", b);
+			}
+		}
+		public void PerformReplicationDestroy(Instance ins, NetworkClient[] recs)
+		{
+			var b = ins.UniqueID.ToByteArray();
+
+			for (int i = 0; i < recs.Length; i++)
+			{
+				var nc = recs[i];
+				var con = nc.Connection;
+				if (con == null) continue; // how did this happen
+
+				con.SendRawData("nb2-destroy", b);
 			}
 		}
 		public void AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)

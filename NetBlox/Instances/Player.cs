@@ -50,6 +50,9 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public void LoadCharacterOld()
 		{
+			if (!GameManager.NetworkManager.IsServer)
+				throw new Exception("Cannot call LoadCharacter from client!");
+
 			var ch = new Character(GameManager);
 			var face = new Decal(GameManager);
 			var workspace = Root.GetService<Workspace>();

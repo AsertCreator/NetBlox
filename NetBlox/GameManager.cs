@@ -40,6 +40,7 @@ namespace NetBlox
 		public bool FilteringEnabled = true;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
+		public int PropertyReplicationRate = 14;
 		public Dictionary<NetworkClient, Instance> Owners = [];
 		public List<Instance> SelfOwnerships = [];
 		public ClientStartupInfo? ClientStartupInfo;

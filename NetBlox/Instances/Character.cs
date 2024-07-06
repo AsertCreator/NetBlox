@@ -77,12 +77,12 @@ namespace NetBlox.Instances
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.Q))
 				{
-					Rotation += new Vector3(0, 0.1f * -WalkSpeed, 0);
+					Rotation += new Vector3(0, -0.1f * -WalkSpeed, 0);
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.E))
 				{
-					Rotation += new Vector3(0, -0.1f * -WalkSpeed, 0);
+					Rotation += new Vector3(0, 0.1f * -WalkSpeed, 0);
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.W))
