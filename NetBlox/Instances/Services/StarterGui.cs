@@ -9,9 +9,6 @@ namespace NetBlox.Instances.Services
 {
 	public class StarterGui : Instance
 	{
-		public Dictionary<string, DynValue> RegisteredSetCallbacks = [];
-		public Dictionary<string, DynValue> RegisteredGetCallbacks = [];
-
 		public StarterGui(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
@@ -23,20 +20,23 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public void RegisterSetCore(string name, DynValue func)
 		{
+			CoreGui cg = Root.GetService<CoreGui>();
 			if (func.Type != DataType.Function) throw new Exception($"RegisterSetCore only accepts functions");
-			RegisteredSetCallbacks[name] = func;
+			cg.RegisteredSetCallbacks[name] = func;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void RegisterGetCore(string name, DynValue func)
 		{
+			CoreGui cg = Root.GetService<CoreGui>();
 			if (func.Type != DataType.Function) throw new Exception($"RegisterGetCore only accepts functions");
-			RegisteredGetCallbacks[name] = func;
+			cg.RegisteredGetCallbacks[name] = func;
 		}
 		[Lua([Security.Capability.None])]
 		public void SetCore(string name, DynValue dv)
 		{
-			if (RegisteredSetCallbacks.ContainsKey(name))
-				TaskScheduler.ScheduleScript(GameManager, RegisteredSetCallbacks[name], 3, null, null, [dv]);
+			CoreGui cg = Root.GetService<CoreGui>();
+			if (cg.RegisteredSetCallbacks.ContainsKey(name))
+				TaskScheduler.ScheduleScript(GameManager, cg.RegisteredSetCallbacks[name], 3, null, null, [dv]);
 			else throw new Exception($"\"{name}\" has not been registered by CoreScripts");
 		}
 		[Lua([Security.Capability.None])]

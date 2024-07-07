@@ -10,6 +10,8 @@ namespace NetBlox.Instances
 	[NotReplicated]
 	public class CoreGui : Instance
 	{
+		public Dictionary<string, DynValue> RegisteredSetCallbacks = [];
+		public Dictionary<string, DynValue> RegisteredGetCallbacks = [];
 		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
 		[Lua([Security.Capability.CoreSecurity])]
@@ -45,9 +47,13 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.CoreSecurity])]
 		public void TakeScreenshot()
 		{
-			string path = AppManager.LibraryFolder + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss") + ".png";
-			Raylib.TakeScreenshot(path);
-			Notify("Screenshot taken!", "Check the screenshort folder");
+			GameManager.RenderManager.Coroutines.Add(() =>
+			{
+				string path = AppManager.LibraryFolder + "/" + DateTime.Now.ToString("ddMMyyyy_HHmmss") + ".png";
+				Raylib.TakeScreenshot(path);
+				Notify("Screenshot taken!", "Check the screenshort folder");
+				return -1;
+			});
 		}
 	}
 }

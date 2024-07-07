@@ -18,6 +18,8 @@ namespace NetBlox
 		public int VersionMargin = 0;
 		public double TimeOfDay = 12;
 		public string Status = string.Empty;
+		public string? CurrentMessage = string.Empty;
+		public string? CurrentHint = "This is a hint test";
 		public bool DebugInformation = true;
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;
@@ -142,6 +144,14 @@ namespace NetBlox
 							if (Root != null)
 							{
 								RenderInstanceUI(Root.FindFirstChild("Workspace"));
+
+								if (CurrentHint != null)
+								{
+									Raylib.DrawRectangle(0, 30, ScreenSizeX, 26, Color.Black); // quite bold of me to assume that top 30 pixels are used.
+									var v = Raylib.MeasureTextEx(MainFont, CurrentHint, MainFont.BaseSize / 1.5f, 0);
+									Raylib.DrawTextEx(MainFont, CurrentHint, new(ScreenSizeX / 2 - v.X / 2, 45 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
+								}
+
 								RenderInstanceUI(Root.GetService<CoreGui>());
 							}
 
@@ -154,8 +164,8 @@ namespace NetBlox
 						if (DebugInformation)
 						{
 							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
-								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", outgoing traffic in bytes/sec: " +
-								GameManager.NetworkManager.OutgoingTraffic, 
+								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", incoming traffic in bytes/sec: " +
+								GameManager.NetworkManager.IncomingTraffic, 
 								new(5, 5), 16, 0, Color.White);
 						}
 

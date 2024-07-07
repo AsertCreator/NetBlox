@@ -67,6 +67,16 @@ namespace NetBlox
 			DefineFastFlag("FFlagShowCoreGui", true);
 			DefineFastInt("FIntDefaultUIVariant", 1);
 
+			TaskScheduler.ScheduleMisc(x =>
+			{
+				for (int i = 0; i < GameManagers.Count; i++)
+				{
+					var gm = GameManagers[i];
+					if (gm.IsRunning)
+						gm.ProcessInstance(gm.CurrentRoot);
+				}
+				return JobResult.NotCompleted;
+			});
 			TaskScheduler.ScheduleRender(x =>
 			{
 				if (CurrentRenderManager != null)
@@ -75,16 +85,6 @@ namespace NetBlox
 					if (CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager)
 						return JobResult.CompletedSuccess;
 					return JobResult.NotCompleted;
-				}
-				return JobResult.NotCompleted;
-			});
-			TaskScheduler.ScheduleMisc(x =>
-			{
-				for (int i = 0; i < GameManagers.Count; i++)
-				{
-					var gm = GameManagers[i];
-					if (gm.IsRunning)
-						gm.ProcessInstance(gm.CurrentRoot);
 				}
 				return JobResult.NotCompleted;
 			});

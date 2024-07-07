@@ -186,6 +186,8 @@ UserInputService.KeyboardPress:Connect(function(x)
 		TitleLabel.Text = game.Name; -- lol
 		Sidebar.Visible = not Sidebar.Visible;
 		BlackOut.Visible = Sidebar.Visible;
+	elseif x == 299 then
+		CoreGui:TakeScreenshot();
 	end
 end)
 
