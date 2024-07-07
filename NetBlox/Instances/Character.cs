@@ -107,7 +107,7 @@ namespace NetBlox.Instances
 				}
 
 				if (dot)
-					ReplicateProps(false);
+					ReplicateProperties(["Position", "Rotation"], false);
 			}
 
 			if (Health <= 0 && IsLocalPlayer && !isDying)

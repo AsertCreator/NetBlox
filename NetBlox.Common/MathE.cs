@@ -14,5 +14,12 @@ namespace NetBlox.Common
 				bytes[i] ^= a;
 			return Encoding.ASCII.GetString(bytes);
 		}
+		public static string FormatSize(long bytes)
+		{
+			if (bytes < 1024) return bytes + " bytes";
+			if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("F2") + " kbs";
+			if (bytes < 1024 * 1024 * 1024) return (bytes / (1024.0 * 1024.0)).ToString("F2") + " mbs";
+			return (bytes / (1024.0 * 1024.0 * 1024.0)).ToString("F2") + " gbs";
+		}
 	}
 }

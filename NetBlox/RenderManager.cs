@@ -1,4 +1,5 @@
 ﻿global using Font = Raylib_cs.Font;
+using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -164,8 +165,8 @@ namespace NetBlox
 						if (DebugInformation)
 						{
 							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
-								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", incoming traffic in bytes/sec: " +
-								GameManager.NetworkManager.IncomingTraffic, 
+								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", outgoing traffic: " +
+								MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic), 
 								new(5, 5), 16, 0, Color.White);
 						}
 

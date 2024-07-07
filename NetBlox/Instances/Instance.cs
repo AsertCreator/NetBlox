@@ -511,13 +511,14 @@ namespace NetBlox.Instances
 			n.Result = null;
 			return n;
 		}
-		public void ReplicateProps(bool immediate)
+		public void ReplicateProperties(string[] props, bool immediate)
 		{
 			if (GameManager.NetworkManager.RemoteConnection != null)
 			{
 				if (DateTime.Now > DoNotReplicateUntil || immediate)
 				{
-					GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
+					var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
+					rep.Properties = props;
 					DoNotReplicateUntil = DateTime.Now.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
 				}
 			}

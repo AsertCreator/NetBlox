@@ -132,8 +132,18 @@ namespace NetBlox
 			Type = JobType.NativePhysics,
 			GameManager = gm
 		});
-		public static Job ScheduleScript(GameManager gm, string code, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null) =>
-			ScheduleScript(gm, gm.MainEnvironment.LoadString(code, null, self != null ? self.GetFullName() : ""), level, self, afterDone, args);
+		public static Job ScheduleScript(GameManager gm, string code, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null)
+		{
+			try
+			{
+				return ScheduleScript(gm, gm.MainEnvironment.LoadString(code, null, self != null ? self.GetFullName() : ""), level, self, afterDone, args);
+			}
+			catch (SyntaxErrorException ex)
+			{
+				LogManager.LogError("Syntax error: " + ex.Message);
+				return null!;
+			}
+		}
 		public static Job ScheduleScript(GameManager gm, DynValue func, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null)
 		{
 			var closure = gm.MainEnvironment.CreateCoroutine(func).Coroutine;
@@ -163,13 +173,6 @@ namespace NetBlox
 						else
 							job.AssociatedObject5 = result;
 						return JobResult.CompletedSuccess;
-					}
-					catch (SyntaxErrorException ex)
-					{
-						LogManager.LogError("Script error: " + ex.Message);
-						for (int i = 0; i < ex.CallStack.Count; i++)
-							LogManager.LogError($"    at {ex.CallStack[i].Name ?? ""}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
-						return JobResult.CompletedFailure;
 					}
 					catch (ScriptRuntimeException ex)
 					{

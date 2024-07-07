@@ -46,6 +46,7 @@ namespace NetBlox
 			public int Mode;
 			public int What;
 			public NetworkClient[] Recievers = [];
+			public string[] Properties = [];
 			public Instance Target;
 
 			public const int REPM_TOALL = 0;
@@ -208,7 +209,11 @@ namespace NetBlox
 							sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
 							sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
 							sh.UniquePlayerID = nc.UniquePlayerID;
-							sh.InstanceCount = 2; // idk lol
+							sh.InstanceCount = 
+								Root.GetService<Workspace>().CountDescendants() +
+								Root.GetService<ReplicatedStorage>().CountDescendants() +
+								Root.GetService<ReplicatedFirst>().CountDescendants() +
+								Root.GetService<Lighting>().CountDescendants();
 
 							Clients.Add(nc);
 						}
@@ -218,7 +223,7 @@ namespace NetBlox
 						}
 					}
 
-					x.SendRawData("nb2-placeinfo", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(sh)));
+					SendRawData(x, "nb2-placeinfo", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(sh)));
 					x.UnRegisterRawDataHandler("nb2-handshake");
 
 					if (sh.ErrorCode != 0)
@@ -331,7 +336,7 @@ namespace NetBlox
 						for (int i = 0; i < rc.Length; i++)
 						{
 							var c = rc[i];
-							c.Connection.SendRawData("nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
+							SendRawData(c.Connection, "nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
 						}
 					}
 				if (ReplicationQueue.Count != 0)
@@ -360,13 +365,15 @@ namespace NetBlox
 								break;
 						}
 
+						if (rc.Length == 0) continue;
+
 						switch (rq.What)
 						{
 							case Replication.REPW_NEWINST:
-								PerformReplicationNew(ins, rc); // not as per constitution, constitution is wrong, this cannot be implemented really
+								PerformReplicationPropchg(ins, SerializationManager.GetAccessibleProperties(ins), rc);
 								break;
 							case Replication.REPW_PROPCHG:
-								PerformReplicationPropchg(ins, rc); // i found constitutional loophole, im not required to send only changed props, i can send entire instance bc idc
+								PerformReplicationPropchg(ins, rq.Properties, rc); // all of a sudden i do care now
 								break;
 							case Replication.REPW_REPARNT:
 								PerformReplicationReparent(ins, rc);
@@ -410,7 +417,7 @@ namespace NetBlox
 
 			bool gotpi = false;
 
-			tcp.SendRawData("nb2-handshake", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(ch)));
+			SendRawData(tcp, "nb2-handshake", Encoding.UTF8.GetBytes(SerializationManager.SerializeJson(ch)));
 			tcp.RegisterRawDataHandler("nb2-placeinfo", (x, _) =>
 			{
 				ProfileIncoming(x.Key, x.Data);
@@ -442,7 +449,7 @@ namespace NetBlox
 
 				// i feel some netflix ce exploit shit can be done here.
 
-				int actinstc = sh.InstanceCount - 2; // didn't i just tell the server that optimal instance count is 2, so here its 0?
+				int actinstc = sh.InstanceCount - 1;
 				int gotinsts = 0;
 				Camera c = new(GameManager);
 				Player? lp = null;
@@ -469,7 +476,7 @@ namespace NetBlox
 						if (lp != null)
 						{
 							lp.Character = ch;
-							tcp.SendRawData("nb2-gotchar", ch.UniqueID.ToByteArray());
+							SendRawData(tcp, "nb2-gotchar", ch.UniqueID.ToByteArray());
 						}
 					}
 					if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
@@ -531,7 +538,7 @@ namespace NetBlox
 					if (GameManager.RenderManager != null)
 						GameManager.RenderManager.ShowKickMessage(Encoding.UTF8.GetString(rep.Data));
 				});
-				tcp.SendRawData("nb2-init", []);
+				SendRawData(tcp, "nb2-init", []);
 			});
 
 			Task.Run(() =>
@@ -557,7 +564,7 @@ namespace NetBlox
 						for (int i = 0; i < rc.Length; i++)
 						{
 							var c = rc[i];
-							c.Connection.SendRawData("nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
+							SendRawData(c.Connection, "nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
 						}
 					}
 				if (ReplicationQueue.Count != 0)
@@ -569,7 +576,9 @@ namespace NetBlox
 						switch (rq.What)
 						{
 							case Replication.REPW_PROPCHG:
-								RequestOwnerReplication(ins);
+								Type t = ins.GetType();
+								List<PropertyInfo> pis = (from x in rq.Properties select t.GetProperty(x)).ToList();
+								RequestOwnerReplication(ins, pis.ToArray());
 								break;
 						}
 					}
@@ -596,6 +605,17 @@ namespace NetBlox
 			Debug.WriteLine($"!! nmprofiler, INCOMING #{incomingPacketsRecieved++}, key: {key}, data len: {data.Length}, incoming bytes/sec: {IncomingTraffic} !!");
 			incomingTraffic += len;
 		}
+		public void ProfileOutgoing(string key, byte[] data)
+		{
+			var len = Encoding.ASCII.GetBytes(key).Length + data.Length;
+			Debug.WriteLine($"!! nmprofiler, OUTGOING #{outgoingPacketsSent++}, key: {key}, data len: {data.Length}, outgoing bytes/sec: {OutgoingTraffic} !!");
+			outgoingTraffic += len;
+		}
+		public void SendRawData(Connection c, string key, byte[] data)
+		{
+			ProfileOutgoing(key, data);
+			c.SendRawData(key, data);
+		}
 		public void Confiscate(Instance ins)
 		{
 			var query = (from x in GameManager.Owners where x.Value == ins select x);
@@ -603,21 +623,20 @@ namespace NetBlox
 			{
 				var ns = query.First().Key;
 				GameManager.Owners.Remove(ns);
-				ns.Connection.SendRawData("nb2-confiscate", ins.UniqueID.ToByteArray());
+				SendRawData(ns.Connection, "nb2-confiscate", ins.UniqueID.ToByteArray());
 			} 
 		}
 		public void SetOwner(NetworkClient nc, Instance ins)
 		{
 			GameManager.Owners[nc] = ins;
-			nc.Connection.SendRawData("nb2-setowner", ins.UniqueID.ToByteArray());
+			SendRawData(nc.Connection, "nb2-setowner", ins.UniqueID.ToByteArray());
 		}
-		public void RequestOwnerReplication(Instance ins)
+		public void RequestOwnerReplication(Instance ins, PropertyInfo[] props)
 		{
 			using MemoryStream ms = new();
 			using BinaryWriter bw = new(ms);
 			var gm = ins.GameManager;
 			var type = ins.GetType(); // apparently gettype caches type object but i dont believe
-			var props = type.GetProperties();
 
 			bw.Write(ins.UniqueID.ToByteArray());
 			bw.Write(ins.ParentID.ToByteArray());
@@ -650,7 +669,7 @@ namespace NetBlox
 
 			byte[] buf = ms.ToArray();
 
-			RemoteConnection.SendRawData("nb2-ownerreplicate", buf);
+			SendRawData(RemoteConnection, "nb2-ownerreplicate", buf);
 		}
 		public void PerformKick(NetworkClient? nc, string msg, bool islocal)
 		{
@@ -667,16 +686,15 @@ namespace NetBlox
 
 			// we are on server
 			if (nc == null) throw new Exception("NetworkClient object not preserved!");
-			nc.Connection.SendRawData("nb2-kick", Encoding.UTF8.GetBytes(msg));
+			SendRawData(nc.Connection, "nb2-kick", Encoding.UTF8.GetBytes(msg));
 			nc.Connection.Close(CloseReason.ServerClosed);
 		}
-		private void PerformReplicationNew(Instance ins, NetworkClient[] recs)
+		private void PerformReplicationNew(Instance ins, PropertyInfo[] props, NetworkClient[] recs)
 		{
 			using MemoryStream ms = new();
 			using BinaryWriter bw = new(ms);
 			var gm = ins.GameManager;
 			var type = ins.GetType(); // apparently gettype caches type object but i dont believe
-			var props = type.GetProperties();
 
 			bw.Write(ins.UniqueID.ToByteArray());
 			bw.Write(ins.ParentID.ToByteArray());
@@ -715,7 +733,7 @@ namespace NetBlox
 				var con = nc.Connection;
 				if (con == null) continue; // how did this happen
 
-				con.SendRawData("nb2-replicate", buf);
+				SendRawData(con, "nb2-replicate", buf);
 			}
 		}
 		private Instance RecieveNewInstance(byte[] data)
@@ -760,9 +778,11 @@ namespace NetBlox
 				return ins;
 			}
 		}
-		private void PerformReplicationPropchg(Instance ins, NetworkClient[] recs)
+		private void PerformReplicationPropchg(Instance ins, string[] props, NetworkClient[] recs)
 		{
-			PerformReplicationNew(ins, recs); // same thing really
+			Type t = ins.GetType();
+			List<PropertyInfo> pis = (from x in props select t.GetProperty(x)).ToList();
+			PerformReplicationNew(ins, pis.ToArray(), recs); // same thing really
 		}
 		private unsafe void PerformReplicationReparent(Instance ins, NetworkClient[] recs)
 		{
@@ -777,7 +797,7 @@ namespace NetBlox
 				var con = nc.Connection;
 				if (con == null) continue; // how did this happen
 
-				con.SendRawData("nb2-reparent", b);
+				SendRawData(con, "nb2-reparent", b);
 			}
 		}
 		public void PerformReplicationDestroy(Instance ins, NetworkClient[] recs)
@@ -790,26 +810,28 @@ namespace NetBlox
 				var con = nc.Connection;
 				if (con == null) continue; // how did this happen
 
-				con.SendRawData("nb2-destroy", b);
+				SendRawData(con, "nb2-destroy", b);
 			}
 		}
-		public void AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
+		public Replication AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
 		{ // the fucking aRgUmEnT ExCePtIoN CirCumCiSiTiOn .net fuck off for god's sake
 			lock (ReplicationQueue)
 			{
-				AddReplicationImpl(inst, m, w, rc, nc);
+				return AddReplicationImpl(inst, m, w, rc, nc);
 			}
 		}
-		private void AddReplicationImpl(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
+		private Replication AddReplicationImpl(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
 		{
 			Thread.Sleep(1); // i just cant
-			ReplicationQueue.Enqueue(new(m, w, inst)
+			var rep = new Replication(m, w, inst)
 			{
 				Recievers = nc ?? []
-			});
+			};
+			ReplicationQueue.Enqueue(rep);
 			if (rc)
 				for (int i = 0; i < inst.Children.Count; i++)
 					AddReplicationImpl(inst.Children[i], m, w, true, nc);
+			return rep;
 		}
 		public static string TranslateErrorCode(int ec)
 		{
