@@ -485,6 +485,8 @@ namespace NetBlox
 						lp.IsLocalPlayer = true;
 						Root.GetService<Players>().CurrentPlayer = lp;
 					}
+
+					Console.WriteLine($"{ins.UniqueID}, parent: {ins.ParentID}, classname: {ins.ClassName}, name: {ins.Name}");
 				});
 				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>
 				{
