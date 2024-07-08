@@ -752,11 +752,12 @@ namespace NetBlox
 				Guid guid = new(br.ReadBytes(16));
 				Guid newp = new(br.ReadBytes(16));
 				var ins = GameManager.GetInstance(guid);
+				var classname = br.ReadString();
 				if (ins == null)
 				{
 					if (GameManager.FilteringEnabled && IsServer)
 						return null!; // we do not permit this shit.
-					ins = InstanceCreator.CreateReplicatedInstance(br.ReadString(), GameManager);
+					ins = InstanceCreator.CreateReplicatedInstance(classname, GameManager);
 					ins.Parent = GameManager.GetInstance(newp);
 				}
 				ins.UniqueID = guid;

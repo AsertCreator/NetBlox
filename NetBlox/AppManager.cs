@@ -20,6 +20,8 @@ namespace NetBlox
 		public static Dictionary<string, int> FastInts = [];
 		public static Action<string> PlatformOpenBrowser = x => { };
 		public static HttpClient HttpClient = new();
+		public static Job? GameRenderer;
+		public static Job? GameProcessor;
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
@@ -67,7 +69,7 @@ namespace NetBlox
 			DefineFastFlag("FFlagShowCoreGui", true);
 			DefineFastInt("FIntDefaultUIVariant", 1);
 
-			TaskScheduler.ScheduleMisc(x =>
+			GameProcessor = TaskScheduler.ScheduleMisc("GameProcessor", x =>
 			{
 				for (int i = 0; i < GameManagers.Count; i++)
 				{
@@ -77,7 +79,7 @@ namespace NetBlox
 				}
 				return JobResult.NotCompleted;
 			});
-			TaskScheduler.ScheduleRender(x =>
+			GameRenderer = TaskScheduler.ScheduleRender("GameRenderer", x =>
 			{
 				if (CurrentRenderManager != null)
 				{

@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="NetBlox.Studio.TaskSchedulerProfiler"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetBlox.Studio"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <StackPanel Margin="5,5,5,5" Height="25" VerticalAlignment="Top" Orientation="Horizontal">
+            <Button Padding="5,0,5,0" Click="Button_Click">Revisualize</Button>
+        </StackPanel>
+        <ListView x:Name="tasks" Margin="5,35,5,5"/>
+    </Grid>
+</UserControl>

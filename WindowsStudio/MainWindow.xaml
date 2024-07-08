@@ -35,6 +35,7 @@
                 </RibbonGroup>
                 <RibbonGroup Header="Debug">
                     <RibbonToggleButton Label="Show Debug Information" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="ToggleDebugClick" Checked="ToggleDebugClick"/>
+                    <RibbonButton Label="Show Task Scheduler Profiler" LargeImageSource="/NetBloxStudio;component/content/studio/icon32.png" Click="ShowAccounting"/>
                 </RibbonGroup>
             </RibbonTab>
 		</Ribbon>

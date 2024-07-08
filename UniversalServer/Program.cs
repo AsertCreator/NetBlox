@@ -30,12 +30,12 @@ namespace NetBlox.Server
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,
-				DoNotRenderAtAll = true,
-				SkipWindowCreation = true,
+				// DoNotRenderAtAll = true,
+				// SkipWindowCreation = true,
 				GameName = "NetBlox Server"
 			}, args, (x) =>
 			{
-				x.LoadDefault();
+				x.LoadDefault(1);
 				Task.Run(x.NetworkManager.StartServer);
 			});
 			g.MainManager = true;

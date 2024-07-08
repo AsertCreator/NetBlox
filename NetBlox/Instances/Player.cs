@@ -50,7 +50,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public void LoadCharacterOld()
 		{
-			if (!GameManager.NetworkManager.IsServer)
+			if (!GameManager.NetworkManager.IsServer && false)
 				throw new Exception("Cannot call LoadCharacter from client!");
 
 			var ch = new Character(GameManager);
@@ -78,7 +78,11 @@ namespace NetBlox.Instances
 		{
 			var chmodel = new Model(GameManager);
 			var humanoid = new Humanoid(GameManager);
+
 			chmodel.Name = Name;
+			chmodel.Parent = Root.GetService<Workspace>();
+			humanoid.Parent = chmodel;
+
 
 		}
 		[Lua([Security.Capability.None])]

@@ -16,7 +16,7 @@ namespace NetBlox
 		public Vector3 Gravity { get => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity; set => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity = value; }
 		public Scene Scene { get => (Workspace ?? throw new Exception("No workspace is loaded")).Scene; set => (Workspace ?? throw new Exception("No workspace is loaded")).Scene = value; }
 		public List<BasePart> Actors = new();
-		public bool DisablePhysics = true; // not now
+		public bool DisablePhysics = false; // not now
 		private DateTime LastTime = DateTime.Now;
 
 		public PhysicsManager(GameManager gameManager)
@@ -30,15 +30,31 @@ namespace NetBlox
 				return;
 			lock (Scene)
 			{
-				Scene.Step((DateTime.Now - LastTime).TotalSeconds);
-				for (int i = 0; i < Actors.Count; i++)
+				try
 				{
-					var act = Actors[i];
-					act._position = act.Body!.GetTransform().position;
-					// act.Rotation = act.Body!.GetTransform().rotation.ToEuler();
-					act.Velocity = act.Body!.GetLinearVelocity();
+					Scene.Step((DateTime.Now - LastTime).TotalSeconds);
+					for (int i = 0; i < Actors.Count; i++)
+					{
+						var act = Actors[i];
+						if (!act.Anchored)
+						{
+							act._position = act.Body!.GetTransform().position;
+							act._rotation = act.Body!.GetTransform().rotation.ToEuler();
+							act.Velocity = act.Body!.GetLinearVelocity();
+
+							if (act._position.Y < Workspace.FallenPartsDestroyHeight && GameManager.NetworkManager.IsServer)
+								act.Destroy();
+
+							if (GameManager.NetworkManager.Clients.Count > 0)
+								act.ReplicateProperties(["Position", "Rotation", "Velocity"], false);
+						}
+					}
+					LastTime = DateTime.Now;
 				}
-				LastTime = DateTime.Now;
+				catch (Exception ex)
+				{
+					LogManager.LogWarn("Physics solver had failed! " + ex.GetType() + ", msg: " + ex.Message);
+				}
 			}
 		}
 	}
