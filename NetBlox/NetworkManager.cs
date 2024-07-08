@@ -45,7 +45,7 @@ namespace NetBlox
 		{
 			public int Mode;
 			public int What;
-			public NetworkClient[] Recievers = [];
+			public RemoteClient[] Recievers = [];
 			public string[] Properties = [];
 			public Instance Target;
 
@@ -68,12 +68,12 @@ namespace NetBlox
 		public class RemoteEventPacket
 		{
 			public Guid RemoteEventId;
-			public NetworkClient[] Recievers = [];
+			public RemoteClient[] Recievers = [];
 			public byte[] Data = [];
 		}
 
 		public GameManager GameManager;
-		public List<NetworkClient> Clients = [];
+		public List<RemoteClient> Clients = [];
 		public Queue<Replication> ReplicationQueue = [];
 		public Queue<RemoteEventPacket> RemoteEventQueue = [];
 		public bool IsServer;
@@ -121,6 +121,7 @@ namespace NetBlox
 			Server.ConnectionEstablished += (x, y) =>
 			{
 				x.EnableLogging = false;
+				x.KeepAlive = false;
 				LogManager.LogInfo(x.IPRemoteEndPoint.Address + " is trying to connect");
 				bool gothandshake = false;
 
@@ -145,7 +146,7 @@ namespace NetBlox
 					}
 
 					ServerHandshake sh = new();
-					NetworkClient nc = null!;
+					RemoteClient nc = null!;
 					Player pl = null!;
 
 					// here we do a lot of shit
@@ -235,8 +236,7 @@ namespace NetBlox
 					void OnClose(CloseReason cr, Connection c)
 					{
 						LogManager.LogInfo(nc.Username + " had disconnected");
-						if (nc.Player.Character != null)
-							nc.Player.Character.Destroy();
+						nc.Player.Character?.Destroy();
 						nc.Player.Destroy();
 						Clients.Remove(nc);
 
@@ -280,7 +280,12 @@ namespace NetBlox
 						ProfileIncoming(data.Key, data.Data);
 
 						Instance ins = RecieveNewInstance(data.Data);
-						AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_PROPCHG, false);
+						for (int i = 0; i < Clients.Count; i++)
+						{
+							RemoteClient nc2 = Clients[i];
+							if (nc2 != nc)
+								nc2.Connection.SendRawData("nb2-replicate", data.Data);
+						}
 					});
 					x.RegisterRawDataHandler("nb2-gotchar", (data, _) =>
 					{
@@ -288,10 +293,7 @@ namespace NetBlox
 
 						Guid inst = new Guid(data.Data);
 						Instance? actinst = GameManager.GetInstance(inst);
-						if (actinst != null)
-						{
-							actinst.SetNetworkOwner(pl);
-						}
+						actinst?.SetNetworkOwner(pl);
 					});
 
 					Task.Delay(5000).ContinueWith(_ =>
@@ -352,7 +354,7 @@ namespace NetBlox
 								rc = Clients.ToArray();
 								break;
 							case Replication.REPM_BUTOWNER:
-								rc = (NetworkClient[])(Clients.ToArray().Clone());
+								rc = (RemoteClient[])(Clients.ToArray().Clone());
 								var oq = (from x in GameManager.Owners where x.Value == ins select x.Key).FirstOrDefault();
 								if (oq != null)
 								{
@@ -395,6 +397,7 @@ namespace NetBlox
 			if (tcp == null)
 				throw new Exception("Remote server had refused to connect");
 			tcp.EnableLogging = false;
+			tcp.KeepAlive = false;
 			RemoteConnection = tcp;
 
 			ClientHandshake ch;
@@ -628,7 +631,7 @@ namespace NetBlox
 				SendRawData(ns.Connection, "nb2-confiscate", ins.UniqueID.ToByteArray());
 			} 
 		}
-		public void SetOwner(NetworkClient nc, Instance ins)
+		public void SetOwner(RemoteClient nc, Instance ins)
 		{
 			GameManager.Owners[nc] = ins;
 			SendRawData(nc.Connection, "nb2-setowner", ins.UniqueID.ToByteArray());
@@ -673,7 +676,7 @@ namespace NetBlox
 
 			SendRawData(RemoteConnection, "nb2-ownerreplicate", buf);
 		}
-		public void PerformKick(NetworkClient? nc, string msg, bool islocal)
+		public void PerformKick(RemoteClient? nc, string msg, bool islocal)
 		{
 			// it's not really constitutionally defined, but idc.
 			if (RemoteConnection == null) return;
@@ -687,11 +690,11 @@ namespace NetBlox
 			}
 
 			// we are on server
-			if (nc == null) throw new Exception("NetworkClient object not preserved!");
+			if (nc == null) throw new Exception("RemoteClient object not preserved!");
 			SendRawData(nc.Connection, "nb2-kick", Encoding.UTF8.GetBytes(msg));
 			nc.Connection.Close(CloseReason.ServerClosed);
 		}
-		private void PerformReplicationNew(Instance ins, PropertyInfo[] props, NetworkClient[] recs)
+		private void PerformReplicationNew(Instance ins, PropertyInfo[] props, RemoteClient[] recs)
 		{
 			using MemoryStream ms = new();
 			using BinaryWriter bw = new(ms);
@@ -780,13 +783,13 @@ namespace NetBlox
 				return ins;
 			}
 		}
-		private void PerformReplicationPropchg(Instance ins, string[] props, NetworkClient[] recs)
+		private void PerformReplicationPropchg(Instance ins, string[] props, RemoteClient[] recs)
 		{
 			Type t = ins.GetType();
 			List<PropertyInfo> pis = (from x in props select t.GetProperty(x)).ToList();
 			PerformReplicationNew(ins, pis.ToArray(), recs); // same thing really
 		}
-		private unsafe void PerformReplicationReparent(Instance ins, NetworkClient[] recs)
+		private unsafe void PerformReplicationReparent(Instance ins, RemoteClient[] recs)
 		{
 			var bytes = new List<byte>();
 			bytes.AddRange(ins.UniqueID.ToByteArray());
@@ -802,7 +805,7 @@ namespace NetBlox
 				SendRawData(con, "nb2-reparent", b);
 			}
 		}
-		public void PerformReplicationDestroy(Instance ins, NetworkClient[] recs)
+		public void PerformReplicationDestroy(Instance ins, RemoteClient[] recs)
 		{
 			var b = ins.UniqueID.ToByteArray();
 
@@ -815,14 +818,14 @@ namespace NetBlox
 				SendRawData(con, "nb2-destroy", b);
 			}
 		}
-		public Replication AddReplication(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
+		public Replication AddReplication(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
 		{ // the fucking aRgUmEnT ExCePtIoN CirCumCiSiTiOn .net fuck off for god's sake
 			lock (ReplicationQueue)
 			{
 				return AddReplicationImpl(inst, m, w, rc, nc);
 			}
 		}
-		private Replication AddReplicationImpl(Instance inst, int m, int w, bool rc = true, NetworkClient[]? nc = null)
+		private Replication AddReplicationImpl(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
 		{
 			Thread.Sleep(1); // i just cant
 			var rep = new Replication(m, w, inst)

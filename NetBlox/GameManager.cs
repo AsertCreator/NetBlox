@@ -41,7 +41,7 @@ namespace NetBlox
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public int PropertyReplicationRate = 14;
-		public Dictionary<NetworkClient, Instance> Owners = [];
+		public Dictionary<RemoteClient, Instance> Owners = [];
 		public List<Instance> SelfOwnerships = [];
 		public ClientStartupInfo? ClientStartupInfo;
 		public ServerStartupInfo? ServerStartupInfo;
@@ -49,7 +49,6 @@ namespace NetBlox
 		public MoonSharp.Interpreter.Script MainEnvironment = null!;
 		public string Username => CurrentProfile.Username; // bye bye DevDevDev
 		public event EventHandler? ShutdownEvent;
-		public event InstanceEventHandler? AddedInstance;
 		public bool AllowReplication = false;
 
 		public GameManager(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
@@ -136,16 +135,7 @@ namespace NetBlox
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
 					QueuedTeleportAddress = ClientStartupInfo.PlaceLocation;
 				}
-				if (NetworkManager.IsServer)
-				{
-					AddedInstance += x =>
-					{
-						if (NetworkManager.Server == null) return;
 
-						if (x.GetType().GetCustomAttribute<NotReplicatedAttribute>() == null)
-							NetworkManager.AddReplication(x, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
-					};
-				}
 				loadcallback(this);
 			}
 			catch (Exception ex)
@@ -154,12 +144,6 @@ namespace NetBlox
 				Environment.Exit(ex.GetHashCode());
 				for (;;); // perhaps platform we're running on does not support exiting.
 			}
-		}
-
-		public void InvokeAddedEvent(Instance inst)
-		{
-			if (AddedInstance != null && AllowReplication)
-				AddedInstance(inst);
 		}
 		public void SetupCoreGui()
 		{

@@ -103,20 +103,6 @@ namespace NetBlox.Instances
 
 				gm.AllInstances.Add(this);
 			}
-			gm.InvokeAddedEvent(this);
-		}
-		public Instance(GameManager gm, Guid guid)
-		{
-			lock (this)
-			{
-				Name = ClassName;
-				UniqueID = guid;
-				WasReplicated = true;
-				GameManager = gm;
-
-				gm.AllInstances.Add(this);
-			}
-			gm.InvokeAddedEvent(this);
 		}
 		public void RaiseDescendantAdded(Instance descendantInQuestion) // thats the longest named variable in the entire solution
 		{
@@ -464,7 +450,7 @@ namespace NetBlox.Instances
 		{
 			GameManager.AllInstances.Remove(this);
 			var item = GameManager.Owners.FirstOrDefault(kvp => kvp.Value == this);
-			if (!item.Equals(default(KeyValuePair<NetworkClient, Instance>)))
+			if (!item.Equals(default(KeyValuePair<RemoteClient, Instance>)))
 				GameManager.Owners.Remove(item.Key);
 			GameManager.SelfOwnerships.Remove(this);
 			GameManager = gm;

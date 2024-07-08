@@ -16,7 +16,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public long UserId { get; set; }
 		public bool IsLocalPlayer = false;
-		public NetworkClient? Client;
+		public RemoteClient? Client;
 
 		public Player(GameManager ins) : base(ins) { }
 

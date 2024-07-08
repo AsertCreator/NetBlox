@@ -86,7 +86,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SerializationManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkClient.cs" />
+    <Compile Include="..\NetBlox\Structs\RemoteClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkIdentity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)structs\Skybox.cs" />
@@ -172,5 +172,6 @@
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)content\scripts\Modules\" />
     <Folder Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Network\" />
   </ItemGroup>
 </Project>
