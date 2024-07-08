@@ -499,7 +499,7 @@ namespace NetBlox.Instances
 		}
 		public void ReplicateProperties(string[] props, bool immediate)
 		{
-			if (GameManager.NetworkManager.RemoteConnection != null)
+			if (GameManager.NetworkManager.RemoteConnection != null || GameManager.NetworkManager.IsServer)
 			{
 				if (DateTime.Now > DoNotReplicateUntil || immediate)
 				{

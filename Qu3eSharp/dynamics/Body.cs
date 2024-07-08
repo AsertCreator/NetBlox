@@ -321,10 +321,20 @@ namespace Qu3e
             Tx.rotation = Q.ToMat3();
 
             SynchronizeProxies();
-        }
+		}
+		public void SetTransform(Vec3 position, Vec3 eulers)
+		{
+			WorldCenter = position;
+			Q.Set(new Vec3(1, 0, 0), eulers.x);
+			Q.Set(new Vec3(0, 1, 0), eulers.y);
+			Q.Set(new Vec3(0, 0, 1), eulers.z);
+			Tx.rotation = Q.ToMat3();
 
-        // Used for debug rendering lines, triangles and basic lighting
-        public void Render(Render render)
+			SynchronizeProxies();
+		}
+
+		// Used for debug rendering lines, triangles and basic lighting
+		public void Render(Render render)
         {
             bool awake = IsAwake();
             

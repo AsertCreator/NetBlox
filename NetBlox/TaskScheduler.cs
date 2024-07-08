@@ -6,12 +6,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Xml.Linq;
 
 namespace NetBlox
 {
 	public class Job
 	{
 		public JobType Type = JobType.NativeMisc;
+		public string Name;
 		public object? AssociatedObject0;
 		public object? AssociatedObject1;
 		public object? AssociatedObject2;
@@ -24,10 +26,17 @@ namespace NetBlox
 		public GameManager GameManager;
 		public JobDelegate NativeCallback;
 		public JobDelegate? AfterDone;
+		public double LastCycleTime = 0;
+		public int Priority = 1;
 		public DateTime JoinedUntil = DateTime.MinValue;
 		public bool HadRunBefore = false;
 		public JobResult Result;
 		public Job? JoinedTo;
+
+		public Job()
+		{
+			Name = Type.ToString();
+		}
 	}
 	public enum JobType { NativeNetwork, NativeRender, NativePhysics, NativeMisc, Script }
 	public enum JobResult
@@ -58,7 +67,7 @@ namespace NetBlox
 			}
 		}
 		public static Job CurrentJob;
-		private static List<Job> RunningJobs = [];
+		internal static List<Job> RunningJobs = [];
 
 		public static void Step()
 		{
@@ -78,14 +87,25 @@ namespace NetBlox
 					CurrentJob = job;
 					try
 					{
-						var res = job.NativeCallback(job);
-						job.HadRunBefore = true;
-						job.Result = res;
-						if (res != JobResult.NotCompleted)
+						for (int j = 0; j < job.Priority; j++)
 						{
-							job.AfterDone?.Invoke(job);
-							Terminate(job);
-							i--;
+							Stopwatch taswa = new();
+							taswa.Start();
+
+							var res = job.NativeCallback(job);
+							job.HadRunBefore = true;
+							job.Result = res;
+							if (res != JobResult.NotCompleted)
+							{
+								job.AfterDone?.Invoke(job);
+								Terminate(job);
+								i--;
+							}
+
+							taswa.Stop();
+							job.LastCycleTime = taswa.ElapsedMilliseconds;
+							if (res != JobResult.NotCompleted)
+								break;
 						}
 					}
 					catch (Exception ex)
@@ -106,27 +126,41 @@ namespace NetBlox
 			LastCycleTime = sw.Elapsed;
 		}
 		public static void Terminate(Job job) => RunningJobs.Remove(job);
-		public static void ScheduleMisc(JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
+		public static Job ScheduleMisc(string name, JobDelegate jd, JobDelegate? afterDone = null)
 		{
-			NativeCallback = jd,
-			AfterDone = afterDone,
-			Type = JobType.NativeMisc
-		});
-		public static void ScheduleNetwork(GameManager gm, JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
+			Job job = new()
+			{
+				Name = name,
+				NativeCallback = jd,
+				AfterDone = afterDone,
+				Type = JobType.NativeMisc
+			};
+			RunningJobs.Add(job);
+			return job;
+		}
+		public static void ScheduleNetwork(string name, GameManager gm, JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
 		{
+			Name = name,
 			NativeCallback = jd,
 			AfterDone = afterDone,
 			Type = JobType.NativeNetwork,
 			GameManager = gm
 		});
-		public static void ScheduleRender(JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
+		public static Job ScheduleRender(string name, JobDelegate jd, JobDelegate? afterDone = null)
 		{
-			NativeCallback = jd,
-			AfterDone = afterDone,
-			Type = JobType.NativeRender
-		});
-		public static void SchedulePhysics(GameManager gm, JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
+			Job job = new()
+			{
+				Name = name,
+				NativeCallback = jd,
+				AfterDone = afterDone,
+				Type = JobType.NativeRender
+			};
+			RunningJobs.Add(job);
+			return job;
+		}
+		public static void SchedulePhysics(string name, GameManager gm, JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
 		{
+			Name = name,
 			NativeCallback = jd,
 			AfterDone = afterDone,
 			Type = JobType.NativePhysics,

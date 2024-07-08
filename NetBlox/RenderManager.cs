@@ -1,6 +1,7 @@
 ﻿global using Font = Raylib_cs.Font;
 using NetBlox.Common;
 using NetBlox.Instances;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
@@ -29,6 +30,7 @@ namespace NetBlox
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
 		public Font MainFont;
+		public BasePart? MoverPart;
 		private bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
 
@@ -97,21 +99,24 @@ namespace NetBlox
 			{
 				if (RenderAtAll)
 				{
-					if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
+					for (int i = 0; i < 3; i++) // s p e e d
 					{
-						Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
-						if (Raylib.IsKeyDown(KeyboardKey.Space))
+						if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
 						{
-							MainCamera.Target.Y += 0.1f;
-							MainCamera.Position.Y += 0.1f;
-						}
-						if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
-						{
-							MainCamera.Target.Y -= 0.1f;
-							MainCamera.Position.Y -= 0.1f;
+							Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+							if (Raylib.IsKeyDown(KeyboardKey.Space))
+							{
+								MainCamera.Target.Y += 0.2f;
+								MainCamera.Position.Y += 0.2f;
+							}
+							if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+							{
+								MainCamera.Target.Y -= 0.2f;
+								MainCamera.Position.Y -= 0.2f;
+							}
 						}
 					}
-
+					
 					PerformResourceLoading();
 
 					// render world

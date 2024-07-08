@@ -16,10 +16,19 @@ namespace NetBlox.Instances
 			{ 
 				_anchored = value;
 
-				if (!_anchored)
-					Body.Flags &= ~BodyFlags.eStatic;
-				else
-					Body.Flags &= ~BodyFlags.eDynamic;
+				if (Body != null)
+				{
+					if (!_anchored)
+					{
+						Body.Flags &= ~BodyFlags.eStatic;
+						Body.Flags |= BodyFlags.eDynamic;
+					}
+					else
+					{
+						Body.Flags &= ~BodyFlags.eDynamic;
+						Body.Flags |= BodyFlags.eStatic;
+					}
+				}
 			} 
 		}
 		[Lua([Security.Capability.None])]
@@ -50,9 +59,32 @@ namespace NetBlox.Instances
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public Vector3 Rotation { get; set; }
+		public Vector3 Rotation
+		{
+			get => _rotation;
+			set
+			{
+				_rotation = value;
+				if (Body != null)
+					Body.SetTransform(value, _rotation);
+			}
+		}
 		[Lua([Security.Capability.None])]
-		public Vector3 Size { get; set; } = new Vector3(4, 1, 2);
+		public Vector3 Size 
+		{
+			get => _size;
+			set
+			{
+				_size = value;
+				if (Box != null)
+				{
+					BoxDef = new BoxDef();
+					BoxDef.Set(Transform.Identity, _size);
+					Body.RemoveBox(Box);
+					Box = Body.AddBox(BoxDef);
+				}
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public Vector3 size { get => Size; set => Size = value; }
 		[Lua([Security.Capability.None])]
@@ -64,24 +96,28 @@ namespace NetBlox.Instances
 		public bool IsGrounded = false;
 		public BoxDef BoxDef;
 		public Body Body;
-		public Box Box;
+		public Box? Box;
+		public Vector3 _size;
 
 		public BasePart(GameManager ins) : base(ins) 
 		{
 			Scene sc = Root.GetService<Workspace>().Scene;
-			BodyDef bodyDef = new BodyDef();
-			bodyDef.position.Set(Position.X, Position.Y, Position.Z);
-			if (!Anchored)
-				bodyDef.bodyType = BodyType.eDynamicBody;
-			else
-				bodyDef.bodyType = BodyType.eStaticBody;
-			Body body = sc.CreateBody(bodyDef);
-			BoxDef = new BoxDef();
-			BoxDef.Set(Transform.Identity, Size);
-			Box = body.AddBox(BoxDef);
-			Body = body;
+			if (GameManager.NetworkManager.IsServer)
+			{
+				BodyDef bodyDef = new BodyDef();
+				bodyDef.position.Set(Position.X, Position.Y, Position.Z);
+				if (!Anchored)
+					bodyDef.bodyType = BodyType.eDynamicBody;
+				else
+					bodyDef.bodyType = BodyType.eStaticBody;
+				Body body = sc.CreateBody(bodyDef);
+				BoxDef = new BoxDef();
+				BoxDef.Set(Transform.Identity, Size);
+				Box = body.AddBox(BoxDef);
+				Body = body;
 
-			GameManager.PhysicsManager.Actors.Add(this);
+				GameManager.PhysicsManager.Actors.Add(this);
+			}
 		}
 
 		public virtual void Render()

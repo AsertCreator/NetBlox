@@ -171,8 +171,11 @@ public partial class MainWindow : System.Windows.Window
 					App.ServerGame = null;
 					GC.Collect(); // to be unnecessary mean
 					AppManager.SetRenderTarget(App.EditorGame);
-					play.IsEnabled = true;
-					stop.IsEnabled = false;
+					Dispatcher.Invoke(() =>
+					{
+						play.IsEnabled = true;
+						stop.IsEnabled = false;
+					});
 				};
 			});
 		}
@@ -195,5 +198,9 @@ public partial class MainWindow : System.Windows.Window
 	{
 		if (App.ClientGame != null)
 			App.ClientGame.Shutdown();
+	}
+	private void ShowAccounting(object sender, System.Windows.RoutedEventArgs e)
+	{
+		OpenTab("Task Scheduler Profiler").Content = new TaskSchedulerProfiler();
 	}
 }

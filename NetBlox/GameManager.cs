@@ -40,7 +40,7 @@ namespace NetBlox
 		public bool FilteringEnabled = true;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
-		public int PropertyReplicationRate = 14;
+		public int PropertyReplicationRate = 50;
 		public Dictionary<RemoteClient, Instance> Owners = [];
 		public List<Instance> SelfOwnerships = [];
 		public ClientStartupInfo? ClientStartupInfo;
@@ -198,82 +198,146 @@ namespace NetBlox
 			if (MainManager)
 				Environment.Exit(0);
 		}
-		public void LoadDefault()
+		public void LoadDefault(int idx = 0)
 		{
 			LogManager.LogInfo("Loading default place...");
-
 			Workspace ws = CurrentRoot.GetService<Workspace>();
 			ReplicatedStorage rs = CurrentRoot.GetService<ReplicatedStorage>();
 			ReplicatedFirst ri = CurrentRoot.GetService<ReplicatedFirst>();
 			Players pl = CurrentRoot.GetService<Players>();
-			LocalScript ls = new(this);
 
-			ws.ZoomToExtents();
-			ws.Parent = CurrentRoot;
+			switch (idx)
+			{
+				case 1:
+					{
+						Part part = new(this)
+						{
+							Parent = ws,
+							Color = Color.DarkGreen,
+							Position = new(0, -45f, 0),
+							Size = new(32, 2, 32),
+							TopSurface = SurfaceType.Studs,
+							Anchored = true
+						};
 
-			Part part = new(this)
-			{
-				Parent = ws,
-				Color = Color.DarkGreen,
-				Position = new(0, -45f, 0),
-				Size = new(32, 2, 32),
-				TopSurface = SurfaceType.Studs,
-				Anchored = true
-			};
-			new SpawnLocation(this)
-			{
-				Parent = ws,
-				Position = new(0, -45f + 2, 0),
-				TopSurface = SurfaceType.Studs
-			};
+						var torso = new Part(this)
+						{
+							Parent = ws,
+							Color = Color.Red,
+							Position = new(-0.5f, -1f, 0),
+							Size = new(2, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
 
-			new Part(this)
-			{
-				Parent = ws,
-				Color = Color.DarkBlue,
-				Position = new(0, -3f, 0),
-				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs
-			};
-			new Part(this)
-			{
-				Parent = ws,
-				Color = Color.DarkBlue,
-				Position = new(-1, -3f, 0),
-				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs
-			};
-			new Part(this)
-			{
-				Parent = ws,
-				Color = Color.Red,
-				Position = new(-0.5f, -1f, 0),
-				Size = new(2, 2, 1),
-				TopSurface = SurfaceType.Studs
-			};
-			new Part(this)
-			{
-				Parent = ws,
-				Color = Color.Yellow,
-				Position = new(-2f, -1f, 0),
-				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs
-			};
-			new Part(this)
-			{
-				Parent = ws,
-				Color = Color.Yellow,
-				Position = new(1f, -1f, 0),
-				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs
-			};
+						new Weld(this)
+						{
+							Part0 = torso,
+							Part1 = new Part(this)
+							{
+								Parent = ws,
+								Color = Color.DarkBlue,
+								Position = new(0, -3f, 0),
+								Size = new(1, 2, 1),
+								TopSurface = SurfaceType.Studs
+							},
+							Enabled = true
+						};
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.DarkBlue,
+							Position = new(-1, -3f, 0),
+							Size = new(1, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.Yellow,
+							Position = new(-2f, -1f, 0),
+							Size = new(1, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.Yellow,
+							Position = new(1f, -1f, 0),
+							Size = new(1, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
 
-			ls.Parent = ri;
-			ls.Source = "print(\"HIIIIII\"); printidentity();";
+						break;
+					}
+				default:
+					{
+						LocalScript ls = new(this);
 
-			rs.Parent = CurrentRoot;
-			ri.Parent = CurrentRoot;
-			pl.Parent = CurrentRoot;
+						ws.ZoomToExtents();
+						ws.Parent = CurrentRoot;
+
+						Part part = new(this)
+						{
+							Parent = ws,
+							Color = Color.DarkGreen,
+							Position = new(0, -45f, 0),
+							Size = new(32, 2, 32),
+							TopSurface = SurfaceType.Studs,
+							Anchored = true
+						};
+						new SpawnLocation(this)
+						{
+							Parent = ws,
+							Position = new(0, -45f + 2, 0),
+							TopSurface = SurfaceType.Studs
+						};
+
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.DarkBlue,
+							Position = new(0, -3f, 0),
+							Size = new(1, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.DarkBlue,
+							Position = new(-1, -3f, 0),
+							Size = new(1, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.Red,
+							Position = new(-0.5f, -1f, 0),
+							Size = new(2, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.Yellow,
+							Position = new(-2f, -1f, 0),
+							Size = new(1, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
+						new Part(this)
+						{
+							Parent = ws,
+							Color = Color.Yellow,
+							Position = new(1f, -1f, 0),
+							Size = new(1, 2, 1),
+							TopSurface = SurfaceType.Studs
+						};
+
+						ls.Parent = ri;
+						ls.Source = "print(\"HIIIIII\"); printidentity();";
+						break;
+					}
+			}
 
 			CurrentIdentity.MaxPlayerCount = 8;
 			CurrentIdentity.PlaceName = "Default Place";
