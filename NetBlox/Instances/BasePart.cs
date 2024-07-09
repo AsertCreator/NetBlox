@@ -98,6 +98,7 @@ namespace NetBlox.Instances
 		public Body Body;
 		public Box? Box;
 		public Vector3 _size;
+		public Vector3 _lastvelocity;
 
 		public BasePart(GameManager ins) : base(ins) 
 		{

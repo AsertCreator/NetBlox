@@ -29,6 +29,7 @@ namespace NetBlox.Runtime
 			gm.MainEnvironment = tenv;
 
 			tenv.Globals["game"] = MakeInstanceTable(gm.CurrentRoot, gm);
+			tenv.Globals["Game"] = tenv.Globals["game"];
 
 			tenv.Globals["wait"] = DynValue.NewCallback((x, y) =>
 			{
@@ -36,6 +37,7 @@ namespace NetBlox.Runtime
 				TaskScheduler.CurrentJob.JoinedUntil = wa;
 				return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
 			});
+			tenv.Globals["delay"] = tenv.Globals["wait"];
 			tenv.Globals["require"] = DynValue.NewCallback((x, y) =>
 			{
 				var table = y[0];
@@ -94,7 +96,7 @@ namespace NetBlox.Runtime
 			});
 			tenv.Globals["spawn"] = DynValue.NewCallback((x, y) =>
 			{
-				TaskScheduler.ScheduleScript(gm, y[0], 8, null);
+				TaskScheduler.ScheduleScript(gm, y[0], 3, null);
 				return DynValue.Void;
 			});
 

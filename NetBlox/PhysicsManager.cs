@@ -16,7 +16,7 @@ namespace NetBlox
 		public Vector3 Gravity { get => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity; set => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity = value; }
 		public Scene Scene { get => (Workspace ?? throw new Exception("No workspace is loaded")).Scene; set => (Workspace ?? throw new Exception("No workspace is loaded")).Scene = value; }
 		public List<BasePart> Actors = new();
-		public bool DisablePhysics = false; // not now
+		public bool DisablePhysics = true; // not now
 		private DateTime LastTime = DateTime.Now;
 
 		public PhysicsManager(GameManager gameManager)
@@ -43,10 +43,21 @@ namespace NetBlox
 							act.Velocity = act.Body!.GetLinearVelocity();
 
 							if (act._position.Y < Workspace.FallenPartsDestroyHeight && GameManager.NetworkManager.IsServer)
+							{
 								act.Destroy();
+								continue;
+							}
 
-							if (GameManager.NetworkManager.Clients.Count > 0)
-								act.ReplicateProperties(["Position", "Rotation", "Velocity"], false);
+							if (GameManager.NetworkManager.Clients.Count > 0 ||
+								act._lastposition != act._position ||
+								act._lastrotation != act._rotation ||
+								act._lastvelocity != act.Velocity)
+
+								act.ReplicateProperties(["Position", "Rotation"], false);
+
+							act._lastposition = act._position;
+							act._lastrotation = act._rotation;
+							act._lastvelocity = act.Velocity;
 						}
 					}
 					LastTime = DateTime.Now;

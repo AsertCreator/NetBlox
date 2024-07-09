@@ -31,6 +31,7 @@ namespace NetBlox
 		public Texture2D StudTexture;
 		public Font MainFont;
 		public BasePart? MoverPart;
+		public bool FirstFrame = false;
 		private bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
 
@@ -99,7 +100,7 @@ namespace NetBlox
 			{
 				if (RenderAtAll)
 				{
-					for (int i = 0; i < 3; i++) // s p e e d
+					for (int i = 0; i < 6; i++) // s p e e d
 					{
 						if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
 						{
@@ -122,6 +123,11 @@ namespace NetBlox
 					// render world
 					Raylib.BeginDrawing();
 					{
+						if (FirstFrame)
+						{
+							GameManager.PhysicsManager.Begin();
+						}
+
 						Raylib.ClearBackground(Color.SkyBlue);
 						Raylib.BeginMode3D(MainCamera);
 

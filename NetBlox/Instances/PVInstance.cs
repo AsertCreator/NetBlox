@@ -9,6 +9,8 @@ namespace NetBlox.Instances
 		public bool _anchored = false;
 		public Vector3 _position = Vector3.Zero;
 		public Vector3 _rotation = Vector3.Zero;
+		public Vector3 _lastposition = Vector3.Zero;
+		public Vector3 _lastrotation = Vector3.Zero;
 
 		public PVInstance(GameManager ins) : base(ins) { }
 

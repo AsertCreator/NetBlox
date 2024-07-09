@@ -45,7 +45,7 @@ namespace NetBlox.Instances
 			base.RenderUI();
 			if (ActualTexture != null)
 				RenderUtils.DrawCubeTextureRec((Texture2D)ActualTexture, bp.Position, bp.Rotation,
-					bp.Size.X + 0.001f, bp.Size.Y + 0.001f, bp.Size.Z + 0.001f, Color.White, Face); // just so it could render
+					bp.Size.X + 0.002f, bp.Size.Y + 0.002f, bp.Size.Z + 0.002f, Color.White, Face); // just so it could render
 		}
 	}
 }

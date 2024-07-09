@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text.Json.Serialization;
 using NetBlox.Instances.Services;
 using NetBlox.Common;
+using Qu3e;
 
 namespace NetBlox.Instances
 {
@@ -30,6 +31,17 @@ namespace NetBlox.Instances
 			Color = c;
 			Anchored = true;
 			Size = new Vector3(1, 1, 1);
+
+			// yes. unnecessary calculations. but what then?
+			Scene sc = Root.GetService<Workspace>().Scene;
+			lock (sc)
+			{
+				sc.RemoveBody(Body);
+			}
+			Body = null;
+			Box = null;
+			BoxDef = null;
+			GameManager.PhysicsManager.Actors.Remove(this);
 		}
 
 		public override void Render()

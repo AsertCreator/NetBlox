@@ -43,8 +43,44 @@ window.netblox = {
         }
     },
     QueryService: {
-        getGameInfo: () =>  
-            
+        getGameInfo: () => {
+            let resp = await fetch("http://" + window.location.hostname + "/api/places/info", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: `${gameid}`
+            });
+            if (resp.ok) {
+                let json = await resp.json();
+                return json;
+            } else {
+                debugger;
+                window.location.href = "http://" + window.location.hostname + "/";
+                throw "Could not retrieve general game information, code " + resp.status;
+            }
+        }
+    },
+    JoinService: {
+        joinGame: (gameid, servid) => {
+            let resp = await fetch("http://" + window.location.hostname + "/api/places/join", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: `${gameid}\n${servid}`
+            });
+            if (resp.ok) {
+                let json = await resp.json();
+                const ip = json.ip;
+                const port = json.port;
+                window.location.href = "netblox-client://base64 " + btoa(JSON.stringify({
+                    "e":
+                }));
+            } else {
+                debugger;
+                throw "Could not join the game, code " + resp.status;
+            }
         }
     }
 };

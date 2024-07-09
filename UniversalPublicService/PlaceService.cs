@@ -21,7 +21,7 @@ namespace NetBlox.PublicService
 			Task = Task.Run(async () =>
 			{
 				LoadDatabase();
-				Log.Information("PlaceService: Successfully started!");
+				Log.Information("PlaceService: Successfully started and loaded places: " + AllPlaces.Count);
 
 				AppDomain.CurrentDomain.ProcessExit += (x, y) =>
 				{

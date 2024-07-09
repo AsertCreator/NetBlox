@@ -126,6 +126,8 @@ namespace NetBlox.PublicService
 				if (uri == "/api/users/setpresence") 
 					return "{\"onlineMode\":\"" + Program.GetService<UserService>().SetPresence(data.Split('\n'), ref i) + "\"}";
 
+				// if (uri == "/api/places/join")
+				// 	return Program.GetService<JoinService>().Join(data.Split('\n')[0], data.Split('\n')[1]);
 				if (uri == "/api/places/exists") 
 					return "{\"value\":" + ((Program.GetService<PlaceService>().GetPlaceByID(long.Parse(data)) != null) ? "true" : "false") + "}";
 				if (uri == "/api/places/icon")

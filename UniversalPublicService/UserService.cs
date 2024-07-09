@@ -21,7 +21,7 @@ namespace NetBlox.PublicService
 			Task = Task.Run(async () =>
 			{
 				LoadDatabase();
-				Log.Information("UserService: Successfully started!");
+				Log.Information("UserService: Successfully started and loaded users: " + AllUsers.Count);
 
 				AppDomain.CurrentDomain.ProcessExit += (x, y) =>
 				{

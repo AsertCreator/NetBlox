@@ -180,6 +180,9 @@ namespace NetBlox
 		}
 		public static Job ScheduleScript(GameManager gm, DynValue func, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null)
 		{
+			if ((level == 7 || level == 8) && gm.NetworkManager.IsClient)
+				throw new Exception("Server-exclusive threads are not expected on client!");
+
 			var closure = gm.MainEnvironment.CreateCoroutine(func).Coroutine;
 			var job = new Job()
 			{
@@ -193,11 +196,14 @@ namespace NetBlox
 							gm.MainEnvironment.Globals["workspace"] = DynValue.Nil;
 						else
 							gm.MainEnvironment.Globals["workspace"] = LuaRuntime.MakeInstanceTable(works, gm);
+						gm.MainEnvironment.Globals["Workspace"] = gm.MainEnvironment.Globals["workspace"];
 
 						if (self == null)
 							gm.MainEnvironment.Globals["script"] = DynValue.Nil;
 						else
 							gm.MainEnvironment.Globals["script"] = LuaRuntime.MakeInstanceTable(self, gm);
+
+
 
 						var args = job.AssociatedObject4 as DynValue[];
 						var result = closure.Resume(args);

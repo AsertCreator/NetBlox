@@ -40,7 +40,7 @@ namespace NetBlox
 		public bool FilteringEnabled = true;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
-		public int PropertyReplicationRate = 50;
+		public int PropertyReplicationRate = 20;
 		public Dictionary<RemoteClient, Instance> Owners = [];
 		public List<Instance> SelfOwnerships = [];
 		public ClientStartupInfo? ClientStartupInfo;
@@ -215,56 +215,43 @@ namespace NetBlox
 							Parent = ws,
 							Color = Color.DarkGreen,
 							Position = new(0, -45f, 0),
-							Size = new(32, 2, 32),
+							Size = new(512, 2, 512),
 							TopSurface = SurfaceType.Studs,
 							Anchored = true
 						};
 
-						var torso = new Part(this)
+						for (int i = 0; i < 7; i++)
 						{
-							Parent = ws,
-							Color = Color.Red,
-							Position = new(-0.5f, -1f, 0),
-							Size = new(2, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
-
-						new Weld(this)
-						{
-							Part0 = torso,
-							Part1 = new Part(this)
+							for (int j = 0; j < i; j++)
 							{
-								Parent = ws,
-								Color = Color.DarkBlue,
-								Position = new(0, -3f, 0),
-								Size = new(1, 2, 1),
-								TopSurface = SurfaceType.Studs
-							},
-							Enabled = true
-						};
-						new Part(this)
+								_ = new Part(this)
+								{
+									Parent = ws,
+									Color = Color.White,
+									Position = new(i * 1.5f, 60 + j * 1.5f, i * 1.5f),
+									Size = new(1, 1, 1),
+									TopSurface = SurfaceType.Studs,
+									BottomSurface = SurfaceType.Studs,
+									LeftSurface = SurfaceType.Studs,
+									RightSurface = SurfaceType.Studs,
+									FrontSurface = SurfaceType.Studs,
+									BackSurface = SurfaceType.Studs,
+								};
+							}
+						}
+
+						_ = new Part(this)
 						{
 							Parent = ws,
-							Color = Color.DarkBlue,
-							Position = new(-1, -3f, 0),
-							Size = new(1, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
-						new Part(this)
-						{
-							Parent = ws,
-							Color = Color.Yellow,
-							Position = new(-2f, -1f, 0),
-							Size = new(1, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
-						new Part(this)
-						{
-							Parent = ws,
-							Color = Color.Yellow,
-							Position = new(1f, -1f, 0),
-							Size = new(1, 2, 1),
-							TopSurface = SurfaceType.Studs
+							Color = Color.White,
+							Position = new(-10, 70, -10),
+							Size = new(1, 40, 1),
+							TopSurface = SurfaceType.Studs,
+							BottomSurface = SurfaceType.Studs,
+							LeftSurface = SurfaceType.Studs,
+							RightSurface = SurfaceType.Studs,
+							FrontSurface = SurfaceType.Studs,
+							BackSurface = SurfaceType.Studs,
 						};
 
 						break;

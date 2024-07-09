@@ -1,7 +1,9 @@
 ﻿using NetBlox.Instances.Services;
 using Raylib_cs;
+using System.Buffers.Text;
 using System.Diagnostics;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 
 namespace NetBlox.Client
@@ -24,6 +26,15 @@ namespace NetBlox.Client
 #if _WINDOWS
 			AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");
 #endif
+			if (args[0] == "base64")
+			{
+				string bas64str = args[1];
+				byte[] base64 = Encoding.UTF8.GetBytes(bas64str);
+				int bytes = 0;
+				Base64.DecodeFromUtf8InPlace(base64, out bytes);
+				string argstr = Encoding.UTF8.GetString(base64);
+				args = argstr.Split(' ');
+			}
 
 			if (args.Length == 1 && args[0] == "check")
 			{
