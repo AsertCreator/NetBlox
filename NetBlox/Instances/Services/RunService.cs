@@ -12,17 +12,22 @@ namespace NetBlox.Instances.Services
 	{
 		[Lua([Security.Capability.None])]
 		public LuaSignal Heartbeat { get; init; } = new();
+		public DateTime LastTimeStartedRunning = DateTime.MinValue;
 
 		public RunService(GameManager gm) : base(gm) 
 		{
 			Name = "Run Service";
 		}
 
-		[Lua([Security.Capability.RobloxScriptSecurity])]
+		[Lua([Security.Capability.CoreSecurity])]
 		public void Pause() => GameManager.IsRunning = false;
-		[Lua([Security.Capability.RobloxScriptSecurity])]
-		public void Run() => GameManager.IsRunning = true;
-		[Lua([Security.Capability.RobloxScriptSecurity])]
+		[Lua([Security.Capability.CoreSecurity])]
+		public void Run() 
+		{
+			LastTimeStartedRunning = DateTime.Now;
+			GameManager.IsRunning = true; 
+		}
+		[Lua([Security.Capability.CoreSecurity])]
 		public void Stop() => GameManager.Shutdown();
 		[Lua([Security.Capability.CoreSecurity])]
 		public void SetProcessorPriority(int priority) => AppManager.GameProcessor.Priority = priority;

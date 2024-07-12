@@ -128,6 +128,8 @@ namespace MoonSharp.Interpreter
 				RegisterScriptFieldAsConst(fi, null, table, t, name);
 			}
 
+			table.IsProtected = true;
+
 			return gtable;
 		}
 

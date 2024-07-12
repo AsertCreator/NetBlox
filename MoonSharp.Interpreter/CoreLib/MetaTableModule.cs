@@ -24,10 +24,13 @@ namespace MoonSharp.Interpreter.CoreLib
 
 			DynValue curmeta = executionContext.GetMetamethod(table, "__metatable");
 
-			if (curmeta != null || executionContext.GetMetamethod(table, "__handle") != null)
+			if (curmeta != null)
 			{
 				throw new ScriptRuntimeException("cannot change a protected metatable");
 			}
+
+			if (table.Table.IsProtected)
+				throw ScriptRuntimeException.ProtectedMetatableAccessedSet();
 
 			table.Table.MetaTable = metatable.Table;
 			return table;
@@ -56,8 +59,8 @@ namespace MoonSharp.Interpreter.CoreLib
 
 			if (meta == null)
 				return DynValue.Nil;
-			else if (meta.RawGet("__handle") != null) // idl when people are getting instance metatables :angry:
-				return DynValue.Nil;
+			if (obj.Table.IsProtected)
+				throw ScriptRuntimeException.ProtectedMetatableAccessedGet();
 			else if (meta.RawGet("__metatable") != null)
 				return meta.Get("__metatable");
 			else
@@ -73,6 +76,9 @@ namespace MoonSharp.Interpreter.CoreLib
 			DynValue table = args.AsType(0, "rawget", DataType.Table);
 			DynValue index = args[1];
 
+			if (table.Table.IsProtected)
+				throw ScriptRuntimeException.ProtectedRawGet();
+
 			return table.Table.Get(index);
 		}
 
@@ -86,6 +92,9 @@ namespace MoonSharp.Interpreter.CoreLib
 		{
 			DynValue table = args.AsType(0, "rawset", DataType.Table);
 			DynValue index = args[1];
+
+			if (table.Table.IsProtected)
+				throw ScriptRuntimeException.ProtectedRawSet();
 
 			table.Table.Set(index, args[2]);
 
@@ -101,6 +110,12 @@ namespace MoonSharp.Interpreter.CoreLib
 			DynValue v1 = args[0];
 			DynValue v2 = args[1];
 
+			if (v1.Type == DataType.Table && v1.Table.IsProtected)
+				throw ScriptRuntimeException.ProtectedRawEqual();
+
+			if (v2.Type == DataType.Table && v2.Table.IsProtected)
+				throw ScriptRuntimeException.ProtectedRawEqual();
+
 			return DynValue.NewBoolean(v1.Equals(v2)); 
 		}
 
@@ -114,6 +129,9 @@ namespace MoonSharp.Interpreter.CoreLib
 			{
 				throw ScriptRuntimeException.BadArgument(0, "rawlen", "table or string", args[0].Type.ToErrorTypeString(), false);
 			}
+
+			if (args[0].Table.IsProtected)
+				throw ScriptRuntimeException.ProtectedLength();
 
 			return args[0].GetLength();
 		}

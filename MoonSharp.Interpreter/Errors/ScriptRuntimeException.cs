@@ -505,6 +505,30 @@ namespace MoonSharp.Interpreter
 		{
 			return new ScriptRuntimeException("attempt to access instance member {0}.{1} from a static userdata", typeDescr.Name, desc.Name);
 		}
+		public static ScriptRuntimeException ProtectedMetatableAccessedGet()
+		{
+			return new ScriptRuntimeException("cannot get metatable from this object");
+		}
+		public static ScriptRuntimeException ProtectedRawGet()
+		{
+			return new ScriptRuntimeException("cannot use rawget on this object");
+		}
+		public static ScriptRuntimeException ProtectedMetatableAccessedSet()
+		{
+			return new ScriptRuntimeException("cannot set metatable to this object");
+		}
+		public static ScriptRuntimeException ProtectedRawSet()
+		{
+			return new ScriptRuntimeException("cannot user rawset on this object");
+		}
+		public static ScriptRuntimeException ProtectedRawEqual()
+		{
+			return new ScriptRuntimeException("cannot use rawequal on this object");
+		}
+		public static ScriptRuntimeException ProtectedLength()
+		{
+			return new ScriptRuntimeException("cannot get length of this object");
+		}
 
 		/// <summary>
 		/// Rethrows this instance if 

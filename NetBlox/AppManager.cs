@@ -28,6 +28,7 @@ namespace NetBlox
 		public static string ContentFolder = Path.GetFullPath("./content/");
 		public static string LibraryFolder = Path.GetFullPath("./tmp/");
 		public static string PublicServiceAPI = "";
+		public static DateTime WhenStartedRunning;
 		public static int VersionMajor => Common.Version.VersionMajor;
 		public static int VersionMinor => Common.Version.VersionMinor;
 		public static int VersionPatch => Common.Version.VersionPatch;
@@ -90,6 +91,8 @@ namespace NetBlox
 				}
 				return JobResult.NotCompleted;
 			});
+
+			WhenStartedRunning = DateTime.Now;
 
 			while (!ShuttingDown) TaskScheduler.Step();
 		}

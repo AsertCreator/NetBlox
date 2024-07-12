@@ -1,9 +1,11 @@
 ﻿using MoonSharp.Interpreter;
+using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Structs;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime;
@@ -28,77 +30,138 @@ namespace NetBlox.Runtime
 				CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
 			gm.MainEnvironment = tenv;
 
-			tenv.Globals["game"] = MakeInstanceTable(gm.CurrentRoot, gm);
-			tenv.Globals["Game"] = tenv.Globals["game"];
-
-			tenv.Globals["wait"] = DynValue.NewCallback((x, y) =>
+			// heavy sandbox lol.
+			// it based on scriptcontext leaked source code
+			// dont tell anybody ok... shhhh...
 			{
-				var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
-				TaskScheduler.CurrentJob.JoinedUntil = wa;
-				return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
-			});
-			tenv.Globals["delay"] = tenv.Globals["wait"];
-			tenv.Globals["require"] = DynValue.NewCallback((x, y) =>
-			{
-				var table = y[0];
-				var inst = SerializationManager.LuaDeserialize<Instance>(table, gm);
+				tenv.Globals["_G"] = DynValue.NewTable(tenv);
+				tenv.Globals["shared"] = DynValue.NewTable(tenv);
+				tenv.Globals["_VERSION"] = gm.CurrentRoot.GetService<PlatformService>().FormatVersion();
 
-				var ms = inst as ModuleScript;
-				if (ms == null)
-					throw new Exception("Expected a ModuleScript");
+				tenv.Globals["game"] = MakeInstanceTable(gm.CurrentRoot, gm);
+				tenv.Globals["Game"] = tenv.Globals["game"];
 
-				if (gm.LoadedModules.TryGetValue(ms, out var dv)) return dv;
+				tenv.Globals["load"] = DynValue.Nil;
+				tenv.Globals["loadfile"] = DynValue.Nil;
+				tenv.Globals["dofile"] = DynValue.Nil;
 
-				var lt = TaskScheduler.CurrentJob;
-				lt.JoinedTo = TaskScheduler.ScheduleScript(gm, ms.Source, (int)lt.AssociatedObject1, ms, x =>
+				tenv.Globals["elapsedTime"] = DynValue.NewCallback((x, y) =>
 				{
-					DynValue dv = (DynValue)x.AssociatedObject5;
-					lt.AssociatedObject4 = dv.Type == DataType.Tuple ? dv.Tuple : [dv];
-					return JobResult.CompletedSuccess;
+					return DynValue.NewNumber(new TimeSpan(AppManager.WhenStartedRunning.Ticks).TotalSeconds);
 				});
-
-				return DynValue.NewYieldReq([]);
-			});
-			tenv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
-			{
-				if (y.Count != 0)
+				tenv.Globals["time"] = DynValue.NewCallback((x, y) => 
 				{
-					string prefix = y.AsStringUsingMeta(x, 0, "printidentity");
-					PrintOut(prefix + " " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
+					var rs = gm.CurrentRoot.GetService<RunService>();
+					if (!gm.IsRunning) return DynValue.NewNumber(0);
+					return DynValue.NewNumber((DateTime.Now - rs.LastTimeStartedRunning).TotalSeconds);
+				});
+				tenv.Globals["tick"] = DynValue.NewCallback((x, y) => 
+					DynValue.NewNumber(new TimeSpan(DateTime.Now.Ticks).TotalSeconds));
+
+				tenv.Globals["wait"] = DynValue.NewCallback((x, y) =>
+				{
+					var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
+					TaskScheduler.CurrentJob.JoinedUntil = wa;
+					return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
+				});
+				tenv.Globals["delay"] = tenv.Globals["wait"];
+				tenv.Globals["Wait"] = tenv.Globals["wait"];
+				tenv.Globals["Delay"] = tenv.Globals["wait"];
+
+				if (Debugger.IsAttached)
+				{
+					tenv.Globals["crash__"] = DynValue.NewCallback((x, y) =>
+					{
+						LogManager.LogError("NETBLOX IS CRASHING ALL EVACUATE IMMEDIATELY!!!");
+						LogManager.LogError("PROTECT YOUR LIVES (dies)\n");
+						LogManager.LogError("NetBlox's crash__ function was called");
+						Environment.FailFast("NetBlox's crash__ function was called");
+						throw new Exception("HAHAHA");
+					});
+					tenv.Globals["hang__"] = DynValue.NewCallback((x, y) =>
+					{
+						LogManager.LogError("Y'ALL WANNA COME TO MY HANGOUT???");
+						LogManager.LogError("AH SHI WHAT THE FU- (dies)\n");
+						LogManager.LogError("NetBlox's hang__ function was called");
+						while (true) ;
+					});
 				}
-				else
-					PrintOut("Current identity is " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
-				return DynValue.Void;
-			});
-			tenv.Globals["print"] = DynValue.NewCallback((x, y) =>
-			{
-				List<string> strs = [];
-				for (int i = 0; i < y.Count; i++)
-					strs.Add(y.AsStringUsingMeta(x, i, "print"));
-				PrintOut(string.Join(' ', strs));
-				return DynValue.Void;
-			});
-			tenv.Globals["warn"] = DynValue.NewCallback((x, y) =>
-			{
-				List<string> strs = [];
-				for (int i = 0; i < y.Count; i++)
-					strs.Add(y.AsStringUsingMeta(x, i, "warn"));
-				PrintWarn(string.Join(' ', strs));
-				return DynValue.Void;
-			});
-			tenv.Globals["error"] = DynValue.NewCallback((x, y) =>
-			{
-				List<string> strs = [];
-				for (int i = 0; i < y.Count; i++)
-					strs.Add(y.AsStringUsingMeta(x, i, "error"));
-				PrintError(string.Join(' ', strs));
-				throw new Exception(y[0].ToString());
-			});
-			tenv.Globals["spawn"] = DynValue.NewCallback((x, y) =>
-			{
-				TaskScheduler.ScheduleScript(gm, y[0], 3, null);
-				return DynValue.Void;
-			});
+
+				tenv.Globals["version"] = DynValue.NewCallback((x, y) =>
+					DynValue.NewString($"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}"));
+				tenv.Globals["Version"] = tenv.Globals["version"];
+
+				tenv.Globals["require"] = DynValue.NewCallback((x, y) =>
+				{
+					var table = y[0];
+
+					if (table.Type == DataType.Table)
+					{
+						var inst = SerializationManager.LuaDeserialize<Instance>(table, gm);
+
+						var ms = inst as ModuleScript;
+						if (ms == null)
+							throw new Exception("Expected a ModuleScript");
+
+						if (gm.LoadedModules.TryGetValue(ms, out var dv)) return dv;
+
+						var lt = TaskScheduler.CurrentJob;
+						lt.JoinedTo = TaskScheduler.ScheduleScript(gm, ms.Source, (int)lt.AssociatedObject1, ms, x =>
+						{
+							DynValue dv = (DynValue)x.AssociatedObject5;
+							lt.AssociatedObject4 = dv.Type == DataType.Tuple ? dv.Tuple : [dv];
+							return JobResult.CompletedSuccess;
+						});
+
+						return DynValue.NewYieldReq([]);
+					}
+					else if (table.Type == DataType.Number)
+					{
+						throw new NotImplementedException();
+					}
+					throw new Exception("expected asset id or ModuleScript to be passed to require");
+				});
+				tenv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
+				{
+					if (y.Count != 0)
+					{
+						string prefix = y.AsStringUsingMeta(x, 0, "printidentity");
+						PrintOut(prefix + " " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
+					}
+					else
+						PrintOut("Current identity is " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
+					return DynValue.Void;
+				});
+				tenv.Globals["print"] = DynValue.NewCallback((x, y) =>
+				{
+					List<string> strs = [];
+					for (int i = 0; i < y.Count; i++)
+						strs.Add(y.AsStringUsingMeta(x, i, "print"));
+					PrintOut(string.Join(' ', strs));
+					return DynValue.Void;
+				});
+				tenv.Globals["warn"] = DynValue.NewCallback((x, y) =>
+				{
+					List<string> strs = [];
+					for (int i = 0; i < y.Count; i++)
+						strs.Add(y.AsStringUsingMeta(x, i, "warn"));
+					PrintWarn(string.Join(' ', strs));
+					return DynValue.Void;
+				});
+				tenv.Globals["error"] = DynValue.NewCallback((x, y) =>
+				{
+					List<string> strs = [];
+					for (int i = 0; i < y.Count; i++)
+						strs.Add(y.AsStringUsingMeta(x, i, "error"));
+					PrintError(string.Join(' ', strs));
+					throw new Exception(y[0].ToString());
+				});
+				tenv.Globals["spawn"] = DynValue.NewCallback((x, y) =>
+				{
+					TaskScheduler.ScheduleScript(gm, y[0], 3, null);
+					return DynValue.Void;
+				});
+			}
 
 			MakeDataType(gm, "Instance", (x, y) =>
 			{
@@ -219,7 +282,7 @@ namespace NetBlox.Runtime
 						var sec = meth.GetCustomAttribute<LuaAttribute>();
 
 						if (TaskScheduler.CurrentJob.Type != JobType.Script)
-							throw new Exception("Attempted to access an Instance as a table from native code");
+							throw new Exception("attempted to access an Instance reference from native code");
 
 						if (sec == null) // we lie
 							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"");
@@ -375,6 +438,7 @@ namespace NetBlox.Runtime
 			table.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.Name));
 			table.MetaTable["__handle"] = inst.UniqueID.ToString();
 			table.MetaTable["__handleType"] = 0;
+			table.IsProtected = true;
 
 			inst.Tables[scr] = table;
 

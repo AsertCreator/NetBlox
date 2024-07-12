@@ -1143,7 +1143,11 @@ namespace MoonSharp.Interpreter.Execution.VM
 				if (ip >= 0)
 					return ip;
 				else if (r.Type == DataType.Table)
+				{
+					if (r.Table.IsProtected)
+						throw ScriptRuntimeException.ProtectedLength();
 					m_ValueStack.Push(DynValue.NewNumber(r.Table.Length));
+				}
 
 				else throw ScriptRuntimeException.LenOnInvalidType(r);
 			}

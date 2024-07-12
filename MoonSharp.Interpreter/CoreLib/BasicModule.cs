@@ -24,6 +24,10 @@ namespace MoonSharp.Interpreter.CoreLib
 			if (args.Count < 1) throw ScriptRuntimeException.BadArgumentValueExpected(0, "type");
 
 			DynValue v = args[0];
+			if (v.Type == DataType.Table && v.Table.IsProtected)
+			{
+				return DynValue.NewString("userdata"); // i love lying
+			}
 			return DynValue.NewString(v.Type.ToLuaTypeString());
 		}
 

@@ -684,5 +684,10 @@ namespace MoonSharp.Interpreter
 				return m_Values.Select(n => n.Value);
 			}
 		}
+
+		/// <summary>
+		/// NetBlox specific, prohibits you from getting metatable altogether.
+		/// </summary>
+		public bool IsProtected { get; set; }
 	}
 }

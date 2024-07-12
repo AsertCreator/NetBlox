@@ -11,7 +11,8 @@ namespace NetBlox.Instances.Services
 	{
 		public UserInputService(GameManager ins) : base(ins) { }
 		[Lua([Security.Capability.None])]
-		public bool TocuhEnabled => GameManager.CurrentProfile.IsTouchDevice;
+		// TOCUH I CANT
+		public bool TouchEnabled => GameManager.CurrentProfile.IsTouchDevice;
 		[Lua([Security.Capability.CoreSecurity])]
 		public LuaSignal KeyboardPress { get; init; } = new();
 
