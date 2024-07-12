@@ -206,7 +206,6 @@ namespace NetBlox.Instances
 				return DoClone(this);
 			}
 		}
-		[Lua([Security.Capability.None])]
 		public virtual Instance ForceClone()
 		{
 			// i tried

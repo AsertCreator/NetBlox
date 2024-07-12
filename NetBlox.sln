@@ -41,9 +41,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalDuoHost", "Univers
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStudio\WindowsStudio.csproj", "{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkTest", "NetworkTest\NetworkTest.csproj", "{450A0E8A-E147-40E8-B549-8529F8F809B0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetworkTest", "NetworkTest\NetworkTest.csproj", "{450A0E8A-E147-40E8-B549-8529F8F809B0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{37CC2C1F-3FE5-4975-8B8D-3185332E708B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBApiDumper", "NBApiDumper\NBApiDumper.csproj", "{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -185,6 +187,22 @@ Global
 		{450A0E8A-E147-40E8-B549-8529F8F809B0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{450A0E8A-E147-40E8-B549-8529F8F809B0}.Release|x86.ActiveCfg = Release|Any CPU
 		{450A0E8A-E147-40E8-B549-8529F8F809B0}.Release|x86.Build.0 = Release|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Debug|x86.Build.0 = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Dev|Any CPU.Build.0 = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Dev|x86.ActiveCfg = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Dev|x86.Build.0 = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Devp4|Any CPU.ActiveCfg = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Devp4|Any CPU.Build.0 = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Devp4|x86.ActiveCfg = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Devp4|x86.Build.0 = Debug|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Release|x86.ActiveCfg = Release|Any CPU
+		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
