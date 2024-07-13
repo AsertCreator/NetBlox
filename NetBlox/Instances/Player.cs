@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 using NetBlox.Instances;
 using System.Text.Json.Serialization;
 using NetBlox.Structs;
+using System.Text;
 
 namespace NetBlox.Instances
 {
@@ -12,14 +13,39 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Instance? Character { get; set; }
 		[Lua([Security.Capability.None])]
+		public Instance? RespawnLocation { get; set; }
+		[Lua([Security.Capability.None])]
 		public bool Guest { get; set; }
 		[Lua([Security.Capability.None])]
-		public long UserId { get; set; }
+		public long UserId => userId;
+		[Lua([Security.Capability.None])]
+		public long AccountAge => age;
+		[Lua([Security.Capability.None])]
+		public double CameraMaxZoomDistance { get; set; } = 32;
+		[Lua([Security.Capability.None])]
+		public double CameraMinZoomDistance { get; set; } = 0.2;
+		[Lua([Security.Capability.None])]
+		public bool AutoJumpEnabled { get; set; } = true;
+		[Lua([Security.Capability.None])]
+		public long CharacterAppearanceId { get; set; }
+
 		public bool IsLocalPlayer = false;
 		public RemoteClient? Client;
+		public long userId;
+		public long age;
 
 		public Player(GameManager ins) : base(ins) { }
 
+		[Lua([Security.Capability.None])]
+		public void SaveNumber(string key, int num) => 
+			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), BitConverter.GetBytes(num)).ConfigureAwait(false);
+		[Lua([Security.Capability.None])]
+		public void SaveString(string key, string data) =>
+			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), Encoding.UTF8.GetBytes(data)).ConfigureAwait(false);
+		[Lua([Security.Capability.CoreSecurity])]
+		public void SetUserId(long userid) => userId = userid;
+		[Lua([Security.Capability.CoreSecurity])]
+		public void SetAccountAge(long age) => this.age = age;
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Reload()
 		{
@@ -61,6 +87,7 @@ namespace NetBlox.Instances
 				Character.Destroy();
 
 			ch.Name = Name;
+			ch.Color3 = GetPlayerColor().Color;
 			ch.IsLocalPlayer = true;
 			ch.Anchored = true;
 			ch.Parent = workspace;
@@ -84,6 +111,14 @@ namespace NetBlox.Instances
 			humanoid.Parent = chmodel;
 
 
+		}
+		public BrickColor GetPlayerColor()
+		{
+			int idx = (int)(Math.Abs(CharacterAppearanceId) % 100);
+			BrickColor? bc = BrickColor.ByIndex(idx);
+			while (!bc.HasValue)
+				bc = BrickColor.ByIndex(++idx);
+			return bc.Value;
 		}
 		[Lua([Security.Capability.None])]
 		public void Kick(string msg) => GameManager.NetworkManager.PerformKick(Client, msg, IsLocalPlayer);

@@ -92,7 +92,7 @@ public partial class MainWindow : System.Windows.Window
 
 			part.Size = new System.Numerics.Vector3(4, 1, 2);
 			part.Position = App.EditorGame.RenderManager.MainCamera.Position;
-			part.Color = Color.Gray;
+			part.Color3 = Color.Gray;
 			part.Parent = works;
 		}
 	}

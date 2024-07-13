@@ -28,7 +28,7 @@ namespace NetBlox
 		public PhysicsManager PhysicsManager;
 		public NetworkManager NetworkManager;
 		public DataModel CurrentRoot = null!;
-		public Profile CurrentProfile = new();
+		public ProfileManager CurrentProfile = new();
 		public ConfigFlags CustomFlags;
 		public bool IsStudio = false;
 		public bool IsRunning = true;
@@ -213,7 +213,7 @@ namespace NetBlox
 						Part part = new(this)
 						{
 							Parent = ws,
-							Color = Color.DarkGreen,
+							Color3 = Color.DarkGreen,
 							Position = new(0, -45f, 0),
 							Size = new(512, 2, 512),
 							TopSurface = SurfaceType.Studs,
@@ -227,7 +227,7 @@ namespace NetBlox
 								_ = new Part(this)
 								{
 									Parent = ws,
-									Color = Color.White,
+									Color3 = Color.White,
 									Position = new(i * 1.5f, 60 + j * 1.5f, i * 1.5f),
 									Size = new(1, 1, 1),
 									TopSurface = SurfaceType.Studs,
@@ -243,7 +243,7 @@ namespace NetBlox
 						_ = new Part(this)
 						{
 							Parent = ws,
-							Color = Color.White,
+							Color3 = Color.White,
 							Position = new(-10, 70, -10),
 							Size = new(1, 40, 1),
 							TopSurface = SurfaceType.Studs,
@@ -266,7 +266,7 @@ namespace NetBlox
 						Part part = new(this)
 						{
 							Parent = ws,
-							Color = Color.DarkGreen,
+							Color3 = Color.DarkGreen,
 							Position = new(0, -45f, 0),
 							Size = new(32, 2, 32),
 							TopSurface = SurfaceType.Studs,
@@ -282,7 +282,7 @@ namespace NetBlox
 						new Part(this)
 						{
 							Parent = ws,
-							Color = Color.DarkBlue,
+							Color3 = Color.DarkBlue,
 							Position = new(0, -3f, 0),
 							Size = new(1, 2, 1),
 							TopSurface = SurfaceType.Studs
@@ -290,7 +290,7 @@ namespace NetBlox
 						new Part(this)
 						{
 							Parent = ws,
-							Color = Color.DarkBlue,
+							Color3 = Color.DarkBlue,
 							Position = new(-1, -3f, 0),
 							Size = new(1, 2, 1),
 							TopSurface = SurfaceType.Studs
@@ -298,7 +298,7 @@ namespace NetBlox
 						new Part(this)
 						{
 							Parent = ws,
-							Color = Color.Red,
+							Color3 = Color.Red,
 							Position = new(-0.5f, -1f, 0),
 							Size = new(2, 2, 1),
 							TopSurface = SurfaceType.Studs
@@ -306,7 +306,7 @@ namespace NetBlox
 						new Part(this)
 						{
 							Parent = ws,
-							Color = Color.Yellow,
+							Color3 = Color.Yellow,
 							Position = new(-2f, -1f, 0),
 							Size = new(1, 2, 1),
 							TopSurface = SurfaceType.Studs
@@ -314,7 +314,7 @@ namespace NetBlox
 						new Part(this)
 						{
 							Parent = ws,
-							Color = Color.Yellow,
+							Color3 = Color.Yellow,
 							Position = new(1f, -1f, 0),
 							Size = new(1, 2, 1),
 							TopSurface = SurfaceType.Studs

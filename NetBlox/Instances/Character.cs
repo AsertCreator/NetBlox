@@ -28,7 +28,7 @@ namespace NetBlox.Instances
 		{
 			var c = Color.White;
 			c.A = 255;
-			Color = c;
+			Color3 = c;
 			Anchored = true;
 			Size = new Vector3(1, 1, 1);
 
@@ -56,7 +56,7 @@ namespace NetBlox.Instances
 					prt.Position = Position;
 					prt.Size = Vector3.One;
 					prt.TopSurface = SurfaceType.Studs;
-					prt.Color = Color.DarkPurple;
+					prt.Color3 = Color.DarkPurple;
 					prt.Parent = this;
 				}
 			}

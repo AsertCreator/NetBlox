@@ -196,7 +196,8 @@ namespace NetBlox
 
 							pl.Name = nc.Username;
 							pl.Guest = isguest;
-							pl.UserId = isguest ? Random.Shared.Next(-100000, -1) : userid;
+							pl.SetUserId(isguest ? Random.Shared.Next(-100000, -1) : userid);
+							pl.CharacterAppearanceId = pl.UserId;
 							pl.Client = nc;
 							nc.Player = pl;
 
@@ -454,7 +455,6 @@ namespace NetBlox
 
 				int actinstc = sh.InstanceCount - 1;
 				int gotinsts = 0;
-				Camera c = new(GameManager);
 				Player? lp = null;
 
 				tcp.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
@@ -464,32 +464,38 @@ namespace NetBlox
 					if (++gotinsts >= actinstc)
 						Root.GetService<CoreGui>().HideTeleportGui();
 
-					var ins = RecieveNewInstance(rep.Data);
+					TaskScheduler.ScheduleNetwork("RecieveInstance", GameManager, x =>
+					{
+						var ins = RecieveNewInstance(rep.Data);
 
-					if (ins is Workspace)
-					{
-						((Workspace)ins).MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
-						c.Parent = ins;
-					}
-					if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
-					{
-						var ch = (Character)ins;
-						ch.IsLocalPlayer = true;
-						c.CameraSubject = ch;
-						if (lp != null)
+						if (ins is Workspace)
 						{
-							lp.Character = ch;
-							SendRawData(tcp, "nb2-gotchar", ch.UniqueID.ToByteArray());
+							Camera c = new(GameManager);
+							((Workspace)ins).MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
+							c.Parent = ins;
 						}
-					}
-					if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
-					{
-						lp = (Player)ins;
-						lp.IsLocalPlayer = true;
-						Root.GetService<Players>().CurrentPlayer = lp;
-					}
+						if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
+						{
+							var ch = (Character)ins;
+							ch.IsLocalPlayer = true;
+							((Camera)Root.GetService<Workspace>().MainCamera).CameraSubject = ch;
+							if (lp != null)
+							{
+								lp.Character = ch;
+								SendRawData(tcp, "nb2-gotchar", ch.UniqueID.ToByteArray());
+							}
+						}
+						if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
+						{
+							lp = (Player)ins;
+							lp.IsLocalPlayer = true;
+							Root.GetService<Players>().CurrentPlayer = lp;
+						}
 
-					Console.WriteLine($"{ins.UniqueID}, parent: {ins.ParentID}, classname: {ins.ClassName}, name: {ins.Name}");
+						Console.WriteLine($"{ins.UniqueID}, parent: {ins.ParentID}, classname: {ins.ClassName}, name: {ins.Name}");
+
+						return JobResult.CompletedSuccess;
+					});
 				});
 				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>
 				{
@@ -828,7 +834,9 @@ namespace NetBlox
 		}
 		private Replication AddReplicationImpl(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
 		{
-			Thread.Sleep(1); // i just cant
+			if (inst is ServerStorage) return null;
+			if (inst is Camera) return null; // worky arounds
+
 			var rep = new Replication(m, w, inst)
 			{
 				Recievers = nc ?? []

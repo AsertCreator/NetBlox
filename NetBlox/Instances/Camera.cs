@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using NetBlox.Instances.Services;
+using NetBlox.Runtime;
 using Raylib_cs;
 using System.Numerics;
 
@@ -24,6 +25,9 @@ namespace NetBlox.Instances
 			else
 			{
 				var subject = CameraSubject as BasePart ?? throw new Exception("CameraSubject is not BasePart");
+				var player = Root.GetService<Players>().LocalPlayer as Player;
+
+				if (player == null) return; // nah
 
 				// Camera rotation
 				if (Raylib.IsKeyDown(KeyboardKey.Down)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, 0.03f, true, true, false);
@@ -43,9 +47,35 @@ namespace NetBlox.Instances
 				}
 
 				// Zoom target distance
-				Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -Raylib.GetMouseWheelMove());
-				if (Raylib.IsKeyDown(KeyboardKey.O)) Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, 0.2f);
-				if (Raylib.IsKeyDown(KeyboardKey.I)) Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -0.2f);
+
+				float move = -Raylib.GetMouseWheelMove();
+				if (move > 0)
+				{
+					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+						.Length() < player.CameraMaxZoomDistance)
+						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
+				}
+				else
+				{
+					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+						.Length() > player.CameraMaxZoomDistance)
+						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
+					else
+						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -move);
+				}
+
+				if (Raylib.IsKeyDown(KeyboardKey.O))
+				{
+					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+						.Length() < player.CameraMaxZoomDistance)
+						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, 0.2f);
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.I))
+				{
+					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+						.Length() > player.CameraMinZoomDistance)
+						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -0.2f);
+				}
 
 				var diff = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;
 

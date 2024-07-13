@@ -35,7 +35,13 @@ namespace NetBlox.Server
 				GameName = "NetBlox Server"
 			}, args, (x) =>
 			{
-				x.LoadDefault(1);
+				x.CurrentRoot.Clear();
+				x.CurrentIdentity.PlaceName = "Welcoming";
+				x.CurrentIdentity.UniverseName = "Welcoming";
+				x.CurrentIdentity.MaxPlayerCount = 8;
+				x.CurrentIdentity.Author = "Roblox original places";
+				x.CurrentRoot.Name = x.CurrentIdentity.PlaceName;
+				RbxlParser.Load("rbxasset://places/Crossroads.rbxl", x.CurrentRoot);
 				Task.Run(x.NetworkManager.StartServer);
 			});
 			g.MainManager = true;

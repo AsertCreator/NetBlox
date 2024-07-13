@@ -46,7 +46,18 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public SurfaceType RightSurface { get; set; }
 		[Lua([Security.Capability.None])]
-		public Color Color { get; set; } = Color.Gray;
+		public Color Color3 { get; set; } = Color.Gray;
+		[Lua([Security.Capability.None])]
+		public BrickColor BrickColor 
+		{
+			get => _brickColor; 
+			set
+			{
+				_brickColor = value;
+				Color3 = _brickColor.Color;
+			}
+		}
+		private BrickColor _brickColor;
 		[Lua([Security.Capability.None])]
 		public Vector3 Position 
 		{ 
@@ -102,9 +113,9 @@ namespace NetBlox.Instances
 
 		public BasePart(GameManager ins) : base(ins) 
 		{
-			Scene sc = Root.GetService<Workspace>().Scene;
 			if (GameManager.NetworkManager.IsServer)
 			{
+				Scene sc = Root.GetService<Workspace>().Scene;
 				BodyDef bodyDef = new BodyDef();
 				bodyDef.position.Set(Position.X, Position.Y, Position.Z);
 				if (!Anchored)

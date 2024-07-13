@@ -7,23 +7,26 @@ namespace NetBlox.Instances
 	public class PVInstance : Instance
 	{
 		public bool _anchored = false;
-		public Vector3 _position = Vector3.Zero;
-		public Vector3 _rotation = Vector3.Zero;
+		public Vector3 _position { get => _pivot.Position; set => _pivot.Position = value; }
+		public Vector3 _rotation { get => _pivot.Rotation; set => _pivot.Rotation = value; }
 		public Vector3 _lastposition = Vector3.Zero;
 		public Vector3 _lastrotation = Vector3.Zero;
+		public CFrame _pivot;
+		public CFrame _pivotOffset;
+		[Lua([Security.Capability.None])]
+		public CFrame PivotOffset { get => _pivotOffset; set => _pivotOffset = value; }
+		[Lua([Security.Capability.None])]
+		public CFrame CFrame { get => _pivot; set => _pivot = value; }
 
 		public PVInstance(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
-		public CFrame GetPivot()
-		{
-			return new CFrame(_position);
-		}
+		public CFrame GetPivot() => _pivot * _pivotOffset;
 		[Lua([Security.Capability.None])]
-		public void SetPivot(CFrame pivot)
-		{
-			_position = pivot.Position;
-			_rotation = Vector3.Zero;
+		public void SetPivot(CFrame pivot) 
+		{ 
+			_pivot = pivot;
+			PivotOffset = default;
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

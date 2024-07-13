@@ -1,6 +1,8 @@
 ﻿using NetBlox.Instances;
+using NetBlox.Structs;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -14,7 +16,8 @@ namespace NetBlox.Server
 		public static void Load(string url, DataModel dm)
 		{
 			var xml = new XmlDocument();
-			xml.LoadXml(File.ReadAllText(url));
+			var ic = CultureInfo.InvariantCulture;
+			xml.LoadXml(File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult()));
 
 			void LoadChildren(Instance inst, XmlNode node)
 			{
@@ -28,45 +31,74 @@ namespace NetBlox.Server
 
 						var ins = InstanceCreator.CreateInstance(child.Attributes!["class"]!.Value, dm.GameManager);
 						var type = ins.GetType();
-						var props = node.SelectSingleNode("Properties");
+						var props = child.SelectNodes("Properties")![0];
+
+						ins.Parent = inst;
 
 						if (props != null)
 						{
 							for (int j = 0; j < props.ChildNodes.Count; j++)
 							{
-								var prop = props.ChildNodes[j]!;
-								var attr = prop.Attributes[0];
-
-								switch (prop.Name)
+								try
 								{
-									case "string" or "ProtectedString":
-										SerializationManager.SetProperty(type, ins, attr.Value, prop.InnerText);
-										break;
-									case "double":
-										SerializationManager.SetProperty(type, ins, attr.Value, double.Parse(prop.InnerText));
-										break;
-									case "float":
-										SerializationManager.SetProperty(type, ins, attr.Value, float.Parse(prop.InnerText));
-										break;
-									case "int":
-										SerializationManager.SetProperty(type, ins, attr.Value, int.Parse(prop.InnerText));
-										break;
-									case "bool":
-										SerializationManager.SetProperty(type, ins, attr.Value, bool.Parse(prop.InnerText));
-										break;
-									case "Vector3":
-										SerializationManager.SetProperty(type, ins, attr.Value, new Vector3()
-										{
-											X = float.Parse(prop.ChildNodes[0].InnerText),
-											Y = float.Parse(prop.ChildNodes[1].InnerText),
-											Z = float.Parse(prop.ChildNodes[2].InnerText)
-										});
-										break;
+									var prop = props.ChildNodes[j]!;
+									var attr = prop.Attributes[0];
+
+									switch (prop.Name)
+									{
+										case "string" or "ProtectedString":
+											SerializationManager.SetProperty(type, ins, attr.Value, prop.InnerText);
+											break;
+										case "double":
+											SerializationManager.SetProperty(type, ins, attr.Value, double.Parse(prop.InnerText, ic));
+											break;
+										case "float":
+											SerializationManager.SetProperty(type, ins, attr.Value, float.Parse(prop.InnerText, ic));
+											break;
+										case "int":
+											if (attr.Value == "BrickColor")
+												SerializationManager.SetProperty(type, ins, attr.Value, BrickColor.ByIndex(int.Parse(prop.InnerText, ic))!.Value);
+											else
+												SerializationManager.SetProperty(type, ins, attr.Value, int.Parse(prop.InnerText, ic));
+											break;
+										case "bool":
+											SerializationManager.SetProperty(type, ins, attr.Value, bool.Parse(prop.InnerText));
+											break;
+										case "Vector3":
+											SerializationManager.SetProperty(type, ins, attr.Value, new Vector3()
+											{
+												X = float.Parse(prop.ChildNodes[0].InnerText, CultureInfo.InvariantCulture),
+												Y = float.Parse(prop.ChildNodes[1].InnerText, CultureInfo.InvariantCulture),
+												Z = float.Parse(prop.ChildNodes[2].InnerText, CultureInfo.InvariantCulture)
+											});
+											break;
+										case "CoordinateFrame":
+											SerializationManager.SetProperty(type, ins, attr.Value, new CFrame()
+											{
+												Position = new Vector3()
+												{
+													X = float.Parse(prop.ChildNodes[0].InnerText, CultureInfo.InvariantCulture),
+													Y = float.Parse(prop.ChildNodes[1].InnerText, CultureInfo.InvariantCulture),
+													Z = float.Parse(prop.ChildNodes[2].InnerText, CultureInfo.InvariantCulture)
+												}
+											});
+											break;
+										case "Color3uint8":
+											uint val = uint.Parse(prop.InnerText, ic);
+											byte[] bs = BitConverter.GetBytes(val);
+											SerializationManager.SetProperty(type, ins, attr.Value[0..^5], new Color()
+											{
+												R = bs[0],
+												G = bs[1],
+												B = bs[2],
+												A = bs[3]
+											});
+											break;
+									}
 								}
+								catch { }
 							}
 						}
-
-						ins.Parent = inst;
 
 						LoadChildren(ins, child);
 					}

@@ -60,22 +60,22 @@ namespace NetBlox.Instances
 
 				if (Raylib.IsKeyDown(KeyboardKey.W))
 				{
-					model.SetPivot(model.GetPivot() + new CFrame(new(0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle))));
+					model.SetPivot(model.GetPivot() * new CFrame(new(0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle))));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.A))
 				{
-					model.SetPivot(model.GetPivot() + new CFrame(new(0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f))));
+					model.SetPivot(model.GetPivot() * new CFrame(new(0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f))));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.S))
 				{
-					model.SetPivot(model.GetPivot() + new CFrame(new(-0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle))));
+					model.SetPivot(model.GetPivot() * new CFrame(new(-0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle))));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.D))
 				{
-					model.SetPivot(model.GetPivot() + new CFrame(new(-0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f))));
+					model.SetPivot(model.GetPivot() * new CFrame(new(-0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f))));
 					dot = true;
 				}
 

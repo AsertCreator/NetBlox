@@ -32,8 +32,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Crossroads.rbxl">
+    <None Update="content\places\Crossroads.rbxl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="content\places\Welcoming.rbxl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

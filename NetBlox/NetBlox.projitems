@@ -53,7 +53,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)instances\Weld.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Profile.cs" />
+    <Compile Include="..\NetBlox\ProfileManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
