@@ -78,6 +78,7 @@ namespace NetBlox
 		public Queue<RemoteEventPacket> RemoteEventQueue = [];
 		public bool IsServer;
 		public bool IsClient;
+		public bool IsLoaded = true;
 		public bool OnlyInternalConnections = false;
 		public int ServerPort = 25570; // apparently that port was forbidden
 		public int OutgoingTraffic = 0;
@@ -446,10 +447,11 @@ namespace NetBlox
 				Root.GetService<CoreGui>().ShowTeleportGui(
 					GameManager.CurrentIdentity.PlaceName, GameManager.CurrentIdentity.Author,
 					(int)GameManager.CurrentIdentity.PlaceID, (int)GameManager.CurrentIdentity.UniverseID);
+				IsLoaded = false;
 
 				Root.UniqueID = Guid.Parse(sh.DataModelInstance);
 				Root.Name = sh.PlaceName;
-				Root.Clear();
+				Task.Run(GameManager.CurrentRoot.Clear);
 
 				// i feel some netflix ce exploit shit can be done here.
 
@@ -462,7 +464,10 @@ namespace NetBlox
 					ProfileIncoming(rep.Key, rep.Data);
 
 					if (++gotinsts >= actinstc)
+					{
 						Root.GetService<CoreGui>().HideTeleportGui();
+						IsLoaded = true;
+					}
 
 					TaskScheduler.ScheduleNetwork("RecieveInstance", GameManager, x =>
 					{

@@ -43,6 +43,10 @@ namespace NetBlox.Instances
 			return serv;
 		}
 		[Lua([Security.Capability.None])]
+		public Instance getService(string sn) => GetService(sn);
+		[Lua([Security.Capability.None])]
+		public Instance service(string sn) => GetService(sn);
+		[Lua([Security.Capability.None])]
 		public Instance FindService(string sn)
 		{
 			for (int i = 0; i < Children.Count; i++)

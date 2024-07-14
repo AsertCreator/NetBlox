@@ -22,6 +22,7 @@ namespace UniversalDuoHost
 				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
 				return 1;
 			}
+			Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
 			LogManager.LogInfo("Initializing server...");
 
@@ -31,7 +32,7 @@ namespace UniversalDuoHost
 				DoNotRenderAtAll = true,
 				SkipWindowCreation = true,
 				GameName = "NetBlox Server (duohosted)"
-			}, args, (x) =>
+			}, ["-ss", "{}"], (x) =>
 			{
 				x.LoadDefault();
 				Task.Run(x.NetworkManager.StartServer);
@@ -63,7 +64,7 @@ namespace UniversalDuoHost
 					AsClient = true,
 					GameName = "NetBlox Client (duohosted)"
 				},
-				args, (x) => { });
+				["-cs", "{\"e\":true,\"g\":\"127.0.0.1\"}"], (x) => { });
 				cg.MainManager = true;
 				AppManager.SetRenderTarget(cg);
 			});

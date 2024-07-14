@@ -99,22 +99,22 @@ namespace NetBlox.Instances
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.W))
 				{
-					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle));
+					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 6 * MathF.Sin(angle));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.A))
 				{
-					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f));
+					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 6 * MathF.Sin(angle - 1.5708f));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.S))
 				{
-					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle));
+					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 6 * MathF.Sin(angle));
 					dot = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.D))
 				{
-					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f));
+					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 6 * MathF.Sin(angle - 1.5708f));
 					dot = true;
 				}
 

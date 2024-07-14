@@ -11,11 +11,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
-namespace NetBlox.Server
+namespace NetBlox
 {
 	public static class RbxlParser
 	{
-		public static void Load(string url, DataModel dm)
+		public static void Load(string url, Instance dm)
 		{
 			var xml = new XmlDocument();
 			var ic = CultureInfo.InvariantCulture;
@@ -75,20 +75,27 @@ namespace NetBlox.Server
 										case "Vector3":
 											SerializationManager.SetProperty(type, ins, attr.Value, new Vector3()
 											{
-												X = float.Parse(prop.ChildNodes[0].InnerText, CultureInfo.InvariantCulture),
-												Y = float.Parse(prop.ChildNodes[1].InnerText, CultureInfo.InvariantCulture),
-												Z = float.Parse(prop.ChildNodes[2].InnerText, CultureInfo.InvariantCulture)
+												X = float.Parse(prop.ChildNodes[0].InnerText, ic),
+												Y = float.Parse(prop.ChildNodes[1].InnerText, ic),
+												Z = float.Parse(prop.ChildNodes[2].InnerText, ic)
 											});
 											break;
 										case "CoordinateFrame":
+											Quaternion q = MathE.QuaternionFromMatrix(
+												[float.Parse(prop.ChildNodes[3].InnerText, ic), float.Parse(prop.ChildNodes[4].InnerText, ic), float.Parse(prop.ChildNodes[5].InnerText, ic)],
+												[float.Parse(prop.ChildNodes[6].InnerText, ic), float.Parse(prop.ChildNodes[7].InnerText, ic), float.Parse(prop.ChildNodes[8].InnerText, ic)],
+												[float.Parse(prop.ChildNodes[9].InnerText, ic), float.Parse(prop.ChildNodes[10].InnerText, ic), float.Parse(prop.ChildNodes[11].InnerText, ic)]);
+											Vector3 rotrad = Raymath.QuaternionToEuler(q);
+											Vector3 rotdeg = MathE.ToDegrees(rotrad);
 											SerializationManager.SetProperty(type, ins, attr.Value, new CFrame()
 											{
 												Position = new Vector3()
 												{
-													X = float.Parse(prop.ChildNodes[0].InnerText, CultureInfo.InvariantCulture),
-													Y = float.Parse(prop.ChildNodes[1].InnerText, CultureInfo.InvariantCulture),
-													Z = float.Parse(prop.ChildNodes[2].InnerText, CultureInfo.InvariantCulture)
-												}
+													X = float.Parse(prop.ChildNodes[0].InnerText, ic),
+													Y = float.Parse(prop.ChildNodes[1].InnerText, ic),
+													Z = float.Parse(prop.ChildNodes[2].InnerText, ic)
+												},
+												Rotation = rotdeg
 											});
 											break;
 										case "Color3uint8":
@@ -119,7 +126,7 @@ namespace NetBlox.Server
 
 			if (slist.Count > 0)
 			{
-				LogManager.LogWarn("While loading RBXLX file, following classes were referenced (" + slist.Count + "), yet they're not implemented!");
+				LogManager.LogWarn("While loading RBXLX/RBXM file, following classes were referenced (" + slist.Count + "), yet they're not implemented!");
 				var arr = slist.ToArray();
 				for (int i = 0; i < slist.Count; i++)
 					LogManager.LogWarn(arr[i]);

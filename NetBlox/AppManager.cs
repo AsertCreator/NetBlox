@@ -70,7 +70,7 @@ namespace NetBlox
 			DefineFastFlag("FFlagShowCoreGui", true);
 			DefineFastInt("FIntDefaultUIVariant", 1);
 
-			GameProcessor = TaskScheduler.ScheduleMisc("GameProcessor", x =>
+			GameProcessor = TaskScheduler.ScheduleMisc("Heartbeat", x =>
 			{
 				for (int i = 0; i < GameManagers.Count; i++)
 				{
@@ -80,7 +80,7 @@ namespace NetBlox
 				}
 				return JobResult.NotCompleted;
 			});
-			GameRenderer = TaskScheduler.ScheduleRender("GameRenderer", x =>
+			GameRenderer = TaskScheduler.ScheduleRender("Renderer", x =>
 			{
 				if (CurrentRenderManager != null)
 				{
