@@ -1,5 +1,7 @@
-﻿using NetBlox.Instances;
+﻿using NetBlox.Common;
+using NetBlox.Instances;
 using NetBlox.Structs;
+using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,6 +19,7 @@ namespace NetBlox.Server
 		{
 			var xml = new XmlDocument();
 			var ic = CultureInfo.InvariantCulture;
+			var slist = new SortedSet<string>();
 			xml.LoadXml(File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult()));
 
 			void LoadChildren(Instance inst, XmlNode node)
@@ -29,7 +32,12 @@ namespace NetBlox.Server
 						var child = children[i]!;
 						if (child.Name != "Item") continue;
 
-						var ins = InstanceCreator.CreateInstance(child.Attributes!["class"]!.Value, dm.GameManager);
+						var ins = InstanceCreator.CreateInstanceIfExists(child.Attributes!["class"]!.Value, dm.GameManager);
+						if (ins == null)
+						{
+							slist.Add(child.Attributes!["class"]!.Value);
+							continue;
+						}
 						var type = ins.GetType();
 						var props = child.SelectNodes("Properties")![0];
 
@@ -107,6 +115,15 @@ namespace NetBlox.Server
 			}
 
 			LoadChildren(dm, xml.FirstChild);
+			GC.Collect(); // hehe
+
+			if (slist.Count > 0)
+			{
+				LogManager.LogWarn("While loading RBXLX file, following classes were referenced (" + slist.Count + "), yet they're not implemented!");
+				var arr = slist.ToArray();
+				for (int i = 0; i < slist.Count; i++)
+					LogManager.LogWarn(arr[i]);
+			}
 		}
 	}
 }

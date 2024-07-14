@@ -492,8 +492,6 @@ namespace NetBlox
 							Root.GetService<Players>().CurrentPlayer = lp;
 						}
 
-						Console.WriteLine($"{ins.UniqueID}, parent: {ins.ParentID}, classname: {ins.ClassName}, name: {ins.Name}");
-
 						return JobResult.CompletedSuccess;
 					});
 				});

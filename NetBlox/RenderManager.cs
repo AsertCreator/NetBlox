@@ -31,7 +31,7 @@ namespace NetBlox
 		public Texture2D StudTexture;
 		public Font MainFont;
 		public BasePart? MoverPart;
-		public bool FirstFrame = false;
+		public bool FirstFrame = true;
 		private bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
 
@@ -124,9 +124,9 @@ namespace NetBlox
 					Raylib.BeginDrawing();
 					{
 						if (FirstFrame)
-						{
 							GameManager.PhysicsManager.Begin();
-						}
+
+						FirstFrame = false;
 
 						Raylib.ClearBackground(Color.SkyBlue);
 						Raylib.BeginMode3D(MainCamera);
@@ -271,78 +271,78 @@ namespace NetBlox
 				if (TextureLoadQueue.Count > 0)
 				{
 					var el = TextureLoadQueue.Dequeue();
-					var x = AppManager.ResolveUrlAsync(el.Item1, true);
-					x.Wait();
+					try
 					{
-						try
+						var x = AppManager.ResolveUrlAsync(el.Item1, true);
+						x.Wait();
 						{
 							var tex = Raylib.LoadTexture(x.Result);
 							TextureCache[el.Item1] = tex;
 							el.Item2(tex);
-						}
-						catch
-						{
-							LogManager.LogWarn("Could not load texture from " + el.Item1);
-							return;
-						}
-					};
+						};
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load texture from " + el.Item1);
+						return;
+					}
 				}
 				if (FontLoadQueue.Count > 0)
 				{
 					var el = FontLoadQueue.Dequeue();
-					var x = AppManager.ResolveUrlAsync(el.Item1, true);
-					x.Wait();
+					try
 					{
-						try
+						var x = AppManager.ResolveUrlAsync(el.Item1, true);
+						x.Wait();
 						{
 							var font = Raylib.LoadFont(x.Result);
 							FontCache[el.Item1] = font;
 							el.Item2(font);
-						}
-						catch
-						{
-							LogManager.LogWarn("Could not load font from " + el.Item1);
-							return;
-						}
-					};
+						};
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load font from " + el.Item1);
+						return;
+					}
 				}
 				if (ShaderLoadQueue.Count > 0)
 				{
 					var el = ShaderLoadQueue.Dequeue();
-					var x = AppManager.ResolveUrlAsync(el.Item1, true);
-					x.Wait();
+					try
 					{
-						try
+						var x = AppManager.ResolveUrlAsync(el.Item1, true);
+						x.Wait();
 						{
 							var shader = Raylib.LoadShader(x.Result + ".vs", x.Result + ".fs");
 							ShaderCache[el.Item1] = shader;
 							el.Item2(shader);
-						}
-						catch
-						{
-							LogManager.LogWarn("Could not load shader from " + el.Item1);
-							return;
-						}
-					};
+						};
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load shader from " + el.Item1);
+						return;
+					}
 				}
 				if (SoundLoadQueue.Count > 0)
 				{
 					var el = SoundLoadQueue.Dequeue();
 					var x = AppManager.ResolveUrlAsync(el.Item1, true);
-					x.Wait();
+					try
 					{
-						try
+						x.Wait();
 						{
 							var snd = Raylib.LoadSound(x.Result);
 							SoundCache[el.Item1] = snd;
 							el.Item2(snd);
-						}
-						catch
-						{
-							LogManager.LogWarn("Could not load sound from " + el.Item1);
-							return;
-						}
-					};
+						};
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load sound from " + el.Item1);
+						return;
+					}
 				}
 			}
 		}

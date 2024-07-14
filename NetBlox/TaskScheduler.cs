@@ -80,6 +80,12 @@ namespace NetBlox
 				for (int i = 0; i < RunningJobs.Count; i++)
 				{
 					var job = RunningJobs[i];
+					if (job == null)
+					{
+						i--; // appmanager.step is happening all over again :sob:
+						continue;
+					}
+
 					if (job.JoinedUntil > now)
 						continue;
 					if (job.JoinedTo != null && job.JoinedTo.Result == JobResult.NotCompleted)
