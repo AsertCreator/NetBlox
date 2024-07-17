@@ -133,7 +133,8 @@ namespace NetBlox.Instances
 		{
 			base.Destroy();
 			Character?.Destroy();
-			Kick("Player has been removed from this DataModel");
+			if (IsLocalPlayer || GameManager.NetworkManager.IsServer)
+				Kick("Player has been removed from this DataModel");
 		}
 	}
 }

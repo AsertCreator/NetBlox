@@ -122,7 +122,6 @@ namespace NetBlox
 			Server.ConnectionEstablished += (x, y) =>
 			{
 				x.EnableLogging = false;
-				x.KeepAlive = false;
 				LogManager.LogInfo(x.IPRemoteEndPoint.Address + " is trying to connect");
 				bool gothandshake = false;
 
@@ -242,8 +241,11 @@ namespace NetBlox
 						nc.Player.Destroy();
 						Clients.Remove(nc);
 
-						if (Clients.Count == 0)
+						if (Clients.Count == 0) 
+						{ 
 							ReplicationQueue.Clear(); // we dont care anymore. we might as well shutdown hehe
+							GameManager.Shutdown();
+						}
 					}
 
 					x.ConnectionClosed += OnClose;
@@ -399,7 +401,6 @@ namespace NetBlox
 			if (tcp == null)
 				throw new Exception("Remote server had refused to connect");
 			tcp.EnableLogging = false;
-			tcp.KeepAlive = false;
 			RemoteConnection = tcp;
 
 			ClientHandshake ch;

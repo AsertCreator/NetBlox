@@ -35,6 +35,20 @@ namespace NetBlox.Server
 				GameName = "NetBlox Server"
 			}, args, (x) =>
 			{
+				try
+				{
+					x.CurrentRoot.Clear();
+					x.CurrentIdentity.PlaceName = "Welcoming";
+					x.CurrentIdentity.UniverseName = "NetBlox";
+					x.CurrentIdentity.MaxPlayerCount = 16;
+					x.CurrentIdentity.Author = "NetBlox";
+					x.CurrentRoot.Name = x.CurrentIdentity.PlaceName;
+					x.CurrentRoot.Load("rbxasset://places/Welcoming.rbxl");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Could not load the place: " + ex.Message);
+				}
 				Task.Run(x.NetworkManager.StartServer);
 				Task.Run(() =>
 				{
