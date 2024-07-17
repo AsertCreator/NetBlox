@@ -20,7 +20,11 @@ namespace NetBlox
 			var xml = new XmlDocument();
 			var ic = CultureInfo.InvariantCulture;
 			var slist = new SortedSet<string>();
-			xml.LoadXml(File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult()));
+			var raw = File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult());
+			xml.LoadXml(raw);
+
+			var ogr = dm.GameManager.IsRunning;
+			dm.GameManager.IsRunning = false; // is this bad idea?
 
 			void LoadChildren(Instance inst, XmlNode node)
 			{
@@ -131,6 +135,8 @@ namespace NetBlox
 				for (int i = 0; i < slist.Count; i++)
 					LogManager.LogWarn(arr[i]);
 			}
+
+			dm.GameManager.IsRunning = ogr;
 		}
 	}
 }

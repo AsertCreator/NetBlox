@@ -75,50 +75,55 @@ namespace NetBlox.Instances
 
 			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer) && Health > 0)
 			{
-				bool dot = false;
+				bool poschg = false;
+				bool rotchg = false;
 
 				if (Raylib.IsKeyDown(KeyboardKey.Space))
 				{
 					Position = Position + new Vector3(0, 0.1f * WalkSpeed / 6, 0);
-					dot = true;
+					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
 				{
 					Position = Position + new Vector3(0, 0.1f * -WalkSpeed / 6, 0);
-					dot = true;
+					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.Q))
 				{
 					Rotation += new Vector3(0, -0.1f * -WalkSpeed, 0);
-					dot = true;
+					rotchg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.E))
 				{
 					Rotation += new Vector3(0, 0.1f * -WalkSpeed, 0);
-					dot = true;
+					rotchg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.W))
 				{
 					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 6 * MathF.Sin(angle));
-					dot = true;
+					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.A))
 				{
 					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 6 * MathF.Sin(angle - 1.5708f));
-					dot = true;
+					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.S))
 				{
 					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 6 * MathF.Sin(angle));
-					dot = true;
+					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.D))
 				{
 					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 6 * MathF.Sin(angle - 1.5708f));
-					dot = true;
+					poschg = true;
 				}
 
-				if (dot)
+				if (poschg && !rotchg)
+					ReplicateProperties(["Position"], false);
+				if (!poschg && rotchg)
+					ReplicateProperties(["Rotation"], false);
+				if (poschg && rotchg)
 					ReplicateProperties(["Position", "Rotation"], false);
 			}
 

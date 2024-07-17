@@ -35,14 +35,49 @@ namespace NetBlox.Server
 				GameName = "NetBlox Server"
 			}, args, (x) =>
 			{
-				x.CurrentRoot.Clear();
-				x.CurrentIdentity.PlaceName = "Welcoming";
-				x.CurrentIdentity.UniverseName = "Welcoming";
-				x.CurrentIdentity.MaxPlayerCount = 8;
-				x.CurrentIdentity.Author = "Roblox original places";
-				x.CurrentRoot.Name = x.CurrentIdentity.PlaceName;
-				RbxlParser.Load("rbxasset://places/Crossroads.rbxl", x.CurrentRoot);
 				Task.Run(x.NetworkManager.StartServer);
+				Task.Run(() =>
+				{
+					Console.WriteLine("NetBlox Server commmand line:");
+					while (!x.ShuttingDown)
+					{
+						try
+						{
+
+							Console.Write(">> ");
+							string cmd = Console.ReadLine();
+							string[] words = cmd.Split(' ');
+							if (words.Length == 0) continue;
+
+							switch (words[0])
+							{
+								case "load":
+									try
+									{
+										x.CurrentRoot.Clear();
+										x.CurrentIdentity.PlaceName = "Place downloaded from Web";
+										x.CurrentIdentity.UniverseName = "NetBlox";
+										x.CurrentIdentity.MaxPlayerCount = 16;
+										x.CurrentIdentity.Author = "NetBlox";
+										x.CurrentRoot.Name = x.CurrentIdentity.PlaceName;
+										x.CurrentRoot.Load(words[1]);
+									}
+									catch (Exception ex)
+									{
+										Console.WriteLine("Could not load the place: " + ex.Message);
+									}
+									break;
+								case "lua":
+									TaskScheduler.ScheduleScript(x, cmd[4..], 8, null);
+									break;
+							}
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine("Could not execute requested command: " + ex.Message);
+						}
+					}
+				});
 			});
 			g.MainManager = true;
 			AppManager.SetRenderTarget(g);

@@ -654,7 +654,7 @@ namespace NetBlox
 
 			bw.Write(ins.UniqueID.ToByteArray());
 			bw.Write(ins.ParentID.ToByteArray());
-			bw.Write(ins.ClassName);
+			bw.Write(""); // we dont actually
 
 			var c = 0;
 
@@ -665,6 +665,8 @@ namespace NetBlox
 				if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
 					continue;
 				if (prop.PropertyType == LST)
+					continue;
+				if (!prop.CanWrite)
 					continue;
 				if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName ?? "", out var x))
 					continue;
@@ -723,6 +725,8 @@ namespace NetBlox
 				if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
 					continue;
 				if (prop.PropertyType == LST)
+					continue;
+				if (!prop.CanWrite)
 					continue;
 				if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName ?? "", out var x))
 					continue;

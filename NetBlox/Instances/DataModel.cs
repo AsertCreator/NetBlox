@@ -78,6 +78,7 @@ namespace NetBlox.Instances
 			RbxlParser.Load(url, ins);
 			Instance[] chlidren = ins.GetChildren();
 			ins.ClearAllChildren();
+			ins.Destroy();
 			return chlidren;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
