@@ -11,7 +11,7 @@ moonsharp (so no luau for you). you can read my "blog" [here](https://asertcreat
 
 ## System requirements
 anything that can run raylib and .net. it consumes a bunch of memory becuse of everything,
-around ~196 MB, so make sure you have enough.
+around ~296 MB (on studio its half a gigabyte 💀), so make sure you have enough.
 
 ## How to play?
 a weird question you have there, but to play this, you need to download installer, good luck
