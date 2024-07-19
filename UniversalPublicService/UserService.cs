@@ -11,38 +11,27 @@ namespace NetBlox.PublicService
 		public override string Name => nameof(UserService);
 		public TimeSpan AutoSaveInterval = TimeSpan.FromMinutes(30);
 		public List<User> AllUsers = new();
-		private Task Task;
-		private bool Running = false;
 
-		public override void Start()
+		protected override void OnStart()
 		{
-			base.Start();
+			LoadDatabase();
+			Log.Information("UserService: Successfully started and loaded users: " + AllUsers.Count);
 
-			Task = Task.Run(async () =>
+			AppDomain.CurrentDomain.ProcessExit += (x, y) =>
 			{
-				LoadDatabase();
-				Log.Information("UserService: Successfully started and loaded users: " + AllUsers.Count);
+				SaveDatabase();
+			};
 
-				AppDomain.CurrentDomain.ProcessExit += (x, y) =>
-				{
-					SaveDatabase();
-				};
-
-				while (Running)
-				{
-					Thread.Sleep(AutoSaveInterval);
-					SaveDatabase();
-				}
-			});
-			Running = true;
+			while (IsRunning)
+			{
+				Thread.Sleep(AutoSaveInterval);
+				SaveDatabase();
+			}
 		}
-		public override void Stop()
+		protected override void OnStop()
 		{
 			SaveDatabase();
-			Running = false;
-			base.Stop();
 		}
-		public override bool IsRunning() => Running;
 		public User? CreateUser(string usern, string passw)
 		{
 			if (GetUserByName(usern) != null)
@@ -66,25 +55,6 @@ namespace NetBlox.PublicService
 			Program.GetService<PlaceService>().CreatePlace(user.Name + "'s place", "", user);
 			AllUsers.Add(user);
 			return user;
-		}
-		public User? Login(string usern, string phash)
-		{
-			User? user = GetUserByName(usern);
-			if (user == null)
-				throw new Exception("No such user");
-			if (!user.CheckPasswordHash(phash))
-				throw new Exception("Wrong password");
-			user.CurrentLoginToken = Guid.NewGuid();
-			return user;
-		}
-		public string SetPresence(string[] data, ref int code)
-		{
-			Guid token = Guid.Parse(data[0]);
-			User? user = GetUserByToken(token);
-			if (user == null)
-				throw new Exception("No such user");
-			user.CurrentPresence = (OnlineMode)int.Parse(data[1]);
-			return user.CurrentPresence.ToString();
 		}
 		public User? GetUserByToken(Guid token) => (from x in AllUsers where x.CurrentLoginToken == token select x).FirstOrDefault();
 		public User? GetUserByName(string name) => (from x in AllUsers where x.Name == name select x).FirstOrDefault();
@@ -115,7 +85,7 @@ namespace NetBlox.PublicService
 			}));
 		}
 	}
-	public class User
+	public class User : ISearchable
 	{
 		[JsonPropertyName("id")]
 		public long Id;
@@ -130,13 +100,26 @@ namespace NetBlox.PublicService
 		[JsonIgnore]
 		public Guid CurrentLoginToken;
 		[JsonIgnore]
-		public OnlineMode CurrentPresence;
+		public OnlineMode CurrentPresence 
+		{ 
+			get 
+			{
+				if (MembershipType == TYPE_BANNED)
+					return OnlineMode.Banned;
+				return presence;
+			} 
+			set => presence = value; 
+		}
+		private OnlineMode presence;
 
 		// idk why i am doing this
 		public const int TYPE_BANNED = -1;
 		public const int TYPE_NORMAL = 0;
 		public const int TYPE_PREMIUM = 1;
 		public const int TYPE_ADMIN = 2;
+
+		string ISearchable.Name => Name;
+		string ISearchable.Description => "";
 
 		public void SetPassword(string password) => PasswordHash = string.Join("", SHA256.HashData(Encoding.UTF8.GetBytes(password)));
 		public void SetPassword(byte[] hash) => PasswordHash = string.Join("", hash);

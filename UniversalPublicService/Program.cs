@@ -9,7 +9,9 @@ namespace NetBlox.PublicService
 	public static class Program
 	{
 		public static List<Service> Services = new();
-		public static string PSName = "";
+		public static string PublicServiceName = "";
+		public static bool IsReadonly = false;
+		public static bool IsUnderMaintenance = true;
 
 		public static void Main(string[] args)
 		{
@@ -23,7 +25,7 @@ namespace NetBlox.PublicService
 			GetService<UserService>();
 			GetService<WebService>();
 
-			WaitForAll();
+			WaitForAllServices();
 		}
 		public static T GetService<T>() where T : Service, new()
 		{
@@ -37,36 +39,31 @@ namespace NetBlox.PublicService
 			Services.Add(s);
 			return s;
 		}
-		public static void StopAll()
+		public static void StopAllServices()
 		{
 			Log.Information("Stopping all services...");
 			for (int i = 0; i < Services.Count; i++)
 				Services[i].Stop();
 		}
-		public static void WaitForAll()
-		{
-			while (true) // help me
-			{
-				bool stop = true;
-				for (int i = 0; i < Services.Count; i++)
-				{
-					if (Services[i].IsRunning())
-					{
-						stop = false;
-						break;
-					}
-				}
-				if (stop)
-					return;
-			}
-		}
+		public static void WaitForAllServices() => Task.WaitAll((from x in Services select x.ServiceTask).ToArray());
 	}
 	public abstract class Service
 	{
 		public abstract string Name { get; }
+		public bool IsRunning { get; protected set; }
+		public Task ServiceTask { get; protected set; }
 
-		public virtual void Start() { }
-		public virtual void Stop() { }
-		public abstract bool IsRunning();
+		public void Start()
+		{
+			IsRunning = true;
+			ServiceTask = Task.Run(OnStart);
+		}
+		public void Stop()
+		{
+			IsRunning = false;
+			OnStop();
+		}
+		protected abstract void OnStart();
+		protected abstract void OnStop();
 	}
 }

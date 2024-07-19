@@ -14,25 +14,16 @@ namespace NetBlox.PublicService
 	{
 		public override string Name => nameof(ServerService);
 		public List<Server> RunningServers = new();
-		private Task Task;
-		private bool Running = false;
 
-		public override void Start()
+		protected override void OnStart()
 		{
-			base.Start();
+			Log.Information("ServerService: Successfully started!");
 
-			Task = Task.Run(async () =>
-			{
-				Log.Information("ServerService: Successfully started!");
-
-				while (Running) ;
-			});
-			Running = true;
+			while (IsRunning) ;
 		}
-		public override void Stop()
+		protected override void OnStop() 
 		{
-			Running = false;
-			base.Stop();
+			ShutdownMatching(x => true); // basically all
 		}
 		public void ShutdownMatching(Predicate<Server> match)
 		{
@@ -46,7 +37,6 @@ namespace NetBlox.PublicService
 				}
 			}
 		}
-		public override bool IsRunning() => Running;
 	}
 	public class Server
 	{

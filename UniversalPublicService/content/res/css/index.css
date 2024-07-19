@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 
-body, a {
+body {
 	margin: 0px;
 	color: white;
 	background-color: #313131;
@@ -8,15 +8,26 @@ body, a {
 	text-decoration: none;
 	font-size: 1.1em;
 }
+a {
+	color: white;
+	font-family: 'DM Sans', sans-serif;
+	text-decoration: none;
+}
 header {
 	position: fixed;
 	top: 0px;
 	left: 0px;
 	width: 100%;
 	height: 40px;
+	padding-left: 20px;
 	background-color: #1e1e1ec2;
 	backdrop-filter: blur(15px);
 	border-bottom: 1px #454545 solid;
+	vertical-align: middle;
+	line-height: 40px;
+}
+header a {
+	margin-inline-end: 20px;
 }
 button:active {
 	background-color: #676767;
@@ -31,11 +42,14 @@ button {
 	background-color: transparent;
 	border: white 1px solid;
 	font-size: 1em;
-	padding: 10px;
+	padding: 5px;
 	padding-left: 15px;
 	padding-right: 15px;
 	border-radius: 10px;
 	transition: background-color 0.1s ease-in-out;
+}
+h1 {
+	margin-block-end: 0.27em;
 }
 #main-content {
 	margin-top: 40px;
@@ -43,23 +57,45 @@ button {
 	padding-left: 40px;
 	padding-right: 40px;
 }
+#search-bar {
+	margin-inline-end: 20px;
+	color: white;
+	font-family: 'DM Sans', sans-serif;
+	background-color: transparent;
+	border: white 1px solid;
+	font-size: 1em;
+	padding: 5px;
+	padding-left: 15px;
+	padding-right: 15px;
+	border-radius: 10px;
+}
 .primary {
+	display: block;
 	font-weight: bold;
 }
 .secondary {
+	display: block;
 	color: darkgrey;
 	font-size: 0.8em;
 }
+.medium-user-icon,
 .medium-game-icon {
 	display: inline-block;
+	vertical-align: top;
 	padding: 10px;
 	margin: 5px;
 	width: 150px;
-	height: 200px;
+	height: 230px;
 	transition: background-color 0.1s ease-in-out;
 	border-radius: 10px;
 	cursor: pointer;
 }
+.medium-user-icon img {
+	display: block;
+	margin-bottom: 10px;
+	border-radius: 100%;
+}
+.medium-user-icon:hover,
 .medium-game-icon:hover {
 	background-color: #494949;
 }

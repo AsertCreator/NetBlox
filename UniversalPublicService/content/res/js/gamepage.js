@@ -2,15 +2,11 @@ const main = document.querySelector('#main-content');
 const root = ReactDOM.createRoot(main);
 const e = React.createElement;
 
-async function joinGame() {
-}
-async function getGameName(gameid) {
-}
-
 // we determine what game we are even looking at
 var gid = Number.parseInt(window.location.pathname.substring(6));
 debugger;
-getGameName(gid).then(x => {
+
+netblox.QueryService.getPlaceInfo(gid).then(x => {
 	class GameOverviewPage extends React.Component {
 		constructor(props) {
 			super(props);
@@ -18,14 +14,17 @@ getGameName(gid).then(x => {
 
 		render() {
 			return (<div>
-				<h1>{x}</h1>
-				<h3>by @NetBlox</h3>
+				<h1>{x.name}</h1>
+				<b>by {x.authorname}</b>
+				<p>{x.desc}</p>
 				<button onClick={x => {
-					joinGame(gid, 0)
+					window.netblox.JoinService.joinGame(gid, 0)
 				}}>Play</button>
 			</div>);
 		}
 	}
 
 	root.render(<GameOverviewPage />);
+
+	document.querySelector("title").innerText = "NetBlox - " + x.name;
 });
