@@ -226,7 +226,7 @@ namespace Qu3e
 			body.RemoveAllBoxes();
 
 			// Remove body from scene Bodies
-			Assert(Bodies.Remove(body));
+			Bodies.Remove(body);
 		}
 		public void RemoveAllBodies()
 		{

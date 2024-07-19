@@ -52,16 +52,14 @@ namespace NetBlox.Instances
 				if (move > 0)
 				{
 					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-						.Length() < player.CameraMaxZoomDistance)
+						.Length() < (player.CameraMaxZoomDistance - 0.2f))
 						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
 				}
 				else
 				{
 					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-						.Length() > player.CameraMaxZoomDistance)
+						.Length() > (player.CameraMinZoomDistance + 0.2f))
 						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
-					else
-						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -move);
 				}
 
 				if (Raylib.IsKeyDown(KeyboardKey.O))

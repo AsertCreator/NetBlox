@@ -78,46 +78,61 @@ namespace NetBlox.Instances
 				bool poschg = false;
 				bool rotchg = false;
 
+				Vector3 posdelta = Vector3.Zero;
+				Vector3 rotdelta = Vector3.Zero;
+				float deltatime = (float)TaskScheduler.LastCycleTime.TotalSeconds;
+
+				bool movingonangle = true;
+
 				if (Raylib.IsKeyDown(KeyboardKey.Space))
 				{
-					Position = Position + new Vector3(0, 0.1f * WalkSpeed / 6, 0);
+					posdelta += new Vector3(0, 0.7f * WalkSpeed * deltatime, 0);
 					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
 				{
-					Position = Position + new Vector3(0, 0.1f * -WalkSpeed / 6, 0);
+					posdelta += new Vector3(0, -WalkSpeed * deltatime, 0);
 					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.Q))
 				{
-					Rotation += new Vector3(0, -0.1f * -WalkSpeed, 0);
+					rotdelta += new Vector3(0, WalkSpeed, 0);
 					rotchg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.E))
 				{
-					Rotation += new Vector3(0, 0.1f * -WalkSpeed, 0);
+					rotdelta += new Vector3(0, -WalkSpeed, 0);
 					rotchg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.W))
 				{
-					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 6 * MathF.Sin(angle));
+					posdelta += new Vector3(WalkSpeed * MathF.Cos(angle) * deltatime, 0, WalkSpeed * MathF.Sin(angle) * deltatime);
+					movingonangle = !movingonangle;
 					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.A))
 				{
-					Position = Position + new Vector3(0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 6 * MathF.Sin(angle - 1.5708f));
+					posdelta += new Vector3(WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+					movingonangle = !movingonangle;
 					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.S))
 				{
-					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 6 * MathF.Sin(angle));
+					posdelta += new Vector3(-WalkSpeed * MathF.Cos(angle) * deltatime, 0, -WalkSpeed * MathF.Sin(angle) * deltatime);
+					movingonangle = !movingonangle;
 					poschg = true;
 				}
 				if (Raylib.IsKeyDown(KeyboardKey.D))
 				{
-					Position = Position + new Vector3(-0.1f * WalkSpeed / 6 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 6 * MathF.Sin(angle - 1.5708f));
+					posdelta += new Vector3(-WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, -WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+					movingonangle = !movingonangle;
 					poschg = true;
 				}
+
+				posdelta = posdelta != Vector3.Zero ? Vector3.Normalize(posdelta) : posdelta;
+
+				Position += posdelta * 0.22f;
+				Rotation += rotdelta * 0.22f;
 
 				if (poschg && !rotchg)
 					ReplicateProperties(["Position"], false);

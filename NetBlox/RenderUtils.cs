@@ -35,7 +35,7 @@ namespace NetBlox
 				// NOTE: Enable texture 1 for Front, Back
 				Rlgl.EnableTexture(texture.Id);
 
-				if (f.HasFlag(Faces.Front))
+				if ((f & Faces.Front) != 0)
 				{
 					// Front Face
 					// Normal Pointing Towards Viewer
@@ -58,7 +58,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
 				}
 
-				if (f.HasFlag(Faces.Back))
+				if ((f & Faces.Back) != 0)
 				{
 					// Back Face
 					// Normal Pointing Away From Viewer
@@ -81,7 +81,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
 				}
 
-				if (f.HasFlag(Faces.Top))
+				if ((f & Faces.Top) != 0)
 				{
 					// Top Face
 					// Normal Pointing Up
@@ -104,7 +104,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
 				}
 
-				if (f.HasFlag(Faces.Bottom))
+				if ((f & Faces.Bottom) != 0)
 				{
 					// Bottom Face
 					// Normal Pointing Down
@@ -127,7 +127,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
 				}
 
-				if (f.HasFlag(Faces.Right))
+				if ((f & Faces.Right) != 0)
 				{
 					// Right face
 					// Normal Pointing Right
@@ -150,7 +150,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
 				}
 
-				if (f.HasFlag(Faces.Left))
+				if ((f & Faces.Left) != 0)
 				{
 					// Left Face
 					// Normal Pointing Left
@@ -199,7 +199,7 @@ namespace NetBlox
 				Rlgl.Begin(7);
 				Rlgl.Color4ub(color.R, color.G, color.B, color.A);
 
-				if (f.HasFlag(Faces.Front))
+				if ((f & Faces.Front) != 0)
 				{
 					Rlgl.Normal3f(0.0f, 0.0f, 1.0f);
 
@@ -209,7 +209,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
 				}
 
-				if (f.HasFlag(Faces.Back))
+				if ((f & Faces.Back) != 0)
 				{
 					Rlgl.Normal3f(0.0f, 0.0f, -1.0f);
 
@@ -219,7 +219,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
 				}
 
-				if (f.HasFlag(Faces.Top))
+				if ((f & Faces.Top) != 0)
 				{
 					Rlgl.Normal3f(0.0f, 1.0f, 0.0f);
 
@@ -229,7 +229,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
 				}
 
-				if (f.HasFlag(Faces.Bottom))
+				if ((f & Faces.Bottom) != 0)
 				{
 					Rlgl.Normal3f(0.0f, -1.0f, 0.0f);
 
@@ -239,7 +239,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
 				}
 
-				if (f.HasFlag(Faces.Right))
+				if ((f & Faces.Right) != 0)
 				{
 					Rlgl.Normal3f(1.0f, 0.0f, 0.0f);
 
@@ -249,7 +249,7 @@ namespace NetBlox
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
 				}
 
-				if (f.HasFlag(Faces.Left))
+				if ((f & Faces.Left) != 0)
 				{
 					Rlgl.Normal3f(-1.0f, 0.0f, 0.0f);
 

@@ -255,10 +255,10 @@ namespace NetBlox
 		}
 		public void RenderInstance(Instance instance)
 		{
-			if (instance is I3DRenderable)
-				(instance as I3DRenderable)!.Render();
-			for (int i = 0; i < instance.GetChildren().Length; i++)
-				RenderInstance(instance.GetChildren()[i]!);
+			var c = instance.GetChildren();
+			(instance as I3DRenderable)?.Render();
+			for (int i = 0; i < c.Length; i++)
+				RenderInstance(c[i]!);
 		}
 		public void ShowKickMessage(string msg)
 		{
