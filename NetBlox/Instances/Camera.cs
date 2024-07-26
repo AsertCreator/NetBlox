@@ -12,11 +12,12 @@ namespace NetBlox.Instances
 		public Instance? CameraSubject { get; set; }
 		public static Vector2 LastMousePosition;
 
-		public Camera(GameManager ins) : base(ins) 
-		{ }
+		public Camera(GameManager ins) : base(ins) { }
 
 		public override void Process()
 		{
+			if (GameManager.NetworkManager.IsServer)
+				return; // im sick of it
 			if (CameraSubject == null || !CameraSubject.IsA("BasePart"))
 			{
 				GameManager.RenderManager.MainCamera.Position = new Vector3(0, 5, -6);

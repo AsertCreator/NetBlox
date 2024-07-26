@@ -14,14 +14,14 @@ namespace NetBlox.Structs
 		[JsonPropertyName("c")]
 		public int UserId;
 		[JsonPropertyName("d")]
-		public string PasswordHash;
+		public string LoginToken;
 		[JsonPropertyName("e")]
 		public bool IsGuest;
 		[JsonPropertyName("f")]
 		public bool IsTouchDevice;
 		[JsonPropertyName("g")]
-		public string PlaceLocation;
-
-		public static ClientStartupInfo? Get(string data) => SerializationManager.DeserializeJson< ClientStartupInfo>(data);
+		public string ServerIP;
+		[JsonPropertyName("h")]
+		public string ServerPort;
 	}
 }

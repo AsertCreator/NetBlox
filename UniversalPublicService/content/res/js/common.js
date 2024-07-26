@@ -95,14 +95,17 @@ window.netblox = {
 				let json = await resp.json();
 				const ip = json.ip;
 				const port = json.port;
-				window.location.href = "netblox-client://base64 " + btoa(JSON.stringify({
+				window.netblox.JoinService.forceJoinGame({
 					"e": !hasLoggedIn(),
 					"g": ip + ":" + port
-				}));
+				});
 			} else {
 				debugger;
 				throw "Could not join the game, code " + resp.status;
 			}
+		},
+		forceJoinGame: async (args) => {
+			window.location.href = "netblox-client://base64 " + btoa(JSON.stringify(args));
 		}
 	}
 };

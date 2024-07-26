@@ -105,6 +105,8 @@ namespace NetBlox
 			{
 				IsServer = server;
 				IsClient = client;
+				if (IsServer)
+					ServerPort = gm.ServerStartupInfo.ServerPort;
 				StartProfiling(true);
 				init = true;
 			}

@@ -103,6 +103,8 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public bool CanTouch { get; set; } = true;
 		[Lua([Security.Capability.None])]
+		public double Transparency { get; set; } = 0;
+		[Lua([Security.Capability.None])]
 		public Vector3 Velocity { get; set; }
 		public bool IsGrounded = false;
 		public BoxDef BoxDef;
@@ -115,20 +117,23 @@ namespace NetBlox.Instances
 		{
 			if (GameManager.NetworkManager.IsServer)
 			{
-				Scene sc = Root.GetService<Workspace>().Scene;
-				BodyDef bodyDef = new BodyDef();
-				bodyDef.position.Set(Position.X, Position.Y, Position.Z);
-				if (!Anchored)
-					bodyDef.bodyType = BodyType.eDynamicBody;
-				else
-					bodyDef.bodyType = BodyType.eStaticBody;
-				Body body = sc.CreateBody(bodyDef);
-				BoxDef = new BoxDef();
-				BoxDef.Set(Transform.Identity, Size);
-				Box = body.AddBox(BoxDef);
-				Body = body;
+				var works = Root.GetService<Workspace>(true);
+				if (works != null) {
+					Scene sc = works.Scene;
+					BodyDef bodyDef = new BodyDef();
+					bodyDef.position.Set(Position.X, Position.Y, Position.Z);
+					if (!Anchored)
+						bodyDef.bodyType = BodyType.eDynamicBody;
+					else
+						bodyDef.bodyType = BodyType.eStaticBody;
+					Body body = sc.CreateBody(bodyDef);
+					BoxDef = new BoxDef();
+					BoxDef.Set(Transform.Identity, Size);
+					Box = body.AddBox(BoxDef);
+					Body = body;
 
-				GameManager.PhysicsManager.Actors.Add(this);
+					GameManager.PhysicsManager.Actors.Add(this); 
+				}
 			}
 		}
 

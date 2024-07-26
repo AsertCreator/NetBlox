@@ -1,9 +1,11 @@
 ﻿using NetBlox.Common;
+using NetBlox.Structs;
 using Serilog;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 namespace NetBlox.PublicService
 {
@@ -21,7 +23,7 @@ namespace NetBlox.PublicService
 
 			while (IsRunning) ;
 		}
-		protected override void OnStop() 
+		protected override void OnStop()
 		{
 			ShutdownMatching(x => true); // basically all
 		}
@@ -37,6 +39,19 @@ namespace NetBlox.PublicService
 				}
 			}
 		}
+		public Server FindServer(User user, Place place)
+		{
+			for (int i = 0; i < RunningServers.Count; i++)
+			{
+				var server = RunningServers[i];
+				if (server.PlaceId != place.Id)
+					continue;
+				if (server.GetPlayerCount() < 16)
+					return server;
+			}
+			Server target = new(place);
+			return target;
+		}
 	}
 	public class Server
 	{
@@ -44,21 +59,37 @@ namespace NetBlox.PublicService
 		public Process ServerProcess;
 		public long ServerId;
 		public long PlaceId;
+		public IPAddress ServerIP;
+		public ushort ServerPort;
 
 		public Server(Place plc)
 		{
-			CustomName = plc.Name;
-			ServerId = Program.GetService<ServerService>().RunningServers.Count;
-			PlaceId = plc.Id;
-			ServerProcess = new Process()
-			{
-				StartInfo = new ProcessStartInfo()
-				{
-					CreateNoWindow = true,
-					FileName = "NetBloxServer.exe"
-				}
-			};
-			ServerProcess.Start();
+			//CustomName = plc.Name;
+			//ServerId = Program.GetService<ServerService>().RunningServers.Count;
+			//PlaceId = plc.Id;
+			//ServerProcess = new Process()
+			//{
+			//	StartInfo = new ProcessStartInfo()
+			//	{
+			//		CreateNoWindow = true,
+			//		FileName = "NetBloxServer.exe",
+			//		ArgumentList =
+			//		{
+			//			"-ss",
+			//			JsonSerializer.Serialize(new ServerStartupInfo()
+			//			{
+			//				ServerPort = unchecked((ushort)Random.Shared.Next(0, ushort.MaxValue)),
+			//				PublicServiceAPI =
+			//			})
+			//		}
+			//	}
+			//};
+			//Program.GetService<ServerService>().RunningServers.Add(this);
+			//ServerProcess.Start();
+			//ServerProcess.Exited += (x, y) =>
+			//{
+			//	Program.GetService<ServerService>().RunningServers.Remove(this);
+			//};
 		}
 		public string Communicate(string cmd)
 		{
@@ -75,7 +106,6 @@ namespace NetBlox.PublicService
 				return ss.ReadToEnd();
 			}
 		}
-		public void LoadXmlPlace(string xmldata) => Communicate("nb2-rctrl-load\n" + xmldata);
 		public void RunScript(string scr) => Communicate("nb2-rctrl-runlua\n" + scr);
 		public void Kick(User user, string msg) => Communicate("nb2-rctrl-kick\n" + user.Id + ";" + msg);
 		public void KickAll(string msg) => GetPlayers().ToList().ForEach(x => Kick(x, msg));

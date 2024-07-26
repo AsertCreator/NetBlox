@@ -30,8 +30,8 @@ namespace NetBlox.Server
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,
-				DoNotRenderAtAll = true,
-				SkipWindowCreation = true,
+				// DoNotRenderAtAll = true,
+				// SkipWindowCreation = true,
 				GameName = "NetBlox Server"
 			}, args, (x) =>
 			{
@@ -80,6 +80,18 @@ namespace NetBlox.Server
 									{
 										Console.WriteLine("Could not load the place: " + ex.Message);
 									}
+									break;
+								case "killall":
+									TaskScheduler.RunningJobs.Clear();
+									break;
+								case "jobs":
+									int i = 0;
+									Console.WriteLine("#) {0,-13} {1,-13} {2,-28} {3,-12}", "Name", "Type", "Paused until", "Is joined to job");
+									TaskScheduler.RunningJobs.ForEach(x =>
+									{
+										Console.WriteLine("{0}) {1,-13} {2,-13} {3,-28} {4,-12}", i, x.Name, x.Type, x.JoinedUntil, x.JoinedTo != null);
+										i++;
+									});
 									break;
 								case "lua":
 									TaskScheduler.ScheduleScript(x, cmd[4..], 8, null);

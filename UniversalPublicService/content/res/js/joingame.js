@@ -13,6 +13,12 @@ class JoinGamePage extends React.Component {
 			<button onClick={x => {
 				window.netblox.JoinService.joinGame(0, 0)
 			}}>Random Game</button>
+			<button onClick={x => {
+				window.netblox.JoinService.forceJoinGame({
+					"e": true,
+					"g": "efrjiverwyu"
+				})
+			}}>Start with invalid data</button>
 		</div>);
 	}
 }

@@ -21,6 +21,12 @@ namespace NetBlox.Instances.Services
 		}
 		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void SetTimeout(double d) => LuaRuntime.ScriptExecutionTimeout = (int)(d * 1000);
+		[Lua([Security.Capability.RobloxScriptSecurity])]
+		public DynValue Compile(string code)
+		{
+			var func = GameManager.MainEnvironment.LoadString(code);
+			return func;
+		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void AddCoreScriptLocal(string path, Instance parent)
 		{

@@ -28,6 +28,7 @@ namespace NetBlox.Runtime
 				CoreModules.Basic | CoreModules.Metatables | CoreModules.Bit32 | CoreModules.Coroutine |
 				CoreModules.TableIterators | CoreModules.Table | CoreModules.String | CoreModules.ErrorHandling |
 				CoreModules.Math | CoreModules.OS_Time | CoreModules.GlobalConsts);
+			tenv.Globals.RegisterModuleType(typeof(TaskModule));
 			gm.MainEnvironment = tenv;
 
 			// heavy sandbox lol.
@@ -168,6 +169,11 @@ namespace NetBlox.Runtime
 				try
 				{
 					var inst = InstanceCreator.CreateAccessibleInstance(y[0].String, gm);
+					if (y.Count > 1)
+					{
+						var part = SerializationManager.LuaDeserialize(typeof(Instance), y[1], gm);
+						inst.Parent = (Instance)part;
+					}
 					return DynValue.NewTable(MakeInstanceTable(inst, gm));
 				}
 				catch
@@ -317,14 +323,11 @@ namespace NetBlox.Runtime
 									var ret = meth!.Invoke(inst, args.ToArray());
 									var rett = meth.ReturnType;
 
-									if (meth.ReturnType.Name == "LuaYield")
-									{
-										var hasr = (bool)meth.ReturnType.GetField("HasResult")!.GetValue(ret)!; // idc lol
-										if (!hasr)
-											return DynValue.NewYieldReq(y.GetArray());
-										else
-											rett = meth.ReturnType.GetGenericArguments()[0];
-									}
+									if (ret is LuaYield) 
+										return DynValue.NewYieldReq([]); // do it immediately
+									if (ret is DynValue)
+										return (DynValue)ret;
+
 									if (!rett.IsArray)
 									{
 										if (!SerializationManager.LuaSerializers.TryGetValue(rett.FullName ?? "", out var ls))

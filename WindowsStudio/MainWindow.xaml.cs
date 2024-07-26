@@ -125,9 +125,11 @@ public partial class MainWindow : System.Windows.Window
 				gm.CurrentIdentity.Author = "NetBlox";
 				gm.CurrentIdentity.MaxPlayerCount = 5;
 
-				for (int i = 0; i < dm.GetChildren().Length; i++)
+				var chd = dm.GetChildren();
+
+				for (int i = 0; i < chd.Length; i++)
 				{
-					var d = dm.GetChildren()[i];
+					var d = chd[i];
 					d.ChangeOwnership(gm);
 					d.Parent = gm.CurrentRoot;
 				}

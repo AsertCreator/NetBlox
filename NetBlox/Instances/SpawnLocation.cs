@@ -37,7 +37,9 @@ namespace NetBlox.Instances
 		public override void Process()
 		{
 			base.Process();
-			Root.GetService<Workspace>().SpawnLocation = this; // a rolling mechanism
+			Workspace? works = Root.GetService<Workspace>(true);
+			if (works != null)
+				works.SpawnLocation = this; // a rolling mechanism
 		}
 	}
 }

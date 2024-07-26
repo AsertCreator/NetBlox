@@ -18,10 +18,6 @@ namespace NetBlox.Structs
 		[JsonPropertyName("e")]
 		public int PlaceVersion;
 		[JsonPropertyName("f")]
-		public bool AllowGuests = true;
-		[JsonPropertyName("g")]
-		public int[]? AllowedUsers;
-
-		public static ServerStartupInfo? Get(string data) => SerializationManager.DeserializeJson<ServerStartupInfo>(data);
+		public ushort ServerPort;
 	}
 }

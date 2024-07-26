@@ -2,6 +2,7 @@
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Qu3e;
+using System;
 
 namespace NetBlox.Instances
 {
@@ -153,22 +154,29 @@ namespace NetBlox.Instances
 					var props = SerializationManager.GetAccessibleProperties(clone);
 					for (int i = 0; i < props.Length; i++)
 					{
-						var prop = SerializationManager.GetProperty(inst, props[i]);
-						var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
-						if (SerializationManager.IsReadonly(clone, props[i]))
-							continue;
-						if (ptyp.IsAssignableTo(typeof(Script))) continue;
-						if (ptyp.IsAssignableTo(typeof(Scene))) continue;
-						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+						try
 						{
-							var ogval = (Instance)prop;
-							if (clonemapping.ContainsKey(ogval))
-								SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+							var prop = SerializationManager.GetProperty(inst, props[i]);
+							var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
+							if (SerializationManager.IsReadonly(clone, props[i]))
+								continue;
+							if (ptyp.IsAssignableTo(typeof(Script))) continue;
+							if (ptyp.IsAssignableTo(typeof(Scene))) continue;
+							if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+							{
+								var ogval = (Instance)prop;
+								if (clonemapping.ContainsKey(ogval))
+									SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+								else
+									dolater.Add(clone);
+							}
 							else
-								dolater.Add(clone);
+								SerializationManager.SetProperty(clone, props[i], prop);
 						}
-						else
-							SerializationManager.SetProperty(clone, props[i], prop);
+						catch
+						{
+							// we dont care
+						}
 					}
 
 					clonemapping[inst] = clone;
@@ -220,22 +228,29 @@ namespace NetBlox.Instances
 					var props = SerializationManager.GetAccessibleProperties(clone);
 					for (int i = 0; i < props.Length; i++)
 					{
-						var prop = SerializationManager.GetProperty(inst, props[i]);
-						var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
-						if (SerializationManager.IsReadonly(clone, props[i]))
-							continue;
-						if (ptyp.IsAssignableTo(typeof(LuaSignal)))
-							continue;
-						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+						try
 						{
-							var ogval = (Instance)prop;
-							if (clonemapping.ContainsKey(ogval))
-								SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+							var prop = SerializationManager.GetProperty(inst, props[i]);
+							var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
+							if (SerializationManager.IsReadonly(clone, props[i]))
+								continue;
+							if (ptyp.IsAssignableTo(typeof(LuaSignal)))
+								continue;
+							if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
+							{
+								var ogval = (Instance)prop;
+								if (clonemapping.ContainsKey(ogval))
+									SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+								else
+									dolater.Add(clone);
+							}
 							else
-								dolater.Add(clone);
+								SerializationManager.SetProperty(clone, props[i], prop);
 						}
-						else
-							SerializationManager.SetProperty(clone, props[i], prop);
+						catch
+						{
+							// we dont care
+						}
 					}
 
 					clonemapping[inst] = clone;
@@ -477,23 +492,24 @@ namespace NetBlox.Instances
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public LuaYield<Instance> WaitForChild(string name)
+		public LuaYield WaitForChild(string name)
 		{
-			var n = new LuaYield<Instance>();
-
-			for (int i = 0; i < Children.Count; i++)
+			var job = TaskScheduler.CurrentJob;
+			job.TaskJoinedTo = Task.Run(() =>
 			{
-				if (name == Children[i].Name)
+				while (!GameManager.ShuttingDown)
 				{
-					n.HasResult = true;
-					n.Result = Children[i];
-					return n;
+					var ch = FindFirstChild(name);
+					if (ch == null)
+						Thread.Sleep(50);
+					else
+					{
+						job.AssociatedObject4 = new DynValue[] { DynValue.NewTable(LuaRuntime.MakeInstanceTable(ch, ch.GameManager)) };
+						return;
+					}
 				}
-			}
-
-			n.HasResult = false;
-			n.Result = null;
-			return n;
+			});
+			return new();
 		}
 		public void ReplicateProperties(string[] props, bool immediate)
 		{

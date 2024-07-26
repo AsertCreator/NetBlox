@@ -100,20 +100,29 @@ namespace NetBlox
 			{
 				if (RenderAtAll)
 				{
-					for (int i = 0; i < 6; i++) // s p e e d
+					for (int i = 0; i < 3; i++) // s p e e d
 					{
 						if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
 						{
 							Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
 							if (Raylib.IsKeyDown(KeyboardKey.Space))
 							{
-								MainCamera.Target.Y += 0.2f;
-								MainCamera.Position.Y += 0.2f;
+								MainCamera.Target.Y += 0.1f;
+								MainCamera.Position.Y += 0.1f;
 							}
 							if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
 							{
-								MainCamera.Target.Y -= 0.2f;
-								MainCamera.Position.Y -= 0.2f;
+								MainCamera.Target.Y -= 0.1f;
+								MainCamera.Position.Y -= 0.1f;
+							}
+							if (Raylib.IsKeyDown(KeyboardKey.G))
+							{
+								Part part = new(GameManager);
+								part.Name = "Trash";
+								part.Parent = Root.GetService<Workspace>();
+								part.Position = MainCamera.Position;
+								part.Size = new(1, 1, 1);
+								part.Color3 = Color.DarkPurple;
 							}
 						}
 					}
@@ -155,7 +164,7 @@ namespace NetBlox
 						{
 							if (Root != null)
 							{
-								RenderInstanceUI(Root.FindFirstChild("Workspace"));
+								RenderInstanceUI(Root.GetService<Workspace>(true));
 
 								if (CurrentHint != null)
 								{
@@ -164,6 +173,7 @@ namespace NetBlox
 									Raylib.DrawTextEx(MainFont, CurrentHint, new(ScreenSizeX / 2 - v.X / 2, 45 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
 								}
 
+								RenderPlayerGui();
 								RenderInstanceUI(Root.GetService<CoreGui>());
 							}
 
@@ -209,6 +219,19 @@ namespace NetBlox
 			if (!SkipWindowCreation)
 				Raylib.CloseWindow();
 		}
+		public void RenderPlayerGui()
+		{
+			if (GameManager.NetworkManager.IsClient)
+			{
+				var plrs = Root.GetService<Players>(true);
+				if (plrs == null) return;
+				var lp = plrs.LocalPlayer;
+				if (lp == null) return;
+				var ch = (lp as Player).FindFirstChild("PlayerGui");
+				if (ch == null) return;
+				RenderInstanceUI(ch);
+			}
+		}
 		public void RenderInstanceUI(Instance? inst)
 		{
 			if (inst == null) return;
@@ -243,7 +266,7 @@ namespace NetBlox
 			if (Root == null) return;
 
 			var skypos = MainCamera.Position;
-			var works = Root.FindFirstChild("Workspace");
+			var works = Root.GetService<Workspace>(true);
 
 			RenderSkybox();
 

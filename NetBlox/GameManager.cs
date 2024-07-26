@@ -56,6 +56,7 @@ namespace NetBlox
 			try
 			{
 				LogManager.LogInfo("Initializing NetBlox...");
+				ManagerName = gc.GameName;
 
 				string? csdata = args[args.ToList().IndexOf("-cs") + 1].Replace("^^", "\"");
 				string? ssdata = args[args.ToList().IndexOf("-ss") + 1].Replace("^^", "\"");
@@ -133,7 +134,7 @@ namespace NetBlox
 				if (NetworkManager.IsClient)
 				{
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-					QueuedTeleportAddress = ClientStartupInfo.PlaceLocation;
+					QueuedTeleportAddress = ClientStartupInfo.ServerIP;
 				}
 
 				loadcallback(this);

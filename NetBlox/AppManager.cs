@@ -22,6 +22,7 @@ namespace NetBlox
 		public static HttpClient HttpClient = new();
 		public static Job? GameRenderer;
 		public static Job? GameProcessor;
+		public static Job? GameGC;
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
@@ -54,7 +55,6 @@ namespace NetBlox
 		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
 			GameManager manager = new GameManager(gc, args, loadcallback, dmc);
-			manager.ManagerName = gc.GameName;
 			GameManagers.Add(manager);
 			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
 			return manager;
@@ -89,6 +89,12 @@ namespace NetBlox
 						return JobResult.CompletedSuccess;
 					return JobResult.NotCompleted;
 				}
+				return JobResult.NotCompleted;
+			});
+			GameGC = TaskScheduler.ScheduleMisc("GlobalGC", x =>
+			{
+				GC.Collect();
+				x.JoinedUntil = DateTime.Now.AddSeconds(7);
 				return JobResult.NotCompleted;
 			});
 

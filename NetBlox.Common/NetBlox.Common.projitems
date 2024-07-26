@@ -9,7 +9,9 @@
     <Import_RootNamespace>NetBlox.Common</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ClientStartupInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LogManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerStartupInfo.cs" />
     <Compile Include="..\NetBlox.Common\MathE.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)OnlineMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)StreamExtensions.cs" />

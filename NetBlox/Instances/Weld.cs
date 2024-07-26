@@ -26,16 +26,21 @@ namespace NetBlox.Instances
 					LogManager.LogWarn("Part0 and Part1 properties of Weld only support BaseParts!");
 					return;
 				}
-				if (value && !enabled)
+				if (b0.Body != null && b1.Body != null)
 				{
-					b0.Body.AddBox(b1.BoxDef);
-					b1.Body.RemoveBox(b1.Box);
+					if (value && !enabled)
+					{
+						b0.Body.AddBox(b1.BoxDef);
+						b1.Body.RemoveBox(b1.Box);
+					}
+					if (!value && enabled)
+					{
+						b1.Body.AddBox(b1.BoxDef);
+						b0.Body.RemoveBox(b1.Box);
+					}
 				}
-				if (!value && enabled)
-				{
-					b1.Body.AddBox(b1.BoxDef);
-					b0.Body.RemoveBox(b1.Box);
-				}
+				else
+					LogManager.LogWarn("Part0 and Part1 properties of Weld are only supported on owned parts!");
 				enabled = value;
 			}
 		}

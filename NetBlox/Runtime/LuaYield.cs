@@ -4,9 +4,5 @@ using System.Text;
 
 namespace NetBlox.Runtime
 {
-	public class LuaYield<T>
-	{
-		public bool HasResult;
-		public T? Result;
-	}
+	public class LuaYield { } // yes. its just an empty class. period.
 }

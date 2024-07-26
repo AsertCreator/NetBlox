@@ -96,8 +96,7 @@ namespace Qu3e
 
             bool found = Boxes.Remove(box);
 
-            // This shape was not connected to this body.
-            Assert(found);
+			if (!found) return;
 
             // Remove all contacts associated with this shape
             foreach (var edge in ContactList)

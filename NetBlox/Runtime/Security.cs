@@ -11,21 +11,30 @@ namespace NetBlox.Runtime
 		{
 			switch (level)
 			{
-				case 1: return true;
-				case 2: return cms.Contains(Capability.None);
-				case 3: return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity);
-				case 4: return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity);
-				case 5: return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity);
-				case 6: return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity) || cms.Contains(Capability.RobloxScriptSecurity);
-				case 7: return true;
-				case 8: return true;
-				case 9: return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity) || cms.Contains(Capability.RobloxScriptSecurity);
+				case 1: /* None */ 
+					return cms.Contains(Capability.None);
+				case 2: /* GameScript */ 
+					return cms.Contains(Capability.None);
+				case 3: /* CoreScript */ 
+					return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity);
+				case 4: /* CommandBar */ 
+					return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity) || cms.Contains(Capability.PluginSecurity);
+				case 5: /* Plugin */     
+					return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity) || cms.Contains(Capability.PluginSecurity);
+				case 6: /* CorePlugin */ 
+					return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity) || cms.Contains(Capability.PluginSecurity) || cms.Contains(Capability.RobloxScriptSecurity);
+				case 7: /* StarterScript */ 
+					return true;
+				case 8: /* PublicServiceRemote */ 
+					return true;
+				case 9: /* Replicator */ 
+					return cms.Contains(Capability.None) || cms.Contains(Capability.CoreSecurity) || cms.Contains(Capability.RobloxScriptSecurity);
 				default: return false;
 			}
 		}
 		public enum Capability
 		{
-			None, CoreSecurity, WritePlayerSecurity, RobloxScriptSecurity, RobloxSecurity
+			None, CoreSecurity, PluginSecurity, WritePlayerSecurity, RobloxScriptSecurity, RobloxSecurity
 		}
 	}
 }

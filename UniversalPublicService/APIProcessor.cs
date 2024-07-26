@@ -217,6 +217,32 @@ namespace NetBlox.PublicService
 				});
 			});
 
+			AddEndpoint("/api/places/join", delegate (HttpListenerContext x, ref int code)
+			{
+				PlaceService ps = Program.GetService<PlaceService>();
+				ServerService ss = Program.GetService<ServerService>();
+				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
+				Place place = ps.GetPlaceByID(long.Parse(GetQueryData(x, "gid")));
+
+				if (user == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+
+				Server server = ss.FindServer(user, place);
+
+				return EncodeJson(new()
+				{
+					["ip"] = server.ServerIP.ToString(),
+					["port"] = server.ServerPort
+				});
+			});
+
 			AddEndpoint("/api/places/update/content", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();

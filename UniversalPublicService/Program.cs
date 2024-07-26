@@ -11,7 +11,7 @@ namespace NetBlox.PublicService
 		public static List<Service> Services = new();
 		public static string PublicServiceName = "";
 		public static bool IsReadonly = false;
-		public static bool IsUnderMaintenance = true;
+		public static bool IsUnderMaintenance = false;
 
 		public static void Main(string[] args)
 		{

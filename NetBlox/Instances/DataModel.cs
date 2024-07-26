@@ -72,6 +72,18 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.CoreSecurity])]
 		public string HttpGet(string url) => File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult());
 		[Lua([Security.Capability.CoreSecurity])]
+		public LuaYield HttpGetAsync(string url) 
+		{
+			var job = TaskScheduler.CurrentJob;
+			job.TaskJoinedTo = Task.Run(async () =>
+			{
+				var path = await AppManager.ResolveUrlAsync(url, true);
+				var data = File.ReadAllText(path);
+				job.AssociatedObject4 = new DynValue[] { DynValue.NewString(data) };
+			});
+			return new();
+		}
+		[Lua([Security.Capability.CoreSecurity])]
 		public Instance[] GetObjects(string url)
 		{
 			Instance ins = new(GameManager); // temporary holder
@@ -85,6 +97,7 @@ namespace NetBlox.Instances
 		public void Load(string url)
 		{
 			LogManager.LogInfo("Loading DataModel from URL " + url + "...");
+			Clear();
 			RbxlParser.Load(url, this);
 		}
 		[Lua([Security.Capability.None])]

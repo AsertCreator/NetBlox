@@ -31,6 +31,7 @@ namespace NetBlox
 		public DateTime JoinedUntil = DateTime.MinValue;
 		public bool HadRunBefore = false;
 		public JobResult Result;
+		public Task? TaskJoinedTo;
 		public Job? JoinedTo;
 
 		public Job()
@@ -58,11 +59,11 @@ namespace NetBlox
 		{
 			get
 			{
-				if (JobCount <= 3) return PressureType.None;
-				if (JobCount <= 13) return PressureType.Slightly;
-				if (JobCount <= 23) return PressureType.Mildly;
-				if (JobCount <= 33) return PressureType.Severe;
-				if (JobCount <= 43) return PressureType.Unplayable;
+				if (JobCount <= 5) return PressureType.None;
+				if (JobCount <= 15) return PressureType.Slightly;
+				if (JobCount <= 25) return PressureType.Mildly;
+				if (JobCount <= 35) return PressureType.Severe;
+				if (JobCount <= 45) return PressureType.Unplayable;
 				return PressureType.Fatal;
 			}
 		}
@@ -89,6 +90,8 @@ namespace NetBlox
 					if (job.JoinedUntil > now)
 						continue;
 					if (job.JoinedTo != null && job.JoinedTo.Result == JobResult.NotCompleted)
+						continue;
+					if (job.TaskJoinedTo != null && !job.TaskJoinedTo.IsCompleted)
 						continue;
 					CurrentJob = job;
 					try
@@ -189,7 +192,14 @@ namespace NetBlox
 			if ((level == 7 || level == 8) && gm.NetworkManager.IsClient)
 				throw new Exception("Server-exclusive threads are not expected on client!");
 
-			var closure = gm.MainEnvironment.CreateCoroutine(func).Coroutine;
+			Coroutine? closure = null;
+			if (func.Type == DataType.Function)
+				closure = gm.MainEnvironment.CreateCoroutine(func).Coroutine;
+			else if (func.Type == DataType.Thread)
+				closure = func.Coroutine;
+			else
+				throw new InvalidOperationException("Cannot create a thread with not a function or coroutine");
+
 			var job = new Job()
 			{
 				NativeCallback = delegate (Job job)
@@ -208,8 +218,6 @@ namespace NetBlox
 							gm.MainEnvironment.Globals["script"] = DynValue.Nil;
 						else
 							gm.MainEnvironment.Globals["script"] = LuaRuntime.MakeInstanceTable(self, gm);
-
-
 
 						var args = job.AssociatedObject4 as DynValue[];
 						var result = closure.Resume(args);

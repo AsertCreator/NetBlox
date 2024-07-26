@@ -12,7 +12,7 @@ namespace NetBlox
 	public class PhysicsManager
 	{
 		public GameManager GameManager;
-		public Workspace? Workspace => (Workspace?)GameManager.CurrentRoot.FindFirstChild("Workspace");
+		public Workspace? Workspace => (Workspace?)GameManager.CurrentRoot.GetService<Workspace>(true);
 		public Vector3 Gravity { get => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity; set => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity = value; }
 		public Scene Scene { get => (Workspace ?? throw new Exception("No workspace is loaded")).Scene; set => (Workspace ?? throw new Exception("No workspace is loaded")).Scene = value; }
 		public List<BasePart> Actors = new();
