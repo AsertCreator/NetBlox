@@ -36,6 +36,8 @@ namespace NetBlox.PublicService
 				return Encoding.UTF8.GetBytes(ServeGamePage(long.Parse(uri[6..]))); 
 			else if (uri.StartsWith("/join")) 
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/joingame.html"));
+			else if (uri.StartsWith("/login"))
+				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/login.html"));
 			else if (uri.StartsWith("/search"))
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/search.html"));
 			else if (uri.StartsWith("/api"))  

@@ -7,8 +7,9 @@ class HomePage extends React.Component {
 		super(props);
 		this.state = {};
 	}
-	
-	render() {
+
+
+	componentDidMount() {
 		var cards = [];
 		var proms = [];
 		for (var i = 0; i < 1; i++) {
@@ -21,10 +22,12 @@ class HomePage extends React.Component {
 			});
 		}
 
-		Promise.all(proms).then((x) => {
-			this.setState({cards:cards});
+		Promise.all(proms).then(x => {
+			this.setState({ cards: cards });
 		});
-
+	}
+	
+	render() {
 		return (<div>
 			<h1>Home</h1>
 			{this.state.cards == undefined ? (<p>Loading...</p>) : this.state.cards}

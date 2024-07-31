@@ -6,7 +6,7 @@ window.netblox = {
 		return matches ? decodeURIComponent(matches[1]) : undefined;
 	},
 	getSha256: async (text) => {
-		const msgBuffer = new TextEncoder().encode(message);
+		const msgBuffer = new TextEncoder().encode(text);
 		const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
 		const hashArray = Array.from(new Uint8Array(hashBuffer));
 		const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -16,11 +16,11 @@ window.netblox = {
 	LoginService: {
 		hasLoggedIn: () => window.netblox.getCookie("nblogtok") == undefined,
 		login: async (uname, passw) => {
-			if (this.hasLoggedIn())
-				this.logout();
-			const phash = getSha256(passw);
-			const resp = await fetch(window.netblox.getPublicServiceApiUrl() + "/user/login?name=" +
-					encodeURIComponent(uname) + "&phash=" + encodeURIComponent(phash), {
+			if (window.netblox.LoginService.hasLoggedIn())
+				window.netblox.LoginService.logout();
+			const phash = await window.netblox.getSha256(passw);
+			const resp = await fetch(window.netblox.getPublicServiceApiUrl() + "/users/login?name=" +
+				encodeURIComponent(uname) + "&phash=" + encodeURIComponent(phash), {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'text/plain;charset=utf-8'
@@ -28,7 +28,7 @@ window.netblox = {
 			});
 			if (resp.ok) {
 				console.log("logged in successfully!");
-				document.cookie = "nblogtok=" + encodeURIComponent(resp.text()) + "; maxage=" + 60 * 60 * 24 * 30; // for a month
+				document.cookie = "nblogtok=" + encodeURIComponent((await resp.json()).token) + "; maxage=" + 60 * 60 * 24 * 30; // for a month
 				return true;
 			}
 			else {
@@ -37,8 +37,8 @@ window.netblox = {
 			}
 		},
 		logout: () => {
-			if (this.hasLoggedIn())
-				window.cookie = "nblogtok=";
+			if (window.netblox.LoginService.hasLoggedIn())
+				document.cookie = "nblogtok=; expires=Thu, 01 Jan 1970 00:00:01 GMT";
 			console.log("logged out!");
 		}
 	},
@@ -96,7 +96,7 @@ window.netblox = {
 				const ip = json.ip;
 				const port = json.port;
 				window.netblox.JoinService.forceJoinGame({
-					"e": !hasLoggedIn(),
+					"e": !window.netblox.LoginService.hasLoggedIn(),
 					"g": ip + ":" + port
 				});
 			} else {
@@ -154,10 +154,23 @@ class Titlebar extends React.Component {
 	}
 
 	render() {
-		return (<div>
+		return (<div id="header-content">
 			<a href="/" style={(window.location.pathname == "/" ? { textDecoration: 'underline' } : {})}>Welcome to NetBlox!</a>
 			<a href="/join" style={(window.location.pathname == "/join" ? { textDecoration: 'underline' } : {})}>Join a game</a>
 			<a href="/search" style={(window.location.pathname == "/search" ? { textDecoration: 'underline' } : {})}>Search</a>
+			<div className="right-align">
+				{
+					window.netblox.LoginService.hasLoggedIn() ?
+					(
+						<a href="/" onClick={() => {
+							window.netblox.LoginService.logout();
+						}}>Logout</a>
+					) :
+					(
+						<a href="/login" style={(window.location.pathname == "/login" ? { textDecoration: 'underline' } : {})}>Login</a>
+					) // what the fuck visual studio. its re****ed isnt it?
+				}
+			</div>
 		</div>);
 	}
 }
