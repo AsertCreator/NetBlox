@@ -1,12 +1,6 @@
 using NetBlox.Runtime;
-using NetBlox.Structs;
 using Raylib_cs;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.PixelFormats;
-using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace NetBlox.Instances.GUIs
 {
