@@ -227,7 +227,7 @@ namespace NetBlox
 				if (plrs == null) return;
 				var lp = plrs.LocalPlayer;
 				if (lp == null) return;
-				var ch = (lp as Player).FindFirstChild("PlayerGui");
+				var ch = ((Player)lp).FindFirstChild("PlayerGui");
 				if (ch == null) return;
 				RenderInstanceUI(ch);
 			}

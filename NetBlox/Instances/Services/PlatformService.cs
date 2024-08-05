@@ -33,7 +33,7 @@ namespace NetBlox.Instances.Services
 		public void SetRenderFlag(string flag)
 		{
 			var type = typeof(ConfigFlags);
-			var conf = (ConfigFlags)(type.GetEnumValues() as uint[])[Array.FindIndex(type.GetEnumNames(), x => x == flag)];
+			var conf = (ConfigFlags)((uint[])type.GetEnumValues())[Array.FindIndex(type.GetEnumNames(), x => x == flag)];
 			// help
 			Raylib.SetConfigFlags(conf);
 		}
@@ -79,7 +79,7 @@ namespace NetBlox.Instances.Services
 											string msg = argblob.Split(';')[1];
 											for (int i = 0; i < plrc.Length; i++)
 											{
-												Player plr = plrc[i] as Player;
+												Player plr = (Player)plrc[i];
 												if (plr.UserId == uid)
 												{
 													plr.Kick(msg);

@@ -4,6 +4,11 @@ using System.Xml.Linq;
 // thank you creative commons
 namespace NetBlox.Studio;
 
+#pragma warning disable CS8603 // Possible null reference return.
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8769 // Nullability of reference types in type of parameter doesn't match implemented member (possibly because of nullability attributes).
+#pragma warning disable CS8765 // Nullability of type of parameter doesn't match overridden member (possibly because of nullability attributes).
+#pragma warning disable CS8768 // Nullability of reference types in return type doesn't match implemented member (possibly because of nullability attributes).
 public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyPropertyChanged
 {
 	private Type _type;
@@ -14,7 +19,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 	private PropertyDescriptor _defaultProperty;
 	private EventDescriptorCollection _events;
 
-	public event PropertyChangedEventHandler PropertyChanged;
+	public event PropertyChangedEventHandler? PropertyChanged;
 
 	private DynamicTypeDescriptor()
 	{
@@ -27,8 +32,8 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 		_type = type;
 		_typeConverter = TypeDescriptor.GetConverter(type);
-		_defaultEvent = TypeDescriptor.GetDefaultEvent(type);
-		_defaultProperty = TypeDescriptor.GetDefaultProperty(type);
+		_defaultEvent = TypeDescriptor.GetDefaultEvent(type)!;
+		_defaultProperty = TypeDescriptor.GetDefaultProperty(type)!;
 		_events = TypeDescriptor.GetEvents(type);
 
 		List<PropertyDescriptor> normalProperties = new List<PropertyDescriptor>();
@@ -137,7 +142,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		private string _category;
 		private List<Attribute> _attributes = new List<Attribute>();
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		public event PropertyChangedEventHandler? PropertyChanged;
 
 		internal DynamicProperty(DynamicTypeDescriptor descriptor, Type type, object value, string name, Attribute[] attrs)
 			: base(name, attrs)
@@ -153,7 +158,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 			else
 			{
 				_hasDefaultValue = true;
-				_defaultValue = def.Value;
+				_defaultValue = def.Value!;
 			}
 			if (attrs != null)
 			{
@@ -363,7 +368,6 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 				_descriptor.OnValueChanged(this);
 			}
 		}
-
 		public override void SetValue(object component, object value)
 		{
 			if (_existing != null)
@@ -611,7 +615,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		return null;
 	}
 
-	EventDescriptorCollection ICustomTypeDescriptor.GetEvents(Attribute[] attributes)
+	EventDescriptorCollection? ICustomTypeDescriptor.GetEvents(Attribute[] attributes)
 	{
 		return _events;
 	}
@@ -621,7 +625,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		return _events;
 	}
 
-	PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties(Attribute[] attributes)
+	PropertyDescriptorCollection? ICustomTypeDescriptor.GetProperties(Attribute[] attributes)
 	{
 		return Properties;
 	}
@@ -636,3 +640,9 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		return Component;
 	}
 }
+
+#pragma warning restore CS8768 // Nullability of reference types in return type doesn't match implemented member (possibly because of nullability attributes).
+#pragma warning restore CS8765 // Nullability of type of parameter doesn't match overridden member (possibly because of nullability attributes).
+#pragma warning restore CS8769 // Nullability of reference types in type of parameter doesn't match implemented member (possibly because of nullability attributes).
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8603 // Possible null reference return.

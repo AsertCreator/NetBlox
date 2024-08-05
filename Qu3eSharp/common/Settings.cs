@@ -42,11 +42,6 @@ namespace Qu3e
 
         public const double Q3_PENETRATION_SLOP = 0.05;
 
-        public static void Assert(bool condition)
-        {
-            System.Diagnostics.Debug.Assert(condition);
-        }
-
         // Restitution mixing. The idea is to use the maximum bounciness, so bouncy
         // objects will never not bounce during collisions.
         public static double MixRestitution(Box A, Box B)

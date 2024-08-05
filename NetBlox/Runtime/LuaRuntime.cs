@@ -104,9 +104,15 @@ namespace NetBlox.Runtime
 						if (gm.LoadedModules.TryGetValue(ms, out var dv)) return dv;
 
 						var lt = TaskScheduler.CurrentJob;
+
+						Debug.Assert(lt.AssociatedObject1 != null);
+
 						lt.JoinedTo = TaskScheduler.ScheduleScript(gm, ms.Source, (int)lt.AssociatedObject1, ms, x =>
 						{
 							DynValue dv = (DynValue)x.AssociatedObject5;
+
+							Debug.Assert(dv != null);
+
 							lt.AssociatedObject4 = dv.Type == DataType.Tuple ? dv.Tuple : [dv];
 							return JobResult.CompletedSuccess;
 						});
@@ -121,6 +127,8 @@ namespace NetBlox.Runtime
 				});
 				tenv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
 				{
+					Debug.Assert(TaskScheduler.CurrentJob.AssociatedObject1 != null);
+
 					if (y.Count != 0)
 					{
 						string prefix = y.AsStringUsingMeta(x, 0, "printidentity");

@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using Qu3e;
 using System;
+using System.Diagnostics;
 
 namespace NetBlox.Instances
 {
@@ -444,6 +445,8 @@ namespace NetBlox.Instances
 		{
 			if (!GameManager.NetworkManager.IsServer)
 				throw new Exception("Cannot call Network Ownership API from client!");
+			Debug.Assert(player.Client != null);
+
 			GameManager.NetworkManager.Confiscate(this);
 			GameManager.NetworkManager.SetOwner(player.Client, this);
 		}
@@ -518,8 +521,11 @@ namespace NetBlox.Instances
 				if (DateTime.Now > DoNotReplicateUntil || immediate)
 				{
 					var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
-					rep.Properties = props;
-					DoNotReplicateUntil = DateTime.Now.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
+					if (rep != null)
+					{
+						rep.Properties = props;
+						DoNotReplicateUntil = DateTime.Now.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
+					}
 				}
 			}
 		}

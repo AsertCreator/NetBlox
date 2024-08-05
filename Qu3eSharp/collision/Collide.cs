@@ -309,7 +309,7 @@ namespace Qu3e
                 if (((InFront(da) && InFront(db)) || On(da) || On(db)))
                 {
 
-                    Assert(resultCount < 8);
+                    System.Diagnostics.Debug.Assert(resultCount < 8);
                     result[resultCount++] = b;
                 }
 
@@ -321,7 +321,7 @@ namespace Qu3e
                     cv.f.outR = clipEdge;
                     cv.f.outI = 0;
 
-                    Assert(resultCount < 8);
+                    System.Diagnostics.Debug.Assert(resultCount < 8);
                     result[resultCount++] = cv;
                 }
 
@@ -333,11 +333,11 @@ namespace Qu3e
                     cv.f.inR = clipEdge;
                     cv.f.inI = 0;
 
-                    Assert(resultCount < 8);
+                    System.Diagnostics.Debug.Assert(resultCount < 8);
                     result[resultCount++] = cv;
 
 
-                    Assert(resultCount < 8);
+                    System.Diagnostics.Debug.Assert(resultCount < 8);
                     result[resultCount++] = b;
                 }
 
@@ -393,7 +393,7 @@ namespace Qu3e
             }
 
 
-            Assert(resultCount <= 8);
+            System.Diagnostics.Debug.Assert(resultCount <= 8);
 
             return resultCount;
         }

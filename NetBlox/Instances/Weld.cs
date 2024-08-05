@@ -26,7 +26,7 @@ namespace NetBlox.Instances
 					LogManager.LogWarn("Part0 and Part1 properties of Weld only support BaseParts!");
 					return;
 				}
-				if (b0.Body != null && b1.Body != null)
+				if (b0.Body != null && b1.Body != null && b0.Box != null && b1.Box != null)
 				{
 					if (value && !enabled)
 					{

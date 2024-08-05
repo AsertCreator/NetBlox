@@ -114,7 +114,7 @@ namespace NetBlox
 				IsServer = server;
 				IsClient = client;
 				if (IsServer)
-					ServerPort = gm.ServerStartupInfo.ServerPort;
+					ServerPort = (GameManager.ServerStartupInfo ?? throw new Exception()).ServerPort;
 				StartProfiling(true);
 				init = true;
 			}
@@ -278,6 +278,8 @@ namespace NetBlox
 						AddReplication(Root.GetService<StarterGui>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<StarterPack>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Workspace>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+
+						Debug.Assert(pl.Character != null);
 
 						AddReplication(pl, Replication.REPM_TOALL, Replication.REPW_NEWINST, false);
 						AddReplication(pl.Character, Replication.REPM_TOALL, Replication.REPW_NEWINST, true);
@@ -530,9 +532,14 @@ namespace NetBlox
 						}
 						if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
 						{
+							var cam = Root.GetService<Workspace>().MainCamera as Camera;
 							var ch = (Character)ins;
 							ch.IsLocalPlayer = true;
-							((Camera)Root.GetService<Workspace>().MainCamera).CameraSubject = ch;
+
+							if (cam == null)
+								return JobResult.CompletedFailure; // hehe
+
+							cam.CameraSubject = ch;
 							if (lp != null)
 							{
 								lp.Character = ch;
@@ -721,6 +728,8 @@ namespace NetBlox
 		}
 		public void RequestOwnerReplication(Instance ins, PropertyInfo[] props)
 		{
+			if (RemoteConnection == null) return;
+
 			using MemoryStream ms = new();
 			using BinaryWriter bw = new(ms);
 			var gm = ins.GameManager;
@@ -906,14 +915,14 @@ namespace NetBlox
 				SendRawData(con, "nb2-destroy", b);
 			}
 		}
-		public Replication AddReplication(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
+		public Replication? AddReplication(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
 		{ // the fucking aRgUmEnT ExCePtIoN CirCumCiSiTiOn .net fuck off for god's sake
 			lock (ReplicationQueue)
 			{
 				return AddReplicationImpl(inst, m, w, rc, nc);
 			}
 		}
-		private Replication AddReplicationImpl(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
+		private Replication? AddReplicationImpl(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
 		{
 			if (inst is ServerStorage) return null;
 			if (inst is Camera) return null; // worky arounds

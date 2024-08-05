@@ -30,7 +30,7 @@ namespace NBApiDumper
 				var type = typs[i];
 				if (type.IsAssignableTo(inst))
 				{
-					Console.WriteLine($"processing class {type.Name} : {type.BaseType.Name}...");
+					Console.WriteLine($"processing class {type.Name} : {type.BaseType!.Name}...");
 					var sb = new StringBuilder();
 					var fi = new FileInfo(Path.Combine(outdir.FullName, type.Name + ".md"));
 					var fs = fi.Create();
@@ -77,12 +77,12 @@ namespace NBApiDumper
 							if (attr.GetType().Name == "LuaAttribute")
 								luattr = attr;
 
-						var sec = (Array)luattr.GetType().GetProperty("Capabilities")!.GetValue(luattr);
-						var sectype = sec.GetType().GetElementType();
-						var capstr = sectype.GetEnumName(sec.GetValue(0));
+						var sec = (Array)luattr!.GetType().GetProperty("Capabilities")!.GetValue(luattr);
+						var sectype = sec!.GetType().GetElementType();
+						var capstr = sectype!.GetEnumName(sec.GetValue(0)!);
 
 						for (int k = 1; k < sec.Length; k++)
-							capstr += ", " + sectype.GetEnumName(sec.GetValue(k));
+							capstr += ", " + sectype.GetEnumName(sec.GetValue(k)!);
 
 						sb.AppendLine($"`{luameths[j].Name}` | `{string.Join(", ", from x in luameths[j].GetParameters() select x.ParameterType.Name)}` " +
 							$"| `{capstr}` |");

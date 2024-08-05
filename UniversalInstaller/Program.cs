@@ -33,7 +33,7 @@ namespace UniversalInstaller
 					var ver = "";
 					proc.OutputDataReceived += (x, y) =>
 					{
-						string target = y.Data;
+						string target = y.Data ?? "";
 						ver = target.Substring(target.IndexOf('('), target.IndexOf('(') - target.IndexOf(')'));
 					};
 					proc.Start();
@@ -104,7 +104,7 @@ namespace UniversalInstaller
 				try
 				{
 					var artifacts = json.RootElement.GetProperty("artifacts");
-					var latest = artifacts[1].GetProperty("archive_download_url").GetString();
+					var latest = artifacts[1].GetProperty("archive_download_url").GetString() ?? "";
 
 					Console.WriteLine($"[+] Downloading from {latest}...");
 					req = new HttpRequestMessage()

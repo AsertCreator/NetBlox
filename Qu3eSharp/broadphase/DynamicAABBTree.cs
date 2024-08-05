@@ -57,16 +57,16 @@ namespace Qu3e
         }
         public void Remove(int id)
         {
-            Assert(id >= 0 && id < Capacity);
-            Assert(Nodes[id].IsLeaf());
+            System.Diagnostics.Debug.Assert(id >= 0 && id < Capacity);
+            System.Diagnostics.Debug.Assert(Nodes[id].IsLeaf());
 
             RemoveLeaf(id);
             DeallocateNode(id);
         }
         public bool Update(int id, AABB aabb)
         {
-            Assert(id >= 0 && id < Capacity);
-            Assert(Nodes[id].IsLeaf());
+            System.Diagnostics.Debug.Assert(id >= 0 && id < Capacity);
+            System.Diagnostics.Debug.Assert(Nodes[id].IsLeaf());
 
             if (Nodes[id].aabb.Contains(aabb))
                 return false;
@@ -84,13 +84,13 @@ namespace Qu3e
 
         public object GetUserData(int id)
         {
-            Assert(id >= 0 && id < Capacity);
+            System.Diagnostics.Debug.Assert(id >= 0 && id < Capacity);
 
             return Nodes[id].userData;
         }
         public AABB GetFatAABB(int id)
         {
-            Assert(id >= 0 && id < Capacity);
+            System.Diagnostics.Debug.Assert(id >= 0 && id < Capacity);
 
             return Nodes[id].aabb;
         }
@@ -147,7 +147,7 @@ namespace Qu3e
             while (sp > 0)
             {
                 // k_stackCapacity too small
-                Assert(sp < k_stackCapacity);
+                System.Diagnostics.Debug.Assert(sp < k_stackCapacity);
 
                 int id = stack[--sp];
 
@@ -212,17 +212,17 @@ namespace Qu3e
 
             while (index != Node.Null)
             {
-                Assert(index >= 0 && index < Capacity);
+                System.Diagnostics.Debug.Assert(index >= 0 && index < Capacity);
                 index = Nodes[index].next;
                 ++freeNodes;
             }
 
-            Assert(Count + freeNodes == Capacity);
+            System.Diagnostics.Debug.Assert(Count + freeNodes == Capacity);
 
             // Validate tree structure
             if (Root != Node.Null)
             {
-                Assert(Nodes[Root].parent == Node.Null);
+                System.Diagnostics.Debug.Assert(Nodes[Root].parent == Node.Null);
 
 #if _DEBUG
                 ValidateStructure(Root);
@@ -287,7 +287,7 @@ namespace Qu3e
 
         void DeallocateNode(int index)
         {
-            Assert(index >= 0 && index < Capacity);
+            System.Diagnostics.Debug.Assert(index >= 0 && index < Capacity);
 
             Nodes[index].next = FreeList;
             Nodes[index].height = Node.Null;
@@ -579,18 +579,18 @@ namespace Qu3e
 
             if (n.IsLeaf())
             {
-                Assert(ir == Node.Null);
-                Assert(n.height == 0);
+                System.Diagnostics.Debug.Assert(ir == Node.Null);
+                System.Diagnostics.Debug.Assert(n.height == 0);
                 return;
             }
 
-            Assert(il >= 0 && il < Capacity);
-            Assert(ir >= 0 && ir < Capacity);
+            System.Diagnostics.Debug.Assert(il >= 0 && il < Capacity);
+            System.Diagnostics.Debug.Assert(ir >= 0 && ir < Capacity);
             Node l = Nodes[il];
             Node r = Nodes[ir];
 
-            Assert(l.parent == index);
-            Assert(r.parent == index);
+            System.Diagnostics.Debug.Assert(l.parent == index);
+            System.Diagnostics.Debug.Assert(r.parent == index);
 
             ValidateStructure(il);
             ValidateStructure(ir);
@@ -598,7 +598,7 @@ namespace Qu3e
         }
         void RenderNode(Render render, int index)
         {
-            Assert(index >= 0 && index < Capacity);
+            System.Diagnostics.Debug.Assert(index >= 0 && index < Capacity);
 
             Node n = Nodes[index];
             AABB b = n.aabb;

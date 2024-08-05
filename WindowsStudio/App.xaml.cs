@@ -15,7 +15,6 @@ public partial class App : Application
 	public static GameManager? EditorGame;
 	public static GameManager? ClientGame;
 	public static GameManager? ServerGame;
-	public static Project? CurrentProject;
 
 	public App()
 	{

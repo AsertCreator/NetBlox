@@ -213,7 +213,7 @@ namespace NetBlox.PublicService
 
 				return EncodeJson(new()
 				{
-					["id"] = place.Id
+					["id"] = place!.Id
 				});
 			});
 
@@ -234,7 +234,7 @@ namespace NetBlox.PublicService
 					});
 				}
 
-				Server server = ss.FindServer(user, place);
+				Server server = ss.FindServer(user, place!);
 
 				return EncodeJson(new()
 				{
@@ -416,7 +416,7 @@ namespace NetBlox.PublicService
 		{
 			try
 			{
-				var end = GetEndpoint(ctx.Request.Url.LocalPath);
+				var end = GetEndpoint(ctx.Request.Url!.LocalPath);
 				if (end == null)
 				{
 					code = 404;

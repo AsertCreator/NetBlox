@@ -59,7 +59,10 @@ namespace NetBlox.Server
 						{
 
 							Console.Write(">> ");
+
 							string cmd = Console.ReadLine();
+							if (cmd == null) continue;
+
 							string[] words = cmd.Split(' ');
 							if (words.Length == 0) continue;
 

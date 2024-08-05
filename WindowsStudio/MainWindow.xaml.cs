@@ -6,6 +6,7 @@ using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
@@ -139,6 +140,7 @@ public partial class MainWindow : System.Windows.Window
 
 				PlatformService.QueuedTeleport = (xo) =>
 				{
+					Debug.Assert(App.ClientGame != null);
 					App.ClientGame.NetworkManager.ClientReplicator = Task.Run(async delegate ()
 					{
 						try
@@ -168,7 +170,7 @@ public partial class MainWindow : System.Windows.Window
 				AppManager.SetRenderTarget(App.ClientGame);
 				App.ClientGame.ShutdownEvent += (x, y) =>
 				{
-					App.ServerGame.Shutdown();
+					App.ServerGame?.Shutdown();
 					App.ClientGame = null;
 					App.ServerGame = null;
 					GC.Collect(); // to be unnecessary mean
@@ -193,7 +195,7 @@ public partial class MainWindow : System.Windows.Window
 	{
 		if (AppManager.CurrentRenderManager != null)
 		{
-			AppManager.CurrentRenderManager.DebugInformation = (sender as RibbonToggleButton)!.IsChecked.Value;
+			AppManager.CurrentRenderManager.DebugInformation = (sender as RibbonToggleButton)!.IsChecked!.Value;
 		}
 	}
 	private void StopButtonClick(object sender, System.Windows.RoutedEventArgs e)

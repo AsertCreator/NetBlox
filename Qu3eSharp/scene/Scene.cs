@@ -160,14 +160,14 @@ namespace Qu3e
 						if ((other.Flags & BodyFlags.eIsland) > 0)
 							continue;
 
-						Assert(stackCount < 256);
+						System.Diagnostics.Debug.Assert(stackCount < 256);
 
 						stack[stackCount++] = other;
 						other.Flags |= BodyFlags.eIsland;
 					}
 				}
 
-				Assert(Island.Bodies.Count != 0);
+				System.Diagnostics.Debug.Assert(Island.Bodies.Count != 0);
 
 				Island.Initialize();
 				Island.Solve();

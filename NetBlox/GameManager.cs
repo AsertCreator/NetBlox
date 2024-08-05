@@ -71,13 +71,16 @@ namespace NetBlox
 				if (ServerStartupInfo == null && gc.AsServer)
 					throw new Exception("Missing startup info");
 
-				AppManager.PublicServiceAPI = gc.AsServer ? ServerStartupInfo.PublicServiceAPI : ClientStartupInfo.PublicServiceAPI;
+				AppManager.PublicServiceAPI = 
+					gc.AsServer ? 
+					(ServerStartupInfo ?? throw new Exception()).PublicServiceAPI :
+					(ClientStartupInfo ?? throw new Exception()).PublicServiceAPI;
 
 				NetworkManager = new(this, gc.AsServer, gc.AsClient);
 				CurrentIdentity.Reset();
 				IsStudio = gc.AsStudio;
 
-				if (gc.AsClient && ClientStartupInfo.IsGuest)
+				if (gc.AsClient && (ClientStartupInfo ?? throw new Exception()).IsGuest)
 					CurrentProfile.LoginAsGuest();
 
 				if (gc.AsClient)
@@ -140,7 +143,7 @@ namespace NetBlox
 				if (NetworkManager.IsClient)
 				{
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-					QueuedTeleportAddress = ClientStartupInfo.ServerIP;
+					QueuedTeleportAddress = (ClientStartupInfo ?? throw new Exception()).ServerIP;
 				}
 
 				loadcallback(this);

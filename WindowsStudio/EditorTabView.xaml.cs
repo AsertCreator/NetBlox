@@ -122,12 +122,12 @@ namespace NetBlox.Studio
 									if (fabm != null)
 									{
 										var ins = (Instance)fabm.Invoke(null, [App.EditorGame]);
-										ins.Parent = inst;
+										ins!.Parent = inst;
 									}
 									else
 									{
 										Instance ins = (Instance)Activator.CreateInstance(typs[j], App.EditorGame);
-										ins.Parent = inst;
+										ins!.Parent = inst;
 									}
 								};
 								mi.Items.Add(ins);
@@ -148,7 +148,7 @@ namespace NetBlox.Studio
 								}),
 								MakeItem("Edit script", inst is BaseScript, () =>
 								{
-									MainWindow.Instance.OpenScriptTab(inst as BaseScript);
+									MainWindow.Instance!.OpenScriptTab((inst as BaseScript)!);
 								}),
 								MakeInsertItem()
 							}

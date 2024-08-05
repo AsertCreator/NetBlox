@@ -67,7 +67,7 @@ namespace Qu3e
         }
         public void ToAxisAngle(out Vec3 axis, out double angle)
         {
-            Assert(w <= 1);
+            System.Diagnostics.Debug.Assert(w <= 1);
 
             angle = 2 * Math.Acos(w);
 

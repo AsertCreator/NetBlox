@@ -9,14 +9,12 @@ namespace NetworkTest
 {
 	public sealed class NetworkClient : IDisposable
 	{
+		/*
 		public event EventHandler ConnectionEstablished;
 		public event EventHandler ConnectionClosed;
+		*/
 		public TcpClient TcpClient { get; private set; }
-
-		public NetworkClient()
-		{
-
-		}
+		
 		public void Dispose()
 		{
 			TcpClient.Close();

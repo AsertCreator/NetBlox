@@ -1,6 +1,7 @@
 ﻿using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace NetBlox.Instances
@@ -25,6 +26,7 @@ namespace NetBlox.Instances
 			if (!allownull)
 			{
 				var serv = (T)Activator.CreateInstance(typeof(T), GameManager);
+				Debug.Assert(serv != null);
 				serv.Parent = this;
 				return serv;
 			}

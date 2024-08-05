@@ -90,7 +90,7 @@ namespace Qu3e
 					case 1: return ey;
 					case 2: return ez;
 					default:
-						Assert(false);
+						System.Diagnostics.Debug.Assert(false);
 						return ex;
 				}
 			}
@@ -101,7 +101,7 @@ namespace Qu3e
 					case 0: ex = value; break;
 					case 1: ey = value; break;
 					case 2: ez = value; break;
-					default: Assert(false); break;
+					default: System.Diagnostics.Debug.Assert(false); break;
 				}
 			}
 		}

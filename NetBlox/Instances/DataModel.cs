@@ -50,15 +50,11 @@ namespace NetBlox.Instances
 				CancellationTokenSource cts = new();
 				var task = Task.Run(() =>
 				{
-					ControlledExecution.Run(() =>
-					{
-						dv.Function.Call(dv.Type);
-					}, cts.Token);
+					dv.Function.Call(dv.Type);
 				});
 				if (!task.Wait(30000))
 				{
-					LogManager.LogWarn("\"Oh come on! Why are you taking so much time before shutdown?\" - BindToClose");
-					cts.Cancel();
+					LogManager.LogWarn("One of BindToClose's function is taking too long, shutting down anyway...");
 				}
 			};
 		}

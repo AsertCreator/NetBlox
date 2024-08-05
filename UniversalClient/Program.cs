@@ -58,17 +58,17 @@ namespace NetBlox.Client
 			{
 				var gm = AppManager.GameManagers[0];
 
-				gm.NetworkManager.ClientReplicator = Task.Run(async delegate ()
+				gm.NetworkManager.ClientReplicator = Task.Run(delegate ()
 				{
 					try
 					{
 						gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
-						return new object();
+						return Task.FromResult(new object());
 					}
 					catch (Exception ex)
 					{
 						gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
-						return new();
+						return Task.FromResult<object>(new());
 					}
 				}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
 			};

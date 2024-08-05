@@ -74,7 +74,7 @@ namespace NetBlox
 			var fi = type.GetRuntimeProperty(name);
 			return fi.GetValue(obj);
 		}
-		public static void SetProperty(object obj, string name, object data)
+		public static void SetProperty(object obj, string name, object? data)
 		{
 			var type = obj.GetType();
 			var fi = type.GetRuntimeProperty(name);
@@ -299,7 +299,7 @@ namespace NetBlox
 			NetworkDeserializers.Add("Raylib_cs.Color", (x, y) => new Color(x[0], x[1], x[2], x[3]));
 			NetworkDeserializers.Add("NetBlox.Structs.Shape", (x, y) => (Shape)BitConverter.ToInt32(x));
 			NetworkDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)BitConverter.ToInt32(x));
-			NetworkDeserializers.Add("NetBlox.Instances.Instance", (x, y) => y.GetInstance(new Guid(x)));
+			NetworkDeserializers.Add("NetBlox.Instances.Instance", (x, y) => y.GetInstance(new Guid(x))!);
 
 			NetworkSerializers.Add("System.Byte",                 (x, y) => [(byte)x]);
 			NetworkSerializers.Add("System.Int16",                (x, y) => BitConverter.GetBytes((short)x));

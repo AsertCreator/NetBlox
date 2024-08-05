@@ -14,7 +14,6 @@ namespace NetBlox.Instances.Services
 		public LuaSignal MessageRecieved { get; init; } = new();
 		public DateTime LastTimeChatted;
 		public List<NetworkManager.ChatMessageData> Conversation = [];
-		private bool HadSetup = false;
 
 		public Chat(GameManager ins) : base(ins) { }
 

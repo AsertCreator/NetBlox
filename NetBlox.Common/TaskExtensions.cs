@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace NetBlox
 {
 	public static class TaskExtensions
@@ -27,6 +29,7 @@ namespace NetBlox
 				}
 				else if (task.IsFaulted)
 				{
+					Debug.Assert(t.Exception != null); // wth anyway
 					tcs.TrySetException(t.Exception);
 				}
 				else

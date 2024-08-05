@@ -2,14 +2,12 @@
 using NetBlox.Instances;
 using NetBlox.Structs;
 using Raylib_cs;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
+
+// NOBODY ASKED YOU VISUAL STUDIO. LITERALLY NO ONE
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
 
 namespace NetBlox
 {
@@ -125,7 +123,7 @@ namespace NetBlox
 				}
 			}
 
-			LoadChildren(dm, xml.FirstChild);
+			LoadChildren(dm, xml.FirstChild ?? throw new ArgumentException("RBXM/RBXL file is empty!"));
 			GC.Collect(); // hehe
 
 			if (slist.Count > 0)
@@ -140,3 +138,4 @@ namespace NetBlox
 		}
 	}
 }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.

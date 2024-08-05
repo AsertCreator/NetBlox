@@ -29,10 +29,6 @@ namespace NetBlox.Instances.Services
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Stop() => GameManager.Shutdown();
-		[Lua([Security.Capability.CoreSecurity])]
-		public void SetProcessorPriority(int priority) => AppManager.GameProcessor.Priority = priority;
-		[Lua([Security.Capability.CoreSecurity])]
-		public void SetRendererPriority(int priority) => AppManager.GameRenderer.Priority = priority;
 		[Lua([Security.Capability.None])]
 		public bool IsClient() => GameManager.NetworkManager.IsClient;
 		[Lua([Security.Capability.None])]

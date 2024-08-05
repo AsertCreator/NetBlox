@@ -55,12 +55,12 @@ namespace NetBlox
 		}
 		public async Task<bool> SetOnlineModeAsync(OnlineMode pm)
 		{
-			if (LastLogin == null) return false;
+			if (!LastLogin.HasValue) return false;
 
 			LogManager.LogInfo("Trying to set online mode to " + pm + "...");
 			Dictionary<string, object> str = new();
 			str["version"] = $"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}";
-			str["token"] = LastLogin.ToString();
+			str["token"] = LastLogin.Value.ToString();
 			str["online"] = (int)pm;
 
 			string json = SerializationManager.SerializeJson(str);
@@ -76,10 +76,12 @@ namespace NetBlox
 		}
 		public async Task<bool> SetPlayerDataAsync(int dataid, byte[] data)
 		{
-			if (LastLogin == null) return false;
+			if (!LastLogin.HasValue) return false;
 
 			LogManager.LogInfo("Trying to set player data...");
 			Dictionary<string, object> str = new();
+			str["version"] = $"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}";
+			str["token"] = LastLogin.Value.ToString();
 			str["dataid"] = dataid;
 			str["data"] = data;
 
@@ -96,10 +98,12 @@ namespace NetBlox
 		}
 		public async Task<byte[]?> GetPlayerDataAsync(int dataid)
 		{
-			if (LastLogin == null) return null;
+			if (!LastLogin.HasValue) return null;
 
 			LogManager.LogInfo("Trying to get player data...");
 			Dictionary<string, object> str = new();
+			str["version"] = $"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}";
+			str["token"] = LastLogin.Value.ToString();
 			str["dataid"] = dataid;
 
 			string json = SerializationManager.SerializeJson(str);

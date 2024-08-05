@@ -41,7 +41,7 @@ namespace NetBlox.PublicService
 			else if (uri.StartsWith("/search"))
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/search.html"));
 			else if (uri.StartsWith("/api"))  
-				return Encoding.UTF8.GetBytes(ServeAPI(cl, uri, ref i, ref mime));
+				return Encoding.UTF8.GetBytes(ServeAPI(cl, uri, ref i, ref mime)!);
 
 			i = 404;
 			return Encoding.UTF8.GetBytes(File.ReadAllText("./content/notfound.html"));
@@ -80,7 +80,7 @@ namespace NetBlox.PublicService
 		{
 			mime = "application/json";
 			string data = APIProcessor.DispatchCall(cl, ref i);
-			mime = cl.Request.ContentType; // im so fucking tired idc atp
+			mime = cl.Request.ContentType!; // im so fucking tired idc atp
 			return data;
 		}
 		protected override async void OnStart()
@@ -103,7 +103,7 @@ namespace NetBlox.PublicService
 				var mime = "text/html";
 				try
 				{
-					by = Serve(cl, cl.Request.Url.LocalPath, ref code, ref mime);
+					by = Serve(cl, cl.Request.Url!.LocalPath, ref code, ref mime);
 
 					cl.Response.ContentType = mime;
 					cl.Response.StatusCode = code;

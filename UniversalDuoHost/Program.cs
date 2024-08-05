@@ -78,17 +78,17 @@ namespace UniversalDuoHost
 		}
 		internal static void ConnectLoopback(this GameManager gm)
 		{
-			gm.NetworkManager.ClientReplicator = Task.Run(async delegate ()
+			gm.NetworkManager.ClientReplicator = Task.Run(delegate ()
 			{
 				try
 				{
 					gm.NetworkManager.ConnectToServer(IPAddress.Loopback);
-					return new object();
+					return Task.FromResult(new object());
 				}
 				catch (Exception ex)
 				{
 					gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
-					return new();
+					return Task.FromResult<object>(new());
 				}
 			}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
 		}

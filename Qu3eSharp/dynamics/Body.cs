@@ -91,8 +91,8 @@ namespace Qu3e
         // pointed to by the box pointer.
         public void RemoveBox(Box box)
         {
-            Assert(box != null);
-            Assert(box.body == this);
+            System.Diagnostics.Debug.Assert(box != null);
+            System.Diagnostics.Debug.Assert(box.body == this);
 
             bool found = Boxes.Remove(box);
 
@@ -221,7 +221,7 @@ namespace Qu3e
         {
             // Velocity of static bodies cannot be adjusted
             if ((Flags & eStatic) > 0)
-                Assert(false);
+                System.Diagnostics.Debug.Assert(false);
 
             if (Vec3.Dot(v, v) > 0)
             {
@@ -238,7 +238,7 @@ namespace Qu3e
         {
             // Velocity of static bodies cannot be adjusted
             if ((Flags & eStatic) > 0)
-                Assert(false);
+                System.Diagnostics.Debug.Assert(false);
 
             if (Vec3.Dot(v, v) > 0)
             {
