@@ -566,7 +566,7 @@ namespace Qu3e
             LocalCenter = lc;
             WorldCenter = Transform.Mul(Tx, lc);
         }
-        internal void SynchronizeProxies()
+        public void SynchronizeProxies()
         {
             BroadPhase broadphase = Scene.ContactManager.Broadphase;
 

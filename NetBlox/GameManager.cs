@@ -109,6 +109,12 @@ namespace NetBlox
 				LogManager.LogInfo("Initializing user interface...");
 				SetupCoreGui();
 
+				if (NetworkManager.IsClient)
+				{
+					LogManager.LogInfo("Creating main services...");
+					CurrentRoot.GetService<SandboxService>();
+					CurrentRoot.GetService<Debris>();
+				}
 				if (NetworkManager.IsServer)
 				{
 					LogManager.LogInfo("Creating main services...");
@@ -123,7 +129,7 @@ namespace NetBlox
 					CurrentRoot.GetService<ScriptContext>();
 					CurrentRoot.GetService<PlatformService>();
 					CurrentRoot.GetService<UserInputService>();
-					CurrentRoot.GetService<Debris>();
+					CurrentRoot.GetService<Chat>();
 				}
 
 				var rs = CurrentRoot.GetService<RunService>();

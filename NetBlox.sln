@@ -47,8 +47,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{37CC2C1F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBApiDumper", "NBApiDumper\NBApiDumper.csproj", "{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebDuoHost", "WebDuoHost\WebDuoHost.csproj", "{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -205,22 +203,6 @@ Global
 		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Release|x86.ActiveCfg = Release|Any CPU
 		{2950F803-6EE9-4269-9299-B6A1FDB5CFD5}.Release|x86.Build.0 = Release|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Debug|x86.Build.0 = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Dev|Any CPU.ActiveCfg = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Dev|Any CPU.Build.0 = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Dev|x86.ActiveCfg = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Dev|x86.Build.0 = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Devp4|Any CPU.ActiveCfg = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Devp4|Any CPU.Build.0 = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Devp4|x86.ActiveCfg = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Devp4|x86.Build.0 = Debug|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Release|x86.ActiveCfg = Release|Any CPU
-		{57A87C7E-1DF1-4F42-8471-5A3E0BE5C50B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -241,9 +223,6 @@ Global
 		NetBlox\NetBlox.projitems*{237fed22-581b-4767-9d33-667e88af609d}*SharedItemsImports = 5
 		Qu3eSharp\Qu3eSharp.projitems*{237fed22-581b-4767-9d33-667e88af609d}*SharedItemsImports = 5
 		Qu3eSharp\Qu3eSharp.projitems*{41572111-4627-464d-87bd-be48fc33ff51}*SharedItemsImports = 13
-		NetBlox.Common\NetBlox.Common.projitems*{57a87c7e-1df1-4f42-8471-5a3e0be5c50b}*SharedItemsImports = 5
-		NetBlox\NetBlox.projitems*{57a87c7e-1df1-4f42-8471-5a3e0be5c50b}*SharedItemsImports = 5
-		Qu3eSharp\Qu3eSharp.projitems*{57a87c7e-1df1-4f42-8471-5a3e0be5c50b}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
 		Qu3eSharp\Qu3eSharp.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5

@@ -153,7 +153,7 @@ namespace Qu3e
     //--------------------------------------------------------------------------------------------------
     // RaycastData
     //--------------------------------------------------------------------------------------------------
-    public struct RaycastData
+    public class RaycastData
     {
         public Vec3 start;   // Beginning point of the ray
         public Vec3 dir;     // Direction of the ray (normalized)

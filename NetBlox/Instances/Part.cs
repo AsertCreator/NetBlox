@@ -22,6 +22,9 @@ namespace NetBlox.Instances
 				case Shape.Block:
 					var st = GameManager.RenderManager.StudTexture;
 
+					// if (Box != null)
+					// 	Raylib.DrawCubeWires(Box.local.position, (float)Box.e.x * 2, (float)Box.e.y * 2, (float)Box.e.z * 2, Color.Red);
+
 					if (TopSurface == SurfaceType.Studs)
 						RenderUtils.DrawCubeTextureRec(st, Position, Rotation, Size.X, Size.Y, Size.Z,
 							new Color((byte)(Color3.R), (byte)(Color3.G), (byte)(Color3.B), (byte)((1 - Transparency) * 255.0)), Faces.Top, true);

@@ -1,4 +1,5 @@
-﻿using NetBlox.Common;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
@@ -71,11 +72,18 @@ namespace NetBlox
 			public RemoteClient[] Recievers = [];
 			public byte[] Data = [];
 		}
+		public class ChatMessageData
+		{
+			public Player Player;
+			public string Message;
+		}
 
 		public GameManager GameManager;
 		public List<RemoteClient> Clients = [];
+		public Queue<ChatMessageData> ChatMessages = [];
 		public Queue<Replication> ReplicationQueue = [];
 		public Queue<RemoteEventPacket> RemoteEventQueue = [];
+		public string? ChatMessage;
 		public bool IsServer;
 		public bool IsClient;
 		public bool IsLoaded = true;
@@ -124,6 +132,7 @@ namespace NetBlox
 			Server.ConnectionEstablished += (x, y) =>
 			{
 				x.EnableLogging = false;
+				x.KeepAlive = !Debugger.IsAttached;
 				LogManager.LogInfo(x.IPRemoteEndPoint.Address + " is trying to connect");
 				bool gothandshake = false;
 
@@ -217,6 +226,7 @@ namespace NetBlox
 								Root.GetService<Workspace>().CountDescendants() +
 								Root.GetService<ReplicatedStorage>().CountDescendants() +
 								Root.GetService<ReplicatedFirst>().CountDescendants() +
+								Root.GetService<Chat>().CountDescendants() +
 								Root.GetService<Lighting>().CountDescendants();
 
 							Clients.Add(nc);
@@ -262,6 +272,7 @@ namespace NetBlox
 
 						AddReplication(Root.GetService<ReplicatedFirst>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<ReplicatedStorage>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
+						AddReplication(Root.GetService<Chat>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Lighting>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<Players>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
 						AddReplication(Root.GetService<StarterGui>(), Replication.REPM_TORECIEVERS, Replication.REPW_NEWINST, true, [nc]);
@@ -277,6 +288,26 @@ namespace NetBlox
 
 							var ins = RecieveNewInstance(rep.Data);
 							AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_NEWINST);
+						});
+						x.RegisterRawDataHandler("nb2-remote", (rep, _) =>
+						{
+							ProfileIncoming(rep.Key, rep.Data);
+
+							Guid inst = new Guid(rep.Data[0..16]);
+							RemoteEvent even = GameManager.GetInstance(inst) as RemoteEvent;
+							if (even == null)
+								return; // womp womp. what the heck in fact? is this fooker exploiting?
+							byte[] payload = rep.Data[16..];
+							DynValue luadata = SerializationManager.DeserializeObject(payload, GameManager);
+
+							even.OnServerEvent.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(pl, GameManager)), luadata);
+						});
+						x.RegisterRawDataHandler("nb2-chat", (rep, _) =>
+						{
+							ProfileIncoming(rep.Key, rep.Data);
+
+							Chat service = Root.GetService<Chat>();
+							service.ProcessMessage(pl, Encoding.UTF8.GetString(rep.Data));
 						});
 
 						x.UnRegisterRawDataHandler("nb2-init"); // as per to constitution, we now do nothing lol
@@ -340,11 +371,25 @@ namespace NetBlox
 					{
 						var re = RemoteEventQueue.Dequeue();
 						var rc = re.Recievers;
+						var payload = re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray();
 
 						for (int i = 0; i < rc.Length; i++)
 						{
 							var c = rc[i];
-							SendRawData(c.Connection, "nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
+							SendRawData(c.Connection, "nb2-remote", payload); // we dont care if it does not get sent
+						}
+					}
+				if (ChatMessages.Count != 0)
+					lock (ChatMessages)
+					{
+						var cmd = ChatMessages.Dequeue();
+						var rc = Clients.ToArray();
+						var payload = cmd.Player.UniqueID.ToByteArray().Concat(Encoding.UTF8.GetBytes(cmd.Message)).ToArray();
+
+						for (int i = 0; i < rc.Length; i++)
+						{
+							var c = rc[i];
+							SendRawData(c.Connection, "nb2-chat", payload);
 						}
 					}
 				if (ReplicationQueue.Count != 0)
@@ -403,6 +448,7 @@ namespace NetBlox
 			if (tcp == null)
 				throw new Exception("Remote server had refused to connect");
 			tcp.EnableLogging = false;
+			tcp.KeepAlive = !Debugger.IsAttached;
 			RemoteConnection = tcp;
 
 			ClientHandshake ch;
@@ -458,7 +504,7 @@ namespace NetBlox
 
 				// i feel some netflix ce exploit shit can be done here.
 
-				int actinstc = sh.InstanceCount - 1;
+				int actinstc = sh.InstanceCount - 4;
 				int gotinsts = 0;
 				Player? lp = null;
 
@@ -502,6 +548,32 @@ namespace NetBlox
 
 						return JobResult.CompletedSuccess;
 					});
+				});
+				tcp.RegisterRawDataHandler("nb2-remote", (rep, _) =>
+				{
+					ProfileIncoming(rep.Key, rep.Data);
+
+					Guid inst = new Guid(rep.Data[0..16]);
+					RemoteEvent even = GameManager.GetInstance(inst) as RemoteEvent;
+					if (even == null)
+						return; // womp womp
+					byte[] payload = rep.Data[16..];
+					DynValue luadata = SerializationManager.DeserializeObject(payload, GameManager);
+
+					even.OnClientEvent.Fire(luadata);
+				});
+				tcp.RegisterRawDataHandler("nb2-chat", (rep, _) =>
+				{
+					ProfileIncoming(rep.Key, rep.Data);
+
+					Player plr = GameManager.GetInstance(new Guid(rep.Data[0..16])) as Player;
+					string msg = Encoding.UTF8.GetString(rep.Data[16..]);
+					Chat service = Root.GetService<Chat>(true);
+
+					if (service == null || plr == null)
+						return; // welp
+
+					service.ProcessMessage(plr, msg);
 				});
 				tcp.RegisterRawDataHandler("nb2-reparent", (rep, _) =>
 				{
@@ -576,13 +648,7 @@ namespace NetBlox
 					lock (RemoteEventQueue)
 					{
 						var re = RemoteEventQueue.Dequeue();
-						var rc = re.Recievers;
-
-						for (int i = 0; i < rc.Length; i++)
-						{
-							var c = rc[i];
-							SendRawData(c.Connection, "nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray()); // we dont care if it does not get sent
-						}
+						SendRawData(RemoteConnection, "nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray());
 					}
 				if (ReplicationQueue.Count != 0)
 					lock (ReplicationQueue)
@@ -599,6 +665,11 @@ namespace NetBlox
 								break;
 						}
 					}
+				if (ChatMessage != null) 
+				{ 
+					SendRawData(RemoteConnection, "nb2-chat", Encoding.UTF8.GetBytes(ChatMessage)); // we dont care if it does not get sent
+					ChatMessage = null;
+				}
 			}
 		}
 		public void StartProfiling(bool dbg)

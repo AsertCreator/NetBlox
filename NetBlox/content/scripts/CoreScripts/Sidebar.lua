@@ -7,6 +7,7 @@ local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
 local Sidebar = Instance.new("Frame");
 local BlackOut = Instance.new("Frame");
 local TopbarFrame = Instance.new("Frame");
+local ChatFrame = Instance.new("ChatFrame");
 
 BlackOut.Name = "NBGBlackOut";
 BlackOut.Parent = RobloxGui;
@@ -16,6 +17,15 @@ BlackOut.BackgroundColor3 = Color3.new(0, 0, 0);
 BlackOut.BackgroundTransparency = 0.6;
 BlackOut.ZIndex = 0;
 BlackOut.Visible = false;
+
+ChatFrame.Name = "NBGChatFrame";
+ChatFrame.Parent = RobloxGui;
+ChatFrame.Position = UDim2.new(0, 0, 0, 30);
+ChatFrame.Size = UDim2.new(1, 0, 0, 30);
+ChatFrame.BackgroundColor3 = Color3.new(0, 0, 0);
+ChatFrame.BackgroundTransparency = 0.6;
+ChatFrame.ZIndex = 1;
+ChatFrame.Visible = false;
 
 Sidebar.Name = "NBGSidebar";
 Sidebar.Parent = RobloxGui;
@@ -32,6 +42,7 @@ TopbarFrame.Position = UDim2.new(0, 0, 0, 0);
 TopbarFrame.Size = UDim2.new(1, 0, 0, 30);
 TopbarFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1);
 TopbarFrame.BackgroundTransparency = 0.5;
+
 
 -- here we init Sidebar
 
@@ -186,6 +197,8 @@ UserInputService.KeyboardPress:Connect(function(x)
 		TitleLabel.Text = game.Name; -- lol
 		Sidebar.Visible = not Sidebar.Visible;
 		BlackOut.Visible = Sidebar.Visible;
+	elseif x == 72 then
+		game:GetService("Chat"):SendMessage("test");
 	elseif x == 299 then
 		CoreGui:TakeScreenshot();
 	end
