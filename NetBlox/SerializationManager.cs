@@ -160,33 +160,34 @@ namespace NetBlox
 					case DataType.ClrFunction: // no
 						break;
 					case DataType.Boolean:
-						bytes.Add((byte)(0x80 + (dv.Boolean ? 1 : 0)));
+						bytes.Add((byte)(0x80 + (dval.Boolean ? 1 : 0)));
 						break;
 					case DataType.Number:
 						bytes.Add(0x82);
-						bytes.AddRange(BitConverter.GetBytes(dv.Number));
+						bytes.AddRange(BitConverter.GetBytes(dval.Number));
 						break;
 					case DataType.String:
 						bytes.Add(0x83);
-						byte[] byt = Encoding.UTF8.GetBytes(dv.String);
+						byte[] byt = Encoding.UTF8.GetBytes(dval.String);
 						bytes.AddRange(BitConverter.GetBytes((short)byt.Length));
 						bytes.AddRange(byt);
 						break;
 					case DataType.Table:
-						if (dv.Table.MetaTable["__handle"] != null)
+						if (dval.Table.MetaTable != null && dval.Table.MetaTable["__handle"] != null)
 						{
-							Guid guid = Guid.Parse(dv.Table.MetaTable["__handle"].ToString());
+							Guid guid = Guid.Parse(dval.Table.MetaTable["__handle"].ToString());
 							bytes.Add(0x85);
 							bytes.AddRange(guid.ToByteArray());
 						}
 						else
 						{
+							var length = dval.Table.Keys.Count(); // i hate you moonsharp :fuckingsob:
 							bytes.Add(0x84);
-							bytes.AddRange(BitConverter.GetBytes(dv.Table.Length));
-							for (int i = 0; i < dv.Table.Length; i++)
+							bytes.AddRange(BitConverter.GetBytes(length));
+							for (int i = 0; i < length; i++)
 							{
-								DoObject(dv.Table.Keys.ElementAt(i));
-								DoObject(dv.Table.Values.ElementAt(i));
+								DoObject(dval.Table.Keys.ElementAt(i));
+								DoObject(dval.Table.Values.ElementAt(i));
 							}
 						}
 						break;
@@ -419,7 +420,7 @@ namespace NetBlox
 			LuaDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)x.Number);
 			LuaDeserializers.Add("NetBlox.Instances.Instance", (x, y) => 
 			(from z in y.AllInstances 
-			 where z.UniqueID.ToString() == (string)x.Table.MetaTable["__handle"] 
+			 where z.UniqueID.ToString().ToLower() == ((string)x.Table.MetaTable["__handle"]).ToLower() 
 			 select z).FirstOrDefault() ?? throw new Exception($"Instance table with id {x.Table.MetaTable["__handle"]} is a zombie table!"));
 			LuaDeserializers.Add("System.Numerics.Vector2", (x, y) => new Vector2(
 				(float)x.Table["X"], 

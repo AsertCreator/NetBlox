@@ -2,6 +2,7 @@
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Qu3e;
+using Raylib_cs;
 using System.Numerics;
 
 namespace NetBlox.Instances
@@ -65,8 +66,8 @@ namespace NetBlox.Instances
 			set
 			{
 				_position = value;
-				if (Body != null)
-					Body.SetTransform(value);
+				if (Box != null)
+					Box.local.position = value;
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -76,8 +77,14 @@ namespace NetBlox.Instances
 			set
 			{
 				_rotation = value;
-				if (Body != null)
-					Body.SetTransform(value, _rotation);
+				if (Box != null)
+				{
+					var Q = new Qu3e.Quaternion();
+					Q.Set(new Vec3(1, 0, 0), value.X);
+					Q.Set(new Vec3(0, 1, 0), value.Y);
+					Q.Set(new Vec3(0, 0, 1), value.Z);
+					Box.local.rotation = Q.ToMat3();
+				}
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -90,9 +97,12 @@ namespace NetBlox.Instances
 				if (Box != null)
 				{
 					BoxDef = new BoxDef();
-					BoxDef.Set(Transform.Identity, _size);
+					BoxDef.Set(Qu3e.Transform.Identity, _size);
 					Body.RemoveBox(Box);
+					var Tx = Box.local;
 					Box = Body.AddBox(BoxDef);
+					Box.SetUserdata(this);
+					Box.local = Tx;
 				}
 			}
 		}
@@ -115,28 +125,27 @@ namespace NetBlox.Instances
 
 		public BasePart(GameManager ins) : base(ins) 
 		{
-			if (GameManager.NetworkManager.IsServer)
+			var works = Root.GetService<Workspace>(true);
+			if (works != null)
 			{
-				var works = Root.GetService<Workspace>(true);
-				if (works != null) {
-					Scene sc = works.Scene;
-					BodyDef bodyDef = new BodyDef();
-					bodyDef.position.Set(Position.X, Position.Y, Position.Z);
-					if (!Anchored)
-						bodyDef.bodyType = BodyType.eDynamicBody;
-					else
-						bodyDef.bodyType = BodyType.eStaticBody;
-					Body body = sc.CreateBody(bodyDef);
-					BoxDef = new BoxDef();
-					BoxDef.Set(Transform.Identity, Size);
-					Box = body.AddBox(BoxDef);
-					Body = body;
+				Scene sc = works.Scene;
+				BodyDef bodyDef = new BodyDef();
+				bodyDef.position.Set(0, 0, 0);
+				if (!Anchored)
+					bodyDef.bodyType = BodyType.eDynamicBody;
+				else
+					bodyDef.bodyType = BodyType.eStaticBody;
+				Body body = sc.CreateBody(bodyDef);
+				BoxDef = new BoxDef();
+				BoxDef.Set(Qu3e.Transform.Identity, Size);
+				Box = body.AddBox(BoxDef);
+				Box.SetUserdata(this);
+				Body = body;
 
-					GameManager.PhysicsManager.Actors.Add(this); 
-				}
+				GameManager.PhysicsManager.Actors.Add(this);
 			}
 		}
-
+		public BoundingBox GetAABB() => new BoundingBox(Position - Size / 2, Position + Size / 2);
 		public virtual void Render()
 		{
 			// render nothing

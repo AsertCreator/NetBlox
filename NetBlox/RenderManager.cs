@@ -21,7 +21,7 @@ namespace NetBlox
 		public double TimeOfDay = 12;
 		public string Status = string.Empty;
 		public string? CurrentMessage = string.Empty;
-		public string? CurrentHint = "This is a hint test";
+		public string? CurrentHint = string.Empty;
 		public bool DebugInformation = true;
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;
@@ -100,7 +100,7 @@ namespace NetBlox
 			{
 				if (RenderAtAll)
 				{
-					for (int i = 0; i < 3; i++) // s p e e d
+					for (int i = 0; i < 2; i++) // s p e e d
 					{
 						if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
 						{
@@ -168,9 +168,9 @@ namespace NetBlox
 
 								if (CurrentHint != null)
 								{
-									Raylib.DrawRectangle(0, 30, ScreenSizeX, 26, Color.Black); // quite bold of me to assume that top 30 pixels are used.
+									Raylib.DrawRectangle(0, ScreenSizeY - 26, ScreenSizeX, 26, Color.Black); // quite bold of me to assume that top 30 pixels are used.
 									var v = Raylib.MeasureTextEx(MainFont, CurrentHint, MainFont.BaseSize / 1.5f, 0);
-									Raylib.DrawTextEx(MainFont, CurrentHint, new(ScreenSizeX / 2 - v.X / 2, 45 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
+									Raylib.DrawTextEx(MainFont, CurrentHint, new(ScreenSizeX / 2 - v.X / 2, ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
 								}
 
 								RenderPlayerGui();
@@ -267,6 +267,7 @@ namespace NetBlox
 
 			var skypos = MainCamera.Position;
 			var works = Root.GetService<Workspace>(true);
+			var sand = Root.GetService<SandboxService>();
 
 			RenderSkybox();
 
@@ -275,6 +276,8 @@ namespace NetBlox
 
 			if (works != null)
 				RenderInstance(works);
+			if (sand != null)
+				RenderInstance(sand);
 		}
 		public void RenderInstance(Instance instance)
 		{

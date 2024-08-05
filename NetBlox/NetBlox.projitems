@@ -18,6 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Decal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ChatFrame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\Frame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\GuiObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ImageButton.cs" />
@@ -31,12 +32,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Message.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\RemoteEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Chat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Debris.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Lighting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\SandboxService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ScriptContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ServerStorage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterGui.cs" />
@@ -97,10 +100,15 @@
     <Content Include="$(MSBuildThisFileDirectory)content\sounds\birdsambient.mp3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\sounds\boom.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\sounds\grunt.mp3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(MSBuildThisFileDirectory)content\textures\blank.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\blank.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\menu.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

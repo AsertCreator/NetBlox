@@ -73,16 +73,13 @@ namespace NetBlox.Runtime
 				{
 					tenv.Globals["crash__"] = DynValue.NewCallback((x, y) =>
 					{
-						LogManager.LogError("NETBLOX IS CRASHING ALL EVACUATE IMMEDIATELY!!!");
-						LogManager.LogError("PROTECT YOUR LIVES (dies)\n");
+						// that was way too... weird
 						LogManager.LogError("NetBlox's crash__ function was called");
 						Environment.FailFast("NetBlox's crash__ function was called");
 						throw new Exception("HAHAHA");
 					});
 					tenv.Globals["hang__"] = DynValue.NewCallback((x, y) =>
 					{
-						LogManager.LogError("Y'ALL WANNA COME TO MY HANGOUT???");
-						LogManager.LogError("AH SHI WHAT THE FU- (dies)\n");
 						LogManager.LogError("NetBlox's hang__ function was called");
 						while (true) ;
 					});
