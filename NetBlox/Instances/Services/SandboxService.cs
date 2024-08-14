@@ -52,12 +52,5 @@ namespace NetBlox.Instances.Services
 				}
 			}
 		}
-		public override void RenderUI()
-		{
-			base.RenderUI();
-			int mx = Raylib.GetMouseX();
-			int my = Raylib.GetMouseY();
-			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, "Debug", new(mx, my), 16, 1.6f, Color.White);
-		}
 	}
 }
