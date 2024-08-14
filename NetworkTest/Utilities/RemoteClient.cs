@@ -23,16 +23,16 @@ namespace NetworkTest.Utilities
 		public void RecieveData(HighPacket hp) => DataRecieved(new(), new(this, Server) { Packet = hp });
 		public void SendPing()
 		{
-			var dn = DateTime.Now;
+			var dn = DateTime.UtcNow;
 			if (dn >= DoNotPingUntil)
 			{
 				Task.Run(() =>
 				{
 					Send(new HighPacket(1, BitConverter.GetBytes(dn.Ticks)));
-					DoNotPingUntil = DateTime.Now.AddMilliseconds(Server.PingInterval);
-					while (Client.Available != 4 && DateTime.Now < DoNotPingUntil) ;
+					DoNotPingUntil = DateTime.UtcNow.AddMilliseconds(Server.PingInterval);
+					while (Client.Available != 4 && DateTime.UtcNow < DoNotPingUntil) ;
 
-					if (DateTime.Now >= DoNotPingUntil)
+					if (DateTime.UtcNow >= DoNotPingUntil)
 					{
 						Server.DisconnectClient(this);
 						return;

@@ -100,6 +100,13 @@ namespace NetBlox
 			{
 				if (RenderAtAll)
 				{
+					for (int i = 0; i < GameManager.Verbs.Count; i++)
+					{
+						var verb = GameManager.Verbs.ElementAt(i);
+						if (Raylib.IsKeyPressed(verb.Key))
+							verb.Value();
+					}
+
 					for (int i = 0; i < 2; i++) // s p e e d
 					{
 						if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
@@ -140,14 +147,6 @@ namespace NetBlox
 						Raylib.ClearBackground(Color.SkyBlue);
 						Raylib.BeginMode3D(MainCamera);
 
-						int a = Raylib.GetKeyPressed();
-						while (a != 0)
-						{
-							if (GameManager.Verbs.TryGetValue((char)a, out Action? act))
-								act();
-							a = Raylib.GetKeyPressed();
-						}
-
 						RenderWorld();
 
 						Raylib.EndMode3D();
@@ -175,6 +174,7 @@ namespace NetBlox
 
 								RenderPlayerGui();
 								RenderInstanceUI(Root.GetService<CoreGui>());
+								RenderInstanceUI(Root.GetService<SandboxService>());
 							}
 
 							Raylib.DrawTextEx(MainFont, Status, new Vector2(20, 20), 16, 0, Color.White);
@@ -187,7 +187,7 @@ namespace NetBlox
 						{
 							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
 								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", outgoing traffic: " +
-								MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic), 
+								MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + (GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled"), 
 								new(5, 5), 16, 0, Color.White);
 						}
 

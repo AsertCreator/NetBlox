@@ -518,13 +518,13 @@ namespace NetBlox.Instances
 		{
 			if (GameManager.NetworkManager.RemoteConnection != null || GameManager.NetworkManager.IsServer)
 			{
-				if (DateTime.Now > DoNotReplicateUntil || immediate)
+				if (DateTime.UtcNow > DoNotReplicateUntil || immediate)
 				{
 					var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
 					if (rep != null)
 					{
 						rep.Properties = props;
-						DoNotReplicateUntil = DateTime.Now.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
+						DoNotReplicateUntil = DateTime.UtcNow.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
 					}
 				}
 			}

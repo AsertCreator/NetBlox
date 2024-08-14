@@ -13,7 +13,7 @@ namespace NetBlox
 		{
 			lock (loglock)
 			{
-				string fm = $"[{DateTime.Now:R}][nb-info] {message}";
+				string fm = $"[{DateTime.UtcNow:R}][nb-info] {message}";
 				Log.AppendLine(fm);
 				if (!IsBrowser)
 					Console.ForegroundColor = ConsoleColor.White;
@@ -27,7 +27,7 @@ namespace NetBlox
 		{
 			lock (loglock)
 			{
-				string fm = $"[{DateTime.Now:R}][nb-warn] {message}";
+				string fm = $"[{DateTime.UtcNow:R}][nb-warn] {message}";
 				Log.AppendLine(fm);
 				if (!IsBrowser)
 					Console.ForegroundColor = ConsoleColor.Yellow;
@@ -41,7 +41,7 @@ namespace NetBlox
 		{
 			lock (loglock)
 			{
-				string fm = $"[{DateTime.Now:R}][nb-error] {message}";
+				string fm = $"[{DateTime.UtcNow:R}][nb-error] {message}";
 				Log.AppendLine(fm);
 				if (!IsBrowser)
 					Console.ForegroundColor = ConsoleColor.Red;

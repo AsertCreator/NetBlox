@@ -16,18 +16,14 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public CFrame PivotOffset { get => _pivotOffset; set => _pivotOffset = value; }
 		[Lua([Security.Capability.None])]
-		public CFrame CFrame { get => _pivot; set => _pivot = value; }
+		public CFrame CFrame { get => GetPivot(); set => SetPivot(value); }
 
 		public PVInstance(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
-		public CFrame GetPivot() => _pivot * _pivotOffset;
+		public virtual CFrame GetPivot() => _pivot * _pivotOffset;
 		[Lua([Security.Capability.None])]
-		public void SetPivot(CFrame pivot) 
-		{ 
-			_pivot = pivot;
-			PivotOffset = default;
-		}
+		public virtual void SetPivot(CFrame pivot) { }
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

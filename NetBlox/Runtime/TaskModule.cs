@@ -16,7 +16,7 @@ namespace NetBlox.Runtime
 		[MoonSharpModuleMethod]
 		public static DynValue wait(ScriptExecutionContext x, CallbackArguments y)
 		{ // i just copied the original wait lol
-			var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
+			var wa = y.Count == 0 ? DateTime.UtcNow : DateTime.UtcNow.AddSeconds(y[0].Number);
 			TaskScheduler.CurrentJob.JoinedUntil = wa;
 			return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
 		}
@@ -32,7 +32,7 @@ namespace NetBlox.Runtime
 		{
 			Job cjob = TaskScheduler.CurrentJob;
 			Job job = TaskScheduler.ScheduleScript(cjob.GameManager, y[1], (int)(cjob.AssociatedObject1 ?? 1), cjob.AssociatedObject2 as BaseScript);
-			job.JoinedUntil = DateTime.Now.AddSeconds(y[0].Number);
+			job.JoinedUntil = DateTime.UtcNow.AddSeconds(y[0].Number);
 			return DynValue.NewCoroutine(job.AssociatedObject0 as Coroutine);
 		}
 		[MoonSharpModuleMethod]

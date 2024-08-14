@@ -54,14 +54,14 @@ namespace NetBlox.Runtime
 				{
 					var rs = gm.CurrentRoot.GetService<RunService>();
 					if (!gm.IsRunning) return DynValue.NewNumber(0);
-					return DynValue.NewNumber((DateTime.Now - rs.LastTimeStartedRunning).TotalSeconds);
+					return DynValue.NewNumber((DateTime.UtcNow - rs.LastTimeStartedRunning).TotalSeconds);
 				});
 				tenv.Globals["tick"] = DynValue.NewCallback((x, y) => 
-					DynValue.NewNumber(new TimeSpan(DateTime.Now.Ticks).TotalSeconds));
+					DynValue.NewNumber(new TimeSpan(DateTime.UtcNow.Ticks).TotalSeconds));
 
 				tenv.Globals["wait"] = DynValue.NewCallback((x, y) =>
 				{
-					var wa = y.Count == 0 ? DateTime.Now : DateTime.Now.AddSeconds(y[0].Number);
+					var wa = y.Count == 0 ? DateTime.UtcNow : DateTime.UtcNow.AddSeconds(y[0].Number);
 					TaskScheduler.CurrentJob.JoinedUntil = wa;
 					return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
 				});

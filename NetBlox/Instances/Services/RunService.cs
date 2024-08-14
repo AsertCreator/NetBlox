@@ -24,7 +24,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Run() 
 		{
-			LastTimeStartedRunning = DateTime.Now;
+			LastTimeStartedRunning = DateTime.UtcNow;
 			GameManager.IsRunning = true; 
 		}
 		[Lua([Security.Capability.CoreSecurity])]

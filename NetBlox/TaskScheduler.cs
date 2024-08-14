@@ -76,14 +76,15 @@ namespace NetBlox
 			sw.Start();
 			if (RunningJobs.Count != 0)
 			{
-				var now = DateTime.Now;
+				var now = DateTime.UtcNow;
 
 				for (int i = 0; i < RunningJobs.Count; i++)
 				{
 					var job = RunningJobs[i];
 					if (job == null)
 					{
-						i--; // appmanager.step is happening all over again :sob:
+						RunningJobs.RemoveAt(i--);
+						// just skip it
 						continue;
 					}
 

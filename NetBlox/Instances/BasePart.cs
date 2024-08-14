@@ -15,7 +15,7 @@ namespace NetBlox.Instances
 			get => _anchored;
 			set 
 			{ 
-				_anchored = value;
+				_anchored = false; // temporary
 
 				if (Body != null)
 				{
@@ -66,8 +66,8 @@ namespace NetBlox.Instances
 			set
 			{
 				_position = value;
-				if (Box != null)
-					Box.local.position = value;
+				if (Body != null)
+					Body.SetTransform(value);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -77,14 +77,8 @@ namespace NetBlox.Instances
 			set
 			{
 				_rotation = value;
-				if (Box != null)
-				{
-					var Q = new Qu3e.Quaternion();
-					Q.Set(new Vec3(1, 0, 0), value.X);
-					Q.Set(new Vec3(0, 1, 0), value.Y);
-					Q.Set(new Vec3(0, 0, 1), value.Z);
-					Box.local.rotation = Q.ToMat3();
-				}
+				if (Body != null)
+					Body.SetTransform(_position, value);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -145,7 +139,6 @@ namespace NetBlox.Instances
 				GameManager.PhysicsManager.Actors.Add(this);
 			}
 		}
-		public BoundingBox GetAABB() => new BoundingBox(Position - Size / 2, Position + Size / 2);
 		public virtual void Render()
 		{
 			// render nothing
@@ -173,6 +166,12 @@ namespace NetBlox.Instances
 				}
 			}
 			base.Destroy();
+		}
+		public override void SetPivot(CFrame pivot)
+		{
+			Position = pivot.Position;
+			Rotation = pivot.Rotation;
+			PivotOffset = default;
 		}
 	}
 }

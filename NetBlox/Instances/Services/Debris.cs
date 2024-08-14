@@ -16,6 +16,6 @@ namespace NetBlox.Instances.Services
 			return base.IsA(classname);
 		}
 		[Lua([Security.Capability.None])]
-		public void AddItem(Instance ins, double when) => ins.DestroyAt = DateTime.Now.AddSeconds(when);
+		public void AddItem(Instance ins, double when) => ins.DestroyAt = DateTime.UtcNow.AddSeconds(when);
 	}
 }

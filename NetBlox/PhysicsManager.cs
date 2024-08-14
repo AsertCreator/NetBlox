@@ -17,13 +17,13 @@ namespace NetBlox
 		public Scene Scene { get => (Workspace ?? throw new Exception("No workspace is loaded")).Scene; set => (Workspace ?? throw new Exception("No workspace is loaded")).Scene = value; }
 		public List<BasePart> Actors = new();
 		public bool DisablePhysics = true; // not now
-		private DateTime LastTime = DateTime.Now;
+		private DateTime LastTime = DateTime.UtcNow;
 
 		public PhysicsManager(GameManager gameManager)
 		{
 			GameManager = gameManager;
 		}
-		public void Begin() => LastTime = DateTime.Now;
+		public void Begin() => LastTime = DateTime.UtcNow;
 		public void Step()
 		{
 			if (Workspace == null || Scene == null || DisablePhysics)
@@ -32,7 +32,7 @@ namespace NetBlox
 			{
 				try
 				{
-					Scene.Step((DateTime.Now - LastTime).TotalSeconds);
+					Scene.Step((DateTime.UtcNow - LastTime).TotalSeconds);
 					for (int i = 0; i < Actors.Count; i++)
 					{
 						var act = Actors[i];
@@ -60,7 +60,7 @@ namespace NetBlox
 							act._lastvelocity = act.Velocity;
 						}
 					}
-					LastTime = DateTime.Now;
+					LastTime = DateTime.UtcNow;
 				}
 				catch (Exception ex)
 				{

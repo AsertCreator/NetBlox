@@ -11,6 +11,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime;
 using System.Xml.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NetBlox
 {
@@ -22,7 +23,7 @@ namespace NetBlox
 	public class GameManager
 	{
 		public List<Instance> AllInstances = [];
-		public Dictionary<char, Action> Verbs = [];
+		public Dictionary<KeyboardKey, Action> Verbs = [];
 		public NetworkIdentity CurrentIdentity = new();
 		public RenderManager RenderManager;
 		public PhysicsManager PhysicsManager;
@@ -97,8 +98,14 @@ namespace NetBlox
 				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
 
 				LogManager.LogInfo("Initializing verbs...");
-				Verbs.Add(',', () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
-				Verbs.Add('`', () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
+				Verbs.Add(KeyboardKey.Comma, () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
+				Verbs.Add(KeyboardKey.Apostrophe, () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
+				Verbs.Add(KeyboardKey.P, () => 
+				{ 
+					PhysicsManager.DisablePhysics = !PhysicsManager.DisablePhysics;
+					if (!PhysicsManager.DisablePhysics)
+						PhysicsManager.Begin();
+				});
 
 				// we dont want corescripts to run before engine is initialized
 
@@ -360,7 +367,7 @@ namespace NetBlox
 			{
 				if (inst != null)
 				{ // i was outsmarted
-					if (inst.DestroyAt < DateTime.Now)
+					if (inst.DestroyAt < DateTime.UtcNow)
 					{
 						inst.Destroy();
 						return;

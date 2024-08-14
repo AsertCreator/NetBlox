@@ -2,6 +2,7 @@
 using Raylib_cs;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace NetBlox.Instances.Services
@@ -31,13 +32,15 @@ namespace NetBlox.Instances.Services
 			var works = Root.GetService<Workspace>(true);
 			if (works != null)
 			{
-				mp.Direction *= 120;
+				mp.Direction *= 30;
+
 				var res = works.Raycast(new()
 				{
 					From = mp.Position,
-					To = mp.Direction,
+					To = mp.Position + mp.Direction,
 					MaxDistance = 500
 				});
+
 				if (res.Part != null)
 				{
 					Raylib.DrawCube(res.Part.Position, res.Part.Size.X, res.Part.Size.Y, res.Part.Size.Z, Color.Red);
@@ -48,6 +51,13 @@ namespace NetBlox.Instances.Services
 					}
 				}
 			}
+		}
+		public override void RenderUI()
+		{
+			base.RenderUI();
+			int mx = Raylib.GetMouseX();
+			int my = Raylib.GetMouseY();
+			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, "Debug", new(mx, my), 16, 1.6f, Color.White);
 		}
 	}
 }

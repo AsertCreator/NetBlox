@@ -94,11 +94,11 @@ namespace NetBlox
 			GameGC = TaskScheduler.ScheduleMisc("GlobalGC", x =>
 			{
 				GC.Collect();
-				x.JoinedUntil = DateTime.Now.AddSeconds(7);
+				x.JoinedUntil = DateTime.UtcNow.AddSeconds(7);
 				return JobResult.NotCompleted;
 			});
 
-			WhenStartedRunning = DateTime.Now;
+			WhenStartedRunning = DateTime.UtcNow;
 
 			while (!ShuttingDown) TaskScheduler.Step();
 		}
