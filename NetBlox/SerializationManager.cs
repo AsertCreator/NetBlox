@@ -173,9 +173,9 @@ namespace NetBlox
 						bytes.AddRange(byt);
 						break;
 					case DataType.Table:
-						if (dval.Table.MetaTable != null && dval.Table.MetaTable["__handle"] != null)
+						if (dval.Table.MetaTable != null && dval.Table.AssociatedObject != null)
 						{
-							Guid guid = Guid.Parse(dval.Table.MetaTable["__handle"].ToString());
+							Guid guid = ((Instance)dval.Table.AssociatedObject).UniqueID;
 							bytes.Add(0x85);
 							bytes.AddRange(guid.ToByteArray());
 						}
@@ -418,10 +418,7 @@ namespace NetBlox
 			LuaDeserializers.Add("System.Char", (x, y) => x.String[0]);
 			LuaDeserializers.Add("NetBlox.Structs.Shape", (x, y) => (Shape)x.Number);
 			LuaDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)x.Number);
-			LuaDeserializers.Add("NetBlox.Instances.Instance", (x, y) => 
-			(from z in y.AllInstances 
-			 where z.UniqueID.ToString().ToLower() == ((string)x.Table.MetaTable["__handle"]).ToLower() 
-			 select z).FirstOrDefault() ?? throw new Exception($"Instance table with id {x.Table.MetaTable["__handle"]} is a zombie table!"));
+			LuaDeserializers.Add("NetBlox.Instances.Instance", (x, y) => (Instance)x.Table.AssociatedObject);
 			LuaDeserializers.Add("System.Numerics.Vector2", (x, y) => new Vector2(
 				(float)x.Table["X"], 
 				(float)x.Table["Y"]));

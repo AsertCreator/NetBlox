@@ -689,5 +689,10 @@ namespace MoonSharp.Interpreter
 		/// NetBlox specific, prohibits you from getting metatable altogether.
 		/// </summary>
 		public bool IsProtected { get; set; }
+
+		/// <summary>
+		/// NetBlox specific, usually contains Instance reference.
+		/// </summary>
+		public object AssociatedObject { get; set; }
 	}
 }

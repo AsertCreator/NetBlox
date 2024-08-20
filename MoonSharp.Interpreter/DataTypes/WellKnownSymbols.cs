@@ -14,6 +14,6 @@ namespace MoonSharp.Interpreter
 		/// <summary>
 		/// The environment symbol ("_ENV")
 		/// </summary>
-		public const string ENV = "_ENV";
+		public const string ENV = "";
 	}
 }
