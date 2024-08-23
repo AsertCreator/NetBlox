@@ -1,6 +1,7 @@
 ﻿global using Font = Raylib_cs.Font;
 using NetBlox.Common;
 using NetBlox.Instances;
+using NetBlox.Instances.GUIs;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -30,7 +31,7 @@ namespace NetBlox
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
 		public Font MainFont;
-		public BasePart? MoverPart;
+		public NetBlox.Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
 		private bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
@@ -188,7 +189,7 @@ namespace NetBlox
 							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
 								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", outgoing traffic: " +
 								MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + (GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled"), 
-								new(5, 5), 16, 0, Color.White);
+								new(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
 						}
 
 						if (!GameManager.ShuttingDown)

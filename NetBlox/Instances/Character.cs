@@ -43,26 +43,6 @@ namespace NetBlox.Instances
 			BoxDef = null;
 			GameManager.PhysicsManager.Actors.Remove(this);
 		}
-
-		public override void Render()
-		{
-			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer))
-			{
-				if (Raylib.IsKeyPressed(KeyboardKey.G))
-				{
-					Part prt = new(GameManager);
-
-					prt.Name = "Trash";
-					prt.Position = Position;
-					prt.Size = Vector3.One;
-					prt.TopSurface = SurfaceType.Studs;
-					prt.Color3 = Color.DarkPurple;
-					prt.Parent = this;
-				}
-			}
-
-			base.Render();
-		}
 		public override void Process()
 		{
 			if (GameManager.RenderManager == null) return;
@@ -84,49 +64,63 @@ namespace NetBlox.Instances
 
 				bool movingonangle = true;
 
-				if (Raylib.IsKeyDown(KeyboardKey.Space))
+				if (GameManager.RenderManager.FocusedBox == null)
 				{
-					posdelta += new Vector3(0, 0.7f * WalkSpeed * deltatime, 0);
-					poschg = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
-				{
-					posdelta += new Vector3(0, -WalkSpeed * deltatime, 0);
-					poschg = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.Q))
-				{
-					rotdelta += new Vector3(0, WalkSpeed, 0);
-					rotchg = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.E))
-				{
-					rotdelta += new Vector3(0, -WalkSpeed, 0);
-					rotchg = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.W))
-				{
-					posdelta += new Vector3(WalkSpeed * MathF.Cos(angle) * deltatime, 0, WalkSpeed * MathF.Sin(angle) * deltatime);
-					movingonangle = !movingonangle;
-					poschg = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.A))
-				{
-					posdelta += new Vector3(WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
-					movingonangle = !movingonangle;
-					poschg = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.S))
-				{
-					posdelta += new Vector3(-WalkSpeed * MathF.Cos(angle) * deltatime, 0, -WalkSpeed * MathF.Sin(angle) * deltatime);
-					movingonangle = !movingonangle;
-					poschg = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.D))
-				{
-					posdelta += new Vector3(-WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, -WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
-					movingonangle = !movingonangle;
-					poschg = true;
+					if (Raylib.IsKeyDown(KeyboardKey.Space))
+					{
+						posdelta += new Vector3(0, 0.7f * WalkSpeed * deltatime, 0);
+						poschg = true;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+					{
+						posdelta += new Vector3(0, -WalkSpeed * deltatime, 0);
+						poschg = true;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.Q))
+					{
+						rotdelta += new Vector3(0, WalkSpeed, 0);
+						rotchg = true;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.E))
+					{
+						rotdelta += new Vector3(0, -WalkSpeed, 0);
+						rotchg = true;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.W))
+					{
+						posdelta += new Vector3(WalkSpeed * MathF.Cos(angle) * deltatime, 0, WalkSpeed * MathF.Sin(angle) * deltatime);
+						movingonangle = !movingonangle;
+						poschg = true;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.A))
+					{
+						posdelta += new Vector3(WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+						movingonangle = !movingonangle;
+						poschg = true;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.S))
+					{
+						posdelta += new Vector3(-WalkSpeed * MathF.Cos(angle) * deltatime, 0, -WalkSpeed * MathF.Sin(angle) * deltatime);
+						movingonangle = !movingonangle;
+						poschg = true;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.D))
+					{
+						posdelta += new Vector3(-WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, -WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+						movingonangle = !movingonangle;
+						poschg = true;
+					}
+					if (Raylib.IsKeyPressed(KeyboardKey.G))
+					{
+						Part prt = new(GameManager);
+
+						prt.Name = "Trash";
+						prt.Position = Position;
+						prt.Size = Vector3.One;
+						prt.TopSurface = SurfaceType.Studs;
+						prt.Color3 = Color.DarkPurple;
+						prt.Parent = this;
+					}
 				}
 
 				posdelta = posdelta != Vector3.Zero ? Vector3.Normalize(posdelta) : posdelta;

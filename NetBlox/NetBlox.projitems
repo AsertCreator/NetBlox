@@ -24,6 +24,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ImageButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)instances\guis\ImageLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ScreenGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextBox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Hint.cs" />

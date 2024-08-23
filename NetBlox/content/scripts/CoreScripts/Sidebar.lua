@@ -7,7 +7,9 @@ local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
 local Sidebar = Instance.new("Frame");
 local BlackOut = Instance.new("Frame");
 local TopbarFrame = Instance.new("Frame");
+local ChatContainerFrame = Instance.new("Frame");
 local ChatFrame = Instance.new("ChatFrame");
+local TextField = Instance.new("TextBox");
 
 BlackOut.Name = "NBGBlackOut";
 BlackOut.Parent = RobloxGui;
@@ -18,14 +20,22 @@ BlackOut.BackgroundTransparency = 0.6;
 BlackOut.ZIndex = 0;
 BlackOut.Visible = false;
 
+ChatContainerFrame.Name = "NBGChatContainerFrame";
+ChatContainerFrame.Parent = RobloxGui;
+ChatContainerFrame.Position = UDim2.new(0, 0, 0, 30);
+ChatContainerFrame.Size = UDim2.new(0.25, 0, 0.2, 0);
+ChatContainerFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1);
+ChatContainerFrame.BackgroundTransparency = 0.75;
+ChatContainerFrame.ZIndex = 1;
+ChatContainerFrame.Visible = true;
+
 ChatFrame.Name = "NBGChatFrame";
-ChatFrame.Parent = RobloxGui;
-ChatFrame.Position = UDim2.new(0, 0, 0, 30);
-ChatFrame.Size = UDim2.new(1, 0, 0, 30);
-ChatFrame.BackgroundColor3 = Color3.new(0, 0, 0);
-ChatFrame.BackgroundTransparency = 0.6;
+ChatFrame.Parent = ChatContainerFrame;
+ChatFrame.Position = UDim2.new(0, 5, 0, 5);
+ChatFrame.Size = UDim2.new(1, -10, 1, -40);
+ChatFrame.BackgroundTransparency = 1;
 ChatFrame.ZIndex = 1;
-ChatFrame.Visible = false;
+ChatFrame.Visible = true;
 
 Sidebar.Name = "NBGSidebar";
 Sidebar.Parent = RobloxGui;
@@ -35,6 +45,15 @@ Sidebar.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2);
 Sidebar.BackgroundTransparency = 0.005;
 Sidebar.ZIndex = 3;
 Sidebar.Visible = false;
+
+-- TextField.Name = "NBGTextField";
+-- TextField.Parent = RobloxGui;
+-- TextField.Position = UDim2.new(0.25, 0, 0.5, 0);
+-- TextField.Size = UDim2.new(0, 400, 0, 30);
+-- TextField.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2);
+-- TextField.BackgroundTransparency = 0.005;
+-- TextField.ZIndex = 3;
+-- TextField.Visible = true;
 
 TopbarFrame.Name = "NBGTopbar";
 TopbarFrame.Parent = RobloxGui;
@@ -134,26 +153,6 @@ MuteButton.MouseButton1Click:Connect(function()
 	workspace.BirdAmbient = not workspace.BirdAmbient;
 end)
 
-local PressButton = Instance.new("TextButton");
-PressButton.Parent = Sidebar;
-PressButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 6);
-PressButton.Size = UDim2.new(1, -60, 0, 35);
-PressButton.BackgroundColor3 = Color3.new(1, 1, 1);
-PressButton.TextColor3 = Color3.new(1, 1, 1);
-PressButton.BackgroundTransparency = 0.7;
-PressButton.Text = "Create new dummy TS job";
-PressButton.MouseButton1Click:Connect(function()
-	for i = 1,10 do
-		spawn(function()
-			print("Hi, from a dummy")
-			while true do
-				printidentity()
-				wait(1)
-			end
-		end)
-	end
-end)
-
 local VersionText = Instance.new("TextLabel");
 VersionText.Parent = Sidebar;
 VersionText.Position = UDim2.new(0, 10, 1, -35);
@@ -192,13 +191,16 @@ PlayerType.LeftAligned = true;
 PlayerType.TextColor3 = Color3.new(0.75, 0.75, 0.75);
 PlayerType.ZIndex = 4;
 
+local nextnum = 0;
+
 UserInputService.KeyboardPress:Connect(function(x) 
 	if x == 256 then
 		TitleLabel.Text = game.Name; -- lol
 		Sidebar.Visible = not Sidebar.Visible;
 		BlackOut.Visible = Sidebar.Visible;
 	elseif x == 72 then
-		game:GetService("Chat"):SendMessage("test");
+		nextnum = nextnum + 1;
+		game:GetService("Chat"):SendMessage("test" .. tostring(nextnum));
 	elseif x == 299 then
 		CoreGui:TakeScreenshot();
 	end

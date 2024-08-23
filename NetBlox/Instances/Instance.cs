@@ -347,48 +347,58 @@ namespace NetBlox.Instances
 				for (int i = 0; i < Children.Count; i++)
 					if (Children[i].Name == name)
 						return Children[i];
+				return null;
 			}
-			return null;
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChildOfClass(string cl)
 		{
 			lock (Children)
+			{
 				for (int i = 0; i < Children.Count; i++)
 					if (Children[i].ClassName == cl)
 						return Children[i];
 
-			return null;
+				return null;
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstChildWhichIsA(string cl)
 		{
 			lock (Children)
+			{
 				for (int i = 0; i < Children.Count; i++)
 					if (Children[i].IsA(cl))
 						return Children[i];
 
-			return null;
+				return null;
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance? FindFirstDescendant(string name)
 		{
 			lock (Children)
+			{
 				for (int i = 0; i < Children.Count; i++)
 					if (Children[i].Name == name)
 						return Children[i];
 
-			for (int i = 0; i < Children.Count; i++)
-			{
-				var child = Children[i];
-				var descendant = child.FindFirstDescendant(name);
-				if (descendant != null) return descendant;
-			}
+				for (int i = 0; i < Children.Count; i++)
+				{
+					var child = Children[i];
+					var descendant = child.FindFirstDescendant(name);
+					if (descendant != null) return descendant;
+				}
 
-			return null;
+				return null;
+			}
 		}
 		[Lua([Security.Capability.None])]
-		public virtual Instance[] GetChildren() => Children.ToArray();
+		public virtual Instance[] GetChildren() 
+		{
+			lock (Children) // that sounds interesting
+				return Children.ToArray(); 
+		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetDescendants()
 		{
@@ -443,12 +453,15 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public virtual void SetNetworkOwner(Player player)
 		{
-			if (!GameManager.NetworkManager.IsServer)
-				throw new Exception("Cannot call Network Ownership API from client!");
-			Debug.Assert(player.Client != null);
+			lock (this)
+			{
+				if (!GameManager.NetworkManager.IsServer)
+					throw new Exception("Cannot call Network Ownership API from client!");
+				Debug.Assert(player.Client != null);
 
-			GameManager.NetworkManager.Confiscate(this);
-			GameManager.NetworkManager.SetOwner(player.Client, this);
+				GameManager.NetworkManager.Confiscate(this);
+				GameManager.NetworkManager.SetOwner(player.Client, this);
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public virtual bool IsDescendantOf(Instance instance) => GetAncestors().Contains(instance);
@@ -516,15 +529,18 @@ namespace NetBlox.Instances
 		}
 		public void ReplicateProperties(string[] props, bool immediate)
 		{
-			if (GameManager.NetworkManager.RemoteConnection != null || GameManager.NetworkManager.IsServer)
+			lock (this)
 			{
-				if (DateTime.UtcNow > DoNotReplicateUntil || immediate)
+				if (GameManager.NetworkManager.RemoteConnection != null || GameManager.NetworkManager.IsServer)
 				{
-					var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
-					if (rep != null)
+					if (DateTime.UtcNow > DoNotReplicateUntil || immediate)
 					{
-						rep.Properties = props;
-						DoNotReplicateUntil = DateTime.UtcNow.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
+						var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
+						if (rep != null)
+						{
+							rep.Properties = props;
+							DoNotReplicateUntil = DateTime.UtcNow.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
+						}
 					}
 				}
 			}

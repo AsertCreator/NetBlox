@@ -15,6 +15,11 @@ namespace NetBlox.Instances.GUIs
 		public UDim2 Size { get; set; }
 		[Lua([Security.Capability.None])]
 		public bool Visible { get; set; } = true;
+		[Lua([Security.Capability.None])]
+		public LuaSignal MouseEnter { get; set; } = new();
+		[Lua([Security.Capability.None])]
+		public LuaSignal MouseLeave { get; set; } = new();
+		private bool lastMouseState = false;
 
 		public GuiObject(GameManager ins) : base(ins) { }
 
@@ -48,11 +53,23 @@ namespace NetBlox.Instances.GUIs
 				if (el == null) continue;
 				var sz = el.Size.Calculate(Vector2.Zero, esz);
 				var po = el.Position.Calculate(epo, esz);
+
+				if (RenderUtils.MouseCollides(po, sz) != lastMouseState)
+				{
+					if (!lastMouseState)
+						MouseEnter.Fire();
+					else
+						MouseLeave.Fire();
+				}
+
 				if (RenderUtils.MouseCollides(po, sz))
 				{
+					lastMouseState = true;
 					var t = el.HitTest(epo, esz);
 					if (t != null) return t;
 				}
+				else
+					lastMouseState = false;
 			}
 			return this;
 		}

@@ -22,7 +22,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public Instance? MainCamera { get; set; }
 		[Lua([Security.Capability.None])]
-		public Vector3 Gravity { get; set; } = new Vector3(0, -9.8f, 0);
+		public float Gravity { get; set; } = -9.8f;
 		[Lua([Security.Capability.None])]
 		public float FallenPartsDestroyHeight { get; set; } = -50;
 		[Lua([Security.Capability.None])]
@@ -43,7 +43,7 @@ namespace NetBlox.Instances.Services
 
 		public Workspace(GameManager ins) : base(ins) 
 		{ 
-			Scene = new(1 / AppManager.PreferredFPS, Gravity, 10);
+			Scene = new(1 / AppManager.PreferredFPS, new Vector3(0, Gravity, 0), 10);
 			birdAmbient = true;
 			if (GameManager.NetworkManager.IsClient)
 			{

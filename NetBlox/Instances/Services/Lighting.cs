@@ -8,7 +8,19 @@ namespace NetBlox.Instances.Services
 	public class Lighting : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public double TimeOfDay { get => GameManager.RenderManager.TimeOfDay; set => GameManager.RenderManager.TimeOfDay = value; }
+		public double ClockTime { get => GameManager.RenderManager.TimeOfDay; set => GameManager.RenderManager.TimeOfDay = value % 24; }
+		[Lua([Security.Capability.None])]
+		public string TimeOfDay 
+		{ 
+			get 
+			{
+				return ""; // no
+			} 
+			set 
+			{ 
+				// no
+			} 
+		}
 		[Lua([Security.Capability.None])]
 		public string CurrentTime => "no";
 

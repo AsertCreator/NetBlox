@@ -30,50 +30,53 @@ namespace NetBlox.Instances
 
 				if (player == null) return; // nah
 
-				// Camera rotation
-				if (Raylib.IsKeyDown(KeyboardKey.Down)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, 0.03f, true, true, false);
-				if (Raylib.IsKeyDown(KeyboardKey.Up)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, -0.03f, true, true, false);
-				if (Raylib.IsKeyDown(KeyboardKey.Right)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, 0.03f, true);
-				if (Raylib.IsKeyDown(KeyboardKey.Left)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, -0.03f, true);
-
-				if (Raylib.IsMouseButtonDown(MouseButton.Right))
+				if (GameManager.RenderManager.FocusedBox == null)
 				{
-					Vector2 mousePositionDelta = Raylib.GetMousePosition() - LastMousePosition;
+					// Camera rotation
+					if (Raylib.IsKeyDown(KeyboardKey.Down)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, 0.03f, true, true, false);
+					if (Raylib.IsKeyDown(KeyboardKey.Up)) Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, -0.03f, true, true, false);
+					if (Raylib.IsKeyDown(KeyboardKey.Right)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, 0.03f, true);
+					if (Raylib.IsKeyDown(KeyboardKey.Left)) Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, -0.03f, true);
 
-					// Mouse support
-					Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, -mousePositionDelta.X * 0.003f, true);
-					Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, -mousePositionDelta.Y * 0.003f, true, true, false);
+					if (Raylib.IsMouseButtonDown(MouseButton.Right))
+					{
+						Vector2 mousePositionDelta = Raylib.GetMousePosition() - LastMousePosition;
 
-					Raylib.SetMousePosition((int)LastMousePosition.X, (int)LastMousePosition.Y);
-				}
+						// Mouse support
+						Raylib.CameraYaw(ref GameManager.RenderManager.MainCamera, -mousePositionDelta.X * 0.003f, true);
+						Raylib.CameraPitch(ref GameManager.RenderManager.MainCamera, -mousePositionDelta.Y * 0.003f, true, true, false);
 
-				// Zoom target distance
+						Raylib.SetMousePosition((int)LastMousePosition.X, (int)LastMousePosition.Y);
+					}
 
-				float move = -Raylib.GetMouseWheelMove();
-				if (move > 0)
-				{
-					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-						.Length() < (player.CameraMaxZoomDistance - 0.2f))
-						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
-				}
-				else
-				{
-					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-						.Length() > (player.CameraMinZoomDistance + 0.2f))
-						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
-				}
+					// Zoom target distance
 
-				if (Raylib.IsKeyDown(KeyboardKey.O))
-				{
-					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-						.Length() < player.CameraMaxZoomDistance)
-						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, 0.2f);
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.I))
-				{
-					if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-						.Length() > player.CameraMinZoomDistance)
-						Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -0.2f);
+					float move = -Raylib.GetMouseWheelMove();
+					if (move > 0)
+					{
+						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+							.Length() < (player.CameraMaxZoomDistance - 0.2f))
+							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
+					}
+					else
+					{
+						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+							.Length() > (player.CameraMinZoomDistance + 0.2f))
+							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
+					}
+
+					if (Raylib.IsKeyDown(KeyboardKey.O))
+					{
+						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+							.Length() < player.CameraMaxZoomDistance)
+							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, 0.2f);
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.I))
+					{
+						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
+							.Length() > player.CameraMinZoomDistance)
+							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -0.2f);
+					}
 				}
 
 				var diff = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;

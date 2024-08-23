@@ -31,7 +31,6 @@ namespace NetBlox.Instances.Services
 		{
 			if (GameManager.NetworkManager.IsClient)
 			{
-				LogManager.LogWarn(plr.Name + " says: " + message);
 				Conversation.Add(new NetworkManager.ChatMessageData()
 				{
 					Player = plr,
@@ -41,7 +40,6 @@ namespace NetBlox.Instances.Services
 			if (GameManager.NetworkManager.IsServer)
 			{
 				message = Profanity.Filter(message);
-				LogManager.LogWarn(plr.Name + " says: " + message);
 				GameManager.NetworkManager.ChatMessages.Enqueue(new NetworkManager.ChatMessageData()
 				{
 					Player = plr,

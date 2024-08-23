@@ -221,6 +221,9 @@ namespace NetBlox
 							gm.MainEnvironment.Globals["script"] = LuaRuntime.MakeInstanceTable(self, gm);
 
 						var args = job.AssociatedObject4 as DynValue[];
+						if (closure.State == CoroutineState.Dead)
+							throw new Exception("what just happened");
+
 						var result = closure.Resume(args);
 
 						if (closure.State == CoroutineState.Suspended)
