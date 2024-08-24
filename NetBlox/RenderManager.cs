@@ -55,26 +55,20 @@ namespace NetBlox
 			GameManager.RenderManager = this;
 			SkipWindowCreation = skiprinit;
 
+			MainCamera = new(new Vector3(5, 6, 0), Vector3.Zero, Vector3.UnitY, 90, CameraProjection.Perspective);
+			RenderAtAll = render;
+
 			if (!skiprinit)
 				Initialize(render);
-			else
+			else if (render)
 			{
-				MainCamera = new(new Vector3(0, 15, 15), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
-				RenderAtAll = render;
-
-				if (render)
-				{
-					LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
-					LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
-					CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
-				}
+				LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
+				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
+				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
 			}
 		}
 		public unsafe void Initialize(bool render)
 		{
-			MainCamera = new(new Vector3(15, 15, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), 90, CameraProjection.Perspective);
-			RenderAtAll = render;
-
 			if (render)
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
@@ -173,9 +167,12 @@ namespace NetBlox
 									Raylib.DrawTextEx(MainFont, CurrentHint, new(ScreenSizeX / 2 - v.X / 2, ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
 								}
 
-								RenderPlayerGui();
-								RenderInstanceUI(Root.GetService<CoreGui>());
-								RenderInstanceUI(Root.GetService<SandboxService>());
+								if (GameManager.NetworkManager.IsClient)
+								{
+									RenderPlayerGui();
+									RenderInstanceUI(Root.GetService<CoreGui>());
+									RenderInstanceUI(Root.GetService<SandboxService>());
+								}
 							}
 
 							Raylib.DrawTextEx(MainFont, Status, new Vector2(20, 20), 16, 0, Color.White);

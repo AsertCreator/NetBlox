@@ -65,6 +65,8 @@ namespace NetBlox.Instances
 			get => _position;
 			set
 			{
+				if (_position == value)
+					return;
 				_position = value;
 				if (Body != null)
 					Body.SetTransform(value);
@@ -76,6 +78,8 @@ namespace NetBlox.Instances
 			get => _rotation;
 			set
 			{
+				if (_rotation == value)
+					return;
 				_rotation = value;
 				if (Body != null)
 					Body.SetTransform(_position, value);
@@ -109,7 +113,18 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public double Transparency { get; set; } = 0;
 		[Lua([Security.Capability.None])]
-		public Vector3 Velocity { get; set; }
+		public Vector3 Velocity 
+		{
+			get => _lastvelocity;
+			set
+			{
+				if (_lastvelocity == value)
+					return;
+				_lastvelocity = value;
+				if (Body != null)
+					Body.SetLinearVelocity(_lastvelocity);
+			} 
+		}
 		public bool IsGrounded = false;
 		public BoxDef BoxDef;
 		public Body Body;

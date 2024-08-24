@@ -506,7 +506,7 @@ namespace NetBlox
 
 				// i feel some netflix ce exploit shit can be done here.
 
-				int actinstc = sh.InstanceCount - 4;
+				int actinstc = sh.InstanceCount;
 				int gotinsts = 0;
 				Player? lp = null;
 

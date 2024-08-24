@@ -1,8 +1,7 @@
 ﻿using NetBlox.Instances.Services;
 using NetBlox.Runtime;
-using NetBlox.Instances;
-using System.Text.Json.Serialization;
 using NetBlox.Structs;
+using System.Numerics;
 using System.Text;
 
 namespace NetBlox.Instances
@@ -90,6 +89,9 @@ namespace NetBlox.Instances
 			ch.Color3 = GetPlayerColor().Color;
 			ch.IsLocalPlayer = true;
 			ch.Anchored = true;
+			ch.Position = workspace.SpawnLocation != null ? 
+				workspace.SpawnLocation.Position + new Vector3(0, workspace.SpawnLocation.Size.Y / 2 + 1, 0) : 
+				new Vector3(0, 20, 0);
 			ch.Parent = workspace;
 			face.Texture = "rbxasset://textures/smile.png";
 			face.Face = Faces.Front;

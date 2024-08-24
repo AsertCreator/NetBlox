@@ -30,6 +30,13 @@ namespace NetBlox.Instances.Services
 			}, 
 			GameManager.RenderManager.MainCamera);
 			var works = Root.GetService<Workspace>(true);
+
+			for (int i = 0; i < GameManager.PhysicsManager.Actors.Count && false; i++)
+			{
+				var actor = GameManager.PhysicsManager.Actors[i];
+				Raylib.DrawCubeWires(actor.Body.GetTransform().position, actor.Size.X, actor.Size.Y, actor.Size.Z, Color.Red);
+			}
+
 			if (works != null)
 			{
 				mp.Direction *= 30;
@@ -41,12 +48,12 @@ namespace NetBlox.Instances.Services
 					MaxDistance = 500
 				});
 
-				if (res.Part != null)
+				if (res.Part != null && !res.Part.Locked)
 				{
 					Raylib.DrawCube(res.Part.Position, res.Part.Size.X, res.Part.Size.Y, res.Part.Size.Z, Color.Red);
 					if (Raylib.IsMouseButtonPressed(MouseButton.Left))
 					{
-						RenderManager.LoadSound("rbxasset://sounds/boom.wav", x => GameManager.RenderManager.PlaySound(x));
+						RenderManager.LoadSound("rbxasset://sounds/boom.wav", GameManager.RenderManager.PlaySound);
 						res.Part.Destroy();
 					}
 				}
