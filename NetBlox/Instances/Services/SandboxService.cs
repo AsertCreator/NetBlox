@@ -9,9 +9,12 @@ namespace NetBlox.Instances.Services
 {
 	public class SandboxService : Instance, I3DRenderable
 	{
+		[Lua([Security.Capability.CoreSecurity])]
+		public bool Enabled { get; set; } = false;
+		private bool firsttime = true;
+
 		public SandboxService(GameManager ins) : base(ins) 
 		{
-			ins.RenderManager.CurrentHint = "You're currently playing NetBlox Sandbox";
 		}
 
 		[Lua([Security.Capability.None])]
@@ -22,6 +25,11 @@ namespace NetBlox.Instances.Services
 		}
 		public void Render()
 		{
+			if (!Enabled) return;
+			if (firsttime)
+				GameManager.RenderManager.CurrentHint = "You're currently playing NetBlox Sandbox";
+			firsttime = false;
+
 			int mx = Raylib.GetMouseX();
 			int my = Raylib.GetMouseY();
 			var mp = Raylib.GetMouseRay(new System.Numerics.Vector2()

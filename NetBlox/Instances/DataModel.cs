@@ -96,6 +96,12 @@ namespace NetBlox.Instances
 			Clear();
 			RbxlParser.Load(url, this);
 		}
+		public void InternalLoad(string url)
+		{
+			LogManager.LogInfo("Loading DataModel from URL " + url + " (unsecure) ...");
+			Clear();
+			RbxlParser.Load(url, this, true);
+		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

@@ -13,12 +13,12 @@ namespace NetBlox
 {
 	public static class RbxlParser
 	{
-		public static void Load(string url, Instance dm)
+		public static void Load(string url, Instance dm, bool fromfile = false)
 		{
 			var xml = new XmlDocument();
 			var ic = CultureInfo.InvariantCulture;
 			var slist = new SortedSet<string>();
-			var raw = File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult());
+			var raw = File.ReadAllText(AppManager.ResolveUrlAsync(url, true, fromfile).WaitAndGetResult());
 			xml.LoadXml(raw);
 
 			var ogr = dm.GameManager.IsRunning;

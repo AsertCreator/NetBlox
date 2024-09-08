@@ -62,20 +62,28 @@ namespace NetBlox
 				string? csdata = args[args.ToList().IndexOf("-cs") + 1].Replace("^^", "\"");
 				string? ssdata = args[args.ToList().IndexOf("-ss") + 1].Replace("^^", "\"");
 
-				if (gc.AsClient)
-					ClientStartupInfo = csdata != null ? SerializationManager.DeserializeJson<ClientStartupInfo>(csdata) : null;
-				if (gc.AsServer)
-					ServerStartupInfo = ssdata != null ? SerializationManager.DeserializeJson<ServerStartupInfo>(ssdata) : null;
+				try
+				{
+					if (gc.AsClient)
+						ClientStartupInfo = csdata != null ? SerializationManager.DeserializeJson<ClientStartupInfo>(csdata) : null;
+					if (gc.AsServer)
+						ServerStartupInfo = ssdata != null ? SerializationManager.DeserializeJson<ServerStartupInfo>(ssdata) : null;
 
-				if (ClientStartupInfo == null && gc.AsClient)
-					throw new Exception("Missing startup info");
-				if (ServerStartupInfo == null && gc.AsServer)
-					throw new Exception("Missing startup info");
+					if (ClientStartupInfo == null && gc.AsClient)
+						throw new Exception("Missing startup info");
+					if (ServerStartupInfo == null && gc.AsServer)
+						throw new Exception("Missing startup info");
 
-				AppManager.PublicServiceAPI = 
-					gc.AsServer ? 
-					(ServerStartupInfo ?? throw new Exception()).PublicServiceAPI :
-					(ClientStartupInfo ?? throw new Exception()).PublicServiceAPI;
+					AppManager.PublicServiceAPI =
+						gc.AsServer ?
+						(ServerStartupInfo ?? throw new Exception()).PublicServiceAPI :
+						(ClientStartupInfo ?? throw new Exception()).PublicServiceAPI;
+				}
+				catch
+				{
+					LogManager.LogError("Could not parse starting information: " + csdata + ssdata);
+					Environment.Exit(1);
+				}
 
 				NetworkManager = new(this, gc.AsServer, gc.AsClient);
 				CurrentIdentity.Reset();
@@ -344,11 +352,11 @@ namespace NetBlox
 			}
 
 			CurrentIdentity.MaxPlayerCount = 8;
-			CurrentIdentity.PlaceName = "Default Place";
-			CurrentIdentity.UniverseName = "NetBlox Defaults";
-			CurrentIdentity.Author = "The Lord";
-			CurrentIdentity.PlaceID = 47384;
-			CurrentIdentity.UniverseID = 47384;
+			CurrentIdentity.PlaceName = "";
+			CurrentIdentity.UniverseName = "";
+			CurrentIdentity.Author = "";
+			CurrentIdentity.PlaceID = 0;
+			CurrentIdentity.UniverseID = 0;
 
 			CurrentRoot.Name = CurrentIdentity.PlaceName;
 		}

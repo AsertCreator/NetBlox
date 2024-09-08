@@ -19,5 +19,9 @@ namespace NetBlox.Structs
 		public int PlaceVersion;
 		[JsonPropertyName("f")]
 		public ushort ServerPort;
+		[JsonPropertyName("g")]
+		public int MaxPlayerCount;
+		[JsonPropertyName("h")]
+		public string UniverseName;
 	}
 }

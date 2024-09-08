@@ -134,12 +134,14 @@ namespace NetBlox
 		/// <param name="url"></param>
 		/// <param name="allowremote"></param>
 		/// <returns></returns>
-		public static async Task<string> ResolveUrlAsync(string url, bool allowremote)
+		public static async Task<string> ResolveUrlAsync(string url, bool allowremote, bool allowfiles = false)
 		{
 			url = url.TrimStart().TrimEnd();
 			if (url.Contains("..")) return ""; // no
 			else if ((url.StartsWith("http://") || url.StartsWith("https://")) && allowremote)
 				return await DownloadFileAsync(url, url.GetHashCode() + ".ffl");
+			else if (url.StartsWith("file://") && allowfiles)
+				return url[7..];
 			else if (url.StartsWith("rbxasset://"))
 			{
 				Uri uri = new Uri(url);
