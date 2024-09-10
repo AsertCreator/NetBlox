@@ -10,14 +10,14 @@ namespace NetBlox.Instances
 	public class Instance
 	{
 		[Lua([Security.Capability.None])]
-		public bool Archivable { get; set; } = true;
+		public virtual bool Archivable { get; set; } = true;
 		[Lua([Security.Capability.None])]
-		public string ClassName => GetType().Name;
+		public virtual string ClassName => GetType().Name;
 		[Lua([Security.Capability.None])]
-		public string Name { get; set; }
+		public virtual string Name { get; set; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public Instance? Parent
+		public virtual Instance? Parent
 		{
 			get => parent;
 			set

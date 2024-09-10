@@ -9,6 +9,9 @@ namespace NetBlox.Instances.Services
 {
 	public class ScriptContext : Instance
 	{
+		[Lua([Security.Capability.RobloxScriptSecurity])]
+		public bool LoadStringEnabled { get; set; }
+
 		public ScriptContext(GameManager ins) : base(ins) 
 		{
 			Name = "Script Context";

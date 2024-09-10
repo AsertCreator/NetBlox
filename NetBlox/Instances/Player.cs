@@ -27,23 +27,47 @@ namespace NetBlox.Instances
 		public bool AutoJumpEnabled { get; set; } = true;
 		[Lua([Security.Capability.None])]
 		public long CharacterAppearanceId { get; set; }
+		public override string Name
+		{
+			get => base.Name;
+			set
+			{
+				Security.Require("Renaming a Player", Security.Capability.WritePlayerSecurity);
+				base.Name = value;
+			}
+		}
 
 		public bool IsLocalPlayer = false;
 		public RemoteClient? Client;
 		public long userId;
 		public long age;
 
-		public Player(GameManager ins) : base(ins) { }
+		public Player(GameManager ins) : base(ins)
+		{
+			Security.Require("Creating a Player", Security.Capability.WritePlayerSecurity);
+		}
 
 		[Lua([Security.Capability.None])]
-		public void SaveNumber(string key, int num) => 
+		public void SaveNumber(string key, int num) =>
 			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), BitConverter.GetBytes(num)).ConfigureAwait(false);
 		[Lua([Security.Capability.None])]
 		public void SaveString(string key, string data) =>
 			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), Encoding.UTF8.GetBytes(data)).ConfigureAwait(false);
-		[Lua([Security.Capability.CoreSecurity])]
+		[Lua([Security.Capability.None])]
+		public void SaveBool(string key, bool data) =>
+			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), [((byte)(data ? 1 : 0))]).ConfigureAwait(false);
+		[Lua([Security.Capability.None])]
+		public int LoadNumber(string key) =>
+			BitConverter.ToInt32(GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult());
+		[Lua([Security.Capability.None])]
+		public string LoadString(string key) =>
+			Encoding.UTF8.GetString(GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult()!);
+		[Lua([Security.Capability.None])]
+		public bool LoadBool(string key) =>
+			GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult()![0] == 1;
+		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void SetUserId(long userid) => userId = userid;
-		[Lua([Security.Capability.CoreSecurity])]
+		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void SetAccountAge(long age) => this.age = age;
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Reload()

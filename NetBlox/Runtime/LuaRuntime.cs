@@ -105,9 +105,7 @@ namespace NetBlox.Runtime
 
 						var lt = TaskScheduler.CurrentJob;
 
-						Debug.Assert(lt.AssociatedObject1 != null);
-
-						lt.JoinedTo = TaskScheduler.ScheduleScript(gm, ms.Source, (int)lt.AssociatedObject1, ms, x =>
+						lt.JoinedTo = TaskScheduler.ScheduleScript(gm, ms.Source, Security.Level, ms, x =>
 						{
 							DynValue dv = (DynValue)x.AssociatedObject5;
 
@@ -125,17 +123,21 @@ namespace NetBlox.Runtime
 					}
 					throw new Exception("expected asset id or ModuleScript to be passed to require");
 				});
+				tenv.Globals["loadstring"] = DynValue.NewCallback((x, y) =>
+				{
+					if (!gm.CurrentRoot.GetService<ScriptContext>().LoadStringEnabled)
+						throw new Exception("loadstring is not accessible");
+					return tenv.LoadString(y[0].CastToString());
+				});
 				tenv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
 				{
-					Debug.Assert(TaskScheduler.CurrentJob.AssociatedObject1 != null);
-
 					if (y.Count != 0)
 					{
 						string prefix = y.AsStringUsingMeta(x, 0, "printidentity");
-						PrintOut(prefix + " " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
+						PrintOut(prefix + " " + Security.Level);
 					}
 					else
-						PrintOut("Current identity is " + (int)TaskScheduler.CurrentJob.AssociatedObject1);
+						PrintOut("Current identity is " + Security.Level);
 					return DynValue.Void;
 				});
 				tenv.Globals["print"] = DynValue.NewCallback((x, y) =>
@@ -295,8 +297,7 @@ namespace NetBlox.Runtime
 						var sec = meth.GetCustomAttribute<LuaAttribute>()!;
 						var parms = meth.GetParameters();
 
-						if (!Security.IsCompatible((int)TaskScheduler.CurrentJob.AssociatedObject1!, sec.Capabilities))
-							throw new Exception($"\"{meth.Name}\" is not accessible");
+						Security.Require(meth.Name, sec.Capabilities);
 
 						return DynValue.NewCallback((a, b) =>
 						{

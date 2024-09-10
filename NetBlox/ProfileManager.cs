@@ -1,5 +1,7 @@
 ﻿using NetBlox.Common;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace NetBlox
 {
@@ -12,9 +14,7 @@ namespace NetBlox
 		public bool IsMouseDevice;
 		public bool IsGamepadDevice;
 		public bool IsOffline = true;
-		public IPAddress LoginServer = IPAddress.Any;
 		public Guid? LastLogin;
-		public string LoginUrl => "http://" + LoginServer.ToString() + ":80";
 
 		/// <summary>
 		/// Returns login token and sets it in <seealso cref="LastLogin"/>, if Public Service allowed to login such way, or null if login failed.
@@ -24,24 +24,23 @@ namespace NetBlox
 			LogManager.LogInfo("Trying to login with " + user + "...");
 			IsOffline = true;
 			Dictionary<string, string> str = new();
-			str["version"] = $"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}";
-			str["user"] = user;
-			str["pass"] = passw;
+			str["name"] = user;
+			str["phash"] = string.Join("", SHA256.HashData(Encoding.UTF8.GetBytes(passw)));
 
 			string json = SerializationManager.SerializeJson(str);
 			var hc = new HttpClient();
-			var res = await hc.PostAsync(LoginUrl + "/api/users/login/", new StringContent(json));
+			var res = await hc.PostAsync(AppManager.PublicServiceAPI + "/api/users/login/", new StringContent(json));
+			var data = await res.Content.ReadAsStringAsync();
+			var result = SerializationManager.DeserializeJson<Dictionary<string, string>>(data)!;
 
 			if (res.StatusCode != HttpStatusCode.OK)
 			{
-				LogManager.LogError("Could not login, possibly wrong credentials");
+				LogManager.LogError("Could not login, possibly wrong credentials, msg: " + result["errorText"]);
 				LastLogin = null; // also dispose last login because why not
 				return null;
 			}
 			else
 			{
-				string data = await res.Content.ReadAsStringAsync();
-				Dictionary<string, string> result = SerializationManager.DeserializeJson<Dictionary<string, string>>(data)!;
 				Username = user;
 				IsOffline = false;
 				return Guid.Parse(result["token"]);
@@ -59,13 +58,12 @@ namespace NetBlox
 
 			LogManager.LogInfo("Trying to set online mode to " + pm + "...");
 			Dictionary<string, object> str = new();
-			str["version"] = $"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}";
 			str["token"] = LastLogin.Value.ToString();
-			str["online"] = (int)pm;
+			str["val"] = (int)pm;
 
 			string json = SerializationManager.SerializeJson(str);
 			var hc = new HttpClient();
-			var res = await hc.PostAsync(LoginUrl + "/api/users/setpresence/", new StringContent(json));
+			var res = await hc.PostAsync(AppManager.PublicServiceAPI + "/api/users/setpresence/", new StringContent(json));
 
 			if (res.StatusCode != HttpStatusCode.OK)
 			{
@@ -80,14 +78,13 @@ namespace NetBlox
 
 			LogManager.LogInfo("Trying to set player data...");
 			Dictionary<string, object> str = new();
-			str["version"] = $"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}";
 			str["token"] = LastLogin.Value.ToString();
 			str["dataid"] = dataid;
 			str["data"] = data;
 
 			string json = SerializationManager.SerializeJson(str);
 			var hc = new HttpClient();
-			var res = await hc.PostAsync(LoginUrl + "/api/users/setplayerdata/", new StringContent(json));
+			var res = await hc.PostAsync(AppManager.PublicServiceAPI + "/api/users/setplayerdata/", new StringContent(json));
 
 			if (res.StatusCode != HttpStatusCode.OK)
 			{
@@ -102,13 +99,12 @@ namespace NetBlox
 
 			LogManager.LogInfo("Trying to get player data...");
 			Dictionary<string, object> str = new();
-			str["version"] = $"{Common.Version.VersionMajor}.{Common.Version.VersionMinor}.{Common.Version.VersionPatch}";
 			str["token"] = LastLogin.Value.ToString();
 			str["dataid"] = dataid;
 
 			string json = SerializationManager.SerializeJson(str);
 			var hc = new HttpClient();
-			var res = await hc.PostAsync(LoginUrl + "/api/users/getplayerdata/", new StringContent(json));
+			var res = await hc.PostAsync(AppManager.PublicServiceAPI + "/api/users/getplayerdata/", new StringContent(json));
 
 			if (res.StatusCode != HttpStatusCode.OK)
 			{

@@ -26,10 +26,12 @@ namespace NetBlox.Instances
 		}
 		public static Instance CreateReplicatedInstance(string cn, GameManager gm)
 		{
+			Security.Impersonate(8);
 			var og = gm.AllowReplication;
 			gm.AllowReplication = false;
 			var inst = (Instance)Activator.CreateInstance((from x in InstanceTypes where x.Name == cn select x).First(), gm)!;
 			gm.AllowReplication = og;
+			Security.EndImpersonate();
 			return inst;
 		}
 		public static Instance CreateAccessibleInstance(string cn, GameManager gm)

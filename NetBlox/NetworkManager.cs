@@ -199,11 +199,13 @@ namespace NetBlox
 						}
 						if (Clients.Count < GameManager.CurrentIdentity.MaxPlayerCount && !stoppls)
 						{
-							pl = new(GameManager);
+							Security.Impersonate(8);
+
+							pl = new Player(GameManager);
 							pl.IsLocalPlayer = false;
 							pl.Parent = Root.GetService<Players>();
 
-							nc = new(new(ch.Username), nextpid++, x, pl);
+							nc = new RemoteClient(ch.Username, nextpid++, x, pl);
 
 							pl.Name = nc.Username;
 							pl.Guest = isguest;
@@ -211,6 +213,8 @@ namespace NetBlox
 							pl.CharacterAppearanceId = pl.UserId;
 							pl.Client = nc;
 							nc.Player = pl;
+
+							Security.EndImpersonate();
 
 							pl.Reload();
 							pl.LoadCharacterOld();
@@ -228,6 +232,8 @@ namespace NetBlox
 								Root.GetService<ReplicatedFirst>().CountDescendants() +
 								Root.GetService<Chat>().CountDescendants() +
 								Root.GetService<Lighting>().CountDescendants();
+
+							GameManager.CurrentProfile.SetOnlineModeAsync(OnlineMode.InGame).ConfigureAwait(false);
 
 							Clients.Add(nc);
 						}
@@ -860,6 +866,9 @@ namespace NetBlox
 				ins.WasReplicated = true;
 				var type = ins.GetType();
 
+				if (classname == "Player") // ugly hack
+					Security.Impersonate(8);
+
 				for (int i = 0; i < propc; i++)
 				{
 					string propname = br.ReadString();
@@ -875,6 +884,9 @@ namespace NetBlox
 					if (SerializationManager.NetworkDeserializers.TryGetValue(pnam, out var x) && prop.CanWrite)
 						prop.SetValue(ins, x(pbytes, GameManager));
 				}
+
+				if (classname == "Player")
+					Security.EndImpersonate();
 
 				GameManager.IsRunning = true; // i cant find better place
 				return ins;

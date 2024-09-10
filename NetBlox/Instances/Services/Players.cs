@@ -19,12 +19,14 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public Player CreateNewPlayer(string name, bool local)
 		{
+			Security.Impersonate(8);
 			Player player = new(GameManager)
 			{
 				Name = name,
 				Parent = this,
 				IsLocalPlayer = local
 			};
+			Security.EndImpersonate();
 
 			return player;
 		}
