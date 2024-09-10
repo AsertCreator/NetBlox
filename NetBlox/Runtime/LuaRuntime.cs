@@ -19,7 +19,7 @@ namespace NetBlox.Runtime
 	{
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 700;
-		private static Type dvt = typeof(DynValue);
+		private static Type DynValueType = typeof(DynValue);
 
 		public static void Setup(GameManager gm)
 		{
@@ -243,214 +243,185 @@ namespace NetBlox.Runtime
 		{
 			LogManager.LogError(msg);
 		}
-		public static Table MakeInstanceTable(Instance? inst, GameManager gm)
+		public static Table MakeInstanceTable(Instance? targetInstanceIWantToForget, GameManager gm)
 		{
 			var scr = gm.MainEnvironment;
 
-			if (inst == null)
+			if (targetInstanceIWantToForget == null)
 				return new Table(scr);
 
 			// i want to bulge out my eyes
-			if (inst.Tables.TryGetValue(scr, out Table? t)) return t;
-			var type = inst.GetType();
+			if (targetInstanceIWantToForget.Table != null) return targetInstanceIWantToForget.Table;
 
-			var table = new Table(scr)
+			var type = targetInstanceIWantToForget.GetType();
+			var chash = targetInstanceIWantToForget.ClassName.GetHashCode();
+
+			if (Instance.MetaTables.TryGetValue(chash, out Table meta))
 			{
-				MetaTable = new Table(scr)
-			};
-
-			var props = (IEnumerable<PropertyInfo?>)type.GetProperties();
-			var meths = (IEnumerable<MethodInfo?>)type.GetMethods();
-
-			props = from x in props where x.GetCustomAttribute<LuaAttribute>() != null select x;
-			meths = from x in meths where x.GetCustomAttribute<LuaAttribute>() != null select x;
-
-			table.MetaTable["__index"] = DynValue.NewCallback((x, y) =>
+				var table = new Table(scr)
+				{
+					MetaTable = meta,
+					AssociatedObject = targetInstanceIWantToForget,
+					IsProtected = true
+				};
+				targetInstanceIWantToForget.Table = table;
+				return table;
+			}
+			else
 			{
-				var key = y[1].String;
-				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
-				var meth = (from z in meths where z.Name == key select z).FirstOrDefault();
+				meta = new Table(scr);
 
-				if (prop != null)
+				var props = type.GetProperties().Where(x => x.GetCustomAttribute<LuaAttribute>() != null).ToList();
+				var meths = type.GetMethods().Where(x => x.GetCustomAttribute<LuaAttribute>() != null).ToList();
+
+				meta["__index"] = DynValue.NewCallback((x, y) =>
 				{
-					if (prop.GetValue(inst) == null)
-						return DynValue.Nil;
+					var key = y[1].String;
+					var prop = props.Find(x => x.Name == key);
+					var meth = meths.Find(x => x.Name == key);
+					var inst = (y[0].Table.AssociatedObject as Instance)!;
 
-					if (!SerializationManager.LuaSerializers.TryGetValue(prop.PropertyType.FullName!, out var ls))
-						return DynValue.Nil;
-
-					var val = prop.GetValue(inst);
-
-					if (val != null)
-						return ls(val, gm);
-					else
-						return DynValue.Nil;
-				}
-				else
-				{
-					if (meth != null)
+					if (prop != null)
 					{
-						var sec = meth.GetCustomAttribute<LuaAttribute>();
+						var val = prop.GetValue(inst);
 
-						if (TaskScheduler.CurrentJob.Type != JobType.Script)
-							throw new Exception("attempted to access an Instance reference from native code");
+						if (val != null && SerializationManager.LuaSerializers.TryGetValue(prop.PropertyType.FullName!, out var ls))
+							return ls(val, gm);
+						else
+							return DynValue.Nil;
+					}
+					else if (meth != null)
+					{
+						var sec = meth.GetCustomAttribute<LuaAttribute>()!;
+						var parms = meth.GetParameters();
 
-						if (sec == null) // we lie
-							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"");
+						if (!Security.IsCompatible((int)TaskScheduler.CurrentJob.AssociatedObject1!, sec.Capabilities))
+							throw new Exception($"\"{meth.Name}\" is not accessible");
 
-						if (Security.IsCompatible((int)TaskScheduler.CurrentJob.AssociatedObject1!, sec.Capabilities))
-							return DynValue.NewCallback((a, b) =>
+						return DynValue.NewCallback((a, b) =>
+						{
+							try
 							{
-								try
+								var args = new List<object?>();
+
+								for (int i = 0; i < parms.Length; i++)
 								{
-									var args = new List<object?>();
-									var parms = meth.GetParameters();
+									var parinfo = parms[i];
+									var partype = parinfo.ParameterType;
 
-									for (int i = 0; i < parms.Length; i++)
+									if (partype != DynValueType)
 									{
-										var info = parms[i];
-										var t = info.ParameterType;
-
-										if (t != dvt)
-										{
-											if (!SerializationManager.LuaDeserializers.TryGetValue(t.FullName ?? "", out var ld))
-												return DynValue.Nil;
-
-											if (b[i + 1] == DynValue.Nil)
-												args.Add(null);
-											else
-												args.Add(ld(b[i + 1], gm));
-										}
-										else
-											args.Add(b[i + 1]);
-									}
-
-									var ret = meth!.Invoke(inst, args.ToArray());
-									var rett = meth.ReturnType;
-
-									if (ret is LuaYield) 
-										return DynValue.NewYieldReq([]); // do it immediately
-									if (ret is DynValue)
-										return (DynValue)ret;
-
-									if (!rett.IsArray)
-									{
-										if (!SerializationManager.LuaSerializers.TryGetValue(rett.FullName ?? "", out var ls))
+										if (!SerializationManager.LuaDeserializers.TryGetValue(partype.FullName ?? "", out var ld))
 											return DynValue.Nil;
 
-										if (ret != null)
-											return ls(ret, gm);
+										if (b[i + 1].IsNil())
+											args.Add(null);
 										else
-											return DynValue.Nil;
+											args.Add(ld(b[i + 1], gm));
 									}
 									else
-									{
-										Table res = new(scr);
-										Array arr = (ret as Array)!;
-										Type? elt = rett.GetElementType();
-
-										if (elt == null) return DynValue.Nil;
-
-										if (SerializationManager.LuaSerializers.TryGetValue(elt.FullName ?? "", out var ls))
-										{
-											for (int i = 0; i < arr.Length; i++)
-											{
-												var val = ls(arr.GetValue(i)!, gm); // i hate you vs debugger for fuck sake help
-												res[i] = val;
-											}
-										}
-
-										return DynValue.NewTable(res);
-									}
+										args.Add(b[i + 1]);
 								}
-								catch (TargetInvocationException)
+
+								var ret = meth!.Invoke(inst, args.ToArray());
+								var rett = meth.ReturnType;
+
+								if (ret is LuaYield)
+									return DynValue.NewYieldReq([]); // do it immediately
+								if (ret is DynValue)
+									return (DynValue)ret;
+
+								if (!rett.IsArray)
 								{
-									throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
+									if (ret != null && SerializationManager.LuaSerializers.TryGetValue(rett.FullName ?? "", out var ls))
+										return ls(ret, gm);
+									else
+										return DynValue.Nil;
 								}
-							});
-						else
-							throw new Exception($"\"{meth.Name}\" is not accessible");
+								else
+								{
+									Table res = new(scr);
+									Array arr = (ret as Array)!;
+									Type? elt = rett.GetElementType();
+
+									if (elt == null) return DynValue.Nil;
+
+									if (SerializationManager.LuaSerializers.TryGetValue(elt.FullName ?? "", out var ls))
+									{
+										for (int i = 0; i < arr.Length; i++)
+										{
+											var val = ls(arr.GetValue(i)!, gm); // i hate you vs debugger for fuck sake help
+											res[i + 1] = val;
+										}
+									}
+
+									return DynValue.NewTable(res);
+								}
+							}
+							catch (TargetInvocationException)
+							{
+								throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
+							}
+						});
 					}
 					else
 					{
-						Instance[] children = inst.GetChildren();
-						Instance? child = (from h in children where h.Name == key select h).FirstOrDefault();
+						Instance? child = inst.FindFirstChild(key);
 
-						if (prop == null && meth == null && child == null)
-							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"");
-						if (child == null)
-							throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\""); // so vs COULD STFU
-
-						return DynValue.NewTable(MakeInstanceTable(child, gm));
+						return child == null
+							? throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"")
+							: DynValue.NewTable(MakeInstanceTable(child, gm));
 					}
-				}
-			});
-			table.MetaTable["__newindex"] = DynValue.NewCallback((x, y) =>
-			{
-				var key = y[1].String;
-				var val = y[2];
-				var prop = (from z in props where z.Name == key select z).FirstOrDefault();
-
-				if (prop == null)
-					throw new ScriptRuntimeException($"\"{type.Name}\" doesn't have a property named \"{key}\"");
-				else
+				});
+				meta["__newindex"] = DynValue.NewCallback((x, y) =>
 				{
-					if (prop.CanWrite)
+					var inst = (y[0].Table.AssociatedObject as Instance)!;
+					var key = y[1].String;
+					var val = y[2];
+					var prop = props.Find(x => x.Name == key);
+
+					if (prop == null)
+						throw new ScriptRuntimeException($"\"{type.Name}\" doesn't have a property named \"{key}\"");
+
+					if (!prop.CanWrite)
+						throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" is read-only");
+
+					if (val.IsNil())
+						prop.SetValue(inst!, null);
+					else
 					{
-						if (val == DynValue.Nil)
-							prop.SetValue(inst!, null);
-						else
+						if (SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName ?? "", out var ld))
 						{
-							if (prop.Name == "Parent")
-							{
-								if (val.Type != DataType.Table)
-									throw new ScriptRuntimeException($"Property \"Parent\" of \"{type.Name}\" only accepts Instance");
-								if (val.Table.MetaTable == null)
-									throw new ScriptRuntimeException($"Property \"Parent\" of \"{type.Name}\" only accepts Instance");
-								if (val.Table.MetaTable["__handle"] == null)
-									throw new ScriptRuntimeException($"Property \"Parent\" of \"{type.Name}\" only accepts Instance");
+							var ret = ld(val, gm);
+							var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName ?? ""];
 
-								if (Guid.TryParse(val.Table.MetaTable["__handle"].ToString(), out Guid uid))
-								{
-									prop.SetValue(inst!, gm.AllInstances.Find(x => x.UniqueID == uid));
-									if (gm.NetworkManager.IsServer)
-										gm.NetworkManager.AddReplication(inst, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_REPARNT, false);
-								}
-								else
-									throw new ScriptRuntimeException($"Attempted to assign Instance's parent to foreign Instance");
-							}
-							else
-							{
-								if (!SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName ?? "", out var ld))
-									return DynValue.Nil;
-								else
-								{
-									var ret = ld(val, gm);
-									var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName ?? ""];
+							if (val.Type != exc)
+								throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");
 
-									if (val.Type != exc)
-										throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");
+							prop.SetValue(inst!, ret);
 
-									prop.SetValue(inst!, ret);
-									if (gm.NetworkManager.IsServer || gm.SelfOwnerships.Contains(inst))
-										gm.NetworkManager.AddReplication(inst, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_PROPCHG, false);
-								}
-							}
+							if (gm.NetworkManager.IsServer || gm.SelfOwnerships.Contains(inst))
+								gm.NetworkManager.AddReplication(inst, 
+									NetworkManager.Replication.REPM_TOALL, 
+									NetworkManager.Replication.REPW_PROPCHG, false);
 						}
 					}
-					else
-						throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" is read-only");
-				}
-				return DynValue.Nil;
-			});
-			table.MetaTable["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString(inst.Name));
-			table.MetaTable["__handle"] = inst.UniqueID.ToString();
-			table.MetaTable["__handleType"] = 0;
-			table.IsProtected = true;
 
-			inst.Tables[scr] = table;
+					return DynValue.Nil;
+				});
+				meta["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString((y[0].Table.AssociatedObject as Instance)!.Name));
+				meta.IsProtected = true;
 
-			return table;
+				Instance.MetaTables[chash] = meta;
+				var table = new Table(scr)
+				{
+					MetaTable = meta,
+					AssociatedObject = targetInstanceIWantToForget,
+					IsProtected = true
+				};
+				targetInstanceIWantToForget.Table = table;
+				return table;
+			}
 		}
 	}
 }

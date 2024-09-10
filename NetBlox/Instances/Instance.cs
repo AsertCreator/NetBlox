@@ -88,9 +88,10 @@ namespace NetBlox.Instances
 		public bool WasReplicated = false;
 		public GameManager GameManager;
 		public List<Instance> Children = new();
-		public Dictionary<Script, Table> Tables = new();
 		public DateTime DestroyAt = DateTime.MaxValue;
 		public DateTime DoNotReplicateUntil = DateTime.MinValue;
+		public static Dictionary<int, Table> MetaTables = [];
+		public Table? Table;
 		private Instance? parent;
 		protected DataModel Root => GameManager.CurrentRoot;
 
