@@ -2,7 +2,7 @@
   "profiles": {
     "UniversalServer": {
       "commandName": "Project",
-      "commandLineArgs": "-ss \"{^^f^^:25570,^^g^^:60,^^b^^:^^content/places/Welcoming.rbxl^^,^^c^^:^^Welcoming^^,^^d^^:^^ItsCalledBoredom^^,^^h^^:^^NetBlox Places^^}\""
+      "commandLineArgs": "-ss \"{^^f^^:25570,^^g^^:60,^^b^^:^^content/places/Welcoming.rbxlx^^,^^c^^:^^Welcoming^^,^^d^^:^^ItsCalledBoredom^^,^^h^^:^^NetBlox Places^^}\""
     }
   }
 }

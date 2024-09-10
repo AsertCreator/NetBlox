@@ -23,7 +23,6 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public float JumpPower { get; set; } = 6;
 		private bool isDying = false;
-		private Vector3 lastPosition;
 
 		public Character(GameManager gm) : base(gm)
 		{
@@ -31,7 +30,7 @@ namespace NetBlox.Instances
 			c.A = 255;
 			Color3 = c;
 			Locked = true;
-			Size = new Vector3(1, 1, 1);
+			Size = new Vector3(2, 2, 2);
 		}
 		public override void Process()
 		{
