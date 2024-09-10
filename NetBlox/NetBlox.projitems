@@ -35,7 +35,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\RemoteEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\ProtectedString.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Chat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Debris.cs" />
