@@ -74,6 +74,38 @@ namespace NetBlox.PublicService
 
 				if (!user.HasPassword() || user.CheckPasswordHash(phash))
 				{
+					return EncodeJson(new()
+					{
+						["token"] = user.CurrentLoginToken.ToString()
+					});
+				}
+
+				code = 401;
+				return EncodeJson(new()
+				{
+					["errorText"] = "Not authorized",
+					["errorCode"] = 401
+				});
+			});
+
+			AddEndpoint("/api/users/relogin", delegate (HttpListenerContext x, ref int code)
+			{
+				User user = Program.GetService<UserService>().GetUserByName(GetQueryData(x, "name"));
+
+				if (user == null)
+				{
+					code = 404;
+					return EncodeJson(new()
+					{
+						["errorText"] = "No such user found",
+						["errorCode"] = 404
+					});
+				}
+
+				string phash = GetQueryData(x, "phash");
+
+				if (!user.HasPassword() || user.CheckPasswordHash(phash))
+				{
 					user.CurrentLoginToken = Guid.NewGuid();
 					return EncodeJson(new()
 					{

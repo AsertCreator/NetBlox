@@ -7,6 +7,7 @@ using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Runtime;
@@ -89,11 +90,16 @@ namespace NetBlox
 				CurrentIdentity.Reset();
 				IsStudio = gc.AsStudio;
 
-				if (gc.AsClient && (ClientStartupInfo ?? throw new Exception()).IsGuest)
-					CurrentProfile.LoginAsGuest();
-
 				if (gc.AsClient)
+				{
+					Debug.Assert(ClientStartupInfo != null);
+					var user = ClientStartupInfo.Username;
+					var hash = ClientStartupInfo.PasswordHash;
+					Guid? token = CurrentProfile.LoginAsync(user, hash).WaitAndGetResult();
+					if (token == null)
+						CurrentProfile.LoginAsGuest();
 					LogManager.LogInfo("Logged in as " + Username);
+				}
 
 				ProhibitProcessing = gc.ProhibitProcessing;
 				ProhibitScripts = gc.ProhibitScripts;

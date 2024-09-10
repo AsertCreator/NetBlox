@@ -10,15 +10,15 @@ namespace NetBlox.Structs
 		[JsonPropertyName("a")]
 		public string PublicServiceAPI;
 		[JsonPropertyName("b")]
-		public string ForcedUsername;
+		public string WindowName = "NetBlox";
 		[JsonPropertyName("c")]
-		public int UserId;
+		public string Username = "";
 		[JsonPropertyName("d")]
-		public string LoginToken;
+		public string PasswordHash = "";
 		[JsonPropertyName("e")]
-		public bool IsGuest;
+		public bool IsGuest = true;
 		[JsonPropertyName("f")]
-		public bool IsTouchDevice;
+		public bool IsTouchDevice = false;
 		[JsonPropertyName("g")]
 		public string ServerIP;
 		[JsonPropertyName("h")]

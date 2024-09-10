@@ -73,7 +73,7 @@ namespace NetBlox
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
 				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint | GameManager.CustomFlags);
-				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, "NetBlox");
+				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, GameManager.ClientStartupInfo == null ? "NetBlox" : GameManager.ClientStartupInfo.WindowName);
 				Raylib.InitAudioDevice();
 				Raylib.SetTargetFPS(AppManager.PreferredFPS);
 				Raylib.SetExitKey(KeyboardKey.Null);
