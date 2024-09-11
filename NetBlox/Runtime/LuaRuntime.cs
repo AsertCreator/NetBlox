@@ -76,7 +76,7 @@ namespace NetBlox.Runtime
 						// that was way too... weird
 						LogManager.LogError("NetBlox's crash__ function was called");
 						Environment.FailFast("NetBlox's crash__ function was called");
-						throw new Exception("HAHAHA");
+						throw new ScriptRuntimeException("HAHAHA");
 					});
 					tenv.Globals["hang__"] = DynValue.NewCallback((x, y) =>
 					{
@@ -99,7 +99,7 @@ namespace NetBlox.Runtime
 
 						var ms = inst as ModuleScript;
 						if (ms == null)
-							throw new Exception("Expected a ModuleScript");
+							throw new ScriptRuntimeException("Expected a ModuleScript");
 
 						if (gm.LoadedModules.TryGetValue(ms, out var dv)) return dv;
 
@@ -119,14 +119,14 @@ namespace NetBlox.Runtime
 					}
 					else if (table.Type == DataType.Number)
 					{
-						throw new NotImplementedException();
+						throw new ScriptRuntimeException("cannot load assets yet");
 					}
-					throw new Exception("expected asset id or ModuleScript to be passed to require");
+					throw new ScriptRuntimeException("expected asset id or ModuleScript to be passed to require");
 				});
 				tenv.Globals["loadstring"] = DynValue.NewCallback((x, y) =>
 				{
 					if (!gm.CurrentRoot.GetService<ScriptContext>().LoadStringEnabled)
-						throw new Exception("loadstring is not accessible");
+						throw new ScriptRuntimeException("loadstring is not accessible");
 					return tenv.LoadString(y[0].CastToString());
 				});
 				tenv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
@@ -162,7 +162,7 @@ namespace NetBlox.Runtime
 					for (int i = 0; i < y.Count; i++)
 						strs.Add(y.AsStringUsingMeta(x, i, "error"));
 					PrintError(string.Join(' ', strs));
-					throw new Exception(y[0].ToString());
+					throw new ScriptRuntimeException(y[0].ToString());
 				});
 				tenv.Globals["spawn"] = DynValue.NewCallback((x, y) =>
 				{
@@ -175,11 +175,16 @@ namespace NetBlox.Runtime
 			{
 				try
 				{
-					var inst = InstanceCreator.CreateAccessibleInstance(y[0].String, gm);
+					var key = y[0].CastToString();
+					var inst = InstanceCreator.CreateAccessibleInstanceIfExists(key, gm);
+					if (inst == null)
+						throw new ScriptRuntimeException("Unable to create Instance of type " + key);
 					if (y.Count > 1)
 					{
-						var part = SerializationManager.LuaDeserialize(typeof(Instance), y[1], gm);
-						inst.Parent = (Instance)part;
+						var part = y[1];
+						var parent = part.Table.AssociatedObject;
+						part.Table.RequireType(MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Instance, 1, "Instance.new");
+						inst.Parent = (Instance)parent;
 					}
 					return DynValue.NewTable(MakeInstanceTable(inst, gm));
 				}
@@ -359,8 +364,10 @@ namespace NetBlox.Runtime
 									return DynValue.NewTable(res);
 								}
 							}
-							catch (TargetInvocationException)
+							catch (TargetInvocationException ex)
 							{
+								if (ex.InnerException != null)
+									throw ex.InnerException;
 								throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
 							}
 						});
@@ -418,6 +425,7 @@ namespace NetBlox.Runtime
 				{
 					MetaTable = meta,
 					AssociatedObject = targetInstanceIWantToForget,
+					ObjectType = MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Instance,
 					IsProtected = true
 				};
 				targetInstanceIWantToForget.Table = table;

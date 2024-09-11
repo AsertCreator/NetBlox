@@ -2,6 +2,7 @@
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class Players : Instance
 	{
 		[Lua([Security.Capability.None])]

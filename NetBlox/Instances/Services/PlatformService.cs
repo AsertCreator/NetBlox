@@ -8,6 +8,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class PlatformService : Instance
 	{
 		public static Action<string> QueuedTeleport = (xo) => { throw new Exception("NetBlox died!"); };
@@ -49,7 +50,7 @@ namespace NetBlox.Instances.Services
 		public void EnableRctlPipe()
 		{
 			if (!GameManager.NetworkManager.IsServer)
-				throw new Exception("Cannot start remote control pipe in client");
+				throw new ScriptRuntimeException("Cannot start remote control pipe in client");
 
 			Process pr = System.Diagnostics.Process.GetCurrentProcess();
 

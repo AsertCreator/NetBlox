@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,7 +41,9 @@ namespace NetBlox.Instances
 				if (Children[i].ClassName == sn)
 					return Children[i];
 			}
-			var serv = InstanceCreator.CreateInstance(sn, GameManager);
+			var serv = InstanceCreator.CreateServiceInstanceIfExists(sn, GameManager);
+			if (serv == null)
+				throw new ScriptRuntimeException(sn + " is not a service!");
 			serv.Parent = this;
 			return serv;
 		}

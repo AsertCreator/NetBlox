@@ -1,4 +1,5 @@
-﻿using NetBlox.Instances;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Structs;
 using Qu3e;
@@ -13,8 +14,16 @@ namespace NetBlox
 	{
 		public GameManager GameManager;
 		public Workspace? Workspace => (Workspace?)GameManager.CurrentRoot.GetService<Workspace>(true);
-		public float Gravity { get => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity; set => (Workspace ?? throw new Exception("No workspace is loaded")).Gravity = value; }
-		public Scene Scene { get => (Workspace ?? throw new Exception("No workspace is loaded")).Scene; set => (Workspace ?? throw new Exception("No workspace is loaded")).Scene = value; }
+		public float Gravity 
+		{ 
+			get => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Gravity; 
+			set => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Gravity = value; 
+		}
+		public Scene Scene 
+		{ 
+			get => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Scene; 
+			set => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Scene = value; 
+		}
 		public List<BasePart> Actors = new();
 		public bool DisablePhysics = true; // not now
 		private DateTime LastTime = DateTime.UtcNow;

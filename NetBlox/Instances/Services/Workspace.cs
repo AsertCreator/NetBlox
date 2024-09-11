@@ -17,6 +17,7 @@ namespace NetBlox.Instances.Services
 		public Vector3 To;
 		public float MaxDistance;
 	}
+	[Service]
 	public class Workspace : Instance, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]

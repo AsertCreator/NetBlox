@@ -781,7 +781,7 @@ namespace NetBlox
 			// it's not really constitutionally defined, but idc.
 			if (RemoteConnection == null) return;
 			if (IsClient && !islocal)
-				throw new Exception("Cannot kick non-local player from client");
+				throw new ScriptRuntimeException("Cannot kick non-local player from client");
 			if (IsClient && islocal)
 			{
 				RemoteConnection.Close(CloseReason.ClientClosed);
@@ -790,7 +790,7 @@ namespace NetBlox
 			}
 
 			// we are on server
-			if (nc == null) throw new Exception("RemoteClient object not preserved!");
+			if (nc == null) throw new ScriptRuntimeException("RemoteClient object not preserved!");
 			SendRawData(nc.Connection, "nb2-kick", Encoding.UTF8.GetBytes(msg));
 			nc.Connection.Close(CloseReason.ServerClosed);
 		}

@@ -7,6 +7,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class SandboxService : Instance, I3DRenderable
 	{
 		[Lua([Security.Capability.CoreSecurity])]

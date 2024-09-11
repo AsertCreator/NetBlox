@@ -7,6 +7,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class UserInputService : Instance
 	{
 		public UserInputService(GameManager ins) : base(ins) { }

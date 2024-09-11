@@ -7,6 +7,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class ScriptContext : Instance
 	{
 		[Lua([Security.Capability.RobloxScriptSecurity])]

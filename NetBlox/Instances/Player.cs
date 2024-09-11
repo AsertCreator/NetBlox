@@ -1,4 +1,5 @@
-﻿using NetBlox.Instances.Services;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Numerics;
@@ -100,7 +101,7 @@ namespace NetBlox.Instances
 		public void LoadCharacterOld()
 		{
 			if (!GameManager.NetworkManager.IsServer && false)
-				throw new Exception("Cannot call LoadCharacter from client!");
+				throw new ScriptRuntimeException("Cannot call LoadCharacter from client!");
 
 			var ch = new Character(GameManager);
 			var face = new Decal(GameManager);

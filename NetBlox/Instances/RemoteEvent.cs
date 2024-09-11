@@ -21,7 +21,7 @@ namespace NetBlox.Instances
 		public void FireServer(DynValue table)
 		{
 			if (!GameManager.NetworkManager.IsClient)
-				throw new Exception("Cannot call FireServer on server!");
+				throw new ScriptRuntimeException("Cannot call FireServer on server!");
 
 			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
 			{
@@ -34,12 +34,12 @@ namespace NetBlox.Instances
 		public void FireClient(Player plr, DynValue table)
 		{
 			if (!GameManager.NetworkManager.IsServer)
-				throw new Exception("Cannot call FireClient on client!");
+				throw new ScriptRuntimeException("Cannot call FireClient on client!");
 
 			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
 			{
 				Data = SerializationManager.SerializeObject(table, GameManager),
-				Recievers = [plr.Client ?? throw new Exception("This Player is not supported")], // say what
+				Recievers = [plr.Client ?? throw new ScriptRuntimeException("This Player is not supported")], // say what
 				RemoteEventId = UniqueID
 			});
 		}
@@ -47,7 +47,7 @@ namespace NetBlox.Instances
 		public void FireAllClients(DynValue table)
 		{
 			if (!GameManager.NetworkManager.IsServer)
-				throw new Exception("Cannot call FireAllClients on client!");
+				throw new ScriptRuntimeException("Cannot call FireAllClients on client!");
 
 			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
 			{

@@ -2,6 +2,7 @@
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class ReplicatedFirst : Instance
 	{
 		public ReplicatedFirst(GameManager ins) : base(ins) { }

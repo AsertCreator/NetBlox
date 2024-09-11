@@ -457,7 +457,7 @@ namespace NetBlox.Instances
 			lock (this)
 			{
 				if (!GameManager.NetworkManager.IsServer)
-					throw new Exception("Cannot call Network Ownership API from client!");
+					throw new ScriptRuntimeException("Cannot call Network Ownership API from client!");
 				Debug.Assert(player.Client != null);
 
 				GameManager.NetworkManager.Confiscate(this);

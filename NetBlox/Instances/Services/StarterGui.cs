@@ -7,6 +7,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class StarterGui : Instance
 	{
 		public StarterGui(GameManager ins) : base(ins) { }
@@ -21,14 +22,14 @@ namespace NetBlox.Instances.Services
 		public void RegisterSetCore(string name, DynValue func)
 		{
 			CoreGui cg = Root.GetService<CoreGui>();
-			if (func.Type != DataType.Function) throw new Exception($"RegisterSetCore only accepts functions");
+			if (func.Type != DataType.Function) throw new ScriptRuntimeException($"RegisterSetCore only accepts functions");
 			cg.RegisteredSetCallbacks[name] = func;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void RegisterGetCore(string name, DynValue func)
 		{
 			CoreGui cg = Root.GetService<CoreGui>();
-			if (func.Type != DataType.Function) throw new Exception($"RegisterGetCore only accepts functions");
+			if (func.Type != DataType.Function) throw new ScriptRuntimeException($"RegisterGetCore only accepts functions");
 			cg.RegisteredGetCallbacks[name] = func;
 		}
 		[Lua([Security.Capability.None])]
@@ -37,12 +38,12 @@ namespace NetBlox.Instances.Services
 			CoreGui cg = Root.GetService<CoreGui>();
 			if (cg.RegisteredSetCallbacks.ContainsKey(name))
 				TaskScheduler.ScheduleScript(GameManager, cg.RegisteredSetCallbacks[name], 3, null, null, [dv]);
-			else throw new Exception($"\"{name}\" has not been registered by CoreScripts");
+			else throw new ScriptRuntimeException($"\"{name}\" has not been registered by CoreScripts");
 		}
 		[Lua([Security.Capability.None])]
 		public DynValue GetCore(string name)
 		{
-			throw new Exception($"im not sure yielding works here");
+			throw new ScriptRuntimeException($"im not sure yielding works here");
 		}
 	}
 }

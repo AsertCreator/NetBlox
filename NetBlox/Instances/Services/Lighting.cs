@@ -5,6 +5,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class Lighting : Instance
 	{
 		[Lua([Security.Capability.None])]

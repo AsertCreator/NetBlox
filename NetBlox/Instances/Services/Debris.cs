@@ -5,6 +5,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class Debris : Instance
 	{
 		public Debris(GameManager ins) : base(ins) { }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter.DataStructs;
+using MoonSharp.Interpreter.DataTypes;
 
 namespace MoonSharp.Interpreter
 {
@@ -694,5 +695,18 @@ namespace MoonSharp.Interpreter
 		/// NetBlox specific, usually contains Instance reference.
 		/// </summary>
 		public object AssociatedObject { get; set; }
+
+		/// <summary>
+		/// NetBlox specific, contains <seealso cref="AssociatedObject"/>'s type to prevent use of reflection
+		/// </summary>
+		public AssociatedObjectType ObjectType { get; set; } = AssociatedObjectType.Misc;
+
+		public void RequireType(AssociatedObjectType type, int argnum, string funcname)
+		{
+			if (!IsProtected)
+				throw new ScriptRuntimeException("bad argument #{0} to '{1}' (" + type + " expected, got table)", argnum, funcname);
+			if (ObjectType != type)
+				throw new ScriptRuntimeException("bad argument #{0} to '{1}' (" + type + " expected, got " + ObjectType + ")", argnum, funcname);
+		}
 	}
 }

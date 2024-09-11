@@ -2,6 +2,7 @@
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class ServerStorage : Instance
 	{
 		public ServerStorage(GameManager ins) : base(ins) { }

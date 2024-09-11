@@ -2,6 +2,7 @@
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class ReplicatedStorage : Instance
 	{
 		public ReplicatedStorage(GameManager ins) : base(ins) { }

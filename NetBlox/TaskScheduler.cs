@@ -239,11 +239,6 @@ namespace NetBlox
 							LogManager.LogError($"    at {ex.CallStack[i].Name ?? ""}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
 						return JobResult.CompletedFailure;
 					}
-					catch (Exception ex)
-					{
-						LogManager.LogError("Script execution error:" + ex.Message + "; the job will be terminated");
-						return JobResult.CompletedFailure;
-					}
 				},
 				AfterDone = afterDone,
 				AssociatedObject0 = closure,

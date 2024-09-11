@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 namespace NetBlox.Instances
 {
 	[NotReplicated]
+	[Service]
 	public class CoreGui : Instance
 	{
 		public Dictionary<string, DynValue> RegisteredSetCallbacks = [];

@@ -44,7 +44,7 @@ namespace NetBlox.Instances
 		public void BindToClose(DynValue dv)
 		{
 			if (dv.Type != DataType.Function)
-				throw new Exception("expected function to be passed to BindToClose");
+				throw new ScriptRuntimeException("expected function to be passed to BindToClose");
 			GameManager.ShutdownEvent += (x, y) =>
 			{
 				CancellationTokenSource cts = new();

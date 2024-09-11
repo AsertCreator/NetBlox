@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class RunService : Instance
 	{
 		[Lua([Security.Capability.None])]

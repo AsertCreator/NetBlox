@@ -6,6 +6,7 @@ using System.Text;
 
 namespace NetBlox.Instances.Services
 {
+	[Service]
 	public class Chat : Instance
 	{
 		[Lua([Security.Capability.None])]

@@ -40,7 +40,7 @@ namespace NetBlox.Runtime
 		{
 			var job = TaskScheduler.RunningJobs.Find(j => j.AssociatedObject0 == y[0]);
 			if (job == null)
-				throw new Exception("No such job is running!");
+				throw new ScriptRuntimeException("No such job is running!");
 			TaskScheduler.Terminate(job);
 			if (job == TaskScheduler.CurrentJob)
 				return DynValue.NewYieldReq([]);
