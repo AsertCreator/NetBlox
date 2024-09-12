@@ -227,7 +227,7 @@ namespace NetBlox
 						}
 						return dv;
 					case 0x85:
-						return DynValue.NewTable(LuaRuntime.MakeInstanceTable(gm.GetInstance(new Guid(br.ReadBytes(16))), gm));
+						return LuaRuntime.PushInstance(gm.GetInstance(new Guid(br.ReadBytes(16))), gm);
 					default:
 						return DynValue.Nil;
 				}
@@ -352,7 +352,7 @@ namespace NetBlox
 			LuaSerializers.Add("System.Char", (x, y) => DynValue.NewString("" + (char)x));
 			LuaSerializers.Add("NetBlox.Structs.Shape", (x, y) => DynValue.NewNumber((double)(Shape)x));
 			LuaSerializers.Add("NetBlox.Structs.SurfaceType", (x, y) => DynValue.NewNumber((double)(SurfaceType)x));
-			LuaSerializers.Add("NetBlox.Instances.Instance", (x, y) => DynValue.NewTable(LuaRuntime.MakeInstanceTable((Instance)x, y)));
+			LuaSerializers.Add("NetBlox.Instances.Instance", (x, y) => LuaRuntime.PushInstance((Instance)x, y));
 			LuaSerializers.Add("System.Numerics.Vector2", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment) {
 				["X"] = ((Vector2)x).X,
 				["Y"] = ((Vector2)x).Y

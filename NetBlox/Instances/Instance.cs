@@ -34,7 +34,7 @@ namespace NetBlox.Instances
 								parent.Children.Remove(this);
 							if (GameManager.MainEnvironment != null)
 							{
-								parent.ChildRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
+								parent.ChildRemoved.Fire(LuaRuntime.PushInstance(this, GameManager));
 								RaiseDescendantRemoved(this);
 							}
 						}
@@ -49,7 +49,7 @@ namespace NetBlox.Instances
 								value.Children.Add(this);
 							if (GameManager.MainEnvironment != null)
 							{
-								value.ChildAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(this, GameManager)));
+								value.ChildAdded.Fire(LuaRuntime.PushInstance(this, GameManager));
 								RaiseDescendantAdded(this);
 							}
 						}
@@ -110,7 +110,7 @@ namespace NetBlox.Instances
 		{
 			if (Parent != null) 
 			{
-				Parent.DescendantAdded.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(descendantInQuestion, GameManager)));
+				Parent.DescendantAdded.Fire(LuaRuntime.PushInstance(descendantInQuestion, GameManager));
 				Parent.RaiseDescendantAdded(descendantInQuestion);
 			}
 		}
@@ -118,7 +118,7 @@ namespace NetBlox.Instances
 		{
 			if (Parent != null)
 			{
-				Parent.DescendantRemoved.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(descendantInQuestion, GameManager)));
+				Parent.DescendantRemoved.Fire(LuaRuntime.PushInstance(descendantInQuestion, GameManager));
 				Parent.RaiseDescendantRemoved(descendantInQuestion);
 			}
 		}
@@ -521,7 +521,7 @@ namespace NetBlox.Instances
 						Thread.Sleep(50);
 					else
 					{
-						job.AssociatedObject4 = new DynValue[] { DynValue.NewTable(LuaRuntime.MakeInstanceTable(ch, ch.GameManager)) };
+						job.AssociatedObject4 = new DynValue[] { LuaRuntime.PushInstance(ch, ch.GameManager) };
 						return;
 					}
 				}

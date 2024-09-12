@@ -308,7 +308,7 @@ namespace NetBlox
 							byte[] payload = rep.Data[16..];
 							DynValue luadata = SerializationManager.DeserializeObject(payload, GameManager);
 
-							even.OnServerEvent.Fire(DynValue.NewTable(LuaRuntime.MakeInstanceTable(pl, GameManager)), luadata);
+							even.OnServerEvent.Fire(LuaRuntime.PushInstance(pl, GameManager), luadata);
 						});
 						x.RegisterRawDataHandler("nb2-chat", (rep, _) =>
 						{

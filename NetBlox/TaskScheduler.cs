@@ -31,6 +31,7 @@ namespace NetBlox
 		public DateTime JoinedUntil = DateTime.MinValue;
 		public bool HadRunBefore = false;
 		public JobResult Result;
+		public Table GlobalEnv;
 		public Task? TaskJoinedTo;
 		public Job? JoinedTo;
 
@@ -180,7 +181,18 @@ namespace NetBlox
 		{
 			try
 			{
-				return ScheduleScript(gm, gm.MainEnvironment.LoadString(code, null, self != null ? self.GetFullName() : ""), level, self, afterDone, args);
+				return ScheduleScript(gm, gm.MainEnvironment.LoadString(code, new Table(gm.MainEnvironment)
+				{
+					IsProtected = true,
+					ObjectType = MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Misc,
+					["script"] = LuaRuntime.PushInstance(self, gm),
+					["workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true), gm),
+					["Workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true), gm),
+					MetaTable = new Table(gm.MainEnvironment)
+					{
+						["__index"] = gm.MainEnvironment.Globals
+					}
+				}, self != null ? self.GetFullName() : ""), level, self, afterDone, args);
 			}
 			catch (SyntaxErrorException ex)
 			{
@@ -207,19 +219,6 @@ namespace NetBlox
 				{
 					try
 					{
-						Workspace? works = gm.CurrentRoot.GetService<Workspace>(true);
-
-						if (works == null)
-							gm.MainEnvironment.Globals["workspace"] = DynValue.Nil;
-						else
-							gm.MainEnvironment.Globals["workspace"] = LuaRuntime.MakeInstanceTable(works, gm);
-						gm.MainEnvironment.Globals["Workspace"] = gm.MainEnvironment.Globals["workspace"];
-
-						if (self == null)
-							gm.MainEnvironment.Globals["script"] = DynValue.Nil;
-						else
-							gm.MainEnvironment.Globals["script"] = LuaRuntime.MakeInstanceTable(self, gm);
-
 						var args = job.AssociatedObject4 as DynValue[];
 						if (closure.State == CoroutineState.Dead)
 							throw new Exception("what just happened");

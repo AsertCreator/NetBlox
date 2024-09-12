@@ -39,6 +39,11 @@ namespace MoonSharp.Interpreter
 		/// </summary>
 		public Script OwnerScript { get; private set; }
 
+		/// <summary>
+		/// NetBlox specific, the value to be returned by getfenv
+		/// </summary>
+		public Table FunctionGlobals { get; set; }
+
 
 		/// <summary>
 		/// Shortcut for an empty closure

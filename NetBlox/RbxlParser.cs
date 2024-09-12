@@ -132,8 +132,7 @@ namespace NetBlox
 				{
 					LogManager.LogWarn("While loading RBXLX/RBXM file, following classes were referenced (" + slist.Count + "), yet they're not implemented!");
 					var arr = slist.ToArray();
-					for (int i = 0; i < slist.Count; i++)
-						LogManager.LogWarn(arr[i]);
+					LogManager.LogWarn(string.Join(", ", arr));
 				}
 
 				dm.GameManager.IsRunning = ogr;

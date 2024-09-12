@@ -39,7 +39,7 @@ namespace NetBlox.Runtime
 				tenv.Globals["shared"] = DynValue.NewTable(tenv);
 				tenv.Globals["_VERSION"] = gm.CurrentRoot.GetService<PlatformService>().FormatVersion();
 
-				tenv.Globals["game"] = MakeInstanceTable(gm.CurrentRoot, gm);
+				tenv.Globals["game"] = PushInstance(gm.CurrentRoot, gm);
 				tenv.Globals["Game"] = tenv.Globals["game"];
 
 				tenv.Globals["load"] = DynValue.Nil;
@@ -186,7 +186,7 @@ namespace NetBlox.Runtime
 						part.Table.RequireType(MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Instance, 1, "Instance.new");
 						inst.Parent = (Instance)parent;
 					}
-					return DynValue.NewTable(MakeInstanceTable(inst, gm));
+					return PushInstance(inst, gm);
 				}
 				catch
 				{
@@ -250,15 +250,15 @@ namespace NetBlox.Runtime
 		{
 			LogManager.LogError(msg);
 		}
-		public static Table MakeInstanceTable(Instance? targetInstanceIWantToForget, GameManager gm)
+		public static DynValue PushInstance(Instance? targetInstanceIWantToForget, GameManager gm)
 		{
 			var scr = gm.MainEnvironment;
 
 			if (targetInstanceIWantToForget == null)
-				return new Table(scr);
+				return DynValue.Nil;
 
 			// i want to bulge out my eyes
-			if (targetInstanceIWantToForget.Table != null) return targetInstanceIWantToForget.Table;
+			if (targetInstanceIWantToForget.Table != null) return DynValue.NewTable(targetInstanceIWantToForget.Table);
 
 			var type = targetInstanceIWantToForget.GetType();
 			var chash = targetInstanceIWantToForget.ClassName.GetHashCode();
@@ -272,7 +272,7 @@ namespace NetBlox.Runtime
 					IsProtected = true
 				};
 				targetInstanceIWantToForget.Table = table;
-				return table;
+				return DynValue.NewTable(table);
 			}
 			else
 			{
@@ -378,7 +378,7 @@ namespace NetBlox.Runtime
 
 						return child == null
 							? throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"")
-							: DynValue.NewTable(MakeInstanceTable(child, gm));
+							: PushInstance(child, gm);
 					}
 				});
 				meta["__newindex"] = DynValue.NewCallback((x, y) =>
@@ -429,7 +429,7 @@ namespace NetBlox.Runtime
 					IsProtected = true
 				};
 				targetInstanceIWantToForget.Table = table;
-				return table;
+				return DynValue.NewTable(table);
 			}
 		}
 	}

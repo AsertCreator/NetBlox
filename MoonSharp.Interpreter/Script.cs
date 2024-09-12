@@ -420,6 +420,8 @@ namespace MoonSharp.Interpreter
 				c = new Closure(this, address, syms, vals);
 			}
 
+			c.FunctionGlobals = envTable;
+
 			return DynValue.NewClosure(c);
 		}
 
