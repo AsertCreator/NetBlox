@@ -18,6 +18,12 @@
   <ItemGroup>
     <ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="content\scripts\CoreScripts\Application.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 	
   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
   	<DefineConstants>_WINDOWS</DefineConstants>

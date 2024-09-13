@@ -1,10 +1,13 @@
 {
   "profiles": {
-    "UniversalClient": {
+    "UniversalClient (ingame)": {
       "commandName": "Project",
       "commandLineArgs": "-cs \"{^^a^^:^^http://localhost:80/^^,^^b^^:^^NetBlox Development^^,^^e^^:true,^^g^^:^^127.0.0.1^^}\"",
       "nativeDebugging": false,
       "remoteDebugEnabled": false
+    },
+    "UniversalClient (app)": {
+      "commandName": "Project"
     }
   }
 }

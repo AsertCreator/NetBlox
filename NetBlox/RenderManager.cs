@@ -21,8 +21,8 @@ namespace NetBlox
 		public int VersionMargin = 0;
 		public double TimeOfDay = 12;
 		public string Status = string.Empty;
-		public string? CurrentMessage = string.Empty;
-		public string? CurrentHint = string.Empty;
+		public string? CurrentMessage = null;
+		public string? CurrentHint = null;
 		public bool DebugInformation = true;
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;

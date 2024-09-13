@@ -111,6 +111,7 @@ namespace NetBlox.Runtime
 
 							Debug.Assert(dv != null);
 
+							gm.LoadedModules[ms] = dv;
 							lt.AssociatedObject4 = dv.Type == DataType.Tuple ? dv.Tuple : [dv];
 							return JobResult.CompletedSuccess;
 						});
@@ -166,7 +167,7 @@ namespace NetBlox.Runtime
 				});
 				tenv.Globals["spawn"] = DynValue.NewCallback((x, y) =>
 				{
-					TaskScheduler.ScheduleScript(gm, y[0], 3, null);
+					TaskScheduler.ScheduleScript(gm, y[0], Security.Level, null);
 					return DynValue.Void;
 				});
 			}
@@ -215,10 +216,39 @@ namespace NetBlox.Runtime
 				{
 					return SerializationManager.LuaSerializers["Raylib_cs.Color"]
 						(new Color(
-							Convert.ToInt32(y[0].Number * 255),
-							Convert.ToInt32(y[1].Number * 255),
-							Convert.ToInt32(y[2].Number * 255),
+							(int)((double)(y[0].Number * 255)),
+							(int)((double)(y[1].Number * 255)),
+							(int)((double)(y[2].Number * 255)),
 							255), gm);
+				}
+				catch
+				{
+					return DynValue.Void;
+				}
+			});
+			MakeDataType(gm, "Vector2", (x, y) =>
+			{
+				try
+				{
+					return SerializationManager.LuaSerializers["System.Numerics.Vector2"]
+						(new Vector2(
+							(float)((double)y[0].Number),
+							(float)((double)y[1].Number)), gm);
+				}
+				catch
+				{
+					return DynValue.Void;
+				}
+			});
+			MakeDataType(gm, "Vector3", (x, y) =>
+			{
+				try
+				{
+					return SerializationManager.LuaSerializers["System.Numerics.Vector3"]
+						(new Vector3(
+							(float)((double)y[0].Number),
+							(float)((double)y[1].Number),
+							(float)((double)y[2].Number)), gm);
 				}
 				catch
 				{

@@ -32,6 +32,22 @@ namespace NetBlox.Instances.Services
 			return player;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
+		public Player CreateApplicationPlayer()
+		{
+			Security.Impersonate(8);
+			Player player = new(GameManager)
+			{
+				Name = GameManager.Username,
+				Parent = this,
+				IsLocalPlayer = true,
+				Guest = GameManager.CurrentProfile.IsOffline
+			};
+			CurrentPlayer = player;
+			Security.EndImpersonate();
+
+			return player;
+		}
+		[Lua([Security.Capability.CoreSecurity])]
 		public void KickAll(string msg)
 		{
 			for (int i = 0; i < Children.Count; i++)

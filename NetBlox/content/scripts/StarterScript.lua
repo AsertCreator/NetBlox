@@ -67,9 +67,11 @@ function initTUI()
 	CoreGui.OnTeleportEnds:Connect(telgui.hide);
 end
 
-initNotify();
-initIGG();
-initTUI();
+if not game.IsApplication then
+	initNotify();
+	initIGG();
+	initTUI();
+end
 
 print("Platform initialized");
 

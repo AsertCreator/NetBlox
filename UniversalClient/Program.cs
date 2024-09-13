@@ -1,4 +1,5 @@
-﻿using NetBlox.Instances.Services;
+﻿using NetBlox.Instances;
+using NetBlox.Instances.Services;
 using Raylib_cs;
 using System.Buffers.Text;
 using System.Diagnostics;
@@ -10,23 +11,26 @@ namespace NetBlox.Client
 {
 	public static class Program
 	{
+		public static string[] ConsoleArguments;
+
 		public static int Main(string[] args)
 		{
 			LogManager.LogInfo($"NetBlox Client ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
-			Raylib.SetTraceLogLevel(TraceLogLevel.None);
+			ConsoleArguments = args;
 
-			var v = Rlgl.GetVersion();
-			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
+			AppManager.PlatformOpenBrowser = x =>
 			{
-				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
-				Environment.Exit(1);
-			}
-
+				ProcessStartInfo psi = new();
+				psi.FileName = x;
+				psi.UseShellExecute = true;
+				Process.Start(psi);
+			};
 #if _WINDOWS
 			AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");
 #endif
-			if (args[0] == "base64")
+
+			if (args.Length > 0 && args[0] == "base64")
 			{
 				string bas64str = args[1];
 				byte[] base64 = Encoding.UTF8.GetBytes(bas64str);
@@ -38,22 +42,58 @@ namespace NetBlox.Client
 
 			if (args.Length == 1 && args[0] == "check")
 			{
-				return 0;
-			}
-			if (args.Length == 0)
-			{
-				LogManager.LogInfo("No arguments given, redirecting to Public Service's website...");
-				if (!File.Exists("./ReferenceData.json"))
-					return 1;
-				Process.Start(new ProcessStartInfo()
-				{
-					FileName = JsonSerializer.Deserialize<Dictionary<string, string>>(
-						File.ReadAllText("./ReferenceData.json"))!["PublicServiceAddress"],
-					UseShellExecute = true
-				});
+				Console.WriteLine(Common.Version.VersionMajor + "." + Common.Version.VersionMinor + "." + Common.Version.VersionPatch);
 				return 0;
 			}
 
+			Raylib.SetTraceLogLevel(TraceLogLevel.None);
+
+			var v = Rlgl.GetVersion();
+			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
+			{
+				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
+				Environment.Exit(1);
+			}
+
+			GameManager game;
+
+			if (args.Length == 0)
+			{
+				LogManager.LogInfo("No arguments, starting app...");
+				game = CreateAppGame();
+			}
+			else
+			{
+				LogManager.LogInfo("Starting general game...");
+				game = CreateGeneralGame(args);
+			}
+
+			AppManager.SetRenderTarget(game);
+			AppManager.Start();
+
+			return 0;
+		}
+		public static GameManager CreateAppGame()
+		{
+			PlatformService.QueuedTeleport = (xo) =>
+			{
+				var gm = AppManager.GameManagers[0];
+				var coregui = gm.CurrentRoot.GetService<CoreGui>();
+				var sctx = gm.CurrentRoot.GetService<ScriptContext>();
+				sctx.AddCoreScriptLocal("CoreScripts/Application", coregui.FindFirstChild("RobloxGui")!);
+			};
+			GameManager cg = null!;
+			cg = AppManager.CreateGame(new()
+			{
+				AsClient = true,
+				GameName = "NetBlox Client"
+			},
+			["-cs", "{}"], (x) => x.CurrentRoot.IsApplication = true);
+			cg.MainManager = true;
+			return cg;
+		}
+		public static GameManager CreateGeneralGame(string[] args)
+		{
 			PlatformService.QueuedTeleport = (xo) =>
 			{
 				var gm = AppManager.GameManagers[0];
@@ -72,26 +112,15 @@ namespace NetBlox.Client
 					}
 				}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
 			};
-
 			GameManager cg = null!;
 			cg = AppManager.CreateGame(new()
 			{
 				AsClient = true,
 				GameName = "NetBlox Client"
-			}, 
+			},
 			args, (x) => { });
 			cg.MainManager = true;
-			AppManager.PlatformOpenBrowser = x =>
-			{
-				ProcessStartInfo psi = new();
-				psi.FileName = x;
-				psi.UseShellExecute = true;
-				Process.Start(psi);
-			};
-			AppManager.SetRenderTarget(cg);
-			AppManager.Start();
-
-			return 0;
+			return cg;
 		}
 	}
 }

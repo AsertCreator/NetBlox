@@ -420,22 +420,22 @@ namespace NetBlox
 			LuaDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)x.Number);
 			LuaDeserializers.Add("NetBlox.Instances.Instance", (x, y) => (Instance)x.Table.AssociatedObject);
 			LuaDeserializers.Add("System.Numerics.Vector2", (x, y) => new Vector2(
-				(float)x.Table["X"], 
-				(float)x.Table["Y"]));
+				(float)(double)x.Table["X"], 
+				(float)(double)x.Table["Y"]));
 			LuaDeserializers.Add("System.Numerics.Vector3", (x, y) => new Vector3(
-				(float)x.Table["X"], 
-				(float)x.Table["Y"], 
-				(float)x.Table["Z"]));
+				(float)(double)x.Table["X"], 
+				(float)(double)x.Table["Y"], 
+				(float)(double)x.Table["Z"]));
 			LuaDeserializers.Add("Raylib_cs.Color", (x, y) => new Color(
 				(int)(Convert.ToSingle(x.Table["R"]) * 255), 
 				(int)(Convert.ToSingle(x.Table["G"]) * 255), 
 				(int)(Convert.ToSingle(x.Table["B"]) * 255), 
 				255));
 			LuaDeserializers.Add("NetBlox.Structs.UDim2", (x, y) => new UDim2(
-				Convert.ToSingle(x.Table["X"]),
-				Convert.ToSingle(x.Table["XOff"]),
-				Convert.ToSingle(x.Table["Y"]),
-				Convert.ToSingle(x.Table["YOff"])));
+				Convert.ToSingle((double)x.Table["X"]),
+				Convert.ToSingle((double)x.Table["XOff"]),
+				Convert.ToSingle((double)x.Table["Y"]),
+				Convert.ToSingle((double)x.Table["YOff"])));
 
 			LuaDataTypes.Add("System.Byte", DataType.Number);
 			LuaDataTypes.Add("System.Int16", DataType.Number);

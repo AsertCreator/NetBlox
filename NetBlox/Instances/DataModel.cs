@@ -17,6 +17,8 @@ namespace NetBlox.Instances
 		public long PlaceId => (long)GameManager.CurrentIdentity.PlaceID;
 		[Lua([Security.Capability.None])]
 		public int PlaceVersion => 0;
+		[Lua([Security.Capability.CoreSecurity])]
+		public bool IsApplication { get; set; }
 
 		public DataModel(GameManager ins) : base(ins) { }
 
