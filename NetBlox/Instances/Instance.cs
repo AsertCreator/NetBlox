@@ -108,7 +108,7 @@ namespace NetBlox.Instances
 				gm.AllInstances.Add(this);
 			}
 		}
-		public void RaiseDescendantAdded(Instance descendantInQuestion) // thats the longest named variable in the entire solution
+		public void RaiseDescendantAdded(Instance descendantInQuestion) // not anymore
 		{
 			if (Parent != null) 
 			{
@@ -116,7 +116,7 @@ namespace NetBlox.Instances
 				Parent.RaiseDescendantAdded(descendantInQuestion);
 			}
 		}
-		public void RaiseDescendantRemoved(Instance descendantInQuestion) // thats the longest named variable in the entire solution
+		public void RaiseDescendantRemoved(Instance descendantInQuestion) // not anymore
 		{
 			if (Parent != null)
 			{

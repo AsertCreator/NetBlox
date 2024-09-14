@@ -1,6 +1,7 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Instances;
+using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -290,13 +291,6 @@ namespace NetBlox
 						AddReplication(pl, Replication.REPM_TOALL, Replication.REPW_NEWINST, false);
 						AddReplication(pl.Character, Replication.REPM_TOALL, Replication.REPW_NEWINST, true);
 
-						x.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
-						{ // here we get instances from owners. actually for now, from everyone
-							ProfileIncoming(rep.Key, rep.Data);
-
-							var ins = RecieveNewInstance(rep.Data);
-							AddReplication(ins, Replication.REPM_BUTOWNER, Replication.REPW_NEWINST);
-						});
 						x.RegisterRawDataHandler("nb2-remote", (rep, _) =>
 						{
 							ProfileIncoming(rep.Key, rep.Data);
@@ -323,13 +317,36 @@ namespace NetBlox
 					x.RegisterRawDataHandler("nb2-ownerreplicate", (data, _) =>
 					{
 						ProfileIncoming(data.Key, data.Data);
-
-						Instance ins = RecieveNewInstance(data.Data);
-						for (int i = 0; i < Clients.Count; i++)
+						Instance? target = GameManager.GetInstance(new Guid(data.Data[0..16]));
+						if (target == null)
 						{
-							RemoteClient nc2 = Clients[i];
-							if (nc2 != nc)
-								nc2.Connection.SendRawData("nb2-replicate", data.Data);
+							LogManager.LogWarn(nc.Player.Name + " tried to replicate a client instance to server!");
+							return;
+						}
+						if (target is BaseScript)
+						{
+							LogManager.LogWarn(nc.Player.Name + " tried to modify a script and send it to server!");
+							return;
+						}
+
+						RemoteClient owner = target.Owner;
+
+						if (owner == nc)
+						{
+							Instance? ins = RecieveNewInstance(data.Data, true);
+							if (ins == null)
+								return;
+							for (int i = 0; i < Clients.Count; i++)
+							{
+								RemoteClient nc2 = Clients[i];
+								if (nc2 != nc)
+									nc2.Connection.SendRawData("nb2-replicate", data.Data);
+							}
+						}
+						else
+						{
+							LogManager.LogWarn(nc.Player.Name + " tried to replicate instance as if they were the owner!");
+							return;
 						}
 					});
 					x.RegisterRawDataHandler("nb2-gotchar", (data, _) =>
@@ -529,6 +546,8 @@ namespace NetBlox
 					TaskScheduler.ScheduleNetwork("RecieveInstance", GameManager, x =>
 					{
 						var ins = RecieveNewInstance(rep.Data);
+						if (ins == null)
+							return JobResult.CompletedFailure;
 
 						if (ins is Workspace)
 						{
@@ -788,8 +807,13 @@ namespace NetBlox
 			SendRawData(nc.Connection, "nb2-kick", Encoding.UTF8.GetBytes(msg));
 			nc.Connection.Close(CloseReason.ServerClosed);
 		}
+		/// <summary>
+		/// Replicates a new/existing Instance to clients. Do not call on client
+		/// </summary>
 		private void PerformReplicationNew(Instance ins, PropertyInfo[] props, RemoteClient[] recs)
 		{
+			if (!IsServer) return;
+
 			using MemoryStream ms = new();
 			using BinaryWriter bw = new(ms);
 			var gm = ins.GameManager;
@@ -837,7 +861,10 @@ namespace NetBlox
 				SendRawData(con, "nb2-replicate", buf);
 			}
 		}
-		private Instance RecieveNewInstance(byte[] data)
+		/// <summary>
+		/// Universal network instance parser, used in both server and client. Returns null if something's wrong
+		/// </summary>
+		private Instance? RecieveNewInstance(byte[] data, bool disallowscripts = false, string sender = "")
 		{
 			lock (replock)
 			{
@@ -851,9 +878,12 @@ namespace NetBlox
 				var classname = br.ReadString();
 				if (ins == null)
 				{
-					if (GameManager.FilteringEnabled && IsServer)
-						return null!; // we do not permit this shit.
 					ins = InstanceCreator.CreateReplicatedInstance(classname, GameManager);
+					if (ins is BaseScript && disallowscripts && IsServer)
+					{
+						LogManager.LogWarn(sender + " tried to replicate a script to server!");
+						return null;
+					}
 					ins.Parent = GameManager.GetInstance(newp);
 				}
 				ins.UniqueID = guid;
