@@ -41,13 +41,13 @@ namespace NetBlox
 			{
 				try
 				{
-					Scene.Step((DateTime.UtcNow - LastTime).TotalSeconds * 2.5);
+					Scene.Step((DateTime.UtcNow - LastTime).TotalSeconds * 1.5);
 
 					for (int i = 0; i < Actors.Count; i++)
 					{
 						var act = Actors[i];
-						if (!act.Anchored && ((GameManager.NetworkManager.IsClient && GameManager.SelfOwnerships.Contains(act)) || 
-							(GameManager.NetworkManager.IsServer && !GameManager.Owners.ContainsValue(act))))
+						if (!act.Anchored && ((GameManager.NetworkManager.IsClient && act.SelfOwned) || 
+							(GameManager.NetworkManager.IsServer && act.Owner != null)))
 						{
 							act._position = act.Body!.GetTransform().position;
 							act._rotation = act.Body!.GetTransform().rotation.ToEuler();

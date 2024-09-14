@@ -414,7 +414,7 @@ namespace NetBlox
 								break;
 							case Replication.REPM_BUTOWNER:
 								rc = (RemoteClient[])(Clients.ToArray().Clone());
-								var oq = (from x in GameManager.Owners where x.Value == ins select x.Key).FirstOrDefault();
+								var oq = ins.Owner;
 								if (oq != null)
 								{
 									var lis = rc.ToList();
@@ -619,9 +619,7 @@ namespace NetBlox
 					Guid inst = new Guid(rep.Data);
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
-					{
-						GameManager.SelfOwnerships.Add(actinst);
-					}
+						actinst.SelfOwned = true;
 				});
 				tcp.RegisterRawDataHandler("nb2-confiscate", (rep, _) =>
 				{
@@ -630,9 +628,7 @@ namespace NetBlox
 					Guid inst = new Guid(rep.Data);
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
-					{
-						GameManager.SelfOwnerships.Remove(actinst);
-					}
+						actinst.SelfOwned = false;
 				});
 				tcp.RegisterRawDataHandler("nb2-kick", (rep, _) =>
 				{
@@ -719,17 +715,15 @@ namespace NetBlox
 		}
 		public void Confiscate(Instance ins)
 		{
-			var query = (from x in GameManager.Owners where x.Value == ins select x);
-			if (query.Any())
+			if (ins.Owner != null)
 			{
-				var ns = query.First().Key;
-				GameManager.Owners.Remove(ns);
-				SendRawData(ns.Connection, "nb2-confiscate", ins.UniqueID.ToByteArray());
+				SendRawData(ins.Owner.Connection, "nb2-confiscate", ins.UniqueID.ToByteArray());
+				ins.Owner = null;
 			} 
 		}
 		public void SetOwner(RemoteClient nc, Instance ins)
 		{
-			GameManager.Owners[nc] = ins;
+			ins.Owner = nc;
 			SendRawData(nc.Connection, "nb2-setowner", ins.UniqueID.ToByteArray());
 		}
 		public void RequestOwnerReplication(Instance ins, PropertyInfo[] props)

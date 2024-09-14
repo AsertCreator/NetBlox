@@ -46,9 +46,9 @@ namespace NetBlox.Instances
 				var x2 = cam.Target.X;
 				var y2 = cam.Target.Z;
 				var angle = MathF.Atan2(y2 - y1, x2 - x1);
-				Vector3 veldelta = Vector3.Zero;
-				Vector3 rotdelta = Vector3.Zero;
 				float deltatime = (float)TaskScheduler.LastCycleTime.TotalSeconds;
+				Vector3 veldelta = new Vector3(0, -WalkSpeed * deltatime, 0);
+				Vector3 rotdelta = Vector3.Zero;
 
 				if (Body == null)
 					return;

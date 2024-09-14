@@ -438,7 +438,7 @@ namespace NetBlox.Runtime
 
 							prop.SetValue(inst!, ret);
 
-							if (gm.NetworkManager.IsServer || gm.SelfOwnerships.Contains(inst))
+							if (gm.NetworkManager.IsServer || inst.SelfOwned)
 								gm.NetworkManager.AddReplication(inst, 
 									NetworkManager.Replication.REPM_TOALL, 
 									NetworkManager.Replication.REPW_PROPCHG, false);

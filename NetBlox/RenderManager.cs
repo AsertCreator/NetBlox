@@ -185,7 +185,8 @@ namespace NetBlox
 						{
 							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
 								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", outgoing traffic: " +
-								MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + (GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled"), 
+								MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + (GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled") + 
+								", actors count: " + GameManager.PhysicsManager.Actors.Count, 
 								new(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
 						}
 

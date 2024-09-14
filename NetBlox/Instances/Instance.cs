@@ -86,6 +86,8 @@ namespace NetBlox.Instances
 		public virtual Security.Capability[] RequiredCapabilities => [];
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
+		public bool SelfOwned = false;
+		public RemoteClient? Owner;
 		public GameManager GameManager;
 		public List<Instance> Children = new();
 		public DateTime DestroyAt = DateTime.MaxValue;
@@ -479,10 +481,8 @@ namespace NetBlox.Instances
 		private void ChangeOwnershipImpl(GameManager gm)
 		{
 			GameManager.AllInstances.Remove(this);
-			var item = GameManager.Owners.FirstOrDefault(kvp => kvp.Value == this);
-			if (!item.Equals(default(KeyValuePair<RemoteClient, Instance>)))
-				GameManager.Owners.Remove(item.Key);
-			GameManager.SelfOwnerships.Remove(this);
+			Owner = null;
+			SelfOwned = false;
 			GameManager = gm;
 			WasReplicated = false;
 			WasDestroyed = false;
