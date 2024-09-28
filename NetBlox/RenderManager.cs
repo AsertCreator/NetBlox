@@ -46,7 +46,7 @@ namespace NetBlox
 		public static Dictionary<string, Sound> SoundCache = [];
 		public static Dictionary<string, Font> FontCache = [];
 
-		public int LoadBatchSize = 5;
+		public int LoadBatchSize = 10;
 
 		public unsafe RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
 		{

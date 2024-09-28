@@ -29,7 +29,7 @@ namespace NetBlox
 		public static Dictionary<string, Func<object, GameManager, DynValue>> LuaSerializers = new();
 		public static Dictionary<string, Func<DynValue, GameManager, object>> LuaDeserializers = new();
 		public static Dictionary<string, DataType> LuaDataTypes = new();
-		private static readonly JsonSerializerOptions DefaultJSON = new()
+		public static readonly JsonSerializerOptions DefaultJSON = new()
 		{
 			IncludeFields = true
 		};

@@ -8,7 +8,7 @@ using System.Text;
 namespace NetBlox.Instances.Services
 {
 	[Service]
-	public class SandboxService : Instance, I3DRenderable
+	public partial class SandboxService : Instance, I3DRenderable
 	{
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool Enabled { get; set; } = false;

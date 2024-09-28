@@ -1,21 +1,22 @@
-﻿using NetBlox.Instances;
+using NetBlox;
+using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using Raylib_cs;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
-using System.Text.Json;
 
-namespace NetBlox.Client
+namespace WindowsTSHost
 {
-	public static class Program
+	internal static class Program
 	{
 		internal static string[] ConsoleArguments;
 
+		[STAThread]
 		public static int Main(string[] args)
 		{
-			LogManager.LogInfo($"NetBlox Client ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
+			LogManager.LogInfo($"NetBlox Team Sandbox ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
 			ConsoleArguments = args;
 
@@ -43,7 +44,7 @@ namespace NetBlox.Client
 
 			if (args.Length == 1 && args[0] == "check")
 			{
-				Console.WriteLine(Common.Version.VersionMajor + "." + Common.Version.VersionMinor + "." + Common.Version.VersionPatch);
+				Console.WriteLine(NetBlox.Common.Version.VersionMajor + "." + NetBlox.Common.Version.VersionMinor + "." + NetBlox.Common.Version.VersionPatch);
 				return 0;
 			}
 
@@ -56,18 +57,8 @@ namespace NetBlox.Client
 				Environment.Exit(1);
 			}
 
-			GameManager game;
-
-			if (args.Length == 0)
-			{
-				LogManager.LogInfo("No arguments, starting app...");
-				game = CreateAppGame();
-			}
-			else
-			{
-				LogManager.LogInfo("Starting general game...");
-				game = CreateGeneralGame(args);
-			}
+			LogManager.LogInfo("Starting TSH application...");
+			GameManager game = CreateAppGame();
 
 			AppManager.SetRenderTarget(game);
 			AppManager.Start();
@@ -79,47 +70,16 @@ namespace NetBlox.Client
 			PlatformService.QueuedTeleport = (xo) =>
 			{
 				var gm = AppManager.GameManagers[0];
-				var coregui = gm.CurrentRoot.GetService<CoreGui>();
-				var sctx = gm.CurrentRoot.GetService<ScriptContext>();
-				sctx.AddCoreScriptLocal("CoreScripts/Application", coregui.FindFirstChild("RobloxGui")!);
+				var ss = gm.CurrentRoot.GetService<SandboxService>();
+				ss.StartTeamSandboxTitle();
 			};
 			GameManager cg = null!;
 			cg = AppManager.CreateGame(new()
 			{
 				AsClient = true,
-				GameName = "NetBlox Client"
+				GameName = "NTS Title"
 			},
 			["-cs", "{}"], (x) => x.CurrentRoot.IsApplication = true);
-			cg.MainManager = true;
-			return cg;
-		}
-		public static GameManager CreateGeneralGame(string[] args)
-		{
-			PlatformService.QueuedTeleport = (xo) =>
-			{
-				var gm = AppManager.GameManagers[0];
-
-				gm.NetworkManager.ClientReplicator = Task.Run(delegate ()
-				{
-					try
-					{
-						gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
-						return Task.FromResult(new object());
-					}
-					catch (Exception ex)
-					{
-						gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
-						return Task.FromResult<object>(new());
-					}
-				}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
-			};
-			GameManager cg = null!;
-			cg = AppManager.CreateGame(new()
-			{
-				AsClient = true,
-				GameName = "NetBlox Client"
-			},
-			args, (x) => { });
 			cg.MainManager = true;
 			return cg;
 		}
