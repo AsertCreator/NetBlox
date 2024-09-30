@@ -9,7 +9,7 @@ namespace NetBlox.PublicService
 	public class UserService : Service
 	{
 		public override string Name => nameof(UserService);
-		public TimeSpan AutoSaveInterval = TimeSpan.FromMinutes(30);
+		public TimeSpan AutoSaveInterval = TimeSpan.FromSeconds(45);
 		public List<User> AllUsers = new();
 
 		protected override void OnStart()
@@ -97,9 +97,9 @@ namespace NetBlox.PublicService
 		public string Email = "";
 		[JsonPropertyName("phash")]
 		public string PasswordHash;
-		[JsonIgnore]
+		[JsonPropertyName("token")]
 		public Guid CurrentLoginToken;
-		[JsonIgnore]
+		[JsonPropertyName("lastpresence")]
 		public OnlineMode CurrentPresence 
 		{ 
 			get 
@@ -121,7 +121,7 @@ namespace NetBlox.PublicService
 		string ISearchable.Name => Name;
 		string ISearchable.Description => "";
 
-		public void SetPassword(string password) => PasswordHash = string.Join("", SHA256.HashData(Encoding.UTF8.GetBytes(password)));
+		public void SetPassword(string password) => PasswordHash = string.Join("", from x in SHA256.HashData(Encoding.UTF8.GetBytes(password)) select x.ToString("X2"));
 		public void SetPassword(byte[] hash) => PasswordHash = string.Join("", hash);
 		public bool HasPassword() => PasswordHash != null;
 		public bool CheckPassword(string password)

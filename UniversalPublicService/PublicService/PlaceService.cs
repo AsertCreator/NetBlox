@@ -9,7 +9,7 @@ namespace NetBlox.PublicService
 	public class PlaceService : Service
 	{
 		public override string Name => nameof(PlaceService);
-		public TimeSpan AutoSaveInterval = TimeSpan.FromMinutes(30);
+		public TimeSpan AutoSaveInterval = TimeSpan.FromSeconds(45);
 		public List<Place> AllPlaces = new();
 
 		protected override void OnStart()

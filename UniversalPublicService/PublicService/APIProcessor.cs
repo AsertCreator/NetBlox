@@ -56,6 +56,39 @@ namespace NetBlox.PublicService
 				});
 			});
 
+			AddEndpoint("/api/users/self", delegate (HttpListenerContext x, ref int code)
+			{
+				var cookie = x.Request.Cookies["nblogtok"];
+				if (cookie == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+				var user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(cookie.Value));
+				if (user == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+
+				return EncodeJson(new()
+				{
+					["type"] = 0,
+					["name"] = user.Name,
+					["id"] = user.Id,
+					["membership"] = user.MembershipType,
+					["presence"] = (int)user.CurrentPresence,
+				});
+			});
+
 			AddEndpoint("/api/users/login", delegate (HttpListenerContext x, ref int code)
 			{
 				User user = Program.GetService<UserService>().GetUserByName(GetQueryData(x, "name"));
@@ -159,8 +192,17 @@ namespace NetBlox.PublicService
 
 			AddEndpoint("/api/users/setpresence", delegate (HttpListenerContext x, ref int code)
 			{
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
-
+				var cookie = x.Request.Cookies["nblogtok"];
+				if (cookie == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+				var user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
 					code = 401;
@@ -228,8 +270,17 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/create", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
-
+				var cookie = x.Request.Cookies["nblogtok"];
+				if (cookie == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+				var user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
 					code = 401;
@@ -253,9 +304,19 @@ namespace NetBlox.PublicService
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
 				ServerService ss = Program.GetService<ServerService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
 				Place place = ps.GetPlaceByID(long.Parse(GetQueryData(x, "gid")));
 
+				var cookie = x.Request.Cookies["nblogtok"];
+				if (cookie == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+				var user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
 					code = 401;
@@ -278,8 +339,17 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/update/content", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
-
+				var cookie = x.Request.Cookies["nblogtok"];
+				if (cookie == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+				var user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
 					code = 401;
@@ -313,8 +383,17 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/update/info", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
-
+				var cookie = x.Request.Cookies["nblogtok"];
+				if (cookie == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+				var user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
 					code = 401;
@@ -349,8 +428,17 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/shutdown", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
-
+				var cookie = x.Request.Cookies["nblogtok"];
+				if (cookie == null)
+				{
+					code = 401;
+					return EncodeJson(new()
+					{
+						["errorText"] = "Not authorized",
+						["errorCode"] = 401
+					});
+				}
+				var user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
 					code = 401;

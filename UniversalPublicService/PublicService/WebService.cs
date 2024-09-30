@@ -40,6 +40,8 @@ namespace NetBlox.PublicService
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/login.html"));
 			else if (uri.StartsWith("/search"))
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/search.html"));
+			else if (uri.StartsWith("/register"))
+				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/register.html"));
 			else if (uri.StartsWith("/api"))  
 				return Encoding.UTF8.GetBytes(ServeAPI(cl, uri, ref i, ref mime)!);
 

@@ -8,7 +8,6 @@ class HomePage extends React.Component {
 		this.state = {};
 	}
 
-
 	componentDidMount() {
 		var cards = [];
 		var proms = [];
@@ -23,13 +22,18 @@ class HomePage extends React.Component {
 		}
 
 		Promise.all(proms).then(x => {
-			this.setState({ cards: cards });
+			this.setState(Object.assign(this.state, { cards: cards }));
+		});
+
+		netblox.LoginService.getSelf().then(x => {
+			if (x != null)
+				this.setState(Object.assign(this.state, { username: x.name }));
 		});
 	}
 	
 	render() {
 		return (<div>
-			<h1>Home</h1>
+			<h1>{this.state.username == undefined ? "Home" : "Welcome back, " + this.state.username}</h1>
 			{this.state.cards == undefined ? (<p>Loading...</p>) : this.state.cards}
 		</div>);
 	}

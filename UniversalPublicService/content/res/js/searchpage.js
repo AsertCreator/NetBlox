@@ -14,27 +14,36 @@ class SearchPage extends React.Component {
 			<input id="search-bar"></input>
 			<button onClick={x => {
 				const query = document.querySelector("#search-bar").value;
-				window.netblox.QueryService.search(query).then(res =>
-				{
-					if (res.success) {
-						var cards = [];
-						for (const i in res.entries) {
-							const x = res.entries[i];
-							if (x.type == 1)
-								cards.push(<MediumGameIcon
-									key={i} gameid={x.id} name={x.name} author={"by " + x.authorname}
-									icon="/res/img/defaultPlace.png" />)
-							else
-								cards.push(<MediumUserIcon
-									key={i} userid={x.id} name={x.name} presence={x.presence}
-									icon="/res/img/defaultPlace.png" />)
+				if (query.length < 3)
+					this.setState({ message: "Please enter at least three letters!" });
+				else {
+					window.netblox.QueryService.search(query).then(res =>
+					{
+						if (res.success) {
+							var cards = [];
+							for (const i in res.entries) {
+								const x = res.entries[i];
+								if (x.type == 1)
+									cards.push(<MediumGameIcon
+										key={i} gameid={x.id} name={x.name} author={"by " + x.authorname}
+										icon="/res/img/defaultPlace.png" />)
+								else
+									cards.push(<MediumUserIcon
+										key={i} userid={x.id} name={x.name} presence={x.presence}
+										icon="/res/img/defaultPlace.png" />)
+							}
+							this.setState({ message: "Found " + res.entries.length + " results!", entries: cards });
 						}
-						this.setState({ entries: cards });
-					}
-				});
+						else {
+							this.setState({ message: "Could not perform the search!" });
+						}
+					});
+				}
 			}}>Search</button>
 			<p>
-				{this.state.entries == undefined ? ("") : (<span>Found {this.state.entries.length} entries!<br/>{this.state.entries}</span>)}
+				<span>{this.state.message}</span>
+				<br />
+				{this.state.entries}
 			</p>
 		</div>);
 	}
