@@ -92,6 +92,44 @@ namespace NetBlox.Server
 										Console.WriteLine("Could not load the place: " + ex.Message);
 									}
 									break;
+								case "test":
+									if (int.TryParse(words[1], out int idx))
+									{
+										switch (idx)
+										{
+											case 0:
+												Console.WriteLine("Beginning Animator test...");
+												Workspace workspace = x.CurrentRoot.GetService<Workspace>();
+												Part p0 = new(x)
+												{
+													Position = new System.Numerics.Vector3(0, 10, 0),
+													Size = new System.Numerics.Vector3(4, 1, 2),
+													Parent = workspace
+												};
+												Part p1 = new(x)
+												{
+													Position = new System.Numerics.Vector3(12, 10, 0),
+													Size = new System.Numerics.Vector3(4, 1, 2),
+													Parent = workspace
+												};
+												Animation anim = new(x)
+												{
+													Parent = workspace,
+												};
+												x.NetworkManager.AddReplication(p0, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+												x.NetworkManager.AddReplication(p1, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+												x.NetworkManager.AddReplication(anim, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+												break;
+											default:
+												Console.WriteLine("No test is associated with " + idx);
+												break;
+										}
+									}
+									else
+									{
+										Console.WriteLine("Please type a number to run associated test!");
+									}
+									break;
 								case "killall":
 									TaskScheduler.RunningJobs.Clear();
 									break;

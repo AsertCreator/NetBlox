@@ -438,6 +438,10 @@ namespace NetBlox.Runtime
 
 							prop.SetValue(inst!, ret);
 
+							inst.Changed.Fire(DynValue.NewString(key));
+							if (inst.ChangedSignals.ContainsKey(key))
+								inst.ChangedSignals[key].Fire(val);
+
 							if (gm.NetworkManager.IsServer || inst.SelfOwned)
 								gm.NetworkManager.AddReplication(inst, 
 									NetworkManager.Replication.REPM_TOALL, 

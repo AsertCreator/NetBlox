@@ -52,7 +52,7 @@ namespace NetBlox.Instances
 			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
 			{
 				Data = SerializationManager.SerializeObject(table, GameManager),
-				Recievers = GameManager.NetworkManager.Clients.ToArray(),
+				Recievers = [.. GameManager.NetworkManager.Clients],
 				RemoteEventId = UniqueID
 			});
 		}

@@ -82,6 +82,9 @@ namespace NetBlox.Instances
 		public LuaSignal ChildRemoved { get; init; } = new();
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
+		public LuaSignal Changed { get; init; } = new();
+		[Lua([Security.Capability.None])]
+		[NotReplicated]
 		public LuaSignal Destroying { get; init; } = new();
 		public virtual Security.Capability[] RequiredCapabilities => [];
 		public bool WasDestroyed = false;
@@ -92,6 +95,7 @@ namespace NetBlox.Instances
 		public List<Instance> Children = new();
 		public DateTime DestroyAt = DateTime.MaxValue;
 		public DateTime DoNotReplicateUntil = DateTime.MinValue;
+		public Dictionary<string, LuaSignal> ChangedSignals = [];
 		public static Dictionary<int, Table> MetaTables = [];
 		public Table? Table;
 		private Instance? parent;
@@ -394,6 +398,16 @@ namespace NetBlox.Instances
 				}
 
 				return null;
+			}
+		}
+		[Lua([Security.Capability.None])]
+		public virtual LuaSignal GetPropertyChangedSignal(string prop)
+		{
+			lock (ChangedSignals)
+			{
+				if (!ChangedSignals.ContainsKey(prop))
+					ChangedSignals[prop] = new();
+				return ChangedSignals[prop];
 			}
 		}
 		[Lua([Security.Capability.None])]

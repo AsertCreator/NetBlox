@@ -47,7 +47,7 @@ namespace NetBlox.Instances
 				var y2 = cam.Target.Z;
 				var angle = MathF.Atan2(y2 - y1, x2 - x1);
 				float deltatime = (float)TaskScheduler.LastCycleTime.TotalSeconds;
-				Vector3 veldelta = new Vector3(0, -WalkSpeed * deltatime, 0);
+				Vector3 veldelta = Vector3.Zero;
 				Vector3 rotdelta = Vector3.Zero;
 
 				if (Body == null)
@@ -55,8 +55,8 @@ namespace NetBlox.Instances
 
 				if (GameManager.RenderManager.FocusedBox == null)
 				{
-					if (Raylib.IsKeyDown(KeyboardKey.Space) && Body.ContactList.Count != 0)
-						Velocity = new Vector3(Velocity.X, WalkSpeed / 1.25f, Velocity.Z);
+					if (Raylib.IsKeyDown(KeyboardKey.Space) && (Body.ContactList.Count != 0 || GameManager.PhysicsManager.DisablePhysics))
+						veldelta += new Vector3(0, JumpPower * deltatime, 0);
 					if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
 						veldelta += new Vector3(0, -WalkSpeed * deltatime, 0);
 					if (Raylib.IsKeyDown(KeyboardKey.Q))
@@ -90,7 +90,10 @@ namespace NetBlox.Instances
 
 				veldelta = veldelta != Vector3.Zero ? Vector3.Normalize(veldelta) : veldelta;
 
-				Velocity += veldelta * 0.22f;
+				if (!GameManager.PhysicsManager.DisablePhysics)
+					Velocity += veldelta * 0.38f;
+				else
+					Position += veldelta * 0.22f;
 				Rotation += rotdelta * 0.22f;
 
 				if (Health <= 0 && IsLocalPlayer && !isDying)
