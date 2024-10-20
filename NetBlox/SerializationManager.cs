@@ -1,4 +1,5 @@
 ﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.DataTypes;
 using NetBlox.Instances;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -236,6 +237,7 @@ namespace NetBlox
 				BitConverter.ToSingle(x.AsSpan()[8..12])));
 			NetworkDeserializers.Add("Raylib_cs.Color", (x, y) => new Color(x[0], x[1], x[2], x[3]));
 			NetworkDeserializers.Add("NetBlox.Structs.Shape", (x, y) => (Shape)BitConverter.ToInt32(x));
+			NetworkDeserializers.Add("NetBlox.Structs.Faces", (x, y) => (Faces)BitConverter.ToInt32(x));
 			NetworkDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)BitConverter.ToInt32(x));
 			NetworkDeserializers.Add("NetBlox.Instances.Instance", (x, y) => y.GetInstance(new Guid(x))!);
 
@@ -272,6 +274,7 @@ namespace NetBlox
 			});
 			NetworkSerializers.Add("Raylib_cs.Color", (x, y) => [((Color)x).R, ((Color)x).G, ((Color)x).B, ((Color)x).A]);
 			NetworkSerializers.Add("NetBlox.Structs.Shape", (x, y) => NetworkSerialize((int)(Shape)x, y));
+			NetworkSerializers.Add("NetBlox.Structs.Faces", (x, y) => NetworkSerialize((int)(Faces)x, y));
 			NetworkSerializers.Add("NetBlox.Structs.SurfaceType", (x, y) => NetworkSerialize((int)(SurfaceType)x, y));
 			NetworkSerializers.Add("NetBlox.Instances.Instance", (x, y) => (x as Instance).UniqueID.ToByteArray());
 
@@ -289,57 +292,75 @@ namespace NetBlox
 			LuaSerializers.Add("System.String", (x, y) => DynValue.NewString((string)x));
 			LuaSerializers.Add("System.Char", (x, y) => DynValue.NewString("" + (char)x));
 			LuaSerializers.Add("NetBlox.Structs.Shape", (x, y) => DynValue.NewNumber((double)(Shape)x));
+			LuaSerializers.Add("NetBlox.Structs.Faces", (x, y) => DynValue.NewNumber((double)(Faces)x));
 			LuaSerializers.Add("NetBlox.Structs.SurfaceType", (x, y) => DynValue.NewNumber((double)(SurfaceType)x));
 			LuaSerializers.Add("NetBlox.Instances.Instance", (x, y) => LuaRuntime.PushInstance((Instance)x, y));
+			LuaSerializers.Add("NetBlox.Runtime.LuaSignal", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
+			{
+				["Connect"] = DynValue.NewCallback((_x, _y) =>
+				{
+					var s = (LuaSignal)x;
+					var i = 0;
+					lock (s)
+						s.Connect(_y[1]);
+
+					return DynValue.NewTable(new Table(y.MainEnvironment)
+					{
+						["Disconnect"] = DynValue.NewCallback((x2, y2) =>
+						{
+							lock (s) s.Attached.RemoveAt(i);
+							return DynValue.Void;
+						}),
+						IsProtected = true
+					});
+				}),
+				["Wait"] = DynValue.NewCallback((_x, _y) =>
+				{
+					var s = (LuaSignal)x;
+					s.Wait();
+					return DynValue.Void;
+				}),
+				IsProtected = true
+			}));
 			LuaSerializers.Add("System.Numerics.Vector2", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["X"] = ((Vector2)x).X,
-				["Y"] = ((Vector2)x).Y
+				["Y"] = ((Vector2)x).Y,
+				IsProtected = true
 			}));
-			LuaSerializers.Add("NetBlox.Runtime.LuaSignal", (x, y) =>
-				DynValue.NewTable(new Table(y.MainEnvironment)
-				{
-					["Connect"] = DynValue.NewCallback((_x, _y) =>
-					{
-						var s = (LuaSignal)x;
-						var i = 0;
-						lock (s)
-							s.Connect(_y[1]);
-
-						return DynValue.NewTable(new Table(y.MainEnvironment)
-						{
-							["Disconnect"] = DynValue.NewCallback((x2, y2) =>
-							{
-								lock (s) s.Attached.RemoveAt(i);
-								return DynValue.Void;
-							})
-						});
-					}),
-					["Wait"] = DynValue.NewCallback((_x, _y) =>
-					{
-						var s = (LuaSignal)x;
-						s.Wait();
-						return DynValue.Void;
-					})
-				}));
 			LuaSerializers.Add("System.Numerics.Vector3", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["X"] = ((Vector3)x).X,
 				["Y"] = ((Vector3)x).Y,
-				["Z"] = ((Vector3)x).Z
+				["Z"] = ((Vector3)x).Z,
+				IsProtected = true
 			}));
 			LuaSerializers.Add("Raylib_cs.Color", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["R"] = ((Color)x).R / 255f,
 				["G"] = ((Color)x).G / 255f,
-				["B"] = ((Color)x).B / 255f
+				["B"] = ((Color)x).B / 255f,
+				IsProtected = true
 			}));
 			LuaSerializers.Add("NetBlox.Structs.UDim2", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
 			{
 				["X"] = ((UDim2)x).X,
 				["Y"] = ((UDim2)x).Y,
 				["XOff"] = ((UDim2)x).XOff,
-				["YOff"] = ((UDim2)x).YOff
+				["YOff"] = ((UDim2)x).YOff,
+				IsProtected = true
+			}));
+			LuaSerializers.Add("NetBlox.Structs.BrickColor", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
+			{
+				// no changes from user expected
+				AssociatedObject = (BrickColor)x,
+				IsProtected = true
+			}));
+			LuaSerializers.Add("NetBlox.Structs.ByteArray", (x, y) => DynValue.NewTable(new Table(y.MainEnvironment)
+			{
+				// no changes from user expected
+				AssociatedObject = (ByteArray)x,
+				IsProtected = true
 			}));
 
 			LuaDeserializers.Add("System.Byte", (x, y) => (Byte)x.Number);
@@ -356,6 +377,7 @@ namespace NetBlox
 			LuaDeserializers.Add("System.String", (x, y) => x.String);
 			LuaDeserializers.Add("System.Char", (x, y) => x.String[0]);
 			LuaDeserializers.Add("NetBlox.Structs.Shape", (x, y) => (Shape)x.Number);
+			LuaDeserializers.Add("NetBlox.Structs.Faces", (x, y) => (Faces)x.Number);
 			LuaDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)x.Number);
 			LuaDeserializers.Add("NetBlox.Instances.Instance", (x, y) => (Instance)x.Table.AssociatedObject);
 			LuaDeserializers.Add("System.Numerics.Vector2", (x, y) => new Vector2(
@@ -375,6 +397,8 @@ namespace NetBlox
 				Convert.ToSingle((double)x.Table["XOff"]),
 				Convert.ToSingle((double)x.Table["Y"]),
 				Convert.ToSingle((double)x.Table["YOff"])));
+			LuaDeserializers.Add("NetBlox.Structs.BrickColor", (x, y) => x.Table.AssociatedObject);
+			LuaDeserializers.Add("NetBlox.Structs.ByteArray", (x, y) => x.Table.AssociatedObject);
 
 			LuaDataTypes.Add("System.Byte", DataType.Number);
 			LuaDataTypes.Add("System.Int16", DataType.Number);
@@ -390,12 +414,15 @@ namespace NetBlox
 			LuaDataTypes.Add("System.String", DataType.String);
 			LuaDataTypes.Add("System.Char", DataType.String);
 			LuaDataTypes.Add("NetBlox.Structs.Shape", DataType.Number);
+			LuaDataTypes.Add("NetBlox.Structs.Faces", DataType.Number);
 			LuaDataTypes.Add("NetBlox.Structs.SurfaceType", DataType.Number);
 			LuaDataTypes.Add("NetBlox.Instances.Instance", DataType.Table);
 			LuaDataTypes.Add("System.Numerics.Vector2", DataType.Table);
 			LuaDataTypes.Add("System.Numerics.Vector3", DataType.Table);
 			LuaDataTypes.Add("Raylib_cs.Color", DataType.Table);
 			LuaDataTypes.Add("NetBlox.Structs.UDim2", DataType.Table);
+			LuaDataTypes.Add("NetBlox.Structs.BrickColor", DataType.Table);
+			LuaDataTypes.Add("NetBlox.Structs.ByteArray", DataType.Table);
 		}
 	}
 }

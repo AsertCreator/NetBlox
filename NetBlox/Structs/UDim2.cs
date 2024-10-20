@@ -19,5 +19,7 @@ namespace NetBlox.Structs
 				Y = Y * cs.Y + YOff + delta.Y
 			};
 		}
+
+		public override string ToString() => $"{{{X}, {XOff}}}, {{{Y}, {YOff}}}";
 	}
 }

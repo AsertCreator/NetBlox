@@ -1,6 +1,7 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Runtime;
+using NetBlox.Structs;
 using Raylib_cs;
 using System.Diagnostics;
 using System.IO.Pipes;
@@ -125,29 +126,29 @@ namespace NetBlox.Instances.Services
 			});
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public string SignString(string text, string pk, string sk)
+		public ByteArray SignString(string text, ByteArray pk, ByteArray sk)
 		{
 			using SHA256 alg = SHA256.Create();
 			using RSA rsa = RSA.Create();
 
 			byte[] text8 = Encoding.Unicode.GetBytes(text);
-			byte[] pk8 = Encoding.ASCII.GetBytes(pk);
-			byte[] sk8 = Encoding.ASCII.GetBytes(sk);
+			byte[] pk8 = pk.Data;
+			byte[] sk8 = sk.Data;
 
 			rsa.ImportRSAPublicKey(pk8, out _);
 			rsa.ImportRSAPrivateKey(sk8, out _);
 			byte[] sign = rsa.SignData(text8, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
-			return Encoding.ASCII.GetString([.. BitConverter.GetBytes((ushort)sign.Length), ..sign, .. text8]);
+			return new ByteArray([.. BitConverter.GetBytes((ushort)sign.Length), ..sign, .. text8]);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool VerifySignature(string stext, string pk)
+		public bool VerifySignature(string stext, ByteArray pk)
 		{
 			using SHA256 alg = SHA256.Create();
 			using RSA rsa = RSA.Create();
 
 			byte[] text8 = Encoding.Unicode.GetBytes(stext);
-			byte[] pk8 = Encoding.ASCII.GetBytes(pk);
+			byte[] pk8 = pk.Data;
 
 			rsa.ImportRSAPublicKey(pk8, out _);
 			byte[] sign = rsa.SignData(text8, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
@@ -156,9 +157,9 @@ namespace NetBlox.Instances.Services
 			return rsa.VerifyData(text8[2..signsize], text8[(2 + signsize)..], HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public string GetDataFromSignedData(string stext)
+		public string GetDataFromSignedData(ByteArray stext)
 		{
-			byte[] text8 = Encoding.Unicode.GetBytes(stext);
+			byte[] text8 = stext.Data;
 			ushort signsize = BitConverter.ToUInt16(text8[0..2]);
 			return Encoding.Unicode.GetString(text8[(2 + signsize)..]);
 		}
@@ -168,10 +169,12 @@ namespace NetBlox.Instances.Services
 			using SHA256 alg = SHA256.Create();
 			using RSA rsa = RSA.Create();
 
-			string sk = Encoding.ASCII.GetString(rsa.ExportRSAPrivateKey());
-			string pk = Encoding.ASCII.GetString(rsa.ExportRSAPublicKey());
+			ByteArray sk = new ByteArray(rsa.ExportRSAPrivateKey());
+			ByteArray pk = new ByteArray(rsa.ExportRSAPublicKey());
 
-			return DynValue.NewTuple(DynValue.NewString(sk), DynValue.NewString(pk));
+			var ser = SerializationManager.LuaSerializers["NetBlox.Structs.ByteArray"];
+
+			return DynValue.NewTuple(ser(sk, GameManager), ser(pk, GameManager));
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

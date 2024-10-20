@@ -253,6 +253,18 @@ namespace NetBlox.Runtime
 					return DynValue.Void;
 				}
 			});
+			MakeDataType(gm, "BrickColor", (x, y) =>
+			{
+				try
+				{
+					return SerializationManager.LuaSerializers["NetBlox.Structs.BrickColor"](BrickColor.ByIndex((int)y[0].Number)!, gm);
+				}
+				catch
+				{
+					return DynValue.Void;
+				}
+			});
+			LuaTypes.ImportAll(tenv.Globals);
 		}
 		public static void MakeDataType(GameManager gm, string name, Func<ScriptExecutionContext, CallbackArguments, DynValue> func)
 		{
