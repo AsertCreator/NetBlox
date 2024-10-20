@@ -1,4 +1,5 @@
-﻿using NetBlox.Instances;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
@@ -144,6 +145,38 @@ namespace NetBlox.Server
 									break;
 								case "lua":
 									TaskScheduler.ScheduleScript(x, cmd[4..], 8, null);
+									break;
+								case "luai":
+									Table t = new(x.MainEnvironment);
+									t.MetaTable = new Table(x.MainEnvironment);
+									t.MetaTable["__index"] = x.MainEnvironment.Globals;
+									while (true)
+									{
+										try
+										{
+											Console.ForegroundColor = ConsoleColor.Green;
+											Console.Write("(lua interactive) >> ");
+											Console.ResetColor();
+											string code = Console.ReadLine() ?? "";
+
+											if (code.Trim() == "exit")
+												break;
+
+											DynValue dynv = x.MainEnvironment.LoadString(code, t);
+
+											x.MainEnvironment.Call(dynv);
+										}
+										catch (SyntaxErrorException see)
+										{
+											Console.ForegroundColor = ConsoleColor.Red;
+											Console.WriteLine("Could not compile Lua: " + see.Message);
+										}
+										catch (Exception see)
+										{
+											Console.ForegroundColor = ConsoleColor.Red;
+											Console.WriteLine("Runtime error from Lua: " + see.Message);
+										}
+									}
 									break;
 							}
 						}

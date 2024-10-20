@@ -4,7 +4,9 @@ using NetBlox.Runtime;
 using Raylib_cs;
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Security.Cryptography;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace NetBlox.Instances.Services
 {
@@ -121,6 +123,55 @@ namespace NetBlox.Instances.Services
 					}
 				}
 			});
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public string SignString(string text, string pk, string sk)
+		{
+			using SHA256 alg = SHA256.Create();
+			using RSA rsa = RSA.Create();
+
+			byte[] text8 = Encoding.Unicode.GetBytes(text);
+			byte[] pk8 = Encoding.ASCII.GetBytes(pk);
+			byte[] sk8 = Encoding.ASCII.GetBytes(sk);
+
+			rsa.ImportRSAPublicKey(pk8, out _);
+			rsa.ImportRSAPrivateKey(sk8, out _);
+			byte[] sign = rsa.SignData(text8, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+			return Encoding.ASCII.GetString([.. BitConverter.GetBytes((ushort)sign.Length), ..sign, .. text8]);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public bool VerifySignature(string stext, string pk)
+		{
+			using SHA256 alg = SHA256.Create();
+			using RSA rsa = RSA.Create();
+
+			byte[] text8 = Encoding.Unicode.GetBytes(stext);
+			byte[] pk8 = Encoding.ASCII.GetBytes(pk);
+
+			rsa.ImportRSAPublicKey(pk8, out _);
+			byte[] sign = rsa.SignData(text8, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+			ushort signsize = BitConverter.ToUInt16(text8[0..2]);
+
+			return rsa.VerifyData(text8[2..signsize], text8[(2 + signsize)..], HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public string GetDataFromSignedData(string stext)
+		{
+			byte[] text8 = Encoding.Unicode.GetBytes(stext);
+			ushort signsize = BitConverter.ToUInt16(text8[0..2]);
+			return Encoding.Unicode.GetString(text8[(2 + signsize)..]);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public DynValue CreatePublicAndPrivateKey()
+		{
+			using SHA256 alg = SHA256.Create();
+			using RSA rsa = RSA.Create();
+
+			string sk = Encoding.ASCII.GetString(rsa.ExportRSAPrivateKey());
+			string pk = Encoding.ASCII.GetString(rsa.ExportRSAPublicKey());
+
+			return DynValue.NewTuple(DynValue.NewString(sk), DynValue.NewString(pk));
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
