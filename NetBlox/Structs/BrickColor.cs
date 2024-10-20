@@ -214,8 +214,8 @@
 			new ("Hot pink"  ,1032   ,255, 0, 191)
 		};
 		private Raylib_cs.Color raycolor;
-		private string name;
-		private int index;
+		private readonly string name;
+		private readonly int index;
 		public Color Color => raycolor;
 		public string Name => name;
 		public int Index => index;

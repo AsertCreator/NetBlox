@@ -6,8 +6,8 @@ namespace NetBlox.Runtime
 {
 	public class LuaSignal
 	{
-		public List<LuaConnection> Attached = new();
-		public List<Action<DynValue[]>> NativeAttached = new();
+		public List<LuaConnection> Attached = [];
+		public List<Action<DynValue[]>> NativeAttached = [];
 		public int FireCount = 0;
 
 		[Lua([Security.Capability.None])]
@@ -17,15 +17,15 @@ namespace NetBlox.Runtime
 				return;
 			lock (this) 
 			{
-				Debug.Assert(TaskScheduler.CurrentJob.AssociatedObject1 != null);
-				Debug.Assert(TaskScheduler.CurrentJob.AssociatedObject2 != null);
+				if (TaskScheduler.CurrentJob.ScriptJobContext.BaseScript == null)
+					return;
 
 				Attached.Add(new LuaConnection()
 				{
 					Function = dv,
-					Level = (int)TaskScheduler.CurrentJob.AssociatedObject1,
-					Manager = ((BaseScript)TaskScheduler.CurrentJob.AssociatedObject2).GameManager,
-					Script = (BaseScript)TaskScheduler.CurrentJob.AssociatedObject2
+					Level = (int)TaskScheduler.CurrentJob.SecurityLevel,
+					Manager = TaskScheduler.CurrentJob.ScriptJobContext.BaseScript.GameManager,
+					Script = TaskScheduler.CurrentJob.ScriptJobContext.BaseScript
 				});
 			}
 		}
@@ -46,7 +46,7 @@ namespace NetBlox.Runtime
 
 #pragma warning disable CS8604 // Possible null reference argument.
 					TaskScheduler.ScheduleScript(Attached[i].Manager, Attached[i].Function, Attached[i].Level, Attached[i].Script)
-						.AssociatedObject4 = dvs;
+						.ScriptJobContext.YieldReturn = dvs;
 #pragma warning restore CS8604 // Possible null reference argument.
 				}
 				for (int i = 0; i < NativeAttached.Count; i++)

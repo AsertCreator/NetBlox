@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MoonSharp.Interpreter.DataTypes;
+using System;
 
 namespace MoonSharp.Interpreter.Interop.BasicDescriptors
 {

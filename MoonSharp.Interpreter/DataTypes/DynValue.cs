@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MoonSharp.Interpreter.DataTypes;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -402,12 +403,14 @@ namespace MoonSharp.Interpreter
 		/// <returns></returns>
 		public DynValue Clone(bool readOnly)
 		{
-			DynValue v = new DynValue();
-			v.m_Object = this.m_Object;
-			v.m_Number = this.m_Number;
-			v.m_HashCode = this.m_HashCode;
-			v.m_Type = this.m_Type;
-			v.m_ReadOnly = readOnly;
+			DynValue v = new DynValue
+			{
+				m_Object = this.m_Object,
+				m_Number = this.m_Number,
+				m_HashCode = this.m_HashCode,
+				m_Type = this.m_Type,
+				m_ReadOnly = readOnly
+			};
 			return v;
 		}
 
@@ -459,9 +462,8 @@ namespace MoonSharp.Interpreter
 
 				string typeString = this.Type.ToLuaTypeString();
 
-				if (m_Object is UserData)
+				if (m_Object is UserData ud)
 				{
-					UserData ud = (UserData)m_Object;
 					string str = ud.Descriptor.AsString(ud.Object);
 					if (str != null)
 						return str;
@@ -496,9 +498,8 @@ namespace MoonSharp.Interpreter
 
 				string typeString = this.Type.ToLuaTypeString();
 
-				if (m_Object is UserData)
+				if (m_Object is UserData ud)
 				{
-					UserData ud = (UserData)m_Object;
 					string str = ud.Descriptor.AsString(ud.Object);
 					if (str != null)
 						return str;
@@ -620,9 +621,7 @@ namespace MoonSharp.Interpreter
 		/// </returns>
 		public override bool Equals(object obj)
 		{
-			DynValue other = obj as DynValue;
-
-			if (other == null) return false;
+			if (!(obj is DynValue other)) return false;
 
 			if ((other.Type == DataType.Nil && this.Type == DataType.Void)
 				|| (other.Type == DataType.Void && this.Type == DataType.Nil))
@@ -709,8 +708,7 @@ namespace MoonSharp.Interpreter
 			}
 			else if (rv.Type == DataType.String)
 			{
-				double num;
-				if (double.TryParse(rv.String, NumberStyles.Any, CultureInfo.InvariantCulture, out num))
+				if (double.TryParse(rv.String, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
 					return num;
 			}
 			return null;
@@ -948,15 +946,15 @@ namespace MoonSharp.Interpreter
 		/// <returns></returns>
 		public T CheckUserDataType<T>(string funcName, int argNum = -1, TypeValidationFlags flags = TypeValidationFlags.Default)
 		{
-			DynValue v = this.CheckType(funcName, DataType.UserData, argNum, flags);
-			bool allowNil = ((int)(flags & TypeValidationFlags.AllowNil) != 0);
+			DynValue v = CheckType(funcName, DataType.UserData, argNum, flags);
+			bool allowNil = (flags & TypeValidationFlags.AllowNil) != 0;
 
 			if (v.IsNil())
-				return default(T);
+				return default;
 
 			object o = v.UserData.Object;
-			if (o != null && o is T)
-				return (T)o;
+			if (o != null && o is T t)
+				return t;
 
 			throw ScriptRuntimeException.BadArgumentUserData(argNum, funcName, typeof(T), o, allowNil);
 		}

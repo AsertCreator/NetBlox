@@ -21,10 +21,7 @@
 */
 //--------------------------------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
 using System.Text;
-using static Qu3e.Settings;
 
 namespace Qu3e
 {
@@ -58,17 +55,17 @@ namespace Qu3e
 			ContactManager = new ContactManager();
 			Island = new Island();
 
-			Bodies = new List<Body>();
-			Gravity = (gravity);
-			Dt = (dt);
-			Iterations = (iterations);
-			NewBox = (false);
-			AllowSleep = (true);
-			EnableFriction = (true);
+			Bodies = [];
+			Gravity = gravity;
+			Dt = dt;
+			Iterations = iterations;
+			NewBox = false;
+			AllowSleep = true;
+			EnableFriction = true;
 		}
 
-		Island Island;
-		Body[] stack = new Body[256];
+		private readonly Island Island;
+		private readonly Body[] stack = new Body[256];
 
 		// Run the simulation forward in time by dt (fixed timestep). Variable
 		// timestep is not supported.
@@ -92,7 +89,7 @@ namespace Qu3e
 			Island.Iterations = Iterations;
 
 			// Build each active Island and then solve each built Island
-//            int stackSize = Bodies.Count;
+			//            int stackSize = Bodies.Count;
 			foreach (var seed in Bodies)
 			{
 				// Seed cannot be apart of an Island already
@@ -205,10 +202,10 @@ namespace Qu3e
 		// discretion, as no reference to the BodyDef is kept.
 		public Body CreateBody(BodyDef def)
 		{
-			Body body = new Body(def, this);
+			Body body = new(def, this);
 
 			// Add body to scene Bodies
-		   
+
 
 			Bodies.Add(body);
 
@@ -259,17 +256,11 @@ namespace Qu3e
 		// realistic (convergent). A good iteration number range is 5 to 20.
 		// Only positive numbers are accepted. Non-positive and negative
 		// inputs set the iteration count to 1.
-		public void SetIterations(int iterations)
-		{
-			Iterations = Math.Max(1, iterations);
-		}
+		public void SetIterations(int iterations) => Iterations = Math.Max(1, iterations);
 
 		// Friction occurs when two rigid bodies have shapes that slide along one
 		// another. The friction force resists this sliding motion.
-		public void SetEnableFriction(bool enabled)
-		{
-			EnableFriction = enabled;
-		}
+		public void SetEnableFriction(bool enabled) => EnableFriction = enabled;
 
 		// Render the scene with an interpolated time between the last frame and
 		// the current simulation step.
@@ -285,20 +276,11 @@ namespace Qu3e
 		}
 
 		// Gets and sets the global gravity vector used during integration
-		public Vec3 GetGravity()
-		{
-			return Gravity;
-		}
-		public void SetGravity(Vec3 gravity)
-		{
-			Gravity = gravity;
-		}
+		public Vec3 GetGravity() => Gravity;
+		public void SetGravity(Vec3 gravity) => Gravity = gravity;
 
 		// Removes all bodies from the scene.
-		public void Shutdown()
-		{
-			RemoveAllBodies();
-		}
+		public void Shutdown() => RemoveAllBodies();
 
 		// Sets the listener to report collision start/end. Provides the user
 		// with a pointer to an ContactConstraint. The ContactConstraint
@@ -307,10 +289,7 @@ namespace Qu3e
 		// called very often, so it is recommended for the funciton to be very
 		// efficient. Provide a NULL pointer to remove the previously set
 		// listener.
-		public void SetContactListener(ContactListener listener)
-		{
-			ContactManager.ContactListener = listener;
-		}
+		public void SetContactListener(ContactListener listener) => ContactManager.ContactListener = listener;
 
 		public class SceneQueryAABBWrapper : ITreeCallback
 		{
@@ -321,12 +300,7 @@ namespace Qu3e
 
 				box.ComputeAABB(box.body.GetTransform(), out aabb);
 
-				if (AABB.AABBtoAABB(Aabb, aabb))
-				{
-					return cb.ReportShape(box);
-				}
-
-				return true;
+				return AABB.AABBtoAABB(Aabb, aabb) ? cb.ReportShape(box) : true;
 			}
 
 			internal QueryCallback cb;
@@ -353,18 +327,13 @@ namespace Qu3e
 			internal Vec3 Point;
 		};
 
-		struct SceneQueryRaycastWrapper : ITreeCallback
+		private struct SceneQueryRaycastWrapper : ITreeCallback
 		{
 			public bool TreeCallback(int id)
 			{
 				Box box = (Box)broadPhase.Tree.GetUserData(id);
 
-				if (box.Raycast(box.body.GetTransform(), RayCast))
-				{
-					return cb.ReportShape(box);
-				}
-
-				return true;
+				return box.Raycast(box.body.GetTransform(), RayCast) ? cb.ReportShape(box) : true;
 			}
 
 			internal QueryCallback cb;
@@ -379,23 +348,24 @@ namespace Qu3e
 		// user might use lmDistance as fine-grained collision detection.
 		public void QueryAABB(QueryCallback cb, AABB aabb)
 		{
-
-			SceneQueryAABBWrapper wrapper = new SceneQueryAABBWrapper();
-			wrapper.Aabb = aabb;
-			wrapper.broadPhase = ContactManager.Broadphase;
-			wrapper.cb = cb;
+			SceneQueryAABBWrapper wrapper = new()
+			{
+				Aabb = aabb,
+				broadPhase = ContactManager.Broadphase,
+				cb = cb
+			};
 			ContactManager.Broadphase.Tree.Query(wrapper, aabb);
 		}
 
 		// Query the world to find any shapes intersecting a world space point.
-		public void QueryPoint(QueryCallback cb,  Vec3 point)
+		public void QueryPoint(QueryCallback cb, Vec3 point)
 		{
 			SceneQueryPointWrapper wrapper;
 			wrapper.Point = point;
 			wrapper.broadPhase = ContactManager.Broadphase;
 			wrapper.cb = cb;
 			double k_fattener = 0.5f;
-			Vec3 v = new Vec3(k_fattener, k_fattener, k_fattener);
+			Vec3 v = new(k_fattener, k_fattener, k_fattener);
 			AABB aabb;
 			aabb.min = point - v;
 			aabb.max = point + v;
@@ -405,10 +375,12 @@ namespace Qu3e
 		// Query the world to find any shapes intersecting a ray.
 		public void RayCast(QueryCallback cb, RaycastData rayCast)
 		{
-			SceneQueryRaycastWrapper wrapper = new SceneQueryRaycastWrapper();
-			wrapper.RayCast = rayCast;
-			wrapper.broadPhase = ContactManager.Broadphase;
-			wrapper.cb = cb;
+			SceneQueryRaycastWrapper wrapper = new()
+			{
+				RayCast = rayCast,
+				broadPhase = ContactManager.Broadphase,
+				cb = cb
+			};
 			ContactManager.Broadphase.Tree.Query(wrapper, rayCast);
 		}
 

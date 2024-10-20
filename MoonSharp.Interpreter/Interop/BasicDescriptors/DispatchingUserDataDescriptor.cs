@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter.Compatibility;
+using MoonSharp.Interpreter.DataTypes;
 using MoonSharp.Interpreter.Interop.Converters;
 
 namespace MoonSharp.Interpreter.Interop.BasicDescriptors

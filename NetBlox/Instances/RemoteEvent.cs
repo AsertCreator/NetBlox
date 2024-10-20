@@ -25,7 +25,7 @@ namespace NetBlox.Instances
 
 			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
 			{
-				Data = SerializationManager.SerializeObject(table, GameManager),
+				Data = SerializationManager.SerializeLuaObject(table, GameManager),
 				Recievers = [],
 				RemoteEventId = UniqueID
 			});
@@ -38,7 +38,7 @@ namespace NetBlox.Instances
 
 			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
 			{
-				Data = SerializationManager.SerializeObject(table, GameManager),
+				Data = SerializationManager.SerializeLuaObject(table, GameManager),
 				Recievers = [plr.Client ?? throw new ScriptRuntimeException("This Player is not supported")], // say what
 				RemoteEventId = UniqueID
 			});
@@ -51,7 +51,7 @@ namespace NetBlox.Instances
 
 			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
 			{
-				Data = SerializationManager.SerializeObject(table, GameManager),
+				Data = SerializationManager.SerializeLuaObject(table, GameManager),
 				Recievers = [.. GameManager.NetworkManager.Clients],
 				RemoteEventId = UniqueID
 			});

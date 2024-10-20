@@ -1,7 +1,7 @@
-﻿using System;
+﻿using MoonSharp.Interpreter.DataTypes;
+using System;
 using System.Reflection;
 using System.Text;
-using MoonSharp.Interpreter.Interop.RegistrationPolicies;
 
 namespace MoonSharp.Interpreter.Interop.Converters
 {
@@ -22,19 +22,13 @@ namespace MoonSharp.Interpreter.Interop.Converters
 
 			Type t = obj.GetType();
 
-			if (obj is bool)
-				return DynValue.NewBoolean((bool)obj);
-
-			if (obj is string || obj is StringBuilder || obj is char)
-				return DynValue.NewString(obj.ToString());
-
-			if (NumericConversions.NumericTypes.Contains(t))
-				return DynValue.NewNumber(NumericConversions.TypeToDouble(t, obj));
-
-			if (obj is Table)
-				return DynValue.NewTable((Table)obj);
-
-			return null;
+			return obj is bool
+				? DynValue.NewBoolean((bool)obj)
+				: obj is string || obj is StringBuilder || obj is char
+				? DynValue.NewString(obj.ToString())
+				: NumericConversions.NumericTypes.Contains(t)
+				? DynValue.NewNumber(NumericConversions.TypeToDouble(t, obj))
+				: obj is Table ? DynValue.NewTable((Table)obj) : null;
 		}
 
 
@@ -79,9 +73,8 @@ namespace MoonSharp.Interpreter.Interop.Converters
 			if (obj is CallbackFunction)
 				return DynValue.NewCallback((CallbackFunction)obj);
 
-			if (obj is Delegate)
+			if (obj is Delegate d)
 			{
-				Delegate d = (Delegate)obj;
 
 
 #if NETFX_CORE
@@ -122,10 +115,8 @@ namespace MoonSharp.Interpreter.Interop.Converters
 			if (obj is Delegate)
 				return DynValue.NewCallback(CallbackFunction.FromDelegate(script, (Delegate)obj));
 
-			if (obj is MethodInfo)
+			if (obj is MethodInfo mi)
 			{
-				MethodInfo mi = (MethodInfo)obj;
-
 				if (mi.IsStatic)
 				{
 					return DynValue.NewCallback(CallbackFunction.FromMethodInfo(script, mi));
@@ -145,10 +136,7 @@ namespace MoonSharp.Interpreter.Interop.Converters
 			}
 
 			var enumerator = EnumerationToDynValue(script, obj);
-			if (enumerator != null) return enumerator;
-
-
-			throw ScriptRuntimeException.ConvertObjectFailed(obj);
+			return enumerator ?? throw ScriptRuntimeException.ConvertObjectFailed(obj);
 		}
 
 		/// <summary>

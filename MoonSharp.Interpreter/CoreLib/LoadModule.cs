@@ -2,6 +2,8 @@
 #pragma warning disable 1591
 
 
+using MoonSharp.Interpreter.DataTypes;
+
 namespace MoonSharp.Interpreter.CoreLib
 {
 	/// <summary>

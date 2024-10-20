@@ -3,6 +3,7 @@
 
 using System;
 using System.Text;
+using MoonSharp.Interpreter.DataTypes;
 using MoonSharp.Interpreter.Debugging;
 using MoonSharp.Interpreter.REPL;
 

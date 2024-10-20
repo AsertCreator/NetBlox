@@ -30,8 +30,8 @@ namespace NetBlox.Studio
 			TaskScheduler.RunningJobs.ForEach(x =>
 			{
 				types.Add(x.Type.ToString());
-				times.Add(x.LastCycleTime);
-				overall += x.LastCycleTime;
+				times.Add(x.JobTimingContext.LastCycleTime);
+				overall += x.JobTimingContext.LastCycleTime;
 			});
 
 			CurrentTasks.Clear();
@@ -61,14 +61,12 @@ namespace NetBlox.Studio
 				}
 
 				ctxmenu.Items.Add(MakeMenuItem("Destroy", () => TaskScheduler.Terminate(CurrentTasks[j].Job)));
-				ctxmenu.Items.Add(MakeMenuItem("Increment priority", () => CurrentTasks[j].Job.Priority++));
-				ctxmenu.Items.Add(MakeMenuItem("Decrement priority", () => CurrentTasks[j].Job.Priority--));
 
 				tasks.Items.Add(new StackPanel()
 				{
 					Children =
 					{
-						new TextBlock() { Text = CurrentTasks[i].Job.Name + " - " + CurrentTasks[i].Job.Type, FontWeight = FontWeight.FromOpenTypeWeight(700) },
+						new TextBlock() { Text = CurrentTasks[i].Job.Type + " - " + CurrentTasks[i].Job.Type, FontWeight = FontWeight.FromOpenTypeWeight(700) },
 						new TextBlock() { Text = CurrentTasks[i].JobPercent.ToString() + "% of whole time, " + CurrentTasks[i].JobTime + " ms" },
 					},
 					ContextMenu = ctxmenu

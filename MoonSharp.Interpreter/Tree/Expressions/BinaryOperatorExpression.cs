@@ -1,20 +1,20 @@
-﻿using System;
-using MoonSharp.Interpreter.Execution;
+﻿using MoonSharp.Interpreter.Execution;
 using MoonSharp.Interpreter.Execution.VM;
+using System;
 
 namespace MoonSharp.Interpreter.Tree.Expressions
 {
 	/// <summary>
 	/// 
 	/// </summary>
-	class BinaryOperatorExpression : Expression
+	internal class BinaryOperatorExpression : Expression
 	{
 		[Flags]
 		private enum Operator
 		{
-			NotAnOperator = 0, 
-			
-			Or = 0x1, 
+			NotAnOperator = 0,
+
+			Or = 0x1,
 			And = 0x2,
 			Less = 0x4,
 			Greater = 0x8,
@@ -32,8 +32,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 			Power = 0x8000,
 		}
 
-
-		class Node
+		private class Node
 		{
 			public Expression Expr;
 			public Operator Op;
@@ -41,26 +40,23 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 			public Node Next;
 		}
 
-		class LinkedList
+		private class LinkedList
 		{
 			public Node Nodes;
 			public Node Last;
 			public Operator OperatorMask;
 		}
 
-		const Operator POWER = Operator.Power;
-		const Operator MUL_DIV_MOD = Operator.Mul | Operator.Div | Operator.Mod;
-		const Operator ADD_SUB = Operator.Add | Operator.Sub;
-		const Operator STRCAT = Operator.StrConcat;
-		const Operator COMPARES = Operator.Less | Operator.Greater | Operator.GreaterOrEqual | Operator.LessOrEqual | Operator.Equal | Operator.NotEqual;
-		const Operator LOGIC_AND = Operator.And;
-		const Operator LOGIC_OR = Operator.Or;
+		private const Operator POWER = Operator.Power;
+		private const Operator MUL_DIV_MOD = Operator.Mul | Operator.Div | Operator.Mod;
+		private const Operator ADD_SUB = Operator.Add | Operator.Sub;
+		private const Operator STRCAT = Operator.StrConcat;
+		private const Operator COMPARES = Operator.Less | Operator.Greater | Operator.GreaterOrEqual | Operator.LessOrEqual | Operator.Equal | Operator.NotEqual;
+		private const Operator LOGIC_AND = Operator.And;
+		private const Operator LOGIC_OR = Operator.Or;
 
 
-		public static object BeginOperatorChain()
-		{
-			return new LinkedList();
-		}
+		public static object BeginOperatorChain() => new LinkedList();
 
 		public static void AddExpressionToChain(object chain, Expression exp)
 		{
@@ -77,15 +73,9 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 			AddNode(list, node);
 		}
 
-		public static Expression CommitOperatorChain(object chain, ScriptLoadingContext lcontext)
-		{
-			return CreateSubTree((LinkedList)chain, lcontext);
-		}
+		public static Expression CommitOperatorChain(object chain, ScriptLoadingContext lcontext) => CreateSubTree((LinkedList)chain, lcontext);
 
-		public static Expression CreatePowerExpression(Expression op1, Expression op2, ScriptLoadingContext lcontext)
-		{
-			return new BinaryOperatorExpression(op1, op2, Operator.Power, lcontext);
-		}
+		public static Expression CreatePowerExpression(Expression op1, Expression op2, ScriptLoadingContext lcontext) => new BinaryOperatorExpression(op1, op2, Operator.Power, lcontext);
 
 
 		private static void AddNode(LinkedList list, Node node)
@@ -138,10 +128,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
 			if (nodes.Next != null || nodes.Prev != null)
 				throw new InternalErrorException("Expression reduction didn't work! - 1");
-			if (nodes.Expr == null)
-				throw new InternalErrorException("Expression reduction didn't work! - 2");
-			
-			return nodes.Expr;
+			return nodes.Expr == null ? throw new InternalErrorException("Expression reduction didn't work! - 2") : nodes.Expr;
 		}
 
 		private static Node PrioritizeLeftAssociative(Node nodes, ScriptLoadingContext lcontext, Operator operatorsToFind)
@@ -241,28 +228,19 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 			}
 		}
 
-
-
-
-		Expression m_Exp1, m_Exp2;
-		Operator m_Operator;
-
-
-
+		private readonly Expression m_Exp1, m_Exp2;
+		private readonly Operator m_Operator;
 		private BinaryOperatorExpression(Expression exp1, Expression exp2, Operator op, ScriptLoadingContext lcontext)
-			: base (lcontext)
+			: base(lcontext)
 		{
 			m_Exp1 = exp1;
 			m_Exp2 = exp2;
 			m_Operator = op;
 		}
 
-		private static bool ShouldInvertBoolean(Operator op)
-		{
-			return (op == Operator.NotEqual)
+		private static bool ShouldInvertBoolean(Operator op) => (op == Operator.NotEqual)
 				|| (op == Operator.GreaterOrEqual)
 				|| (op == Operator.Greater);
-		}
 
 		private static OpCode OperatorToOpCode(Operator op)
 		{
@@ -318,10 +296,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 			}
 
 
-			if (m_Exp2 != null)
-			{
-				m_Exp2.Compile(bc);
-			}
+			m_Exp2?.Compile(bc);
 
 			bc.Emit_Operator(OperatorToOpCode(m_Operator));
 
@@ -335,35 +310,28 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
 			if (m_Operator == Operator.Or)
 			{
-				if (v1.CastToBool())
-					return v1;
-				else
-					return m_Exp2.Eval(context).ToScalar();
+				return v1.CastToBool() ? v1 : m_Exp2.Eval(context).ToScalar();
 			}
 
 			if (m_Operator == Operator.And)
 			{
-				if (!v1.CastToBool())
-					return v1;
-				else
-					return m_Exp2.Eval(context).ToScalar();
+				return !v1.CastToBool() ? v1 : m_Exp2.Eval(context).ToScalar();
 			}
 
 			DynValue v2 = m_Exp2.Eval(context).ToScalar();
 
 			if ((m_Operator & COMPARES) != 0)
 			{
-				return DynValue.NewBoolean(EvalComparison(v1, v2, m_Operator));				
+				return DynValue.NewBoolean(EvalComparison(v1, v2, m_Operator));
 			}
 			else if (m_Operator == Operator.StrConcat)
 			{
 				string s1 = v1.CastToString();
 				string s2 = v2.CastToString();
 
-				if (s1 == null || s2 == null)
-					throw new DynamicExpressionException("Attempt to perform concatenation on non-strings.");
-
-				return DynValue.NewString(s1 + s2);
+				return s1 == null || s2 == null
+					? throw new DynamicExpressionException("Attempt to perform concatenation on non-strings.")
+					: DynValue.NewString(s1 + s2);
 			}
 			else
 			{
@@ -410,28 +378,24 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 				case Operator.Less:
 					if (l.Type == DataType.Number && r.Type == DataType.Number)
 					{
-						return (l.Number < r.Number);
-					}
-					else if (l.Type == DataType.String && r.Type == DataType.String)
-					{
-						return (l.String.CompareTo(r.String) < 0);
+						return l.Number < r.Number;
 					}
 					else
 					{
-						throw new DynamicExpressionException("Attempt to compare non-numbers, non-strings.");
+						return l.Type == DataType.String && r.Type == DataType.String
+							? l.String.CompareTo(r.String) < 0
+							: throw new DynamicExpressionException("Attempt to compare non-numbers, non-strings.");
 					}
 				case Operator.LessOrEqual:
 					if (l.Type == DataType.Number && r.Type == DataType.Number)
 					{
-						return (l.Number <= r.Number);
-					}
-					else if (l.Type == DataType.String && r.Type == DataType.String)
-					{
-						return (l.String.CompareTo(r.String) <= 0);
+						return l.Number <= r.Number;
 					}
 					else
 					{
-						throw new DynamicExpressionException("Attempt to compare non-numbers, non-strings.");
+						return l.Type == DataType.String && r.Type == DataType.String
+							? l.String.CompareTo(r.String) <= 0
+							: throw new DynamicExpressionException("Attempt to compare non-numbers, non-strings.");
 					}
 				case Operator.Equal:
 					if (object.ReferenceEquals(r, l))
@@ -440,11 +404,8 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 					}
 					else if (r.Type != l.Type)
 					{
-						if ((l.Type == DataType.Nil && r.Type == DataType.Void)
-							|| (l.Type == DataType.Void && r.Type == DataType.Nil))
-							return true;
-						else
-							return false;
+						return (l.Type == DataType.Nil && r.Type == DataType.Void)
+							|| (l.Type == DataType.Void && r.Type == DataType.Nil);
 					}
 					else
 					{

@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Globalization; 
+using System.Globalization;
 using MoonSharp.Interpreter.Compatibility;
+using MoonSharp.Interpreter.DataTypes;
 
 namespace MoonSharp.Interpreter.Interop.Converters
 {

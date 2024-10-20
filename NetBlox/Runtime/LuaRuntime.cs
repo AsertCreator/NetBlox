@@ -1,4 +1,5 @@
 ﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.DataTypes;
 using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
@@ -19,7 +20,7 @@ namespace NetBlox.Runtime
 	{
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 700;
-		private static Type DynValueType = typeof(DynValue);
+		private readonly static Type DynValueType = typeof(DynValue);
 
 		public static void Setup(GameManager gm)
 		{
@@ -62,7 +63,7 @@ namespace NetBlox.Runtime
 				tenv.Globals["wait"] = DynValue.NewCallback((x, y) =>
 				{
 					var wa = y.Count == 0 ? DateTime.UtcNow : DateTime.UtcNow.AddSeconds(y[0].Number);
-					TaskScheduler.CurrentJob.JoinedUntil = wa;
+					TaskScheduler.CurrentJob.JobTimingContext.JoinedUntil = wa;
 					return DynValue.NewYieldReq([]); // here we go to the next, bc thread is paused
 				});
 				tenv.Globals["delay"] = tenv.Globals["wait"];
@@ -91,37 +92,35 @@ namespace NetBlox.Runtime
 
 				tenv.Globals["require"] = DynValue.NewCallback((x, y) =>
 				{
-					var table = y[0];
+					var input = y[0];
 
-					if (table.Type == DataType.Table)
+					if (input.Type == DataType.Table)
 					{
-						var inst = SerializationManager.LuaDeserialize<Instance>(table, gm);
+						var module = input.Table.AssociatedObject as ModuleScript
+							?? throw new ScriptRuntimeException("expected a ModuleScript");
 
-						var ms = inst as ModuleScript;
-						if (ms == null)
-							throw new ScriptRuntimeException("Expected a ModuleScript");
+						if (gm.LoadedModules.TryGetValue(module, out var dv)) return dv;
 
-						if (gm.LoadedModules.TryGetValue(ms, out var dv)) return dv;
+						var returnjob = TaskScheduler.CurrentJob;
 
-						var lt = TaskScheduler.CurrentJob;
-
-						lt.JoinedTo = TaskScheduler.ScheduleScript(gm, ms.Source, Security.Level, ms, x =>
+						returnjob.JobTimingContext.JoinedTo = TaskScheduler.ScheduleScript(gm, module.Source, Security.Level, module, msjob =>
 						{
-							DynValue dv = (DynValue)x.AssociatedObject5;
-
+							DynValue dv = msjob.ScriptJobContext.YieldAnswer;
 							Debug.Assert(dv != null);
 
-							gm.LoadedModules[ms] = dv;
-							lt.AssociatedObject4 = dv.Type == DataType.Tuple ? dv.Tuple : [dv];
+							gm.LoadedModules[module] = dv;
+
+							returnjob.ScriptJobContext.YieldReturn = dv.Type == DataType.Tuple ? dv.Tuple : [dv];
 							return JobResult.CompletedSuccess;
 						});
 
 						return DynValue.NewYieldReq([]);
 					}
-					else if (table.Type == DataType.Number)
+					else if (input.Type == DataType.Number)
 					{
 						throw new ScriptRuntimeException("cannot load assets yet");
 					}
+
 					throw new ScriptRuntimeException("expected asset id or ModuleScript to be passed to require");
 				});
 				tenv.Globals["loadstring"] = DynValue.NewCallback((x, y) =>
@@ -177,9 +176,8 @@ namespace NetBlox.Runtime
 				try
 				{
 					var key = y[0].CastToString();
-					var inst = InstanceCreator.CreateAccessibleInstanceIfExists(key, gm);
-					if (inst == null)
-						throw new ScriptRuntimeException("Unable to create Instance of type " + key);
+					var inst = InstanceCreator.CreateAccessibleInstanceIfExists(key, gm)
+						?? throw new ScriptRuntimeException("Unable to create Instance of type " + key);
 					if (y.Count > 1)
 					{
 						var part = y[1];
@@ -258,13 +256,13 @@ namespace NetBlox.Runtime
 		}
 		public static void MakeDataType(GameManager gm, string name, Func<ScriptExecutionContext, CallbackArguments, DynValue> func)
 		{
-			var it = new Table(gm.MainEnvironment);
+			Table it = new(gm.MainEnvironment);
 			it["new"] = DynValue.NewCallback(func);
 			gm.MainEnvironment.Globals[name] = DynValue.NewTable(it);
 		}
 		public static Table ShallowCloneTable(Table t)
 		{
-			Table ta = new Table(t.OwnerScript);
+			Table ta = new(t.OwnerScript);
 			t.Pairs.ToList().ForEach(x => ta.Set(x.Key, x.Value));
 			return ta;
 		}
@@ -359,13 +357,13 @@ namespace NetBlox.Runtime
 										args.Add(b[i + 1]);
 								}
 
-								var ret = meth!.Invoke(inst, args.ToArray());
+								var ret = meth!.Invoke(inst, [.. args]);
 								var rett = meth.ReturnType;
 
 								if (ret is LuaYield)
 									return DynValue.NewYieldReq([]); // do it immediately
-								if (ret is DynValue)
-									return (DynValue)ret;
+								if (ret is DynValue value)
+									return value;
 
 								if (!rett.IsArray)
 								{
@@ -416,10 +414,8 @@ namespace NetBlox.Runtime
 					var inst = (y[0].Table.AssociatedObject as Instance)!;
 					var key = y[1].String;
 					var val = y[2];
-					var prop = props.Find(x => x.Name == key);
-
-					if (prop == null)
-						throw new ScriptRuntimeException($"\"{type.Name}\" doesn't have a property named \"{key}\"");
+					var prop = props.Find(x => x.Name == key)
+						?? throw new ScriptRuntimeException($"\"{type.Name}\" doesn't have a property named \"{key}\"");
 
 					if (!prop.CanWrite)
 						throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" is read-only");
@@ -439,8 +435,9 @@ namespace NetBlox.Runtime
 							prop.SetValue(inst!, ret);
 
 							inst.Changed.Fire(DynValue.NewString(key));
-							if (inst.ChangedSignals.ContainsKey(key))
-								inst.ChangedSignals[key].Fire(val);
+
+							if (inst.ChangedSignals.TryGetValue(key, out LuaSignal? value))
+								value.Fire(val);
 
 							if (gm.NetworkManager.IsServer || inst.SelfOwned)
 								gm.NetworkManager.AddReplication(inst, 

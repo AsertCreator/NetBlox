@@ -6,7 +6,7 @@ using System.Text;
 namespace NetBlox.Instances
 {
 	[Creatable]
-	public class Animation : Instance
+	public class Animation(GameManager ins) : Instance(ins)
 	{
 		[Lua([Security.Capability.None])]
 		public Instance[] Subjects { get; set; } = [];
@@ -33,9 +33,6 @@ namespace NetBlox.Instances
 		public bool IsPlaying => isPlaying;
 		private string animationUrl = "";
 		private bool isPlaying = false;
-		private float time = 0;
-
-		public Animation(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
@@ -52,7 +49,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public void Stop()
 		{
-			time = 0;
+			// time = 0;
 			isPlaying = false;
 			AnimationEnded.Fire();
 		}

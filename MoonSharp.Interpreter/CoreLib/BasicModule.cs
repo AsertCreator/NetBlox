@@ -1,6 +1,7 @@
-﻿// Disable warnings about XML documentation
-#pragma warning disable 1591
+﻿
+// Disable warnings about XML documentation
 
+using MoonSharp.Interpreter.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -106,7 +107,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
 			DynValue v = args[0];
 			DynValue tail = executionContext.GetMetamethodTailCall(v, "__tostring", v);
-			
+
 			if (tail == null || tail.IsNil())
 				return DynValue.NewString(v.ToPrintString());
 
@@ -122,11 +123,7 @@ namespace MoonSharp.Interpreter.CoreLib
 			if (b.IsNil())
 				return b;
 
-			if (b.Type != DataType.String)
-				throw new ScriptRuntimeException("'tostring' must return a string");
-
-
-			return b;
+			return b.Type != DataType.String ? throw new ScriptRuntimeException("'tostring' must return a string") : b;
 		}
 
 		// select (index, ...)
@@ -139,14 +136,9 @@ namespace MoonSharp.Interpreter.CoreLib
 		{
 			if (args[0].Type == DataType.String && args[0].String == "#")
 			{
-				if (args[args.Count - 1].Type == DataType.Tuple)
-				{
-					return DynValue.NewNumber(args.Count - 1 + args[args.Count - 1].Tuple.Length);
-				}
-				else
-				{
-					return DynValue.NewNumber(args.Count - 1);
-				}
+				return args[args.Count - 1].Type == DataType.Tuple
+					? DynValue.NewNumber(args.Count - 1 + args[args.Count - 1].Tuple.Length)
+					: DynValue.NewNumber(args.Count - 1);
 			}
 
 			DynValue v_num = args.AsType(0, "select", DataType.Number, false);
@@ -206,48 +198,41 @@ namespace MoonSharp.Interpreter.CoreLib
 				if (e.Type != DataType.String)
 					return DynValue.Nil;
 
-				double d;
-				if (double.TryParse(e.String, NumberStyles.Any, CultureInfo.InvariantCulture, out d))
-				{
-					return DynValue.NewNumber(d);
-				}
-				return DynValue.Nil;
+				return double.TryParse(e.String, NumberStyles.Any, CultureInfo.InvariantCulture, out double d) ? DynValue.NewNumber(d) : DynValue.Nil;
 			}
 			else
 			{
-                //!COMPAT: tonumber supports only 2,8,10 or 16 as base
-                //UPDATE: added support for 3-9 base numbers
-                DynValue ee;
-
-				if (args[0].Type != DataType.Number)
-					ee = args.AsType(0, "tonumber", DataType.String, false);
-				else
-					ee = DynValue.NewString(args[0].Number.ToString(CultureInfo.InvariantCulture)); ;
+				//!COMPAT: tonumber supports only 2,8,10 or 16 as base
+				//UPDATE: added support for 3-9 base numbers
+				DynValue ee = args[0].Type != DataType.Number
+					? args.AsType(0, "tonumber", DataType.String, false)
+					: DynValue.NewString(args[0].Number.ToString(CultureInfo.InvariantCulture));
+				;
 
 				int bb = (int)b.Number;
 
-			    uint uiv = 0;
-                if (bb == 2 || bb == 8 || bb == 10 || bb == 16)
-			    {
-                    uiv = Convert.ToUInt32(ee.String.Trim(), bb);
-                }
-			    else if (bb < 10 && bb > 2) // Support for 3, 4, 5, 6, 7 and 9 based numbers
-			    {
-			        foreach (char digit in ee.String.Trim())
-			        {
-			            int value = digit - 48;
-			            if (value < 0 || value >= bb)
-			            {
-                            throw new ScriptRuntimeException("bad argument #1 to 'tonumber' (invalid character)");
-                        }
+				uint uiv = 0;
+				if (bb == 2 || bb == 8 || bb == 10 || bb == 16)
+				{
+					uiv = Convert.ToUInt32(ee.String.Trim(), bb);
+				}
+				else if (bb < 10 && bb > 2) // Support for 3, 4, 5, 6, 7 and 9 based numbers
+				{
+					foreach (char digit in ee.String.Trim())
+					{
+						int value = digit - 48;
+						if (value < 0 || value >= bb)
+						{
+							throw new ScriptRuntimeException("bad argument #1 to 'tonumber' (invalid character)");
+						}
 
-                        uiv = (uint)(uiv * bb) + (uint)value;
-			        }
-                }
-			    else
-			    {
-                    throw new ScriptRuntimeException("bad argument #2 to 'tonumber' (base out of range)");
-                }
+						uiv = (uint)(uiv * bb) + (uint)value;
+					}
+				}
+				else
+				{
+					throw new ScriptRuntimeException("bad argument #2 to 'tonumber' (base out of range)");
+				}
 
 				return DynValue.NewNumber(uiv);
 			}

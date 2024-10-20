@@ -96,9 +96,8 @@ namespace NetBlox
 		public ServerConnectionContainer? Server;
 		public CancellationTokenSource ClientReplicatorCanceller = new();
 		public Task<object>? ClientReplicator;
-		private object replock = new();
-		private static Type LST = typeof(LuaSignal);
-		private bool profilerDebug = false;
+		private readonly static object replock = new();
+		private readonly static Type LST = typeof(LuaSignal);
 		private int outgoingPacketsSent = 0;
 		private int incomingPacketsRecieved = 0;
 		private int outgoingTraffic = 0;
@@ -116,7 +115,7 @@ namespace NetBlox
 				IsClient = client;
 				if (IsServer)
 					ServerPort = (GameManager.ServerStartupInfo ?? throw new Exception()).ServerPort;
-				StartProfiling(true);
+				StartProfiling();
 				init = true;
 			}
 		}
@@ -201,18 +200,20 @@ namespace NetBlox
 						if (Clients.Count < GameManager.CurrentIdentity.MaxPlayerCount && !stoppls)
 						{
 							Security.Impersonate(8);
-
-							pl = new Player(GameManager);
-							pl.IsLocalPlayer = false;
-							pl.Parent = Root.GetService<Players>();
+							var id = isguest ? Random.Shared.Next(-100000, -1) : userid;
 
 							nc = new RemoteClient(ch.Username, nextpid++, x, pl);
+							pl = new Player(GameManager)
+							{
+								IsLocalPlayer = false,
+								Parent = Root.GetService<Players>(),
+								CharacterAppearanceId = id,
+								Name = nc.Username,
+								Guest = isguest,
+								Client = nc
+							};
 
-							pl.Name = nc.Username;
-							pl.Guest = isguest;
-							pl.SetUserId(isguest ? Random.Shared.Next(-100000, -1) : userid);
-							pl.CharacterAppearanceId = pl.UserId;
-							pl.Client = nc;
+							pl.SetUserId(id);
 							nc.Player = pl;
 
 							Security.EndImpersonate();
@@ -295,12 +296,13 @@ namespace NetBlox
 						{
 							ProfileIncoming(rep.Key, rep.Data);
 
-							Guid inst = new Guid(rep.Data[0..16]);
-							RemoteEvent even = GameManager.GetInstance(inst) as RemoteEvent;
-							if (even == null)
+							Guid inst = new(rep.Data[0..16]);
+
+							if (GameManager.GetInstance(inst) is not RemoteEvent even)
 								return; // womp womp. what the heck in fact? is this fooker exploiting?
+
 							byte[] payload = rep.Data[16..];
-							DynValue luadata = SerializationManager.DeserializeObject(payload, GameManager);
+							DynValue luadata = SerializationManager.DeserializeLuaObject(payload, GameManager);
 
 							even.OnServerEvent.Fire(LuaRuntime.PushInstance(pl, GameManager), luadata);
 						});
@@ -353,7 +355,7 @@ namespace NetBlox
 					{
 						ProfileIncoming(data.Key, data.Data);
 
-						Guid inst = new Guid(data.Data);
+						Guid inst = new(data.Data);
 						Instance? actinst = GameManager.GetInstance(inst);
 						actinst?.SetNetworkOwner(pl);
 					});
@@ -427,16 +429,16 @@ namespace NetBlox
 						switch (rq.Mode)
 						{
 							case Replication.REPM_TOALL:
-								rc = Clients.ToArray();
+								rc = [.. Clients];
 								break;
 							case Replication.REPM_BUTOWNER:
-								rc = (RemoteClient[])(Clients.ToArray().Clone());
+								rc = (RemoteClient[])Clients.ToArray().Clone();
 								var oq = ins.Owner;
 								if (oq != null)
 								{
 									var lis = rc.ToList();
 									lis.Remove(oq);
-									rc = lis.ToArray();
+									rc = [.. lis];
 								}
 								break;
 							case Replication.REPM_TORECIEVERS:
@@ -469,9 +471,9 @@ namespace NetBlox
 				throw new NotSupportedException("Cannot teleport in server");
 
 			var cn = ConnectionResult.TCPConnectionNotAlive;
-			var tcp = ConnectionFactory.CreateTcpConnection(ipa.ToString(), ServerPort, out cn);
-			if (tcp == null)
-				throw new Exception("Remote server had refused to connect");
+			var tcp = ConnectionFactory.CreateTcpConnection(ipa.ToString(), ServerPort, out cn)
+				?? throw new Exception("Remote server had refused to connect");
+
 			tcp.EnableLogging = false;
 			tcp.KeepAlive = !Debugger.IsAttached;
 			RemoteConnection = tcp;
@@ -489,8 +491,7 @@ namespace NetBlox
 
 			void OnClose(CloseReason cr, Connection c)
 			{
-				if (GameManager.RenderManager != null)
-					GameManager.RenderManager.ShowKickMessage("The server had closed");
+				GameManager.RenderManager?.ShowKickMessage("The server had closed");
 				GameManager.IsRunning = false;
 			}
 
@@ -531,7 +532,6 @@ namespace NetBlox
 
 				int actinstc = sh.InstanceCount;
 				int gotinsts = 0;
-				Player? lp = null;
 
 				tcp.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 				{
@@ -543,39 +543,39 @@ namespace NetBlox
 						IsLoaded = true;
 					}
 
-					TaskScheduler.ScheduleNetwork("RecieveInstance", GameManager, x =>
+					TaskScheduler.ScheduleJob(JobType.Replication, x =>
 					{
 						var ins = RecieveNewInstance(rep.Data);
 						if (ins == null)
 							return JobResult.CompletedFailure;
 
-						if (ins is Workspace)
+						if (ins is Workspace workspace)
 						{
 							Camera c = new(GameManager);
-							((Workspace)ins).MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
+							workspace.MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
 							c.Parent = ins;
 						}
-						if (ins is Character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
+						if (ins is Character character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
 						{
-							var cam = Root.GetService<Workspace>().MainCamera as Camera;
-							var ch = (Character)ins;
-							ch.IsLocalPlayer = true;
+							character.IsLocalPlayer = true;
 
-							if (cam == null)
+							if (Root.GetService<Workspace>().MainCamera is not Camera cam)
 								return JobResult.CompletedFailure; // hehe
 
-							cam.CameraSubject = ch;
-							if (lp != null)
+							cam.CameraSubject = character;
+							if (Root.GetService<Players>(true) != null)
 							{
-								lp.Character = ch;
-								SendRawData(tcp, "nb2-gotchar", ch.UniqueID.ToByteArray());
+								if (Root.GetService<Players>(true).LocalPlayer != null)
+								{
+									(Root.GetService<Players>(true).LocalPlayer as Player)!.Character = character;
+									SendRawData(tcp, "nb2-gotchar", character.UniqueID.ToByteArray());
+								}
 							}
 						}
-						if (ins is Player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
+						if (ins is Player player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
 						{
-							lp = (Player)ins;
-							lp.IsLocalPlayer = true;
-							Root.GetService<Players>().CurrentPlayer = lp;
+							player.IsLocalPlayer = true;
+							Root.GetService<Players>().CurrentPlayer = player;
 						}
 
 						return JobResult.CompletedSuccess;
@@ -585,12 +585,13 @@ namespace NetBlox
 				{
 					ProfileIncoming(rep.Key, rep.Data);
 
-					Guid inst = new Guid(rep.Data[0..16]);
-					RemoteEvent even = GameManager.GetInstance(inst) as RemoteEvent;
-					if (even == null)
+					Guid inst = new(rep.Data[0..16]);
+
+					if (GameManager.GetInstance(inst) is not RemoteEvent even)
 						return; // womp womp
+
 					byte[] payload = rep.Data[16..];
-					DynValue luadata = SerializationManager.DeserializeObject(payload, GameManager);
+					DynValue luadata = SerializationManager.DeserializeLuaObject(payload, GameManager);
 
 					even.OnClientEvent.Fire(luadata);
 				});
@@ -598,11 +599,10 @@ namespace NetBlox
 				{
 					ProfileIncoming(rep.Key, rep.Data);
 
-					Player plr = GameManager.GetInstance(new Guid(rep.Data[0..16])) as Player;
 					string msg = Encoding.UTF8.GetString(rep.Data[16..]);
 					Chat service = Root.GetService<Chat>(true);
 
-					if (service == null || plr == null)
+					if (service == null || GameManager.GetInstance(new(rep.Data[0..16])) is not Player plr)
 						return; // welp
 
 					service.ProcessMessage(plr, msg);
@@ -611,8 +611,9 @@ namespace NetBlox
 				{
 					ProfileIncoming(rep.Key, rep.Data);
 
-					Guid inst = new Guid(rep.Data[0..16]);
-					Guid newp = new Guid(rep.Data[16..32]);
+					Guid inst = new(rep.Data[0..16]);
+					Guid newp = new(rep.Data[16..32]);
+
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
 					{
@@ -624,18 +625,17 @@ namespace NetBlox
 				{
 					ProfileIncoming(rep.Key, rep.Data);
 
-					Guid inst = new Guid(rep.Data);
+					Guid inst = new(rep.Data);
+
 					Instance? actinst = GameManager.GetInstance(inst);
-					if (actinst != null)
-					{
-						actinst.Destroy();
-					}
+					actinst?.Destroy();
 				});
 				tcp.RegisterRawDataHandler("nb2-setowner", (rep, _) =>
 				{
 					ProfileIncoming(rep.Key, rep.Data);
 
-					Guid inst = new Guid(rep.Data);
+					Guid inst = new(rep.Data);
+
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
 						actinst.SelfOwned = true;
@@ -644,7 +644,8 @@ namespace NetBlox
 				{
 					ProfileIncoming(rep.Key, rep.Data);
 
-					Guid inst = new Guid(rep.Data);
+					Guid inst = new(rep.Data);
+
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
 						actinst.SelfOwned = false;
@@ -652,8 +653,7 @@ namespace NetBlox
 				tcp.RegisterRawDataHandler("nb2-kick", (rep, _) =>
 				{
 					tcp.ConnectionClosed -= OnClose;
-					if (GameManager.RenderManager != null)
-						GameManager.RenderManager.ShowKickMessage(Encoding.UTF8.GetString(rep.Data));
+					GameManager.RenderManager?.ShowKickMessage(Encoding.UTF8.GetString(rep.Data));
 				});
 				SendRawData(tcp, "nb2-init", []);
 			});
@@ -676,7 +676,7 @@ namespace NetBlox
 					lock (RemoteEventQueue)
 					{
 						var re = RemoteEventQueue.Dequeue();
-						SendRawData(RemoteConnection, "nb2-remote", re.RemoteEventId.ToByteArray().Concat(re.Data).ToArray());
+						SendRawData(RemoteConnection, "nb2-remote", [.. re.RemoteEventId.ToByteArray(), .. re.Data]);
 					}
 				if (ReplicationQueue.Count != 0)
 					lock (ReplicationQueue)
@@ -689,7 +689,7 @@ namespace NetBlox
 							case Replication.REPW_PROPCHG:
 								Type t = ins.GetType();
 								List<PropertyInfo> pis = (from x in rq.Properties select t.GetProperty(x)).ToList();
-								RequestOwnerReplication(ins, pis.ToArray());
+								RequestOwnerReplication(ins, [.. pis]);
 								break;
 						}
 					}
@@ -700,9 +700,8 @@ namespace NetBlox
 				}
 			}
 		}
-		public void StartProfiling(bool dbg)
+		public void StartProfiling()
 		{
-			profilerDebug = dbg;
 			Task.Run(() =>
 			{
 				while (!GameManager.ShuttingDown)
@@ -798,8 +797,7 @@ namespace NetBlox
 			if (IsClient && islocal)
 			{
 				RemoteConnection.Close(CloseReason.ClientClosed);
-				if (GameManager.RenderManager != null)
-					GameManager.RenderManager.ShowKickMessage(msg);
+				GameManager.RenderManager?.ShowKickMessage(msg);
 			}
 
 			// we are on server
@@ -871,7 +869,7 @@ namespace NetBlox
 				using MemoryStream ms = new(data);
 				using BinaryReader br = new(ms);
 
-				int propc = data[data.Length - 1];
+				int propc = data[^1];
 				Guid guid = new(br.ReadBytes(16));
 				Guid newp = new(br.ReadBytes(16));
 				var ins = GameManager.GetInstance(guid);
@@ -920,7 +918,7 @@ namespace NetBlox
 		{
 			Type t = ins.GetType();
 			List<PropertyInfo> pis = (from x in props select t.GetProperty(x)).ToList();
-			PerformReplicationNew(ins, pis.ToArray(), recs); // same thing really
+			PerformReplicationNew(ins, [.. pis], recs); // same thing really
 		}
 		private unsafe void PerformReplicationReparent(Instance ins, RemoteClient[] recs)
 		{
@@ -973,23 +971,14 @@ namespace NetBlox
 					AddReplicationImpl(inst.Children[i], m, w, true, nc);
 			return rep;
 		}
-		public static string TranslateErrorCode(int ec)
+		public static string TranslateErrorCode(int ec) => ec switch
 		{
-			switch (ec)
-			{
-				case 100:
-					return "The server is full";
-				case 101:
-					return "Server only accepts internal connections";
-				case 102:
-					return "Authorization failed";
-				case 103:
-					return "A player with same name is already playing";
-				case 104:
-					return "Server is just being weird";
-				default:
-					return "Unknown connection failure";
-			}
-		}
+			100 => "The server is full",
+			101 => "Server only accepts internal connections",
+			102 => "Authorization failed",
+			103 => "A player with same name is already playing",
+			104 => "Server is just being weird",
+			_ => "Unknown connection failure",
+		};
 	}
 }

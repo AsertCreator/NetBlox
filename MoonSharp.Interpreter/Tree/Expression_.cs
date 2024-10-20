@@ -1,34 +1,29 @@
-﻿using System.Collections.Generic;
-using MoonSharp.Interpreter.Execution;
+﻿using MoonSharp.Interpreter.Execution;
 using MoonSharp.Interpreter.Tree.Expressions;
+using System.Collections.Generic;
 
 namespace MoonSharp.Interpreter.Tree
 {
-	abstract class Expression : NodeBase
+	internal abstract class Expression : NodeBase
 	{
 		public Expression(ScriptLoadingContext lcontext)
 			: base(lcontext)
 		{ }
 
-		public virtual string GetFriendlyDebugName()
-		{
-			return null;
-		}
+		public virtual string GetFriendlyDebugName() => null;
 
 		public abstract DynValue Eval(ScriptExecutionContext context);
 
-		public virtual SymbolRef FindDynamic(ScriptExecutionContext context)
-		{
-			return null;
-		}
+		public virtual SymbolRef FindDynamic(ScriptExecutionContext context) => null;
 
 		internal static List<Expression> ExprListAfterFirstExpr(ScriptLoadingContext lcontext, Expression expr1)
 		{
-			List<Expression> exps = new List<Expression>();
+			List<Expression> exps = new List<Expression>
+			{
+				expr1
+			};
 
-			exps.Add(expr1);
-
-			while ((lcontext.Lexer.Current.Type == TokenType.Comma))
+			while (lcontext.Lexer.Current.Type == TokenType.Comma)
 			{
 				lcontext.Lexer.Next();
 				exps.Add(Expr(lcontext));
@@ -52,13 +47,10 @@ namespace MoonSharp.Interpreter.Tree
 				lcontext.Lexer.Next();
 			}
 
-			return exps; 
+			return exps;
 		}
 
-		internal static Expression Expr(ScriptLoadingContext lcontext)
-		{
-			return SubExpr(lcontext, true);
-		}
+		internal static Expression Expr(ScriptLoadingContext lcontext) => SubExpr(lcontext, true);
 
 		internal static Expression SubExpr(ScriptLoadingContext lcontext, bool isPrimary)
 		{
@@ -77,8 +69,7 @@ namespace MoonSharp.Interpreter.Tree
 
 				if (isPrimary && T.Type == TokenType.Op_Pwr)
 				{
-					List<Expression> powerChain = new List<Expression>();
-					powerChain.Add(e);
+					List<Expression> powerChain = new List<Expression> { e };
 
 					while (isPrimary && T.Type == TokenType.Op_Pwr)
 					{
@@ -231,7 +222,7 @@ namespace MoonSharp.Interpreter.Tree
 				default:
 					throw new SyntaxErrorException(T, "unexpected symbol near '{0}'", T.Text)
 					{
-						IsPrematureStreamTermination = (T.Type == TokenType.Eof)
+						IsPrematureStreamTermination = T.Type == TokenType.Eof
 					};
 
 			}

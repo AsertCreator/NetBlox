@@ -2,7 +2,6 @@
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Qu3e;
-using System;
 using System.Diagnostics;
 
 namespace NetBlox.Instances
@@ -63,7 +62,7 @@ namespace NetBlox.Instances
 			}
 		}
 		[NotReplicated]
-		public List<string> Tags { get; set; } = new();
+		public List<string> Tags { get; set; } = [];
 		[NotReplicated]
 		public Guid ParentID { get; set; }
 		[NotReplicated]
@@ -92,7 +91,7 @@ namespace NetBlox.Instances
 		public bool SelfOwned = false;
 		public RemoteClient? Owner;
 		public GameManager GameManager;
-		public List<Instance> Children = new();
+		public List<Instance> Children = [];
 		public DateTime DestroyAt = DateTime.MaxValue;
 		public DateTime DoNotReplicateUntil = DateTime.MinValue;
 		public Dictionary<string, LuaSignal> ChangedSignals = [];
@@ -114,7 +113,7 @@ namespace NetBlox.Instances
 		}
 		public void RaiseDescendantAdded(Instance descendantInQuestion) // not anymore
 		{
-			if (Parent != null) 
+			if (Parent != null)
 			{
 				Parent.DescendantAdded.Fire(LuaRuntime.PushInstance(descendantInQuestion, GameManager));
 				Parent.RaiseDescendantAdded(descendantInQuestion);
@@ -152,8 +151,8 @@ namespace NetBlox.Instances
 					return null;
 				// i tried
 				// maybe i did it
-				Dictionary<Instance, Instance> clonemapping = new();
-				List<Instance> dolater = new();
+				Dictionary<Instance, Instance> clonemapping = [];
+				List<Instance> dolater = [];
 
 				Instance? DoClone(Instance? inst)
 				{
@@ -173,8 +172,8 @@ namespace NetBlox.Instances
 							if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
 							{
 								var ogval = (Instance)prop;
-								if (clonemapping.ContainsKey(ogval))
-									SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+								if (clonemapping.TryGetValue(ogval, out Instance? value))
+									SerializationManager.SetProperty(clone, props[i], value);
 								else
 									dolater.Add(clone);
 							}
@@ -227,8 +226,8 @@ namespace NetBlox.Instances
 			// maybe i did it
 			lock (this)
 			{
-				Dictionary<Instance, Instance> clonemapping = new();
-				List<Instance> dolater = new();
+				Dictionary<Instance, Instance> clonemapping = [];
+				List<Instance> dolater = [];
 
 				Instance DoClone(Instance inst)
 				{
@@ -247,8 +246,8 @@ namespace NetBlox.Instances
 							if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
 							{
 								var ogval = (Instance)prop;
-								if (clonemapping.ContainsKey(ogval))
-									SerializationManager.SetProperty(clone, props[i], clonemapping[ogval]);
+								if (clonemapping.TryGetValue(ogval, out Instance? value))
+									SerializationManager.SetProperty(clone, props[i], value);
 								else
 									dolater.Add(clone);
 							}
@@ -322,8 +321,7 @@ namespace NetBlox.Instances
 			if (Parent == null) return null;
 			lock (Parent)
 			{
-				if (Parent.Name == name) return Parent;
-				else return Parent.FindFirstAncestor(name);
+				return Parent.Name == name ? Parent : Parent.FindFirstAncestor(name);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -332,8 +330,7 @@ namespace NetBlox.Instances
 			if (Parent == null) return null;
 			lock (Parent)
 			{
-				if (Parent.ClassName == cl) return Parent;
-				else return Parent.FindFirstAncestorOfClass(cl);
+				return Parent.ClassName == cl ? Parent : Parent.FindFirstAncestorOfClass(cl);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -342,8 +339,7 @@ namespace NetBlox.Instances
 			if (Parent == null) return null;
 			lock (Parent)
 			{
-				if (Parent.IsA(cl)) return Parent;
-				else return Parent.FindFirstAncestorWhichIsA(cl);
+				return Parent.IsA(cl) ? Parent : Parent.FindFirstAncestorWhichIsA(cl);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -411,10 +407,10 @@ namespace NetBlox.Instances
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public virtual Instance[] GetChildren() 
+		public virtual Instance[] GetChildren()
 		{
 			lock (Children) // that sounds interesting
-				return Children.ToArray(); 
+				return [.. Children];
 		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetDescendants()
@@ -426,7 +422,7 @@ namespace NetBlox.Instances
 				for (int i = 0; i < Children.Count; i++)
 					list.AddRange(Children[i].GetDescendants());
 
-				return list.ToArray();
+				return [.. list];
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -445,7 +441,7 @@ namespace NetBlox.Instances
 					inst = inst.Parent!;
 				}
 
-				return list.ToArray();
+				return [.. list];
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -485,7 +481,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public virtual bool IsAncestorOf(Instance instance) => GetDescendants().Contains(instance);
 		[Lua([Security.Capability.None])]
-		public virtual string[] GetTags() => Tags.ToArray();
+		public virtual string[] GetTags() => [.. Tags];
 		[Lua([Security.Capability.None])]
 		public virtual bool HasTag(string tag) => Tags.Contains(tag);
 		[Lua([Security.Capability.None])]
@@ -526,7 +522,7 @@ namespace NetBlox.Instances
 		public LuaYield WaitForChild(string name)
 		{
 			var job = TaskScheduler.CurrentJob;
-			job.TaskJoinedTo = Task.Run(() =>
+			job.JobTimingContext.TaskJoinedTo = Task.Run(() =>
 			{
 				while (!GameManager.ShuttingDown)
 				{
@@ -535,7 +531,7 @@ namespace NetBlox.Instances
 						Thread.Sleep(50);
 					else
 					{
-						job.AssociatedObject4 = new DynValue[] { LuaRuntime.PushInstance(ch, ch.GameManager) };
+						job.ScriptJobContext.YieldReturn = [ LuaRuntime.PushInstance(ch, ch.GameManager) ];
 						return;
 					}
 				}

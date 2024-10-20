@@ -1,6 +1,7 @@
 ﻿// Disable warnings about XML documentation
 #pragma warning disable 1591
 
+using MoonSharp.Interpreter.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Text;

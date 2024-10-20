@@ -48,6 +48,7 @@
 // THE SOFTWARE.
 
 
+using MoonSharp.Interpreter.DataTypes;
 using MoonSharp.Interpreter.Interop.LuaStateInterop;
 using lua_Integer = System.Int32;
 using LUA_INTFRM_T = System.Int64;

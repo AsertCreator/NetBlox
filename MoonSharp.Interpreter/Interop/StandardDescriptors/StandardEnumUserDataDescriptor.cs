@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using MoonSharp.Interpreter.Compatibility;
+using MoonSharp.Interpreter.DataTypes;
 using MoonSharp.Interpreter.Interop.BasicDescriptors;
 
 namespace MoonSharp.Interpreter.Interop

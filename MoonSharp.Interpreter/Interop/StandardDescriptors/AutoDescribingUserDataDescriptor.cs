@@ -1,16 +1,13 @@
-﻿using System;
-using MoonSharp.Interpreter.Compatibility;
-using MoonSharp.Interpreter.Interop;
+﻿using MoonSharp.Interpreter.Compatibility;
+using System;
 
-namespace MoonSharp.Interpreter
+namespace MoonSharp.Interpreter.Interop.StandardDescriptors
 {
 	/// <summary>
 	/// Descriptor which acts as a non-containing adapter from IUserDataType to IUserDataDescriptor
 	/// </summary>
 	internal class AutoDescribingUserDataDescriptor : IUserDataDescriptor
 	{
-		private string m_FriendlyName;
-		private Type m_Type;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="AutoDescribingUserDataDescriptor"/> class.
@@ -19,25 +16,19 @@ namespace MoonSharp.Interpreter
 		/// <param name="friendlyName">Name of the friendly.</param>
 		public AutoDescribingUserDataDescriptor(Type type, string friendlyName)
 		{
-			m_FriendlyName = friendlyName;
-			m_Type = type;
+			Name = friendlyName;
+			Type = type;
 		}
 
 		/// <summary>
 		/// Gets the name of the descriptor (usually, the name of the type described).
 		/// </summary>
-		public string Name
-		{
-			get { return m_FriendlyName; }
-		}
+		public string Name { get; }
 
 		/// <summary>
 		/// Gets the type this descriptor refers to
 		/// </summary>
-		public Type Type
-		{
-			get { return m_Type; }
-		}
+		public Type Type { get; }
 
 		/// <summary>
 		/// Performs an "index" "get" operation.
@@ -47,15 +38,7 @@ namespace MoonSharp.Interpreter
 		/// <param name="index">The index.</param>
 		/// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
 		/// <returns></returns>
-		public DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing)
-		{
-			IUserDataType u = obj as IUserDataType;
-
-			if (u != null)
-				return u.Index(script, index, isDirectIndexing);
-
-			return null;
-		}
+		public DynValue Index(Script script, object obj, DynValue index, bool isDirectIndexing) => obj is IUserDataType u ? u.Index(script, index, isDirectIndexing) : null;
 
 		/// <summary>
 		/// Performs an "index" "set" operation.
@@ -66,28 +49,14 @@ namespace MoonSharp.Interpreter
 		/// <param name="value">The value to be set</param>
 		/// <param name="isDirectIndexing">If set to true, it's indexed with a name, if false it's indexed through brackets.</param>
 		/// <returns></returns>
-		public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing)
-		{
-			IUserDataType u = obj as IUserDataType;
-
-			if (u != null)
-				return u.SetIndex(script, index, value, isDirectIndexing);
-
-			return false;
-		}
+		public bool SetIndex(Script script, object obj, DynValue index, DynValue value, bool isDirectIndexing) => obj is IUserDataType u && u.SetIndex(script, index, value, isDirectIndexing);
 
 		/// <summary>
 		/// Converts this userdata to string
 		/// </summary>
 		/// <param name="obj">The object.</param>
 		/// <returns></returns>
-		public string AsString(object obj)
-		{
-			if (obj != null)
-				return obj.ToString();
-			else
-				return null;
-		}
+		public string AsString(object obj) => obj?.ToString();
 
 		/// <summary>
 		/// Gets a "meta" operation on this userdata. If a descriptor does not support this functionality,
@@ -103,15 +72,7 @@ namespace MoonSharp.Interpreter
 		/// <param name="obj">The object (null if a static request is done)</param>
 		/// <param name="metaname">The name of the metamember.</param>
 		/// <returns></returns>
-		public DynValue MetaIndex(Script script, object obj, string metaname)
-		{
-			IUserDataType u = obj as IUserDataType;
-
-			if (u != null)
-				return u.MetaIndex(script, metaname);
-
-			return null;
-		}
+		public DynValue MetaIndex(Script script, object obj, string metaname) => obj is IUserDataType u ? u.MetaIndex(script, metaname) : null;
 
 
 		/// <summary>
@@ -122,9 +83,6 @@ namespace MoonSharp.Interpreter
 		/// <param name="type">The type.</param>
 		/// <param name="obj">The object.</param>
 		/// <returns></returns>
-		public bool IsTypeCompatible(Type type, object obj)
-		{
-			return Framework.Do.IsInstanceOfType(type, obj);
-		}
+		public bool IsTypeCompatible(Type type, object obj) => Framework.Do.IsInstanceOfType(type, obj);
 	}
 }

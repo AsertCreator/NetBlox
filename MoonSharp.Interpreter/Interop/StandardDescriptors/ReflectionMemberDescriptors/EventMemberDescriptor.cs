@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using MoonSharp.Interpreter.Compatibility;
 using MoonSharp.Interpreter.DataStructs;
+using MoonSharp.Interpreter.DataTypes;
 using MoonSharp.Interpreter.Interop.BasicDescriptors;
 using MoonSharp.Interpreter.Interop.StandardDescriptors;
 

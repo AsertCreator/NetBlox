@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using MoonSharp.Interpreter.Interop;
 using System.Reflection;
+using MoonSharp.Interpreter.DataTypes;
 
 namespace MoonSharp.Interpreter
 {

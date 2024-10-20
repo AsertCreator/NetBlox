@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using MoonSharp.Interpreter.CoreLib;
+using MoonSharp.Interpreter.DataTypes;
 using MoonSharp.Interpreter.Debugging;
 using MoonSharp.Interpreter.Diagnostics;
 using MoonSharp.Interpreter.Execution.VM;
@@ -30,12 +31,12 @@ namespace MoonSharp.Interpreter
 		/// </summary>
 		public const string LUA_VERSION = "5.2";
 
-		Processor m_MainProcessor = null;
-		ByteCode m_ByteCode;
-		List<SourceCode> m_Sources = new List<SourceCode>();
-		Table m_GlobalTable;
+		readonly Processor m_MainProcessor = null;
+		readonly ByteCode m_ByteCode;
+		readonly List<SourceCode> m_Sources = new List<SourceCode>();
+		readonly Table m_GlobalTable;
+		readonly Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
 		IDebugger m_Debugger;
-		Table[] m_TypeMetatables = new Table[(int)LuaTypeExtensions.MaxMetaTypes];
 
 		/// <summary>
 		/// Initializes the <see cref="Script"/> class.
@@ -129,21 +130,9 @@ namespace MoonSharp.Interpreter
 			return MakeClosure(address, globalTable ?? m_GlobalTable);
 		}
 
-		private void SignalByteCodeChange()
-		{
-			if (m_Debugger != null)
-			{
-				m_Debugger.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
-			}
-		}
+		private void SignalByteCodeChange() => m_Debugger?.SetByteCode(m_ByteCode.Code.Select(s => s.ToString()).ToArray());
 
-		private void SignalSourceCodeChange(SourceCode source)
-		{
-			if (m_Debugger != null)
-			{
-				m_Debugger.SetSourceCode(source);
-			}
-		}
+		private void SignalSourceCodeChange(SourceCode source) => m_Debugger?.SetSourceCode(source);
 
 
 		/// <summary>
@@ -216,8 +205,7 @@ namespace MoonSharp.Interpreter
 
 				m_Sources.Add(source);
 
-				bool hasUpvalues;
-				int address = m_MainProcessor.Undump(codeStream, m_Sources.Count - 1, globalTable ?? m_GlobalTable, out hasUpvalues);
+				int address = m_MainProcessor.Undump(codeStream, m_Sources.Count - 1, globalTable ?? m_GlobalTable, out bool hasUpvalues);
 
 				SignalSourceCodeChange(source);
 				SignalByteCodeChange();
@@ -280,24 +268,24 @@ namespace MoonSharp.Interpreter
 
 			object code = Options.ScriptLoader.LoadFile(filename, globalContext ?? m_GlobalTable);
 
-			if (code is string)
+			if (code is string v1)
 			{
-				return LoadString((string)code, globalContext, friendlyFilename ?? filename);
+				return LoadString(v1, globalContext, friendlyFilename ?? filename);
 			}
-			else if (code is byte[])
+			else if (code is byte[] v)
 			{
-				using (MemoryStream ms = new MemoryStream((byte[])code))
+				using (MemoryStream ms = new MemoryStream(v))
 					return LoadStream(ms, globalContext, friendlyFilename ?? filename);
 			}
-			else if (code is Stream)
+			else if (code is Stream stream)
 			{
 				try
 				{
-					return LoadStream((Stream)code, globalContext, friendlyFilename ?? filename);
+					return LoadStream(stream, globalContext, friendlyFilename ?? filename);
 				}
 				finally
 				{
-					((Stream)code).Dispose();
+					stream.Dispose();
 				}
 			}
 			else
@@ -620,11 +608,8 @@ namespace MoonSharp.Interpreter
 			this.CheckScriptOwnership(globalContext);
 
 			Table globals = globalContext ?? m_GlobalTable;
-			string filename = Options.ScriptLoader.ResolveModuleName(modname, globals);
-
-			if (filename == null)
+			string filename = Options.ScriptLoader.ResolveModuleName(modname, globals) ?? 
 				throw new ScriptRuntimeException("module '{0}' not found", modname);
-
 			DynValue func = LoadFile(filename, globalContext, filename);
 			return func;
 		}

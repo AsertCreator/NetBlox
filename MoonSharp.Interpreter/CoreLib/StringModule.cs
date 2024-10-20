@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Text;
 using MoonSharp.Interpreter.CoreLib.StringLib;
+using MoonSharp.Interpreter.DataTypes;
 
 namespace MoonSharp.Interpreter.CoreLib
 {

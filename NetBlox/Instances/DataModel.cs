@@ -7,7 +7,7 @@ using System.Runtime;
 
 namespace NetBlox.Instances
 {
-	public class DataModel : ServiceProvider
+	public class DataModel(GameManager gm) : ServiceProvider(gm)
 	{
 		[Lua([Security.Capability.None])]
 		public long CreatorId => GameManager.CurrentIdentity.Author.GetHashCode(); // worky around
@@ -19,8 +19,6 @@ namespace NetBlox.Instances
 		public int PlaceVersion => 0;
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsApplication { get; set; }
-
-		public DataModel(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
 		public bool IsLoaded() => GameManager.NetworkManager.IsLoaded;
@@ -73,11 +71,11 @@ namespace NetBlox.Instances
 		public LuaYield HttpGetAsync(string url) 
 		{
 			var job = TaskScheduler.CurrentJob;
-			job.TaskJoinedTo = Task.Run(async () =>
+			job.JobTimingContext.TaskJoinedTo = Task.Run(async () =>
 			{
 				var path = await AppManager.ResolveUrlAsync(url, true);
 				var data = File.ReadAllText(path);
-				job.AssociatedObject4 = new DynValue[] { DynValue.NewString(data) };
+				job.ScriptJobContext.YieldReturn = [ DynValue.NewString(data) ];
 			});
 			return new();
 		}

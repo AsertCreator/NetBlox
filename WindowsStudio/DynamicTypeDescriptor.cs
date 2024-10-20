@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Drawing.Design;
-using System.Xml.Linq;
 // thank you creative commons
 namespace NetBlox.Studio;
 
@@ -27,16 +26,13 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 	public DynamicTypeDescriptor(Type type)
 	{
-		if (type == null)
-			throw new ArgumentNullException("type");
-
-		_type = type;
+		_type = type ?? throw new ArgumentNullException(nameof(type));
 		_typeConverter = TypeDescriptor.GetConverter(type);
 		_defaultEvent = TypeDescriptor.GetDefaultEvent(type)!;
 		_defaultProperty = TypeDescriptor.GetDefaultProperty(type)!;
 		_events = TypeDescriptor.GetEvents(type);
 
-		List<PropertyDescriptor> normalProperties = new List<PropertyDescriptor>();
+		List<PropertyDescriptor> normalProperties = [];
 		OriginalProperties = TypeDescriptor.GetProperties(type);
 		foreach (PropertyDescriptor property in OriginalProperties)
 		{
@@ -46,11 +42,11 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 			normalProperties.Add(property);
 
 		}
-		Properties = new PropertyDescriptorCollection(normalProperties.ToArray());
+		Properties = new PropertyDescriptorCollection([.. normalProperties]);
 
 		_attributes = TypeDescriptor.GetAttributes(type);
 
-		_editors = new Dictionary<Type, object>();
+		_editors = [];
 		object editor = TypeDescriptor.GetEditor(type, typeof(UITypeEditor));
 		if (editor != null)
 		{
@@ -70,8 +66,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 	public T GetPropertyValue<T>(string name, T defaultValue)
 	{
-		if (name == null)
-			throw new ArgumentNullException("name");
+		ArgumentNullException.ThrowIfNull(name);
 
 		foreach (PropertyDescriptor pd in Properties)
 		{
@@ -92,8 +87,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 	public void SetPropertyValue(string name, object value)
 	{
-		if (name == null)
-			throw new ArgumentNullException("name");
+		ArgumentNullException.ThrowIfNull(name);
 
 		foreach (PropertyDescriptor pd in Properties)
 		{
@@ -107,11 +101,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 	internal void OnValueChanged(PropertyDescriptor prop)
 	{
-		PropertyChangedEventHandler handler = PropertyChanged;
-		if (handler != null)
-		{
-			handler(this, new PropertyChangedEventArgs(prop.Name));
-		}
+		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop.Name));
 	}
 
 	internal static T GetAttribute<T>(AttributeCollection attributes) where T : Attribute
@@ -140,7 +130,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		private string _displayName;
 		private string _description;
 		private string _category;
-		private List<Attribute> _attributes = new List<Attribute>();
+		private readonly List<Attribute> _attributes = [];
 
 		public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -171,23 +161,20 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 		internal static Attribute[] GetAttributes(PropertyDescriptor existing)
 		{
-			List<Attribute> atts = new List<Attribute>();
+			List<Attribute> atts = new ();
 			foreach (Attribute a in existing.Attributes)
 			{
 				atts.Add(a);
 			}
-			return atts.ToArray();
+			return [.. atts];
 		}
 
 		internal DynamicProperty(DynamicTypeDescriptor descriptor, PropertyDescriptor existing, object component)
-			: this(descriptor, existing.PropertyType, existing.GetValue(component), existing.Name, GetAttributes(existing))
-		{
-			_existing = existing;
-		}
+			: this(descriptor, existing.PropertyType, existing.GetValue(component), existing.Name, GetAttributes(existing)) => _existing = existing;
 
 		public void RemoveAttributesOfType<T>() where T : Attribute
 		{
-			List<Attribute> remove = new List<Attribute>();
+			List<Attribute> remove = [];
 			foreach (Attribute att in _attributes)
 			{
 				if (typeof(T).IsAssignableFrom(att.GetType()))
@@ -202,82 +189,25 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 			}
 		}
 
-		public IList<Attribute> AttributesList
-		{
-			get
-			{
-				return _attributes;
-			}
-		}
+		public IList<Attribute> AttributesList => _attributes;
 
-		public override AttributeCollection Attributes
-		{
-			get
-			{
-				return new AttributeCollection(_attributes.ToArray());
-			}
-		}
+		public override AttributeCollection Attributes => new([.. _attributes]);
 
 		public object Value { get; set; }
 
-		public override bool CanResetValue(object component)
-		{
-			if (_existing != null)
-				return _existing.CanResetValue(component);
+		public override bool CanResetValue(object component) => _existing != null ? _existing.CanResetValue(component) : _hasDefaultValue;
 
-			return _hasDefaultValue;
-		}
+		public override Type ComponentType => _existing != null ? _existing.ComponentType : typeof(object);
 
-		public override Type ComponentType
-		{
-			get
-			{
-				if (_existing != null)
-					return _existing.ComponentType;
+		public override object GetValue(object component) => _existing != null ? _existing.GetValue(component) : Value;
 
-				return typeof(object);
-			}
-		}
+		public override string Category => _category ?? base.Category;
 
-		public override object GetValue(object component)
-		{
-			if (_existing != null)
-				return _existing.GetValue(component);
+		public void SetCategory(string category) => _category = category;
 
-			return Value;
-		}
+		public override string Description => _description ?? base.Description;
 
-		public override string Category
-		{
-			get
-			{
-				if (_category != null)
-					return _category;
-
-				return base.Category;
-			}
-		}
-
-		public void SetCategory(string category)
-		{
-			_category = category;
-		}
-
-		public override string Description
-		{
-			get
-			{
-				if (_description != null)
-					return _description;
-
-				return base.Description;
-			}
-		}
-
-		public void SetDescription(string description)
-		{
-			_description = description;
-		}
+		public void SetDescription(string description) => _description = description;
 
 		public override string DisplayName
 		{
@@ -286,33 +216,15 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 				if (_displayName != null)
 					return _displayName;
 
-				if (_existing != null)
-					return _existing.DisplayName;
-
-				return base.DisplayName;
+				return _existing != null ? _existing.DisplayName : base.DisplayName;
 			}
 		}
 
-		public void SetDisplayName(string displayName)
-		{
-			_displayName = displayName;
-		}
+		public void SetDisplayName(string displayName) => _displayName = displayName;
 
-		public override bool IsBrowsable
-		{
-			get
-			{
-				if (_browsable.HasValue)
-					return _browsable.Value;
+		public override bool IsBrowsable => _browsable ?? base.IsBrowsable;
 
-				return base.IsBrowsable;
-			}
-		}
-
-		public void SetBrowsable(bool browsable)
-		{
-			_browsable = browsable;
-		}
+		public void SetBrowsable(bool browsable) => _browsable = browsable;
 
 		public override bool IsReadOnly
 		{
@@ -325,39 +237,20 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 					return _existing.IsReadOnly;
 
 				ReadOnlyAttribute att = DynamicTypeDescriptor.GetAttribute<ReadOnlyAttribute>(Attributes);
-				if (att == null)
-					return false;
-
-				return att.IsReadOnly;
+				return att != null && att.IsReadOnly;
 			}
 		}
 
-		public void SetIsReadOnly(bool readOnly)
-		{
-			_readOnly = readOnly;
-		}
+		public void SetIsReadOnly(bool readOnly) => _readOnly = readOnly;
 
-		public override Type PropertyType
-		{
-			get
-			{
-				if (_existing != null)
-					return _existing.PropertyType;
-
-				return _type;
-			}
-		}
+		public override Type PropertyType => _existing != null ? _existing.PropertyType : _type;
 
 		public override void ResetValue(object component)
 		{
 			if (_existing != null)
 			{
 				_existing.ResetValue(component);
-				PropertyChangedEventHandler handler = PropertyChanged;
-				if (handler != null)
-				{
-					handler(this, new PropertyChangedEventArgs(Name));
-				}
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(Name));
 				_descriptor.OnValueChanged(this);
 				return;
 			}
@@ -373,12 +266,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 			if (_existing != null)
 			{
 				_existing.SetValue(component, value);
-				PropertyChangedEventHandler handler = PropertyChanged;
-
-				if (handler != null)
-				{
-					handler(this, new PropertyChangedEventArgs(Name));
-				}
+				PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(Name));
 				_descriptor.OnValueChanged(this);
 				return;
 			}
@@ -387,23 +275,15 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 			_descriptor.OnValueChanged(this);
 		}
 
-		public override bool ShouldSerializeValue(object component)
-		{
-			if (_existing != null)
-				return _existing.ShouldSerializeValue(component);
-
-			return false;
-		}
+		public override bool ShouldSerializeValue(object component) => _existing != null && _existing.ShouldSerializeValue(component);
 
 		public override object GetEditor(Type editorBaseType)
 		{
-			if (editorBaseType == null)
-				throw new ArgumentNullException("editorBaseType");
+			ArgumentNullException.ThrowIfNull(editorBaseType);
 
 			if (_editors != null)
 			{
-				object type;
-				if ((_editors.TryGetValue(editorBaseType, out type)) && (type != null))
+				if (_editors.TryGetValue(editorBaseType, out object type) && (type != null))
 					return type;
 			}
 			return base.GetEditor(editorBaseType);
@@ -411,15 +291,14 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 		public void SetEditor(Type editorBaseType, object obj)
 		{
-			if (editorBaseType == null)
-				throw new ArgumentNullException("editorBaseType");
+			ArgumentNullException.ThrowIfNull(editorBaseType);
 
 			if (_editors == null)
 			{
 				if (obj == null)
 					return;
 
-				_editors = new Dictionary<Type, object>();
+				_editors = [];
 			}
 			if (obj == null)
 			{
@@ -432,10 +311,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		}
 	}
 
-	public PropertyDescriptor AddProperty(Type type, string name, object value, string displayName, string description, string category, bool hasDefaultValue, object defaultValue, bool readOnly)
-	{
-		return AddProperty(type, name, value, displayName, description, category, hasDefaultValue, defaultValue, readOnly, null);
-	}
+	public PropertyDescriptor AddProperty(Type type, string name, object value, string displayName, string description, string category, bool hasDefaultValue, object defaultValue, bool readOnly) => AddProperty(type, name, value, displayName, description, category, hasDefaultValue, defaultValue, readOnly, null);
 
 	public PropertyDescriptor AddProperty(
 		Type type,
@@ -449,13 +325,10 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		bool readOnly,
 		Type uiTypeEditor)
 	{
-		if (type == null)
-			throw new ArgumentNullException("type");
+		ArgumentNullException.ThrowIfNull(type);
+		ArgumentNullException.ThrowIfNull(name);
 
-		if (name == null)
-			throw new ArgumentNullException("name");
-
-		List<Attribute> atts = new List<Attribute>();
+		List<Attribute> atts = [];
 		if (!string.IsNullOrEmpty(displayName))
 		{
 			atts.Add(new DisplayNameAttribute(displayName));
@@ -486,17 +359,16 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 			atts.Add(new ReadOnlyAttribute(true));
 		}
 
-		DynamicProperty property = new DynamicProperty(this, type, value, name, atts.ToArray());
+		DynamicProperty property = new(this, type, value, name, [.. atts]);
 		AddProperty(property);
 		return property;
 	}
 
 	public void RemoveProperty(string name)
 	{
-		if (name == null)
-			throw new ArgumentNullException("name");
+		ArgumentNullException.ThrowIfNull(name);
 
-		List<PropertyDescriptor> remove = new List<PropertyDescriptor>();
+		List<PropertyDescriptor> remove = [];
 		foreach (PropertyDescriptor pd in Properties)
 		{
 			if (pd.Name == name)
@@ -513,50 +385,47 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 
 	public void AddProperty(PropertyDescriptor property)
 	{
-		if (property == null)
-			throw new ArgumentNullException("property");
+		ArgumentNullException.ThrowIfNull(property);
 
 		Properties.Add(property);
 	}
 
-	public override string ToString()
-	{
-		return base.ToString() + " (" + Component + ")";
-	}
+	public override string ToString() => base.ToString() + " (" + Component + ")";
 
 	public PropertyDescriptorCollection OriginalProperties { get; private set; }
 	public PropertyDescriptorCollection Properties { get; private set; }
 
 	public DynamicTypeDescriptor FromComponent(object component)
 	{
-		if (component == null)
-			throw new ArgumentNullException("component");
+		ArgumentNullException.ThrowIfNull(component);
 
 		if (!_type.IsAssignableFrom(component.GetType()))
-			throw new ArgumentException(null, "component");
+			throw new ArgumentException(null, nameof(component));
 
-		DynamicTypeDescriptor desc = new DynamicTypeDescriptor();
-		desc._type = _type;
-		desc.Component = component;
+		DynamicTypeDescriptor desc = new()
+		{
+			_type = _type,
+			Component = component,
 
-		// shallow copy on purpose
-		desc._typeConverter = _typeConverter;
-		desc._editors = _editors;
-		desc._defaultEvent = _defaultEvent;
-		desc._defaultProperty = _defaultProperty;
-		desc._attributes = _attributes;
-		desc._events = _events;
-		desc.OriginalProperties = OriginalProperties;
+			// shallow copy on purpose
+			_typeConverter = _typeConverter,
+			_editors = _editors,
+			_defaultEvent = _defaultEvent,
+			_defaultProperty = _defaultProperty,
+			_attributes = _attributes,
+			_events = _events,
+			OriginalProperties = OriginalProperties
+		};
 
 		// track values
-		List<PropertyDescriptor> properties = new List<PropertyDescriptor>();
+		List<PropertyDescriptor> properties = [];
 		foreach (PropertyDescriptor pd in Properties)
 		{
-			DynamicProperty ap = new DynamicProperty(desc, pd, component);
+			DynamicProperty ap = new(desc, pd, component);
 			properties.Add(ap);
 		}
 
-		desc.Properties = new PropertyDescriptorCollection(properties.ToArray());
+		desc.Properties = new PropertyDescriptorCollection([.. properties]);
 		return desc;
 	}
 
@@ -564,10 +433,7 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 	public string ClassName { get; set; }
 	public string ComponentName { get; set; }
 
-	AttributeCollection ICustomTypeDescriptor.GetAttributes()
-	{
-		return _attributes;
-	}
+	AttributeCollection ICustomTypeDescriptor.GetAttributes() => _attributes;
 
 	string ICustomTypeDescriptor.GetClassName()
 	{
@@ -577,68 +443,28 @@ public sealed class DynamicTypeDescriptor : ICustomTypeDescriptor, INotifyProper
 		if (Component != null)
 			return Component.GetType().Name;
 
-		if (_type != null)
-			return _type.Name;
-
-		return null;
+		return _type?.Name;
 	}
 
-	string ICustomTypeDescriptor.GetComponentName()
-	{
-		if (ComponentName != null)
-			return ComponentName;
+	string ICustomTypeDescriptor.GetComponentName() => ComponentName ?? (Component?.ToString());
 
-		return Component != null ? Component.ToString() : null;
-	}
+	TypeConverter ICustomTypeDescriptor.GetConverter() => _typeConverter;
 
-	TypeConverter ICustomTypeDescriptor.GetConverter()
-	{
-		return _typeConverter;
-	}
+	EventDescriptor ICustomTypeDescriptor.GetDefaultEvent() => _defaultEvent;
 
-	EventDescriptor ICustomTypeDescriptor.GetDefaultEvent()
-	{
-		return _defaultEvent;
-	}
+	PropertyDescriptor ICustomTypeDescriptor.GetDefaultProperty() => _defaultProperty;
 
-	PropertyDescriptor ICustomTypeDescriptor.GetDefaultProperty()
-	{
-		return _defaultProperty;
-	}
+	object ICustomTypeDescriptor.GetEditor(Type editorBaseType) => _editors.TryGetValue(editorBaseType, out object editor) ? editor : null;
 
-	object ICustomTypeDescriptor.GetEditor(Type editorBaseType)
-	{
-		object editor;
-		if (_editors.TryGetValue(editorBaseType, out editor))
-			return editor;
+	EventDescriptorCollection? ICustomTypeDescriptor.GetEvents(Attribute[] attributes) => _events;
 
-		return null;
-	}
+	EventDescriptorCollection ICustomTypeDescriptor.GetEvents() => _events;
 
-	EventDescriptorCollection? ICustomTypeDescriptor.GetEvents(Attribute[] attributes)
-	{
-		return _events;
-	}
+	PropertyDescriptorCollection? ICustomTypeDescriptor.GetProperties(Attribute[] attributes) => Properties;
 
-	EventDescriptorCollection ICustomTypeDescriptor.GetEvents()
-	{
-		return _events;
-	}
+	PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties() => Properties;
 
-	PropertyDescriptorCollection? ICustomTypeDescriptor.GetProperties(Attribute[] attributes)
-	{
-		return Properties;
-	}
-
-	PropertyDescriptorCollection ICustomTypeDescriptor.GetProperties()
-	{
-		return Properties;
-	}
-
-	object ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor pd)
-	{
-		return Component;
-	}
+	object ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor pd) => Component;
 }
 
 #pragma warning restore CS8768 // Nullability of reference types in return type doesn't match implemented member (possibly because of nullability attributes).

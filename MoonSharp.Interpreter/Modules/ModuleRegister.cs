@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using MoonSharp.Interpreter.Compatibility;
 using MoonSharp.Interpreter.CoreLib;
+using MoonSharp.Interpreter.DataTypes;
 using MoonSharp.Interpreter.Platforms;
 
 namespace MoonSharp.Interpreter

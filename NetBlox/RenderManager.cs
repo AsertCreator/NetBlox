@@ -1,9 +1,7 @@
 ﻿global using Font = Raylib_cs.Font;
 using NetBlox.Common;
 using NetBlox.Instances;
-using NetBlox.Instances.GUIs;
 using NetBlox.Instances.Services;
-using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 using System.Numerics;
@@ -14,8 +12,8 @@ namespace NetBlox
 	{
 		public GameManager GameManager;
 		public Action? PostRender;
-		public List<Func<int>> Coroutines = new();
-		public List<Shader> Shaders = new();
+		public List<Func<int>> Coroutines = [];
+		public List<Shader> Shaders = [];
 		public int ScreenSizeX = 1600;
 		public int ScreenSizeY = 900;
 		public int VersionMargin = 0;
@@ -33,7 +31,7 @@ namespace NetBlox
 		public Font MainFont;
 		public NetBlox.Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
-		private bool SkipWindowCreation = false;
+		private readonly bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
 
 		public static Queue<(string, Action<Texture2D>)> TextureLoadQueue = [];
@@ -119,16 +117,18 @@ namespace NetBlox
 							}
 							if (Raylib.IsKeyDown(KeyboardKey.G))
 							{
-								Part part = new(GameManager);
-								part.Name = "Trash";
-								part.Parent = Root.GetService<Workspace>();
-								part.Position = MainCamera.Position;
-								part.Size = new(1, 1, 1);
-								part.Color3 = Color.DarkPurple;
+								Part part = new(GameManager)
+								{
+									Name = "Trash",
+									Parent = Root.GetService<Workspace>(),
+									Position = MainCamera.Position,
+									Size = new(1, 1, 1),
+									Color3 = Color.DarkPurple
+								};
 							}
 						}
 					}
-					
+
 					PerformResourceLoading();
 
 					// render world
@@ -148,9 +148,9 @@ namespace NetBlox
 
 						if (DoPostProcessing) // sounds too fancy
 						{
-							TimeOfDay = TimeOfDay % 24;
+							TimeOfDay %= 24;
 							if (TimeOfDay != 12)
-								Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255) * 0.8 + 255 * 0.2))));
+								Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255 * 0.8) + (255 * 0.2)))));
 						}
 
 						// render all guis
@@ -164,7 +164,7 @@ namespace NetBlox
 								{
 									Raylib.DrawRectangle(0, ScreenSizeY - 26, ScreenSizeX, 26, Color.Black); // quite bold of me to assume that top 30 pixels are used.
 									var v = Raylib.MeasureTextEx(MainFont, CurrentHint, MainFont.BaseSize / 1.5f, 0);
-									Raylib.DrawTextEx(MainFont, CurrentHint, new(ScreenSizeX / 2 - v.X / 2, ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
+									Raylib.DrawTextEx(MainFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
 								}
 
 								if (GameManager.NetworkManager.IsClient)
@@ -178,16 +178,18 @@ namespace NetBlox
 							Raylib.DrawTextEx(MainFont, Status, new Vector2(20, 20), 16, 0, Color.White);
 						}
 
-						if (PostRender != null)
-							PostRender();
+						PostRender?.Invoke();
 
 						if (DebugInformation)
 						{
-							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + ", fps: " + Raylib.GetFPS() + ", instances: " + GameManager.AllInstances.Count + 
-								", task scheduler pressure: " + TaskScheduler.PressureType + " (" + TaskScheduler.JobCount + ")" + ", outgoing traffic: " +
-								MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + (GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled") + 
-								", actors count: " + GameManager.PhysicsManager.Actors.Count, 
-								new(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
+							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + 
+								", fps: " + Raylib.GetFPS() + 
+								", instances: " + GameManager.AllInstances.Count +
+								", task scheduler pressure: " + TaskScheduler.JobCount + 
+								", outgoing traffic: " + MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + 
+								(GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled") +
+								", actors count: " + GameManager.PhysicsManager.Actors.Count,
+								new Vector2(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
 						}
 
 						if (!GameManager.ShuttingDown)
@@ -285,10 +287,7 @@ namespace NetBlox
 			for (int i = 0; i < c.Length; i++)
 				RenderInstance(c[i]!);
 		}
-		public void ShowKickMessage(string msg)
-		{
-			Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
-		}
+		public void ShowKickMessage(string msg) => Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
 		public void PerformResourceLoading() // e F f I c I e N t  resource loader
 		{
 			for (int i = 0; i < LoadBatchSize; i++)

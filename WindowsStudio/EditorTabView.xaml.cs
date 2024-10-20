@@ -48,7 +48,7 @@ namespace NetBlox.Studio
 			explorerTree.SelectedItemChanged += (x, y) =>
 			{
 				var inst = Items.FirstOrDefault(x => x.Value == y.NewValue).Key;
-				DynamicTypeDescriptor dt = new DynamicTypeDescriptor(inst.GetType());
+				DynamicTypeDescriptor dt = new(inst.GetType());
 				dt.RemoveProperty("RequiredCapabilities");
 				dt.RemoveProperty("DescendantRemoved");
 				dt.RemoveProperty("DescendantAdded");
@@ -159,14 +159,14 @@ namespace NetBlox.Studio
 					{
 						Dispatcher.Invoke(() =>
 						{
-							Instance inst = SerializationManager.LuaDeserialize<Instance>(i[0], x.GameManager);
+							Instance inst = (Instance)i[0].Table.AssociatedObject;
 							TreeViewItem? parent = null;
 							bool noparent = false;
 							if (inst.Parent != x && inst.Parent != null)
 							{
-								if (Items.ContainsKey(inst.Parent))
+								if (Items.TryGetValue(inst.Parent, out TreeViewItem? value))
 								{
-									TreeViewItem item = Items[inst.Parent];
+									TreeViewItem item = value;
 									parent = item;
 								}
 								else
@@ -206,19 +206,19 @@ namespace NetBlox.Studio
 					{
 						Dispatcher.Invoke(() =>
 						{
-							Instance inst = SerializationManager.LuaDeserialize<Instance>(i[0], x.GameManager);
+							Instance inst = (Instance)i[0].Table.AssociatedObject;
 							TreeViewItem? parent = null;
 							if (inst.Parent != x && inst.Parent != null)
 							{
-								if (Items.ContainsKey(inst.Parent))
+								if (Items.TryGetValue(inst.Parent, out TreeViewItem? c))
 								{
-									TreeViewItem item = Items[inst.Parent];
+									TreeViewItem item = c;
 									parent = item;
 								}
 							}
-							if (Items.ContainsKey(inst))
+							if (Items.TryGetValue(inst, out TreeViewItem? value))
 							{
-								TreeViewItem item = Items[inst];
+								TreeViewItem item = value;
 								if (parent != null)
 								{
 									if (parent.Items.Contains(item))

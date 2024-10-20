@@ -4,11 +4,11 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 {
 	internal class BuildTimeScopeFrame
 	{
-		BuildTimeScopeBlock m_ScopeTreeRoot;
-		BuildTimeScopeBlock m_ScopeTreeHead;
-		RuntimeScopeFrame m_ScopeFrame = new RuntimeScopeFrame();
+		private readonly BuildTimeScopeBlock m_ScopeTreeRoot;
+		private BuildTimeScopeBlock m_ScopeTreeHead;
+		private readonly RuntimeScopeFrame m_ScopeFrame = new RuntimeScopeFrame();
 
-		public bool HasVarArgs { get; private set;}
+		public bool HasVarArgs { get; private set; }
 
 		internal BuildTimeScopeFrame(bool hasVarArgs)
 		{
@@ -16,10 +16,7 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 			m_ScopeTreeHead = m_ScopeTreeRoot = new BuildTimeScopeBlock(null);
 		}
 
-		internal void PushBlock()
-		{
-			m_ScopeTreeHead = m_ScopeTreeHead.AddChild();
-		}
+		internal void PushBlock() => m_ScopeTreeHead = m_ScopeTreeHead.AddChild();
 
 		internal RuntimeScopeBlock PopBlock()
 		{
@@ -29,10 +26,7 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 
 			m_ScopeTreeHead = m_ScopeTreeHead.Parent;
 
-			if (m_ScopeTreeHead == null)
-				throw new InternalErrorException("Can't pop block - stack underflow");
-
-			return tree.ScopeBlock;
+			return m_ScopeTreeHead == null ? throw new InternalErrorException("Can't pop block - stack underflow") : tree.ScopeBlock;
 		}
 
 		internal RuntimeScopeFrame GetRuntimeFrameData()
@@ -58,10 +52,7 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 			return null;
 		}
 
-		internal SymbolRef DefineLocal(string name)
-		{
-			return m_ScopeTreeHead.Define(name);
-		}
+		internal SymbolRef DefineLocal(string name) => m_ScopeTreeHead.Define(name);
 
 		internal SymbolRef TryDefineLocal(string name)
 		{
@@ -87,19 +78,10 @@ namespace MoonSharp.Interpreter.Execution.Scopes
 			return var.i_Index;
 		}
 
-		internal int GetPosForNextVar()
-		{
-			return m_ScopeFrame.DebugSymbols.Count;
-		}
+		internal int GetPosForNextVar() => m_ScopeFrame.DebugSymbols.Count;
 
-		internal void DefineLabel(LabelStatement label)
-		{
-			m_ScopeTreeHead.DefineLabel(label);
-		}
+		internal void DefineLabel(LabelStatement label) => m_ScopeTreeHead.DefineLabel(label);
 
-		internal void RegisterGoto(GotoStatement gotostat)
-		{
-			m_ScopeTreeHead.RegisterGoto(gotostat);
-		}
+		internal void RegisterGoto(GotoStatement gotostat) => m_ScopeTreeHead.RegisterGoto(gotostat);
 	}
 }

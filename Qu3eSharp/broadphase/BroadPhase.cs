@@ -21,167 +21,140 @@
 */
 //--------------------------------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using static Qu3e.Settings;
-
 namespace Qu3e
 {
-    public struct ContactPair
-    {
-        public int A;
-        public int B;
-    }
+	public struct ContactPair
+	{
+		public int A;
+		public int B;
+	}
 
-    public interface ITreeCallback
-    {
-        bool TreeCallback(int id);
-    }
+	public interface ITreeCallback
+	{
+		bool TreeCallback(int id);
+	}
 
-    public class BroadPhase : ITreeCallback
-    {
-        public BroadPhase(ContactManager manager)
-        {
-            Manager = manager;
+	public class BroadPhase : ITreeCallback
+	{
+		public BroadPhase(ContactManager manager)
+		{
+			Manager = manager;
 
-            PairBuffer = new List<ContactPair>();
-            MoveBuffer = new List<int>();
+			PairBuffer = [];
+			MoveBuffer = [];
 
-        }
+		}
 
-        public void InsertBox(Box shape, AABB aabb)
-        {
-            int id = Tree.Insert(aabb, shape);
-            shape.broadPhaseIndex = id;
-            BufferMove(id);
-        }
+		public void InsertBox(Box shape, AABB aabb)
+		{
+			int id = Tree.Insert(aabb, shape);
+			shape.broadPhaseIndex = id;
+			BufferMove(id);
+		}
 
-        public void RemoveBox(Box shape)
-        {
-            Tree.Remove(shape.broadPhaseIndex);
-        }
+		public void RemoveBox(Box shape) => Tree.Remove(shape.broadPhaseIndex);
 
-        // Generates the contact list. All previous contacts are returned to the allocator
-        // before generation occurs.
-        public void UpdatePairs()
-        {
-            PairBuffer.Clear();
+		// Generates the contact list. All previous contacts are returned to the allocator
+		// before generation occurs.
+		public void UpdatePairs()
+		{
+			PairBuffer.Clear();
 
-            // Query the tree with all moving boxs
-            for (int i = 0; i <  MoveBuffer.Count; ++i)
-            {
-                CurrentIndex = MoveBuffer[i];
-                AABB aabb = Tree.GetFatAABB(CurrentIndex);
+			// Query the tree with all moving boxs
+			for (int i = 0; i < MoveBuffer.Count; ++i)
+			{
+				CurrentIndex = MoveBuffer[i];
+				AABB aabb = Tree.GetFatAABB(CurrentIndex);
 
-                // @TODO: Use a static and non-static tree and query one against the other.
-                //        This will potentially prevent (gotta think about this more) time
-                //        wasted with queries of static bodies against static bodies, and
-                //        kinematic to kinematic.
-                Tree.Query(this, aabb);
-            }
+				// @TODO: Use a static and non-static tree and query one against the other.
+				//        This will potentially prevent (gotta think about this more) time
+				//        wasted with queries of static bodies against static bodies, and
+				//        kinematic to kinematic.
+				Tree.Query(this, aabb);
+			}
 
-            // Reset the move buffer
-            MoveBuffer.Clear();
+			// Reset the move buffer
+			MoveBuffer.Clear();
 
-            // Sort pairs to expose duplicates
-            PairBuffer.Sort(ContactPairSorter.Default);
+			// Sort pairs to expose duplicates
+			PairBuffer.Sort(ContactPairSorter.Default);
 
-            // Queue manifolds for solving
-            {
-                int i = 0;
-                while (i < PairBuffer.Count)
-                {
-                    // Add contact to manager
-                    ContactPair pair = PairBuffer[i];
-                    Box A = (Box)Tree.GetUserData(pair.A);
-                    Box B = (Box)Tree.GetUserData(pair.B);
-                    Manager.AddContact(A, B);
+			// Queue manifolds for solving
+			{
+				int i = 0;
+				while (i < PairBuffer.Count)
+				{
+					// Add contact to manager
+					ContactPair pair = PairBuffer[i];
+					Box A = (Box)Tree.GetUserData(pair.A);
+					Box B = (Box)Tree.GetUserData(pair.B);
+					Manager.AddContact(A, B);
 
-                    ++i;
+					++i;
 
-                    // Skip duplicate pairs by iterating i until we find a unique pair
-                    while (i < PairBuffer.Count)
-                    {
-                        ContactPair potentialDup = PairBuffer[i];
+					// Skip duplicate pairs by iterating i until we find a unique pair
+					while (i < PairBuffer.Count)
+					{
+						ContactPair potentialDup = PairBuffer[i];
 
-                        if (pair.A != potentialDup.A || pair.B != potentialDup.B)
-                            break;
+						if (pair.A != potentialDup.A || pair.B != potentialDup.B)
+							break;
 
-                        ++i;
-                    }
-                }
-            }
+						++i;
+					}
+				}
+			}
 
-//            Tree.Validate();
-        }
+			//            Tree.Validate();
+		}
 
-        public void Update(int id, AABB aabb)
-        {
-            if (Tree.Update(id, aabb))
-                BufferMove(id);
-        }
+		public void Update(int id, AABB aabb)
+		{
+			if (Tree.Update(id, aabb))
+				BufferMove(id);
+		}
 
-        public bool TestOverlap(int A, int B)
-        {
-            return AABB.AABBtoAABB(Tree.GetFatAABB(A), Tree.GetFatAABB(B));
-        }
+		public bool TestOverlap(int A, int B) => AABB.AABBtoAABB(Tree.GetFatAABB(A), Tree.GetFatAABB(B));
 
-        ContactManager Manager;
+		private readonly ContactManager Manager;
+		private readonly List<ContactPair> PairBuffer;
+		private readonly List<int> MoveBuffer;
 
-        List<ContactPair> PairBuffer;
+		internal DynamicAABBTree Tree = new();
+		private int CurrentIndex;
 
-        List<int> MoveBuffer;
+		private void BufferMove(int id) => MoveBuffer.Add(id);
 
-        internal DynamicAABBTree Tree = new DynamicAABBTree();
-        int CurrentIndex;
-
-        void BufferMove(int id)
-        {
-            MoveBuffer.Add(id);
-        }
-
-        public bool TreeCallback(int index)
-        {
-            // Cannot collide with self
-            if (index == CurrentIndex)
-                return true;
-
-            
-
-            int iA = Math.Min(index, CurrentIndex);
-            int iB = Math.Max(index, CurrentIndex);
-
-
-            PairBuffer.Add(new ContactPair() { A = iA, B = iB });
-
-            return true;
-
-        }
-
-        //--------------------------------------------------------------------------------------------------
-
-        public class ContactPairSorter : IComparer<ContactPair>
-        {
-            static ContactPairSorter m_default;
-            public static ContactPairSorter Default
-            {
-                get
-                {
-                    return m_default ?? (m_default = new ContactPairSorter());
-                }
-            }
-
-            public int Compare(ContactPair lhs, ContactPair rhs)
-            {
-                if (lhs.A == rhs.A)
-                    return Comparer<int>.Default.Compare(lhs.B, rhs.B);
-                else
-                    return Comparer<int>.Default.Compare(lhs.A, rhs.A);
-            }
-
-        }
+		public bool TreeCallback(int index)
+		{
+			// Cannot collide with self
+			if (index == CurrentIndex)
+				return true;
 
 
 
-    }
+			int iA = Math.Min(index, CurrentIndex);
+			int iB = Math.Max(index, CurrentIndex);
+
+
+			PairBuffer.Add(new ContactPair() { A = iA, B = iB });
+
+			return true;
+
+		}
+
+		//--------------------------------------------------------------------------------------------------
+
+		public class ContactPairSorter : IComparer<ContactPair>
+		{
+			private static ContactPairSorter m_default;
+			public static ContactPairSorter Default => m_default ??= new ContactPairSorter();
+
+			public int Compare(ContactPair lhs, ContactPair rhs) => lhs.A == rhs.A ? Comparer<int>.Default.Compare(lhs.B, rhs.B) : Comparer<int>.Default.Compare(lhs.A, rhs.A);
+
+		}
+
+
+
+	}
 }

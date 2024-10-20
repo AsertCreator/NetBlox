@@ -1,182 +1,118 @@
 ﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.DataTypes;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
-using System.Xml.Linq;
 
 namespace NetBlox
 {
-	public class Job
+	public delegate JobResult JobDelegate(Job self);
+	public struct ScriptJobContext
 	{
-		public JobType Type = JobType.NativeMisc;
-		public string Name;
-		public object? AssociatedObject0;
-		public object? AssociatedObject1;
-		public object? AssociatedObject2;
-		public object? AssociatedObject3;
-		public object? AssociatedObject4;
-		/// <summary>
-		/// When <seealso cref="Type"/> is set to <seealso cref="JobType.Script"/>, then its set to script's returned value
-		/// </summary>
-		public object? AssociatedObject5;
-		public GameManager GameManager;
-		public JobDelegate NativeCallback;
-		public JobDelegate? AfterDone;
-		public double LastCycleTime = 0;
-		public int Priority = 1;
-		public DateTime JoinedUntil = DateTime.MinValue;
-		public bool HadRunBefore = false;
-		public JobResult Result;
 		public Table GlobalEnv;
+		public Coroutine? Coroutine;
+		public BaseScript? BaseScript;
+		public GameManager GameManager;
+		public DynValue[] YieldReturn;
+		public DynValue YieldAnswer;
+		public JobDelegate? AfterDone;
+	}
+	public struct JobTimingContext
+	{
+		public DateTime JoinedUntil;
+		public bool HadRunBefore;
+		public double LastCycleTime;
 		public Task? TaskJoinedTo;
 		public Job? JoinedTo;
-
-		public Job()
-		{
-			Name = Type.ToString();
-		}
 	}
-	public enum JobType { NativeNetwork, NativeRender, NativePhysics, NativeMisc, Script }
-	public enum JobResult
+	public class Job(JobType type, JobDelegate callback, int security)
 	{
-		CompletedSuccess, CompletedFailure, NotCompleted
+		public JobType Type = type;
+		public int SecurityLevel = security;
+		public JobDelegate NativeCallback = callback;
+		public ScriptJobContext ScriptJobContext = new();
+		public JobTimingContext JobTimingContext = new();
+		public JobResult Result;
 	}
-	public enum PressureType
-	{
-		None, Slightly, Mildly, Severe, Unplayable, Fatal
-	}
-	public delegate JobResult JobDelegate(Job self);
+	public enum JobType { Replication, Renderer, Heartbeat, Miscellaneous, Script }
+	public enum JobResult { CompletedSuccess, CompletedFailure, NotCompleted }
 	public static class TaskScheduler
 	{
-		public static bool AllowScheduling = true;
+		public static Job CurrentJob;
+		public static bool Enabled = true;
 		public static TimeSpan LastCycleTime = TimeSpan.Zero;
 		public static int JobCount => RunningJobs.Count;
 		public static double AverageTimeToRun => LastCycleTime.TotalMilliseconds / RunningJobs.Count;
-		public static PressureType PressureType
-		{
-			get
-			{
-				if (JobCount <= 5) return PressureType.None;
-				if (JobCount <= 15) return PressureType.Slightly;
-				if (JobCount <= 25) return PressureType.Mildly;
-				if (JobCount <= 35) return PressureType.Severe;
-				if (JobCount <= 45) return PressureType.Unplayable;
-				return PressureType.Fatal;
-			}
-		}
-		public static Job CurrentJob;
 		internal static List<Job> RunningJobs = [];
 
 		public static void Step()
 		{
 			Stopwatch sw = new();
 			sw.Start();
-			if (RunningJobs.Count != 0)
+
+			var now = DateTime.UtcNow.Ticks;
+
+			for (int i = 0; i < RunningJobs.Count; i++)
 			{
-				var now = DateTime.UtcNow;
+				var job = RunningJobs[i];
 
-				for (int i = 0; i < RunningJobs.Count; i++)
+				if (job == null)
 				{
-					var job = RunningJobs[i];
-					if (job == null)
-					{
-						RunningJobs.RemoveAt(i--);
-						// just skip it
-						continue;
-					}
+					RunningJobs.RemoveAt(i--);
+					// just skip it
+					continue;
+				}
 
-					if (job.JoinedUntil > now)
-						continue;
-					if (job.JoinedTo != null && job.JoinedTo.Result == JobResult.NotCompleted)
-						continue;
-					if (job.TaskJoinedTo != null && !job.TaskJoinedTo.IsCompleted)
-						continue;
-					CurrentJob = job;
-					try
-					{
-						for (int j = 0; j < job.Priority; j++)
-						{
-							Stopwatch taswa = new();
-							taswa.Start();
+				if (job.JobTimingContext.JoinedUntil.Ticks > now)
+					continue;
+				if (job.JobTimingContext.JoinedTo != null && job.JobTimingContext.JoinedTo.Result == JobResult.NotCompleted)
+					continue;
+				if (job.JobTimingContext.TaskJoinedTo != null && !job.JobTimingContext.TaskJoinedTo.IsCompleted)
+					continue;
 
-							var res = job.NativeCallback(job);
-							job.HadRunBefore = true;
-							job.Result = res;
-							if (res != JobResult.NotCompleted)
-							{
-								job.AfterDone?.Invoke(job);
-								Terminate(job);
-								i--;
-							}
+				CurrentJob = job;
+				try
+				{
+					Stopwatch taswa = new();
+					taswa.Start();
 
-							taswa.Stop();
-							job.LastCycleTime = taswa.ElapsedMilliseconds;
-							if (res != JobResult.NotCompleted)
-								break;
-						}
-					}
-					catch (Exception ex)
+					var res = job.NativeCallback(job);
+					job.JobTimingContext.HadRunBefore = true;
+					job.Result = res;
+
+					if (res != JobResult.NotCompleted)
 					{
-						LogManager.LogError("Job execution error:" + ex.Message + "; the job will be terminated");
+						job.ScriptJobContext.AfterDone?.Invoke(job);
 						Terminate(job);
 						i--;
 					}
+
+					taswa.Stop();
+					job.JobTimingContext.LastCycleTime = taswa.ElapsedMilliseconds;
+					if (res != JobResult.NotCompleted)
+						break;
+				}
+				catch (Exception ex)
+				{
+					LogManager.LogError("Job execution error:" + ex.Message + "; the job will be terminated");
+					Terminate(job);
+					i--;
 				}
 			}
-			sw.Stop();
 
-			if (RunningJobs.Count >= 43)
-				LogManager.LogWarn("Task Scheduler: cannot keep up at all!!!, too many jobs (" + RunningJobs.Count + ")");
-			else if (RunningJobs.Count >= 36)
-				LogManager.LogWarn("Task Scheduler: cannot keep up, too many jobs (" + RunningJobs.Count + ")");
+			sw.Stop();
 
 			LastCycleTime = sw.Elapsed;
 		}
 		public static void Terminate(Job job) => RunningJobs.Remove(job);
-		public static Job ScheduleMisc(string name, JobDelegate jd, JobDelegate? afterDone = null)
+		public static Job ScheduleJob(JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
 		{
-			Job job = new()
-			{
-				Name = name,
-				NativeCallback = jd,
-				AfterDone = afterDone,
-				Type = JobType.NativeMisc
-			};
+			Job job = new(type, jd, level);
+			job.ScriptJobContext.AfterDone = afterDone;
 			RunningJobs.Add(job);
 			return job;
 		}
-		public static void ScheduleNetwork(string name, GameManager gm, JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
-		{
-			Name = name,
-			NativeCallback = jd,
-			AfterDone = afterDone,
-			Type = JobType.NativeNetwork,
-			GameManager = gm
-		});
-		public static Job ScheduleRender(string name, JobDelegate jd, JobDelegate? afterDone = null)
-		{
-			Job job = new()
-			{
-				Name = name,
-				NativeCallback = jd,
-				AfterDone = afterDone,
-				Type = JobType.NativeRender
-			};
-			RunningJobs.Add(job);
-			return job;
-		}
-		public static void SchedulePhysics(string name, GameManager gm, JobDelegate jd, JobDelegate? afterDone = null) => RunningJobs.Add(new()
-		{
-			Name = name,
-			NativeCallback = jd,
-			AfterDone = afterDone,
-			Type = JobType.NativePhysics,
-			GameManager = gm
-		});
 		public static Job ScheduleScript(GameManager gm, string code, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null)
 		{
 			try
@@ -184,10 +120,12 @@ namespace NetBlox
 				return ScheduleScript(gm, gm.MainEnvironment.LoadString(code, new Table(gm.MainEnvironment)
 				{
 					IsProtected = true,
-					ObjectType = MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Misc,
+					ObjectType = AssociatedObjectType.Misc,
+
 					["script"] = LuaRuntime.PushInstance(self, gm),
 					["workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true), gm),
 					["Workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true), gm),
+
 					MetaTable = new Table(gm.MainEnvironment)
 					{
 						["__index"] = gm.MainEnvironment.Globals
@@ -206,49 +144,45 @@ namespace NetBlox
 				throw new Exception("Server-exclusive threads are not expected on client!");
 
 			Coroutine? closure = null;
-			if (func.Type == DataType.Function)
-				closure = gm.MainEnvironment.CreateCoroutine(func).Coroutine;
-			else if (func.Type == DataType.Thread)
-				closure = func.Coroutine;
-			else
-				throw new InvalidOperationException("Cannot create a thread with not a function or coroutine");
+			if (func.Type == DataType.Function) closure = gm.MainEnvironment.CreateCoroutine(func).Coroutine;
+			else if (func.Type == DataType.Thread) closure = func.Coroutine;
+			else throw new InvalidOperationException("Cannot create a thread with not a function or coroutine");
 
-			var job = new Job()
-			{
-				NativeCallback = delegate (Job job)
-				{
-					try
-					{
-						var args = job.AssociatedObject4 as DynValue[];
-						if (closure.State == CoroutineState.Dead)
-							throw new Exception("what just happened");
+			var job = new Job(JobType.Script, ScriptJob, level);
+			job.ScriptJobContext.AfterDone = afterDone;
+			job.ScriptJobContext.BaseScript = self;
+			job.ScriptJobContext.YieldReturn = args ?? [];
+			job.ScriptJobContext.Coroutine = closure;
 
-						var result = closure.Resume(args);
-
-						if (closure.State == CoroutineState.Suspended)
-							return JobResult.NotCompleted;
-						else
-							job.AssociatedObject5 = result;
-						return JobResult.CompletedSuccess;
-					}
-					catch (ScriptRuntimeException ex)
-					{
-						LogManager.LogError("Script error: " + ex.Message);
-						for (int i = 0; i < ex.CallStack.Count; i++)
-							LogManager.LogError($"    at {ex.CallStack[i].Name ?? ""}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
-						return JobResult.CompletedFailure;
-					}
-				},
-				AfterDone = afterDone,
-				AssociatedObject0 = closure,
-				AssociatedObject1 = level,
-				AssociatedObject2 = self,
-				AssociatedObject4 = args ?? [],
-				Type = JobType.Script,
-				GameManager = gm
-			};
 			RunningJobs.Add(job);
 			return job;
+		}
+		private static JobResult ScriptJob(Job job)
+		{
+			if (job.ScriptJobContext.Coroutine == null)
+				return JobResult.CompletedFailure;
+
+			try
+			{
+				var args = job.ScriptJobContext.YieldReturn;
+				if (job.ScriptJobContext.Coroutine.State == CoroutineState.Dead)
+					throw new Exception("what just happened");
+
+				var result = job.ScriptJobContext.Coroutine.Resume(args);
+
+				if (job.ScriptJobContext.Coroutine.State == CoroutineState.Suspended)
+					return JobResult.NotCompleted;
+				else
+					job.ScriptJobContext.YieldAnswer = result;
+				return JobResult.CompletedSuccess;
+			}
+			catch (ScriptRuntimeException ex)
+			{
+				LogManager.LogError("Script error: " + ex.Message);
+				for (int i = 0; i < ex.CallStack.Count; i++)
+					LogManager.LogError($"    at {ex.CallStack[i].Name ?? ""}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
+				return JobResult.CompletedFailure;
+			}
 		}
 	}
 }

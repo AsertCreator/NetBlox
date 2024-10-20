@@ -2,7 +2,6 @@
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Qu3e;
-using Raylib_cs;
 using System.Numerics;
 
 namespace NetBlox.Instances
@@ -10,11 +9,11 @@ namespace NetBlox.Instances
 	public class BasePart : PVInstance, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]
-		public bool Anchored 
+		public bool Anchored
 		{
 			get => _anchored;
-			set 
-			{ 
+			set
+			{
 				_anchored = false; // temporary
 
 				if (Body != null)
@@ -30,7 +29,7 @@ namespace NetBlox.Instances
 						Body.Flags |= BodyFlags.eStatic;
 					}
 				}
-			} 
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public bool Locked { get; set; }
@@ -49,9 +48,9 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Color Color3 { get; set; } = Color.Gray;
 		[Lua([Security.Capability.None])]
-		public BrickColor BrickColor 
+		public BrickColor BrickColor
 		{
-			get => _brickColor; 
+			get => _brickColor;
 			set
 			{
 				_brickColor = value;
@@ -60,16 +59,15 @@ namespace NetBlox.Instances
 		}
 		private BrickColor _brickColor;
 		[Lua([Security.Capability.None])]
-		public Vector3 Position 
-		{ 
+		public Vector3 Position
+		{
 			get => _position;
 			set
 			{
 				if (_position == value)
 					return;
 				_position = value;
-				if (Body != null)
-					Body.SetTransform(value);
+				Body?.SetTransform(value);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -81,12 +79,11 @@ namespace NetBlox.Instances
 				if (_rotation == value)
 					return;
 				_rotation = value;
-				if (Body != null)
-					Body.SetTransform(_position, value);
+				Body?.SetTransform(_position, value);
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public Vector3 Size 
+		public Vector3 Size
 		{
 			get => _size;
 			set
@@ -113,7 +110,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public double Transparency { get; set; } = 0;
 		[Lua([Security.Capability.None])]
-		public Vector3 Velocity 
+		public Vector3 Velocity
 		{
 			get => _lastvelocity;
 			set
@@ -121,9 +118,8 @@ namespace NetBlox.Instances
 				if (_lastvelocity == value)
 					return;
 				_lastvelocity = value;
-				if (Body != null)
-					Body.SetLinearVelocity(_lastvelocity);
-			} 
+				Body?.SetLinearVelocity(_lastvelocity);
+			}
 		}
 		public bool IsGrounded = false;
 		public BoxDef BoxDef;
@@ -132,18 +128,15 @@ namespace NetBlox.Instances
 		public Vector3 _size;
 		public Vector3 _lastvelocity;
 
-		public BasePart(GameManager ins) : base(ins) 
+		public BasePart(GameManager ins) : base(ins)
 		{
 			var works = Root.GetService<Workspace>(true);
 			if (works != null)
 			{
 				Scene sc = works.Scene;
-				BodyDef bodyDef = new BodyDef();
+				BodyDef bodyDef = new();
 				bodyDef.position.Set(0, 0, 0);
-				if (!Anchored)
-					bodyDef.bodyType = BodyType.eDynamicBody;
-				else
-					bodyDef.bodyType = BodyType.eStaticBody;
+				bodyDef.bodyType = !Anchored ? BodyType.eDynamicBody : BodyType.eStaticBody;
 				Body body = sc.CreateBody(bodyDef);
 				BoxDef = new BoxDef();
 				BoxDef.Set(Qu3e.Transform.Identity, Size);
@@ -158,15 +151,8 @@ namespace NetBlox.Instances
 		{
 			// render nothing
 		}
-		public override void Process()
-		{
-			base.Process();
-		}
-		public override bool IsA(string classname)
-		{
-			if (nameof(BasePart) == classname) return true;
-			return base.IsA(classname);
-		}
+		public override void Process() => base.Process();
+		public override bool IsA(string classname) => nameof(BasePart) == classname || base.IsA(classname);
 		public override void Destroy()
 		{
 			if (Body != null)

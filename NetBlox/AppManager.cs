@@ -1,9 +1,5 @@
 ﻿#define DISABLE_EME
-using MoonSharp.Interpreter;
 using NetBlox.Instances;
-using NetBlox.Instances.Services;
-using NetBlox.Runtime;
-using System.Runtime;
 
 namespace NetBlox
 {
@@ -54,7 +50,7 @@ namespace NetBlox
 		}
 		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
-			GameManager manager = new GameManager(gc, args, loadcallback, dmc);
+			GameManager manager = new(gc, args, loadcallback, dmc);
 			GameManagers.Add(manager);
 			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
 			return manager;
@@ -70,7 +66,7 @@ namespace NetBlox
 			DefineFastFlag("FFlagShowCoreGui", true);
 			DefineFastInt("FIntDefaultUIVariant", 1);
 
-			GameProcessor = TaskScheduler.ScheduleMisc("Heartbeat", x =>
+			GameProcessor = TaskScheduler.ScheduleJob(JobType.Heartbeat, x =>
 			{
 				for (int i = 0; i < GameManagers.Count; i++)
 				{
@@ -80,21 +76,21 @@ namespace NetBlox
 				}
 				return JobResult.NotCompleted;
 			});
-			GameRenderer = TaskScheduler.ScheduleRender("Renderer", x =>
+			GameRenderer = TaskScheduler.ScheduleJob(JobType.Renderer, x =>
 			{
 				if (CurrentRenderManager != null)
 				{
 					CurrentRenderManager.RenderFrame();
-					if (CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager)
-						return JobResult.CompletedSuccess;
-					return JobResult.NotCompleted;
+					return CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager
+						? JobResult.CompletedSuccess
+						: JobResult.NotCompleted;
 				}
 				return JobResult.NotCompleted;
 			});
-			GameGC = TaskScheduler.ScheduleMisc("GlobalGC", x =>
+			GameGC = TaskScheduler.ScheduleJob(JobType.Miscellaneous, x =>
 			{
 				GC.Collect();
-				x.JoinedUntil = DateTime.UtcNow.AddSeconds(7);
+				x.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddSeconds(7);
 				return JobResult.NotCompleted;
 			});
 
@@ -109,7 +105,7 @@ namespace NetBlox
 			ShuttingDown = true;
 			throw new RollbackException();
 		}
-		public static async Task<string> DownloadAssetAsync(long aid) => 
+		public static async Task<string> DownloadAssetAsync(long aid) =>
 			await DownloadFileAsync(PublicServiceAPI + "/api/asset/get?aid=" + aid, PublicServiceAPI.GetHashCode() + "_" + aid + ".nas");
 		public static async Task<string> DownloadFileAsync(string from, string to)
 		{
@@ -144,11 +140,10 @@ namespace NetBlox
 				return url[7..];
 			else if (url.StartsWith("rbxasset://"))
 			{
-				Uri uri = new Uri(url);
-				if (long.TryParse(uri.LocalPath, out long assetid) && allowremote)
-					return await DownloadAssetAsync(assetid);
-				else
-					return Path.Combine(Path.GetFullPath(ContentFolder), uri.Authority + uri.LocalPath).Replace('\\', '/');
+				Uri uri = new(url);
+				return long.TryParse(uri.LocalPath, out long assetid) && allowremote
+					? await DownloadAssetAsync(assetid)
+					: Path.Combine(Path.GetFullPath(ContentFolder), uri.Authority + uri.LocalPath).Replace('\\', '/');
 			}
 			return "";
 		}

@@ -135,10 +135,10 @@ namespace NetBlox.Server
 									break;
 								case "jobs":
 									int i = 0;
-									Console.WriteLine("#) {0,-13} {1,-13} {2,-28} {3,-12}", "Name", "Type", "Paused until", "Is joined to job");
+									Console.WriteLine("#) {0,-13} {1,-28} {2,-12}", "Type", "Paused until", "Is joined to job");
 									TaskScheduler.RunningJobs.ForEach(x =>
 									{
-										Console.WriteLine("{0}) {1,-13} {2,-13} {3,-28} {4,-12}", i, x.Name, x.Type, x.JoinedUntil, x.JoinedTo != null);
+										Console.WriteLine("{0}) {1,-13} {2,-28} {3,-12}", i, x.Type, x.JobTimingContext.JoinedUntil, x.JobTimingContext.JoinedTo != null);
 										i++;
 									});
 									break;

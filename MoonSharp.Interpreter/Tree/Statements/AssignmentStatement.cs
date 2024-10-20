@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using MoonSharp.Interpreter.Debugging;
+﻿using MoonSharp.Interpreter.Debugging;
 using MoonSharp.Interpreter.Execution;
-
 using MoonSharp.Interpreter.Tree.Expressions;
+using System;
+using System.Collections.Generic;
 
 namespace MoonSharp.Interpreter.Tree.Statements
 {
-	class AssignmentStatement : Statement
+	internal class AssignmentStatement : Statement
 	{
-		List<IVariable> m_LValues = new List<IVariable>();
-		List<Expression> m_RValues;
-		SourceRef m_Ref;
+		private readonly List<IVariable> m_LValues = new List<IVariable>();
+		private readonly List<Expression> m_RValues;
+		private readonly SourceRef m_Ref;
 
 
 		public AssignmentStatement(ScriptLoadingContext lcontext, Token startToken)
@@ -80,12 +79,9 @@ namespace MoonSharp.Interpreter.Tree.Statements
 
 		private IVariable CheckVar(ScriptLoadingContext lcontext, Expression firstExpression)
 		{
-			IVariable v = firstExpression as IVariable;
-
-			if (v == null)
-				throw new SyntaxErrorException(lcontext.Lexer.Current, "unexpected symbol near '{0}' - not a l-value", lcontext.Lexer.Current);
-
-			return v;
+			return !(firstExpression is IVariable v)
+				? throw new SyntaxErrorException(lcontext.Lexer.Current, "unexpected symbol near '{0}' - not a l-value", lcontext.Lexer.Current)
+				: v;
 		}
 
 

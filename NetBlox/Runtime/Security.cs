@@ -12,7 +12,7 @@ namespace NetBlox.Runtime
 			get
 			{
 				if (impmutex) return implevel;
-				object? lvl = TaskScheduler.CurrentJob.AssociatedObject1;
+				object? lvl = TaskScheduler.CurrentJob.SecurityLevel;
 				if (lvl == null)
 					return 0;
 				return (int)lvl;
