@@ -28,6 +28,7 @@ namespace NetBlox
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
+		public Texture2D BlankTexture;
 		public Font MainFont;
 		public NetBlox.Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
@@ -43,6 +44,8 @@ namespace NetBlox
 		public static Dictionary<string, Shader> ShaderCache = [];
 		public static Dictionary<string, Sound> SoundCache = [];
 		public static Dictionary<string, Font> FontCache = [];
+
+		public Shader? ActiveShader;
 
 		public int LoadBatchSize = 5;
 
@@ -78,6 +81,7 @@ namespace NetBlox
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
 
 				LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
+				LoadTexture("rbxasset://textures/black.png", x => BlankTexture = x);
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
 			}
