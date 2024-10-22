@@ -127,6 +127,7 @@ namespace NetBlox.Instances
 			}
 		}
 		public PartRenderCache RenderCache = new();
+		public Lighting? LocalLighing;
 		public bool IsGrounded = false;
 		public BoxDef BoxDef;
 		public Body Body;
@@ -155,7 +156,14 @@ namespace NetBlox.Instances
 		}
 		public virtual void Render()
 		{
-			// render nothing
+			if (LocalLighing != null && LocalLighing.WasDestroyed)
+				LocalLighing = null;
+
+			if (LocalLighing == null)
+			{
+				LocalLighing = Root.GetService<Lighting>(true);
+				return;  // now parts REQUIRE Lighting service to be present in order to render (because sun)
+			}
 		}
 		public override void Process() => base.Process();
 		public override bool IsA(string classname) => nameof(BasePart) == classname || base.IsA(classname);

@@ -14,7 +14,10 @@ namespace NetBlox.Instances
 			{
 				_pivot.Position = value;
 				if (this is BasePart bp)
-					bp.RenderCache.DirtyCounter = 6;
+				{
+					if (bp.LocalLighing != null && bp.LocalLighing.SunLocality)
+						bp.RenderCache.DirtyCounter = 6;
+				}
 			} 
 		}
 		public Vector3 _rotation 

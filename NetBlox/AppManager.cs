@@ -64,6 +64,7 @@ namespace NetBlox
 				Directory.CreateDirectory(LibraryFolder);
 
 			DefineFastFlag("FFlagShowCoreGui", true);
+			DefineFastFlag("FFlagShowAFSCacheReload", false);
 			DefineFastInt("FIntDefaultUIVariant", 1);
 
 			GameProcessor = TaskScheduler.ScheduleJob(JobType.Heartbeat, x =>

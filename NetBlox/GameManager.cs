@@ -120,6 +120,12 @@ namespace NetBlox
 					if (!PhysicsManager.DisablePhysics)
 						PhysicsManager.Begin();
 				});
+				Verbs.Add(KeyboardKey.L, () =>
+				{
+					var light = CurrentRoot.GetService<Lighting>(true);
+					if (light != null)
+						light.SunLocality = !light.SunLocality;
+				});
 
 				// we dont want corescripts to run before engine is initialized
 

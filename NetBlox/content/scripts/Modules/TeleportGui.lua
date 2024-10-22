@@ -33,13 +33,27 @@ AuthorTitle.FontSize = 24;
 AuthorTitle.ZIndex = 10001;
 AuthorTitle.Text = "";
 
+local uh = nil;
+
 return {
 	show = function(placename, authorname, pid, uid)
+		if uh then
+			task.cancel(uh);
+		end
+
+		game:EnableWhiteOut(false)
+
+		TeleportFrame.BackgroundTransparency = 0;
 		TeleportGui.Enabled = true;
 		GameTitle.Text = placename;
 		AuthorTitle.Text = "by " .. authorname;
 	end,
 	hide = function()
-		TeleportGui.Enabled = false;
+		game:EnableWhiteOut(false)
+
+		TeleportFrame:TweenTransparency(1, 0.5);
+		uh = task.delay(0.5, function()
+			TeleportGui.Enabled = false;
+		end)
 	end
 };

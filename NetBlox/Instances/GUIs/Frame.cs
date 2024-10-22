@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using NetBlox.Common;
+using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 using System;
@@ -15,6 +16,7 @@ namespace NetBlox.Instances.GUIs
 		public Color BackgroundColor3 { get; set; } = Color.White;
 		[Lua([Security.Capability.None])]
 		public float BackgroundTransparency { get; set; } = 0;
+		private int CoroutineId = -1;
 
 		public Frame(GameManager ins) : base(ins) {	}
 
@@ -23,6 +25,37 @@ namespace NetBlox.Instances.GUIs
 		{
 			if (nameof(Frame) == classname) return true;
 			return base.IsA(classname);
+		}
+		[Lua([Security.Capability.None])]
+		public void TweenTransparency(float to, float dur)
+		{
+			float init = BackgroundTransparency;
+			var dt = DateTime.Now;
+
+			GameManager.RenderManager.Coroutines.Add(() =>
+			{
+				var cur = DateTime.Now;
+				float time = (float)((cur - dt).TotalSeconds / dur);
+
+				if (time >= 1)
+					time = 1;
+
+				BackgroundTransparency = MathE.Lerp(init, to, time);
+
+				if (time == 1)
+				{
+					CoroutineId = -1;
+					return -1;
+				}
+				return 0;
+			});
+			CoroutineId = GameManager.RenderManager.Coroutines.Count - 1;
+		}
+		[Lua([Security.Capability.None])]
+		public void CancelTween()
+		{
+			if (CoroutineId != -1)
+				GameManager.RenderManager.Coroutines.RemoveAt(CoroutineId);
 		}
 		public override void RenderGUI(Vector2 cp, Vector2 cs)
 		{

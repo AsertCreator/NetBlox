@@ -25,6 +25,7 @@ namespace NetBlox
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;
 		public bool DoPostProcessing = true;
+		public bool WhiteOut = true;
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
@@ -81,7 +82,7 @@ namespace NetBlox
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
 
 				LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
-				LoadTexture("rbxasset://textures/black.png", x => BlankTexture = x);
+				LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
 			}
@@ -195,6 +196,9 @@ namespace NetBlox
 								", actors count: " + GameManager.PhysicsManager.Actors.Count,
 								new Vector2(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
 						}
+
+						if (WhiteOut)
+							Raylib.ClearBackground(Color.White);
 
 						if (!GameManager.ShuttingDown)
 							Raylib.EndDrawing();

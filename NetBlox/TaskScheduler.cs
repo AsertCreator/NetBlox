@@ -149,6 +149,7 @@ namespace NetBlox
 			else throw new InvalidOperationException("Cannot create a thread with not a function or coroutine");
 
 			var job = new Job(JobType.Script, ScriptJob, level);
+			job.ScriptJobContext.GameManager = gm;
 			job.ScriptJobContext.AfterDone = afterDone;
 			job.ScriptJobContext.BaseScript = self;
 			job.ScriptJobContext.YieldReturn = args ?? [];

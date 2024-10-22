@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using NetBlox.Instances.Services;
 
 namespace NetBlox.Instances
 {
@@ -16,6 +17,10 @@ namespace NetBlox.Instances
 
 		public override void Render()
 		{
+			base.Render();
+
+			if (LocalLighing == null) return;
+
 			switch (Shape)
 			{
 				case Shape.Ball:
@@ -24,7 +29,10 @@ namespace NetBlox.Instances
 					var st = GameManager.RenderManager.StudTexture;
 					var bt = GameManager.RenderManager.BlankTexture;
 					var tex = GameManager.RenderManager.StudTexture;
-					var sun = new Vector3(2, 2, 0);
+					var sun = LocalLighing.SunPosition;
+
+					if (LocalLighing.SunLocality)
+						RenderCache.DirtyCounter = 6;
 
 					[MethodImpl(MethodImplOptions.AggressiveInlining)]
 					float AFS(float nx, float ny, float nz)
@@ -34,13 +42,23 @@ namespace NetBlox.Instances
 						var ns = new Vector3(nx, ny, nz);
 
 						if (RenderCache.AFSCache == null)
+						{
 							RenderCache.AFSCache = [];
+							RenderCache.DirtyCounter = 6;
+						}
 
 						if (RenderCache.DirtyCounter > 0)
 						{
+							if (AppManager.FastFlags["FFlagShowAFSCacheReload"])
+								Raylib.DrawCubeWires(_pivot.Position, _size.X, _size.Y, _size.Z, Color.Red);
+
+							if (LocalLighing!.SunLocality)
+								ns += Position;
+
 							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitX, Rotation.X / 180 * MathF.PI);
 							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitY, Rotation.Y / 180 * MathF.PI);
 							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitZ, Rotation.Z / 180 * MathF.PI);
+
 							var sl = sun.Length();
 							var nl = ns.Length();
 							var dot = Vector3.Dot(ns, sun);

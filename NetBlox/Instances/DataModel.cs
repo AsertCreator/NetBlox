@@ -90,6 +90,8 @@ namespace NetBlox.Instances
 			return chlidren;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
+		public void EnableWhiteOut(bool huh) =>	GameManager.RenderManager.WhiteOut = huh;
+		[Lua([Security.Capability.CoreSecurity])]
 		public void Load(string url)
 		{
 			LogManager.LogInfo("Loading DataModel from URL " + url + "...");

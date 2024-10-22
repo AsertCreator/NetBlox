@@ -350,6 +350,9 @@ namespace NetBlox.Runtime
 							{
 								var args = new List<object?>();
 
+								if (b[0].Type != DataType.Table || (b[0].Type == DataType.Table && !b[0].Table.IsProtected))
+									throw new ScriptRuntimeException("Instance functions must be called using semicolon operator");
+
 								for (int i = 0; i < parms.Length; i++)
 								{
 									var parinfo = parms[i];

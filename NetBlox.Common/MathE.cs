@@ -5,7 +5,11 @@ namespace NetBlox.Common
 {
 	public static class MathE
 	{
-		public static float Lerp(float a, float b, float t) => a * (1 - t) + b * t;
+		public static float Lerp(float a, float b, float t)
+		{
+			var flo = a * (1 - t) + b * t;
+			return flo;
+		}
 		public static string Roll(string str, byte a)
 		{
 			var bytes = Encoding.ASCII.GetBytes(str);

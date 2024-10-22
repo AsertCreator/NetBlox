@@ -1,6 +1,7 @@
 ﻿using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace NetBlox.Instances.Services
@@ -24,6 +25,8 @@ namespace NetBlox.Instances.Services
 		}
 		[Lua([Security.Capability.None])]
 		public string CurrentTime => "no";
+		public Vector3 SunPosition = new Vector3(2, 2, 0);
+		public bool SunLocality = false;
 
 		public Lighting(GameManager ins) : base(ins) { }
 
