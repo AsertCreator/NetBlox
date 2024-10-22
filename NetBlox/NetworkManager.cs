@@ -201,43 +201,58 @@ namespace NetBlox
 						{
 							Security.Impersonate(8);
 							var id = isguest ? Random.Shared.Next(-100000, -1) : userid;
+							var plrs = Root.GetService<Players>();
+							var allplrs = plrs.GetChildren();
 
-							nc = new RemoteClient(ch.Username, nextpid++, x, pl);
-							pl = new Player(GameManager)
+							for (int i = 0; i < allplrs.Length; i++)
 							{
-								IsLocalPlayer = false,
-								Parent = Root.GetService<Players>(),
-								CharacterAppearanceId = id,
-								Name = nc.Username,
-								Guest = isguest,
-								Client = nc
-							};
+								if (allplrs[i].Name.Trim() == ch.Username.Trim())
+								{
+									sh.ErrorCode = 103;
+									stoppls = true;
+									break;
+								}
+							}
 
-							pl.SetUserId(id);
-							nc.Player = pl;
+							if (!stoppls)
+							{
+								nc = new RemoteClient(ch.Username, nextpid++, x, pl);
+								pl = new Player(GameManager)
+								{
+									IsLocalPlayer = false,
+									Parent = plrs,
+									CharacterAppearanceId = id,
+									Name = nc.Username,
+									Guest = isguest,
+									Client = nc
+								};
 
-							Security.EndImpersonate();
+								pl.SetUserId(id);
+								nc.Player = pl;
 
-							pl.Reload();
-							pl.LoadCharacterOld();
+								Security.EndImpersonate();
 
-							sh.PlayerInstance = pl.UniqueID.ToString();
-							sh.CharacterInstance = pl.Character!.UniqueID.ToString();
-							sh.DataModelInstance = Root.UniqueID.ToString();
-							sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
-							sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
-							sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
-							sh.UniquePlayerID = nc.UniquePlayerID;
-							sh.InstanceCount = 
-								Root.GetService<Workspace>().CountDescendants() +
-								Root.GetService<ReplicatedStorage>().CountDescendants() +
-								Root.GetService<ReplicatedFirst>().CountDescendants() +
-								Root.GetService<Chat>().CountDescendants() +
-								Root.GetService<Lighting>().CountDescendants();
+								pl.Reload();
+								pl.LoadCharacterOld();
 
-							GameManager.CurrentProfile.SetOnlineModeAsync(OnlineMode.InGame).ConfigureAwait(false);
+								sh.PlayerInstance = pl.UniqueID.ToString();
+								sh.CharacterInstance = pl.Character!.UniqueID.ToString();
+								sh.DataModelInstance = Root.UniqueID.ToString();
+								sh.MaxPlayerCount = GameManager.CurrentIdentity.MaxPlayerCount;
+								sh.UniverseID = GameManager.CurrentIdentity.UniverseID;
+								sh.PlaceID = GameManager.CurrentIdentity.PlaceID;
+								sh.UniquePlayerID = nc.UniquePlayerID;
+								sh.InstanceCount =
+									Root.GetService<Workspace>().CountDescendants() +
+									Root.GetService<ReplicatedStorage>().CountDescendants() +
+									Root.GetService<ReplicatedFirst>().CountDescendants() +
+									Root.GetService<Chat>().CountDescendants() +
+									Root.GetService<Lighting>().CountDescendants();
 
-							Clients.Add(nc);
+								GameManager.CurrentProfile.SetOnlineModeAsync(OnlineMode.InGame).ConfigureAwait(false);
+
+								Clients.Add(nc);
+							}
 						}
 						else if (!stoppls)
 						{
@@ -977,7 +992,7 @@ namespace NetBlox
 			101 => "Server only accepts internal connections",
 			102 => "Authorization failed",
 			103 => "A player with same name is already playing",
-			104 => "Server is just being weird",
+			104 => "Server has closed",
 			_ => "Unknown connection failure",
 		};
 	}
