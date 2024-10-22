@@ -29,15 +29,29 @@ namespace NetBlox.Instances
 					[MethodImpl(MethodImplOptions.AggressiveInlining)]
 					float AFS(float nx, float ny, float nz)
 					{
+						float retu = 0;
+						var og = new Vector3(nx, ny, nz);
 						var ns = new Vector3(nx, ny, nz);
-						ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitX, Rotation.X / 180 * MathF.PI);
-						ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitY, Rotation.Y / 180 * MathF.PI);
-						ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitZ, Rotation.Z / 180 * MathF.PI);
-						var sl = sun.Length();
-						var nl = ns.Length();
-						var dot = Vector3.Dot(ns, sun);
-						var res = MathF.Acos(dot / (nl * sl)) / MathF.PI;
-						return (1 - res);
+
+						if (RenderCache.AFSCache == null)
+							RenderCache.AFSCache = [];
+
+						if (RenderCache.DirtyCounter > 0)
+						{
+							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitX, Rotation.X / 180 * MathF.PI);
+							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitY, Rotation.Y / 180 * MathF.PI);
+							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitZ, Rotation.Z / 180 * MathF.PI);
+							var sl = sun.Length();
+							var nl = ns.Length();
+							var dot = Vector3.Dot(ns, sun);
+							var res = MathF.Acos(dot / (nl * sl)) / MathF.PI;
+							retu = 1 - res;
+							RenderCache.AFSCache[og] = retu;
+							RenderCache.DirtyCounter--;
+						}
+						else if (RenderCache.AFSCache != null)
+							retu = RenderCache.AFSCache[og];
+						return retu;
 					}
 
 					if (TopSurface == SurfaceType.Studs) tex = st;

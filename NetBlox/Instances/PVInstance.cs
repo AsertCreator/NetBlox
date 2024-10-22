@@ -7,8 +7,26 @@ namespace NetBlox.Instances
 	public class PVInstance : Instance
 	{
 		public bool _anchored = false;
-		public Vector3 _position { get => _pivot.Position; set => _pivot.Position = value; }
-		public Vector3 _rotation { get => _pivot.Rotation; set => _pivot.Rotation = value; }
+		public Vector3 _position 
+		{ 
+			get => _pivot.Position;
+			set 
+			{
+				_pivot.Position = value;
+				if (this is BasePart bp)
+					bp.RenderCache.DirtyCounter = 6;
+			} 
+		}
+		public Vector3 _rotation 
+		{ 
+			get => _pivot.Rotation;
+			set 
+			{
+				_pivot.Rotation = value;
+				if (this is BasePart bp)
+					bp.RenderCache.DirtyCounter = 6;
+			}
+		}
 		public Vector3 _lastposition = Vector3.Zero;
 		public Vector3 _lastrotation = Vector3.Zero;
 		public CFrame _pivot;

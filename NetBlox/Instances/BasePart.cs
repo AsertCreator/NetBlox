@@ -6,6 +6,11 @@ using System.Numerics;
 
 namespace NetBlox.Instances
 {
+	public struct PartRenderCache
+	{
+		public int DirtyCounter;
+		public Dictionary<Vector3, float>? AFSCache;
+	}
 	public class BasePart : PVInstance, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]
@@ -121,6 +126,7 @@ namespace NetBlox.Instances
 				Body?.SetLinearVelocity(_lastvelocity);
 			}
 		}
+		public PartRenderCache RenderCache = new();
 		public bool IsGrounded = false;
 		public BoxDef BoxDef;
 		public Body Body;
