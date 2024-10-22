@@ -30,11 +30,11 @@ namespace NetBlox.Instances.GUIs
 		public void TweenTransparency(float to, float dur)
 		{
 			float init = BackgroundTransparency;
-			var dt = DateTime.Now;
+			var dt = DateTime.UtcNow;
 
 			GameManager.RenderManager.Coroutines.Add(() =>
 			{
-				var cur = DateTime.Now;
+				var cur = DateTime.UtcNow;
 				float time = (float)((cur - dt).TotalSeconds / dur);
 
 				if (time >= 1)

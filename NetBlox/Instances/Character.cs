@@ -23,6 +23,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public float JumpPower { get; set; } = 6;
 		private bool isDying = false;
+		private float lastHealth = 100;
 
 		public Character(GameManager gm) : base(gm)
 		{
@@ -38,7 +39,14 @@ namespace NetBlox.Instances
 
 			if (GameManager.RenderManager == null) return;
 
-			if (IsLocalPlayer && GameManager.NetworkManager.IsClient && Health > 0)
+			List<string> torep = [];
+
+			if (Health != lastHealth)
+				torep.Add("Health");
+
+			lastHealth = Health;
+
+			if (IsLocalPlayer && GameManager.NetworkManager.IsClient && !isDying)
 			{
 				var cam = GameManager.RenderManager.MainCamera;
 				var x1 = cam.Position.X;
@@ -91,19 +99,77 @@ namespace NetBlox.Instances
 				veldelta = veldelta != Vector3.Zero ? Vector3.Normalize(veldelta) : veldelta;
 
 				if (!GameManager.PhysicsManager.DisablePhysics)
-					Velocity += veldelta * 0.38f;
-				else
-					Position += veldelta * 0.22f;
-				Rotation += rotdelta * 0.22f;
-
-				if (Health <= 0 && IsLocalPlayer && !isDying)
 				{
-					isDying = true;
-					Die();
+					Velocity += veldelta * 0.38f;
+					if (veldelta != Vector3.Zero)
+						torep.Add("Velocity");
+				}
+				else
+				{
+					Position += veldelta * 0.38f;
+					if (veldelta != Vector3.Zero)
+						torep.Add("Position");
 				}
 
-				Health = Math.Max(Health, 0);
+				Rotation += rotdelta * 0.22f;
+				if (rotdelta != Vector3.Zero)
+					torep.Add("Rotation");
 			}
+
+			if (Health <= 0 && GameManager.NetworkManager.IsClient && !isDying)
+			{
+				isDying = true;
+				RenderManager.LoadSound("rbxasset://sounds/grunt.mp3", GameManager.RenderManager.PlaySound);
+			}
+
+			if (Health <= 0 && GameManager.NetworkManager.IsServer && !isDying)
+			{
+				isDying = true;
+
+				Players players = Root.GetService<Players>();
+				Instance[] playerl = players.GetChildren();
+				Player plr = null!;
+
+				for (int i = 0; i < playerl.Length; i++)
+				{
+					plr = (Player)playerl[i];
+					if (plr.Character == this)
+						break;
+				}
+
+				if (plr == null) 
+				{
+					Destroy();
+					return;
+				}
+
+				DestroyAt = DateTime.UtcNow.AddSeconds(4);
+
+				Task.Delay(4000).ContinueWith(_ =>
+				{
+					// synchronize with the game thread
+					TaskScheduler.ScheduleJob(JobType.Miscellaneous, x =>
+					{
+						if (plr.WasDestroyed)
+							return JobResult.CompletedFailure;
+
+						plr.Character = null;
+						plr.LoadCharacterOld();
+
+						GameManager.NetworkManager.AddReplication(plr.Character!,
+							NetworkManager.Replication.REPM_TOALL,
+							NetworkManager.Replication.REPW_NEWINST);
+
+						GameManager.NetworkManager.SetOwner(plr.Client!, plr.Character!);
+						GameManager.NetworkManager.SetCharacter(plr.Client!, plr.Character!);
+
+						return JobResult.CompletedSuccess;
+					});
+				});
+			}
+
+			if (GameManager.NetworkManager.IsClient && torep.Count > 0)
+				ReplicateProperties(torep.ToArray(), false);
 		}
 		public override void RenderUI()
 		{
@@ -127,16 +193,6 @@ namespace NetBlox.Instances
 			Raylib.DrawTextEx(font, $"Position: {Position.X}, {Position.Y}, {Position.Z}", new Vector2(100, 100), 14, 1.4f, Color.White);
 			Raylib.DrawTextEx(font, $"Rotation: {Rotation.X}, {Rotation.Y}, {Rotation.Z}", new Vector2(100, 116), 14, 1.4f, Color.White);
 			Raylib.DrawTextEx(font, $"Velocity: {Velocity.X}, {Velocity.Y}, {Velocity.Z}", new Vector2(100, 132), 14, 1.4f, Color.White);
-		}
-		public void Die()
-		{
-			LogManager.LogInfo("Character had died!");
-			Root.GetService<Debris>().AddItem(this, 4);
-			RenderManager.LoadSound("rbxasset://sounds/grunt.mp3", GameManager.RenderManager.PlaySound);
-			Task.Delay(4000).ContinueWith(_ =>
-			{
-				((Player)Root.GetService<Players>().LocalPlayer!).LoadCharacterOld();
-			});
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

@@ -357,7 +357,7 @@ namespace NetBlox
 							{
 								RemoteClient nc2 = Clients[i];
 								if (nc2 != nc)
-									nc2.Connection.SendRawData("nb2-replicate", data.Data);
+									SendRawData(nc2.Connection, "nb2-replicate", data.Data);
 							}
 						}
 						else
@@ -665,8 +665,34 @@ namespace NetBlox
 					if (actinst != null)
 						actinst.SelfOwned = false;
 				});
+				tcp.RegisterRawDataHandler("nb2-setcharacter", (rep, _) =>
+				{
+					ProfileIncoming(rep.Key, rep.Data);
+
+					Task.Run(() =>
+					{
+						var guid = new Guid(rep.Data);
+
+						while (!GameManager.ShuttingDown && RemoteConnection != null && RemoteConnection.IsAlive)
+						{
+							var ch = GameManager.GetInstance(guid);
+							var work = Root.GetService<Workspace>();
+							var plrs = Root.GetService<Players>();
+							var lp = (Player)plrs.LocalPlayer!;
+							var c = (Camera)work.MainCamera!;
+
+							lp.Character = ch;
+							c.CameraSubject = ch;
+
+							if (ch is Character cha)
+								cha.IsLocalPlayer = true;
+						}
+					});
+				});
 				tcp.RegisterRawDataHandler("nb2-kick", (rep, _) =>
 				{
+					ProfileIncoming(rep.Key, rep.Data);
+
 					tcp.ConnectionClosed -= OnClose;
 					GameManager.RenderManager?.ShowKickMessage(Encoding.UTF8.GetString(rep.Data));
 				});
@@ -728,6 +754,11 @@ namespace NetBlox
 					incomingTraffic = 0;
 				}
 			});
+		}
+		public void SetCharacter(RemoteClient rc, Instance inst)
+		{
+			if (rc.Connection.IsAlive)
+				SendRawData(rc.Connection, "nb2-setcharacter", inst.UniqueID.ToByteArray());
 		}
 		public void ProfileIncoming(string key, byte[] data)
 		{

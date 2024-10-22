@@ -114,6 +114,12 @@ namespace NetBlox
 				LogManager.LogInfo("Initializing verbs...");
 				Verbs.Add(KeyboardKey.Comma, () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
 				Verbs.Add(KeyboardKey.Apostrophe, () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
+				Verbs.Add(KeyboardKey.F3, () =>
+				{
+					var coregui = CurrentRoot.GetService<CoreGui>(true);
+					if (coregui != null)
+						coregui.TakeScreenshot();
+				});
 				Verbs.Add(KeyboardKey.P, () => 
 				{ 
 					PhysicsManager.DisablePhysics = !PhysicsManager.DisablePhysics;

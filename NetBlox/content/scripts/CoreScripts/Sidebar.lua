@@ -108,15 +108,15 @@ ResetButton.MouseButton1Click:Connect(function() -- how do i debug this 😭
 	chr.Health = 0;
 end)
 
-local ResetButton = Instance.new("TextButton");
-ResetButton.Parent = Sidebar;
-ResetButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 3);
-ResetButton.Size = UDim2.new(1, -60, 0, 35);
-ResetButton.BackgroundColor3 = Color3.new(1, 1, 1);
-ResetButton.TextColor3 = Color3.new(1, 1, 1);
-ResetButton.BackgroundTransparency = 0.7;
-ResetButton.Text = "Damage yourself";
-ResetButton.MouseButton1Click:Connect(function()
+local DamageButton = Instance.new("TextButton");
+DamageButton.Parent = Sidebar;
+DamageButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 3);
+DamageButton.Size = UDim2.new(1, -60, 0, 35);
+DamageButton.BackgroundColor3 = Color3.new(1, 1, 1);
+DamageButton.TextColor3 = Color3.new(1, 1, 1);
+DamageButton.BackgroundTransparency = 0.7;
+DamageButton.Text = "Damage yourself";
+DamageButton.MouseButton1Click:Connect(function()
 	local pls = game.Players;
 	local lpr = pls.LocalPlayer;
 	local chr = lpr.Character;

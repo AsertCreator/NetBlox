@@ -118,7 +118,7 @@ namespace NetBlox.Client
 				AsClient = true,
 				GameName = "NetBlox Client"
 			},
-			args, (x) => { });
+			args, (x) => x.RenderManager.WhiteOut = true);
 			cg.MainManager = true;
 			return cg;
 		}

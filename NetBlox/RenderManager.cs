@@ -25,7 +25,7 @@ namespace NetBlox
 		public bool DisableAllGuis = false;
 		public bool RenderAtAll = false;
 		public bool DoPostProcessing = true;
-		public bool WhiteOut = true;
+		public bool WhiteOut = false;
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;

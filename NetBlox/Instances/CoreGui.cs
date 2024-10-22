@@ -50,9 +50,11 @@ namespace NetBlox.Instances
 		{
 			GameManager.RenderManager.Coroutines.Add(() =>
 			{
-				string path = AppManager.LibraryFolder + "/" + DateTime.UtcNow.ToString("ddMMyyyy_HHmmss") + ".png";
+				string local = DateTime.UtcNow.ToString("ddMMyyyy_HHmmss") + ".png";
+				string path = AppManager.LibraryFolder + "/" + local;
 				Raylib.TakeScreenshot(path);
-				Notify("Screenshot taken!", "Check the screenshort folder");
+				File.Move(local, path);
+				Root.GetService<PlatformService>().OpenBrowserWindow(path);
 				return -1;
 			});
 		}
