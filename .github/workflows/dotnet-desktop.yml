@@ -3,8 +3,8 @@ on:
     branches:
       - master
 jobs:
-  test-build:
-    name: test if netblox even builds
+  test-build-windows:
+    name: Test if NetBlox builds on Windows
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -20,4 +20,23 @@ jobs:
         uses: actions/upload-artifact@v4.3.3
         with:
           name: NetBloxInstallerWindows
+          path: ./UniversalInstaller/bin/Release/net8.0/
+    
+  test-build-linux:
+    name: Test if NetBlox builds on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.5
+      - name: Build
+        uses: EasyDesk/action-dotnet-build@v1.0.0
+      - name: Upload NetBlox Client for Linux
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: NetBloxClientLinux
+          path: ./UniversalClient/bin/Release/net8.0/
+      - name: Upload NetBlox Installer for Linux
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: NetBloxInstallerLinux
           path: ./UniversalInstaller/bin/Release/net8.0/
