@@ -1,10 +1,10 @@
 ﻿using NetBlox;
-using NetBlox.Instances;
-using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
-using NetBlox.Structs;
 using Raylib_cs;
+using System.Buffers.Text;
+using System.Diagnostics;
 using System.Net;
+using System.Text;
 
 namespace UniversalDuoHost
 {
@@ -42,6 +42,7 @@ namespace UniversalDuoHost
 		{
 			PlatformService.QueuedTeleport = (xo) =>
 			{
+				CurrentClient.ConnectLoopback();
 			};
 
 			CurrentClient = AppManager.CreateGame(new()
@@ -49,7 +50,7 @@ namespace UniversalDuoHost
 				AsClient = true,
 				GameName = "NetBlox Client (duohosted)"
 			},
-			["-cs", "{\"e\":true,\"g\":\"127.0.0.1\"}"], (x) => { });
+			["-cs", "{\"a\":\"http://localhost:80/\",\"b\":\"NetBlox Development\",\"e\":true,\"g\":\"127.0.0.1\"}"], (x) => { });
 			CurrentClient.MainManager = true;
 			AppManager.SetRenderTarget(CurrentClient);
 			return CurrentClient;
@@ -68,11 +69,38 @@ namespace UniversalDuoHost
 			}
 			Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
+#if _WINDOWS
+			AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");
+#endif
+
+			if (args.Length > 0 && args[0] == "base64")
+			{
+				string bas64str = args[1];
+				byte[] base64 = Encoding.UTF8.GetBytes(bas64str);
+				int bytes = 0;
+				Base64.DecodeFromUtf8InPlace(base64, out bytes);
+				string argstr = Encoding.UTF8.GetString(base64);
+				args = argstr.Split(' ');
+			}
+
+			if (args.Length == 1 && args[0] == "check")
+			{
+				Console.WriteLine(NetBlox.Common.Version.VersionMajor + "." + NetBlox.Common.Version.VersionMinor + "." + NetBlox.Common.Version.VersionPatch);
+				return 0;
+			}
+
+			AppManager.PlatformOpenBrowser = x =>
+			{
+				ProcessStartInfo psi = new();
+				psi.FileName = x;
+				psi.UseShellExecute = true;
+				Process.Start(psi);
+			};
+
 			LogManager.LogInfo("Initializing server...");
 
 			CurrentServer = CreateServer(25570);
 			CurrentClient = CreateClient();
-			CurrentClient.ConnectLoopback();
 			AppManager.Start();
 			return 0;
 		}
