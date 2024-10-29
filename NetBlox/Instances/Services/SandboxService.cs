@@ -43,7 +43,7 @@ namespace NetBlox.Instances.Services
 			for (int i = 0; i < GameManager.PhysicsManager.Actors.Count && false; i++)
 			{
 				var actor = GameManager.PhysicsManager.Actors[i];
-				Raylib.DrawCubeWires(actor.Body.GetTransform().position, actor.Size.X, actor.Size.Y, actor.Size.Z, Color.Red);
+				// TODO: this
 			}
 
 			if (works != null)

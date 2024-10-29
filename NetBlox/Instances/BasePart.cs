@@ -1,7 +1,9 @@
-﻿using NetBlox.Instances.Services;
+﻿using BepuPhysics;
+using BepuPhysics.Collidables;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using Qu3e;
+using Raylib_cs;
 using System.Numerics;
 
 namespace NetBlox.Instances
@@ -13,26 +15,29 @@ namespace NetBlox.Instances
 	}
 	public class BasePart : PVInstance, I3DRenderable
 	{
+		public bool IsActuallyAnchored => IsDomestic ? _anchored : true;
 		[Lua([Security.Capability.None])]
 		public bool Anchored
 		{
 			get => _anchored;
 			set
 			{
-				_anchored = false; // temporary
-
-				if (Body != null)
+				if (_anchored != value)
 				{
-					if (!_anchored)
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+
+					if (_anchored)
 					{
-						Body.Flags &= ~BodyFlags.eStatic;
-						Body.Flags |= BodyFlags.eDynamic;
+						localsim.Bodies.Remove(BodyHandle);
+						CreateStaticHandle();
 					}
 					else
 					{
-						Body.Flags &= ~BodyFlags.eDynamic;
-						Body.Flags |= BodyFlags.eStatic;
+						localsim.Statics.Remove(StaticHandle);
+						CreateBodyHandle();
 					}
+
+					_anchored = value;
 				}
 			}
 		}
@@ -72,7 +77,7 @@ namespace NetBlox.Instances
 				if (_position == value)
 					return;
 				_position = value;
-				Body?.SetTransform(value);
+				// TODO: this
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -84,7 +89,7 @@ namespace NetBlox.Instances
 				if (_rotation == value)
 					return;
 				_rotation = value;
-				Body?.SetTransform(_position, value);
+				// TODO: this
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -93,16 +98,12 @@ namespace NetBlox.Instances
 			get => _size;
 			set
 			{
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				_size = value;
-				if (Box != null)
+
+				if (_anchored)
 				{
-					BoxDef = new BoxDef();
-					BoxDef.Set(Qu3e.Transform.Identity, _size);
-					Body.RemoveBox(Box);
-					var Tx = Box.local;
-					Box = Body.AddBox(BoxDef);
-					Box.SetUserdata(this);
-					Box.local = Tx;
+
 				}
 			}
 		}
@@ -123,36 +124,73 @@ namespace NetBlox.Instances
 				if (_lastvelocity == value)
 					return;
 				_lastvelocity = value;
-				Body?.SetLinearVelocity(_lastvelocity);
+				// TODO: this
 			}
 		}
+		/// <summary>
+		/// Use this if the part is anchored OR if its foreign (owned by another player)<br/>
+		/// ========================================<br/>
+		/// Use this if the part is server-side and its anchored
+		/// </summary>
+		public StaticHandle StaticHandle;
+		/// <summary>
+		/// Use this if the part is NOT anchored AND its domestic (owned by us)<br/>
+		/// ========================================<br/>
+		/// Use this if the part is server-side and its NOT anchored
+		/// </summary>
+		public BodyHandle BodyHandle;
 		public PartRenderCache RenderCache = new();
 		public Lighting? LocalLighing;
 		public bool IsGrounded = false;
-		public BoxDef BoxDef;
-		public Body Body;
-		public Box? Box;
 		public Vector3 _size;
 		public Vector3 _lastvelocity;
 
 		public BasePart(GameManager ins) : base(ins)
 		{
-			var works = Root.GetService<Workspace>(true);
-			if (works != null)
+			if (GameManager.NetworkManager.IsServer) // we are in server
 			{
-				Scene sc = works.Scene;
-				BodyDef bodyDef = new();
-				bodyDef.position.Set(0, 0, 0);
-				bodyDef.bodyType = !Anchored ? BodyType.eDynamicBody : BodyType.eStaticBody;
-				Body body = sc.CreateBody(bodyDef);
-				BoxDef = new BoxDef();
-				BoxDef.Set(Qu3e.Transform.Identity, Size);
-				Box = body.AddBox(BoxDef);
-				Box.SetUserdata(this);
-				Body = body;
+				// by default we ARE server-side AND unanchored
+				_anchored = false;
+				_size = new Vector3(1, 1, 1);
+				_position = new Vector3(0, 0, 0);
+				_rotation = new Vector3(0, 0, 0);
+				_lastvelocity = new Vector3(0, 0, 0);
 
-				GameManager.PhysicsManager.Actors.Add(this);
+				CreateBodyHandle();
 			}
+			GameManager.PhysicsManager.Actors.Add(this);
+		}
+		public void CreateBodyHandle()
+		{
+			if (_anchored)
+				throw new InvalidOperationException("Cannot call CreateBodyHandle on anchored BaseParts");
+
+			var localsim = GameManager.PhysicsManager.LocalSimulation;
+
+			var collidable = new Box(_size.X, _size.Y, _size.Z);
+			var inertia = collidable.ComputeInertia(1);
+			var rotation = Raymath.QuaternionFromEuler(_rotation.X, _rotation.Y, _rotation.Z);
+			var rigidpose = new RigidPose(_position, rotation);
+			var index = localsim.Shapes.Add(collidable);
+			var description = BodyDescription.CreateDynamic(rigidpose, inertia, index, 0.01f);
+			description.Velocity.Linear = _lastvelocity;
+
+			BodyHandle = localsim.Bodies.Add(description);
+		}
+		public void CreateStaticHandle()
+		{
+			// not necessarily, we might be a foreign part
+			// if (_anchored)
+			// 	throw new InvalidOperationException("Cannot call CreateBodyHandle on anchored BaseParts");
+
+			var localsim = GameManager.PhysicsManager.LocalSimulation;
+
+			var collidable = new Box(_size.X, _size.Y, _size.Z);
+			var rotation = Raymath.QuaternionFromEuler(_rotation.X, _rotation.Y, _rotation.Z);
+			var index = localsim.Shapes.Add(collidable);
+			var description = new StaticDescription(_position, rotation, index);
+
+			StaticHandle = localsim.Statics.Add(description);
 		}
 		public virtual void Render()
 		{
@@ -169,17 +207,7 @@ namespace NetBlox.Instances
 		public override bool IsA(string classname) => nameof(BasePart) == classname || base.IsA(classname);
 		public override void Destroy()
 		{
-			if (Body != null)
-			{
-				GameManager.PhysicsManager.Actors.Remove(this);
-				Scene sc = GameManager.CurrentRoot.GetService<Workspace>().Scene;
-				lock (sc)
-				{
-					sc.RemoveBody(Body);
-					Body = null!;
-					Box = null!;
-				}
-			}
+			// TODO: this
 			base.Destroy();
 		}
 		public override void SetPivot(CFrame pivot)

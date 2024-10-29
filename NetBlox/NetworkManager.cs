@@ -653,7 +653,7 @@ namespace NetBlox
 
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
-						actinst.SelfOwned = true;
+						actinst.IsDomestic = true;
 				});
 				tcp.RegisterRawDataHandler("nb2-confiscate", (rep, _) =>
 				{
@@ -663,7 +663,7 @@ namespace NetBlox
 
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
-						actinst.SelfOwned = false;
+						actinst.IsDomestic = false;
 				});
 				tcp.RegisterRawDataHandler("nb2-setcharacter", (rep, _) =>
 				{

@@ -1,12 +1,9 @@
 ﻿using Raylib_cs;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using NetBlox.Instances;
 using System.Numerics;
-using System.Text.Json.Serialization;
 using NetBlox.Instances.Services;
 using NetBlox.Common;
-using Qu3e;
 
 namespace NetBlox.Instances
 {
@@ -58,12 +55,9 @@ namespace NetBlox.Instances
 				Vector3 veldelta = Vector3.Zero;
 				Vector3 rotdelta = Vector3.Zero;
 
-				if (Body == null)
-					return;
-
 				if (GameManager.RenderManager.FocusedBox == null)
 				{
-					if (Raylib.IsKeyDown(KeyboardKey.Space) && (Body.ContactList.Count != 0 || GameManager.PhysicsManager.DisablePhysics))
+					if (Raylib.IsKeyDown(KeyboardKey.Space) && (/* TODO: this */ GameManager.PhysicsManager.DisablePhysics))
 						veldelta += new Vector3(0, JumpPower * deltatime, 0);
 					if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
 						veldelta += new Vector3(0, -WalkSpeed * deltatime, 0);

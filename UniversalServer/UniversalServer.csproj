@@ -19,9 +19,8 @@
 
   <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
 
-  <Import Project="..\Qu3eSharp\Qu3eSharp.projitems" Label="Shared" />
-
   <ItemGroup>
+    <PackageReference Include="BepuPhysics" Version="2.4.0" />
     <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="Raylib-cs" Version="6.1.0" />
   </ItemGroup>

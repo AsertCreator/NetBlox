@@ -1,7 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using Qu3e;
 using System.Diagnostics;
 
 namespace NetBlox.Instances
@@ -88,7 +87,7 @@ namespace NetBlox.Instances
 		public virtual Security.Capability[] RequiredCapabilities => [];
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
-		public bool SelfOwned = false;
+		public bool IsDomestic = false;
 		public RemoteClient? Owner;
 		public GameManager GameManager;
 		public List<Instance> Children = [];
@@ -168,7 +167,6 @@ namespace NetBlox.Instances
 							if (SerializationManager.IsReadonly(clone, props[i]))
 								continue;
 							if (ptyp.IsAssignableTo(typeof(Script))) continue;
-							if (ptyp.IsAssignableTo(typeof(Scene))) continue;
 							if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
 							{
 								var ogval = (Instance)prop;
@@ -492,7 +490,7 @@ namespace NetBlox.Instances
 		{
 			GameManager.AllInstances.Remove(this);
 			Owner = null;
-			SelfOwned = false;
+			IsDomestic = false;
 			GameManager = gm;
 			WasReplicated = false;
 			WasDestroyed = false;

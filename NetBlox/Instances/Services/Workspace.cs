@@ -1,7 +1,5 @@
 ﻿using NetBlox.Runtime;
-using NetBlox.Instances;
 using System.Numerics;
-using Qu3e;
 using Raylib_cs;
 
 namespace NetBlox.Instances.Services
@@ -39,12 +37,10 @@ namespace NetBlox.Instances.Services
 		}
 		public SpawnLocation? SpawnLocation;
 		public Sound? Ambient;
-		public Scene Scene;
 		private bool birdAmbient = true;
 
 		public Workspace(GameManager ins) : base(ins) 
 		{ 
-			Scene = new(1 / AppManager.PreferredFPS, new Vector3(0, Gravity, 0), 10);
 			birdAmbient = true;
 			if (GameManager.NetworkManager.IsClient)
 			{
@@ -64,51 +60,8 @@ namespace NetBlox.Instances.Services
 			GameManager.RenderManager.MainCamera.Position = new Vector3(50, 40, 0);
 			GameManager.RenderManager.MainCamera.Target = Vector3.Zero;
 		}
-		private class RaycastQueryCallback(WeakReference reference) : QueryCallback
-		{
-			public WeakReference Reference = reference;
-			public override bool ReportShape(Box box)
-			{
-				Reference.Target = box;
-				return true;
-			}
-		}
 		public RaycastResult Raycast(RaycastRequest req)
 		{
-			// Qu3e has the best api naming i ever seen
-			// we need to resynchronize proxies. whatever that means
-			for (int i = 0; i < GameManager.PhysicsManager.Actors.Count; i++)
-			{
-				var actor = GameManager.PhysicsManager.Actors[i];
-				actor.Body.SynchronizeProxies();
-			}
-
-			WeakReference boxref = new WeakReference(null);
-			Scene.RayCast(new RaycastQueryCallback(boxref /*im desperate*/), new RaycastData()
-			{
-				start = req.From,
-				dir = Vector3.Normalize(req.To - req.From),
-				t = req.MaxDistance
-			});
-			if (boxref.Target == null)
-			{
-				return new RaycastResult()
-				{
-					Distance = -1,
-					Part = null
-				};
-			}
-			var basepart = ((Box)(boxref.Target)).GetUserdata() as BasePart; // was about to go with O(n^2) approach.
-			// is performance is really a concern in THIS project? in a roblox clone?? should i even care? should you?
-			if (basepart != null && !basepart.Locked)
-			{
-				return new RaycastResult()
-				{
-					Distance = Vector3.Distance(basepart.Position, req.To),
-					Part = basepart
-				};
-			}
-
 			return new RaycastResult()
 			{
 				Distance = -1,

@@ -454,7 +454,7 @@ namespace NetBlox.Runtime
 							if (inst.ChangedSignals.TryGetValue(key, out LuaSignal? value))
 								value.Fire(val);
 
-							if (gm.NetworkManager.IsServer || inst.SelfOwned)
+							if (gm.NetworkManager.IsServer || inst.IsDomestic)
 								gm.NetworkManager.AddReplication(inst, 
 									NetworkManager.Replication.REPM_TOALL, 
 									NetworkManager.Replication.REPW_PROPCHG, false);

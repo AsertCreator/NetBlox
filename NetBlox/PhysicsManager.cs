@@ -1,12 +1,15 @@
-﻿using MoonSharp.Interpreter;
+﻿using BepuPhysics;
+using BepuPhysics.Collidables;
+using BepuPhysics.CollisionDetection;
+using BepuPhysics.Constraints;
+using BepuUtilities;
+using BepuUtilities.Memory;
+using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
-using NetBlox.Structs;
-using Qu3e;
-using System;
-using System.Collections.Generic;
+using Raylib_cs;
 using System.Numerics;
-using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace NetBlox
 {
@@ -19,68 +22,130 @@ namespace NetBlox
 			get => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Gravity; 
 			set => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Gravity = value; 
 		}
-		public Scene Scene 
-		{ 
-			get => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Scene; 
-			set => (Workspace ?? throw new ScriptRuntimeException("No workspace is loaded")).Scene = value; 
-		}
+		public Simulation LocalSimulation;
+		public BufferPool LocalSimulationBuffer;
+		public ThreadDispatcher DefaultThreadDispatcher;
 		public List<BasePart> Actors = new();
 		public bool DisablePhysics = true; // not now
 		private DateTime LastTime = DateTime.UtcNow;
 
 		public PhysicsManager(GameManager gameManager)
 		{
+			var inpc = new InternalNarrowPhaseCallbacks();
+			var ipic = new InternalPoseIntegratorCallbacks(new Vector3(0, -10, 0));
+			var solver = new SolveDescription(8, 1);
+
 			GameManager = gameManager;
+			DefaultThreadDispatcher = new ThreadDispatcher(2);
+			LocalSimulationBuffer = new BufferPool();
+			LocalSimulation = Simulation.Create(LocalSimulationBuffer, inpc, ipic, solver);
 		}
 		public void Begin() => LastTime = DateTime.UtcNow;
-		public void Step()
+		public void ClientStep()
 		{
-			if (Workspace == null || Scene == null || DisablePhysics)
+			if (Workspace == null || DisablePhysics)
 				return;
-			lock (Scene)
+
+			LocalSimulation.Timestep(1.0f / AppManager.PreferredFPS, DefaultThreadDispatcher);
+
+			for (int i = 0; i < Actors.Count; i++)
 			{
-				try
+				var box = Actors[i];
+
+				if (!box.Anchored && box.IsDomestic) // if part is dynamic AND its domestic
 				{
-					Scene.Step((DateTime.UtcNow - LastTime).TotalSeconds * 1.5);
-
-					for (int i = 0; i < Actors.Count; i++)
-					{
-						var act = Actors[i];
-						if (!act.Anchored && ((GameManager.NetworkManager.IsClient && act.SelfOwned) || 
-							(GameManager.NetworkManager.IsServer && act.Owner != null)))
-						{
-							act._position = act.Body!.GetTransform().position;
-							act._rotation = act.Body!.GetTransform().rotation.ToEuler();
-							act._lastvelocity = act.Body!.GetLinearVelocity();
-
-							if (act._position.Y < Workspace.FallenPartsDestroyHeight && GameManager.NetworkManager.IsServer)
-							{
-								act.Destroy();
-								continue;
-							}
-
-							if ((GameManager.NetworkManager.Clients.Count > 0 || GameManager.NetworkManager.IsClient) && (
-								act._lastposition != act._position ||
-								act._lastrotation != act._rotation ||
-								act._lastvelocity != act.Velocity))
-								act.ReplicateProperties(["Position", "Rotation", "Velocity"], false);
-
-							act._lastposition = act._position;
-							act._lastrotation = act._rotation;
-						}
-						else
-						{
-							act.Body!.SetTransform(act._position, act._rotation);
-							act.Body!.SetLinearVelocity(act._lastvelocity);
-						}
-					}
-					LastTime = DateTime.UtcNow;
-				}
-				catch (Exception ex)
-				{
-					LogManager.LogWarn("Physics solver had failed! " + ex.GetType() + ", msg: " + ex.Message);
+					// reflect this in rendering
+					var refer = LocalSimulation.Bodies[box.BodyHandle];
+					box._position = refer.Pose.Position;
+					box._rotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
+					box._lastvelocity = refer.Velocity.Linear;
 				}
 			}
+		}
+		public void ServerStep()
+		{
+			if (Workspace == null || DisablePhysics)
+				return;
+
+			LocalSimulation.Timestep(1.0f / 45, DefaultThreadDispatcher);
+
+			for (int i = 0; i < Actors.Count; i++)
+			{
+				var box = Actors[i];
+
+				if (!box.Anchored && box.Owner == null) // if part is dynamic AND its server-side
+				{
+					// reflect this in rendering
+					var refer = LocalSimulation.Bodies[box.BodyHandle];
+					box._position = refer.Pose.Position;
+					box._rotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
+					box._lastvelocity = refer.Velocity.Linear;
+				}
+			}
+		}
+		public void Step()
+		{
+			if (GameManager.NetworkManager.IsServer)
+				ServerStep();
+			else if (GameManager.NetworkManager.IsClient)
+				ClientStep();
+		}
+	}
+	internal struct InternalNarrowPhaseCallbacks : INarrowPhaseCallbacks
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
+		{
+			return a.Mobility == CollidableMobility.Dynamic || b.Mobility == CollidableMobility.Dynamic;
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool AllowContactGeneration(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB)
+		{
+			return true;
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold, out PairMaterialProperties pairMaterial) where TManifold : unmanaged, IContactManifold<TManifold>
+		{
+			pairMaterial.FrictionCoefficient = 1f;
+			pairMaterial.MaximumRecoveryVelocity = 2f;
+			pairMaterial.SpringSettings = new SpringSettings(30, 1);
+			return true;
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool ConfigureContactManifold(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB, ref ConvexContactManifold manifold)
+		{
+			return true;
+		}
+		public void Dispose()
+		{
+		}
+		public void Initialize(Simulation simulation)
+		{
+		}
+	}
+	public struct InternalPoseIntegratorCallbacks : IPoseIntegratorCallbacks
+	{
+		public void Initialize(Simulation simulation)
+		{
+		}
+		public AngularIntegrationMode AngularIntegrationMode => AngularIntegrationMode.Nonconserving;
+		public bool AllowSubstepsForUnconstrainedBodies => false;
+		public bool IntegrateVelocityForKinematics => false;
+		public Vector3 Gravity;
+
+		public InternalPoseIntegratorCallbacks(Vector3 gravity)
+		{
+			Gravity = gravity;
+		}
+		Vector3Wide gravityWideDt;
+
+		public void PrepareForIntegration(float dt)
+		{
+			gravityWideDt = Vector3Wide.Broadcast(Gravity * dt);
+		}
+		public void IntegrateVelocity(Vector<int> bodyIndices, Vector3Wide position, QuaternionWide orientation, BodyInertiaWide localInertia, Vector<int> integrationMask, int workerIndex, Vector<float> dt, ref BodyVelocityWide velocity)
+		{
+			velocity.Linear += gravityWideDt;
 		}
 	}
 }
