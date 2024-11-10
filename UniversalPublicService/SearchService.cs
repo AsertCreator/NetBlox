@@ -20,12 +20,12 @@ namespace NetBlox.PublicService
 		{
 			// we dont
 		}
-		public ISearchable[] Search(string query, int amount) => Search(query.Split(' '), amount);
-		public ISearchable[] Search(string[] keywords, int amount)
+		public IWebSubject[] Search(string query, int amount) => Search(query.Split(' '), amount);
+		public IWebSubject[] Search(string[] keywords, int amount)
 		{
-			var places = Program.GetService<PlaceService>().AllPlaces.Cast<ISearchable>();
-			var users = Program.GetService<UserService>().AllUsers.Cast<ISearchable>();
-			var result = new List<ISearchable>();
+			var places = Program.GetService<PlaceService>().AllPlaces.Cast<IWebSubject>();
+			var users = Program.GetService<AccountService>().AllUsers.Cast<IWebSubject>();
+			var result = new List<IWebSubject>();
 			var all = places.Concat(users).ToArray();
 
 			for (int i = 0; i < keywords.Length; i++)
@@ -51,7 +51,10 @@ namespace NetBlox.PublicService
 			return result.ToArray();
 		}
 	}
-	public interface ISearchable
+	/// <summary>
+	/// A web subject has a name, a description, and things i just removed because i need to commit to do other things
+	/// </summary>
+	public interface IWebSubject
 	{
 		public string Name { get; }
 		public string Description { get; }

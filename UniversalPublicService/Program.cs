@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text;
+using System.Text.Json;
 using NetBlox.Common;
 using Serilog;
 using Version = NetBlox.Common.Version;
@@ -12,6 +13,10 @@ namespace NetBlox.PublicService
 		public static string PublicServiceName = "";
 		public static bool IsReadonly = false;
 		public static bool IsUnderMaintenance = false;
+		public static JsonSerializerOptions SerializerOptions = new JsonSerializerOptions()
+		{
+			IncludeFields = true
+		};
 
 		public static void Main(string[] args)
 		{
@@ -22,7 +27,7 @@ namespace NetBlox.PublicService
 
 			GetService<ServerService>();
 			GetService<PlaceService>();
-			GetService<UserService>();
+			GetService<AccountService>();
 			GetService<WebService>();
 
 			WaitForAllServices();

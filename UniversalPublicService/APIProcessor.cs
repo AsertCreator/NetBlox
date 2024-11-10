@@ -27,14 +27,14 @@ namespace NetBlox.PublicService
 				return EncodeJson(new()
 				{
 					["placeCount"] = Program.GetService<PlaceService>().AllPlaces.Count,
-					["userCount"] = Program.GetService<UserService>().AllUsers.Count,
+					["userCount"] = Program.GetService<AccountService>().AllUsers.Count,
 					["name"] = Program.PublicServiceName
 				});
 			});
 
 			AddEndpoint("/api/users/info", delegate (HttpListenerContext x, ref int code)
 			{
-				User user = Program.GetService<UserService>().GetUserByID(long.Parse(GetQueryData(x, "id")));
+				Account user = Program.GetService<AccountService>().GetUserByID(long.Parse(GetQueryData(x, "id")));
 
 				if (user == null)
 				{
@@ -51,14 +51,13 @@ namespace NetBlox.PublicService
 					["type"] = 0,
 					["name"] = user.Name,
 					["id"] = user.Id,
-					["membership"] = user.MembershipType,
-					["presence"] = (int)user.CurrentPresence,
+					["presence"] = (int)user.Presence,
 				});
 			});
 
 			AddEndpoint("/api/users/login", delegate (HttpListenerContext x, ref int code)
 			{
-				User user = Program.GetService<UserService>().GetUserByName(GetQueryData(x, "name"));
+				Account user = Program.GetService<AccountService>().GetUserByName(GetQueryData(x, "name"));
 
 				if (user == null)
 				{
@@ -72,11 +71,11 @@ namespace NetBlox.PublicService
 
 				string phash = GetQueryData(x, "phash");
 
-				if (!user.HasPassword() || user.CheckPasswordHash(phash))
+				if (Program.GetService<AccountService>().CheckPassword(user, phash))
 				{
 					return EncodeJson(new()
 					{
-						["token"] = user.CurrentLoginToken.ToString()
+						["token"] = user.LoginToken.ToString()
 					});
 				}
 
@@ -90,7 +89,7 @@ namespace NetBlox.PublicService
 
 			AddEndpoint("/api/users/relogin", delegate (HttpListenerContext x, ref int code)
 			{
-				User user = Program.GetService<UserService>().GetUserByName(GetQueryData(x, "name"));
+				Account user = Program.GetService<AccountService>().GetUserByName(GetQueryData(x, "name"));
 
 				if (user == null)
 				{
@@ -104,12 +103,12 @@ namespace NetBlox.PublicService
 
 				string phash = GetQueryData(x, "phash");
 
-				if (!user.HasPassword() || user.CheckPasswordHash(phash))
+				if (Program.GetService<AccountService>().CheckPassword(user, phash))
 				{
-					user.CurrentLoginToken = Guid.NewGuid();
+					user.LoginToken = Guid.NewGuid();
 					return EncodeJson(new()
 					{
-						["token"] = user.CurrentLoginToken.ToString()
+						["token"] = user.LoginToken.ToString()
 					});
 				}
 
@@ -124,8 +123,8 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/users/create", delegate (HttpListenerContext x, ref int code)
 			{
 				string name = GetQueryData(x, "name").TrimStart().TrimEnd();
-				UserService us = Program.GetService<UserService>();
-				User user = us.GetUserByName(name);
+				AccountService us = Program.GetService<AccountService>();
+				Account user = us.GetUserByName(name);
 
 				if (user != null)
 				{
@@ -138,7 +137,7 @@ namespace NetBlox.PublicService
 				}
 
 				string password = GetQueryData(x, "pplain");
-				user = us.CreateUser(name, password);
+				user = us.RegisterNewUser(name, password);
 
 				if (user == null)
 				{
@@ -150,16 +149,16 @@ namespace NetBlox.PublicService
 					});
 				}
 
-				user.CurrentLoginToken = Guid.NewGuid();
+				user.LoginToken = Guid.NewGuid();
 				return EncodeJson(new()
 				{
-					["token"] = user.CurrentLoginToken.ToString()
+					["token"] = user.LoginToken.ToString()
 				});
 			});
 
 			AddEndpoint("/api/users/setpresence", delegate (HttpListenerContext x, ref int code)
 			{
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
+				Account user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
 
 				if (user == null)
 				{
@@ -171,10 +170,10 @@ namespace NetBlox.PublicService
 					});
 				}
 
-				user.CurrentPresence = (OnlineMode)int.Parse(GetQueryData(x, "val"));
+				user.Presence = (OnlineMode)int.Parse(GetQueryData(x, "val"));
 				return EncodeJson(new()
 				{
-					["presence"] = (int)user.CurrentPresence
+					["presence"] = (int)user.Presence
 				});
 			});
 
@@ -192,7 +191,7 @@ namespace NetBlox.PublicService
 					});
 				}
 
-				User? author = Program.GetService<UserService>().GetUserByID(place.UserId);
+				Account? author = Program.GetService<AccountService>().GetUserByID(place.UserId);
 
 				return EncodeJson(new()
 				{
@@ -228,7 +227,7 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/create", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
+				Account user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
 
 				if (user == null)
 				{
@@ -253,7 +252,7 @@ namespace NetBlox.PublicService
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
 				ServerService ss = Program.GetService<ServerService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
+				Account user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
 				Place place = ps.GetPlaceByID(long.Parse(GetQueryData(x, "gid")));
 
 				if (user == null)
@@ -278,7 +277,7 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/update/content", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
+				Account user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
 
 				if (user == null)
 				{
@@ -313,7 +312,7 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/update/info", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
+				Account user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
 
 				if (user == null)
 				{
@@ -349,7 +348,7 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/places/shutdown", delegate (HttpListenerContext x, ref int code)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
-				User user = Program.GetService<UserService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
+				Account user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(GetQueryData(x, "token")));
 
 				if (user == null)
 				{
@@ -384,7 +383,7 @@ namespace NetBlox.PublicService
 			AddEndpoint("/api/search", delegate (HttpListenerContext x, ref int code)
 			{
 				SearchService ss = Program.GetService<SearchService>();
-				UserService us = Program.GetService<UserService>();
+				AccountService us = Program.GetService<AccountService>();
 				
 				int amount = int.Parse(GetQueryData(x, "amount"));
 				string query = GetQueryData(x, "q");
@@ -405,11 +404,11 @@ namespace NetBlox.PublicService
 				{
 					var entry = entries[i];
 					var place = entry as Place;
-					var user = entry as User;
+					var user = entry as Account;
 
 					if (place != null)
 					{
-						User? author = us.GetUserByID(place.UserId);
+						Account? author = us.GetUserByID(place.UserId);
 						infos.Add(new()
 						{
 							["type"] = 1,
@@ -427,8 +426,7 @@ namespace NetBlox.PublicService
 							["type"] = 0,
 							["name"] = user.Name,
 							["id"] = user.Id,
-							["membership"] = user.MembershipType,
-							["presence"] = (int)user.CurrentPresence,
+							["presence"] = (int)user.Presence,
 						});
 					}
 				}

@@ -33,7 +33,7 @@ namespace NetBlox.PublicService
 			SaveDatabase();
 		}
 		public Place? GetPlaceByID(long id) => (from x in AllPlaces where x.Id == id select x).FirstOrDefault();
-		public Place? CreatePlace(string name, string content, User user)
+		public Place? CreatePlace(string name, string content, Account user)
 		{
 			Place place = new();
 			place.Id = AllPlaces.Count;
@@ -61,7 +61,7 @@ namespace NetBlox.PublicService
 			}));
 		}
 	}
-	public class Place : ISearchable
+	public class Place : IWebSubject
 	{
 		[JsonPropertyName("id")]
 		public long Id;
@@ -76,8 +76,8 @@ namespace NetBlox.PublicService
 		[JsonPropertyName("uid")]
 		public long UserId;
 
-		string ISearchable.Name => Name;
-		string ISearchable.Description => Description;
+		string IWebSubject.Name => Name;
+		string IWebSubject.Description => Description;
 
 		public void ShutdownServers()
 		{
