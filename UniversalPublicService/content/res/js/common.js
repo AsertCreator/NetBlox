@@ -10,11 +10,29 @@ window.netblox = {
 		const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
 		const hashArray = Array.from(new Uint8Array(hashBuffer));
 		const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-		return hashHex;
+		return hashHex.toUpperCase();
 	},
 	getPublicServiceApiUrl: () => "http://" + window.location.hostname + "/api",
 	LoginService: {
-		hasLoggedIn: () => window.netblox.getCookie("nblogtok") == undefined,
+		hasLoggedIn: () => window.netblox.getCookie("nblogtok") != undefined,
+		getSelf: async () => {
+			if (!window.netblox.LoginService.hasLoggedIn())
+				return null;
+			debugger;
+			const resp = await fetch(window.netblox.getPublicServiceApiUrl() + "/users/self", {
+				method: 'GET',
+				credentials: "same-origin",
+				headers: {
+					'Content-Type': 'text/plain;charset=utf-8'
+				},
+			});
+			if (resp.ok) {
+				return await resp.json();
+			}
+			else {
+				return null;
+			}
+		},
 		login: async (uname, passw) => {
 			if (window.netblox.LoginService.hasLoggedIn())
 				window.netblox.LoginService.logout();
@@ -29,11 +47,31 @@ window.netblox = {
 			if (resp.ok) {
 				console.log("logged in successfully!");
 				document.cookie = "nblogtok=" + encodeURIComponent((await resp.json()).token) + "; maxage=" + 60 * 60 * 24 * 30; // for a month
-				return true;
+				return [true];
 			}
 			else {
 				console.error("failed to log in!");
-				return false;
+				return [false, await resp.json().errorText];
+			}
+		},
+		register: async (uname, passw) => {
+			if (window.netblox.LoginService.hasLoggedIn())
+				window.netblox.LoginService.logout();
+			const resp = await fetch(window.netblox.getPublicServiceApiUrl() + "/users/create?name=" +
+				encodeURIComponent(uname) + "&pplain=" + encodeURIComponent(passw), {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'text/plain;charset=utf-8'
+				},
+			});
+			if (resp.ok) {
+				console.log("registered successfully!");
+				document.cookie = "nblogtok=" + encodeURIComponent((await resp.json()).token) + "; maxage=" + 60 * 60 * 24 * 30; // for a month
+				return [true];
+			}
+			else {
+				console.error("failed to register!");
+				return [false, await resp.json().errorText];
 			}
 		},
 		logout: () => {
@@ -87,6 +125,7 @@ window.netblox = {
 			let resp = await fetch("http://" + window.location.hostname + "/api/places/join?id=" + encodeURIComponent(gameid)
 				+ "&sid=" + encodeURIComponent(servid), {
 				method: 'GET',
+				credentials: "same-origin",
 				headers: {
 					'Content-Type': 'text/plain;charset=utf-8'
 				}
@@ -167,7 +206,10 @@ class Titlebar extends React.Component {
 						}}>Logout</a>
 					) :
 					(
-						<a href="/login" style={(window.location.pathname == "/login" ? { textDecoration: 'underline' } : {})}>Login</a>
+						<span>
+							<a href="/login" style={(window.location.pathname == "/login" ? { textDecoration: 'underline' } : {})}>Login</a>
+							<a href="/register" style={(window.location.pathname == "/register" ? { textDecoration: 'underline' } : {})}>Register</a>
+						</span>
 					) // what the fuck visual studio. its re****ed isnt it?
 				}
 			</div>
