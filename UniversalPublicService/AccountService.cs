@@ -109,6 +109,7 @@ namespace NetBlox.PublicService
 		public string About = "";
 		public string PasswordHash = "";
 		public string AppearanceData = "";
+		public string CountryCode = "PS";
 		public double Rating;
 		public Guid LoginToken;
 		public OnlineMode Presence;
