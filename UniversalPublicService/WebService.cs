@@ -101,31 +101,40 @@ namespace NetBlox.PublicService
 
 				var code = 200;
 				var mime = "text/html";
+
 				try
 				{
-					by = Serve(cl, cl.Request.Url!.LocalPath, ref code, ref mime);
+					try
+					{
+						by = Serve(cl, cl.Request.Url!.LocalPath, ref code, ref mime);
 
-					cl.Response.ContentType = mime;
-					cl.Response.StatusCode = code;
-					cl.Response.ContentLength64 += by.Length;
-					st.Write(by);
-					st.Flush();
-					cl.Response.Close();
+						cl.Response.ContentType = mime;
+						cl.Response.StatusCode = code;
+						cl.Response.ContentLength64 += by.Length;
+						st.Write(by);
+						st.Flush();
+						cl.Response.Close();
+					}
+					catch
+					{
+						code = 404;
+						by = Encoding.UTF8.GetBytes(File.ReadAllText("./content/notfound.html"));
+
+						cl.Response.ContentType = mime;
+						cl.Response.StatusCode = code;
+						cl.Response.ContentLength64 += by.Length;
+						st.Write(by);
+						st.Flush();
+						cl.Response.Close();
+					}
+
+					TokenSource.Token.ThrowIfCancellationRequested();
 				}
-				catch
+				catch (Exception ex)
 				{
-					code = 404;
-					by = Encoding.UTF8.GetBytes(File.ReadAllText("./content/notfound.html"));
-
-					cl.Response.ContentType = mime;
-					cl.Response.StatusCode = code;
-					cl.Response.ContentLength64 += by.Length;
-					st.Write(by);
-					st.Flush();
-					cl.Response.Close();
+					// severe shit happened
+					Log.Warning("Something weird happened in WebService: " + ex.GetType().FullName + ", msg: " + ex.Message);
 				}
-
-				TokenSource.Token.ThrowIfCancellationRequested();
 			}
 		}
 		protected override void OnStop() => TokenSource.Cancel();

@@ -78,16 +78,6 @@ namespace NetBlox.PublicService
 		public Account? GetUserByToken(Guid token) => (from x in AllUsers where x.LoginToken == token select x).FirstOrDefault();
 		public Account? GetUserByName(string name) => (from x in AllUsers where x.Name == name select x).FirstOrDefault();
 		public Account? GetUserByID(long id) => (from x in AllUsers where x.Id == id select x).FirstOrDefault();
-		public Account RegisterUser(string name, string password)
-		{
-			Account user = new();
-			user.Id = AllUsers.Count;
-			user.Name = name;
-			SetPassword(user, password);
-
-			AllUsers.Add(user);
-			return user;
-		}
 		public void LoadDatabase()
 		{
 			if (File.Exists("users"))
