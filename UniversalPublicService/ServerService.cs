@@ -39,7 +39,7 @@ namespace NetBlox.PublicService
 				}
 			}
 		}
-		public Server FindServer(User user, Place place)
+		public Server FindServer(Account user, Place place)
 		{
 			for (int i = 0; i < RunningServers.Count; i++)
 			{
@@ -107,9 +107,9 @@ namespace NetBlox.PublicService
 			}
 		}
 		public void RunScript(string scr) => Communicate("nb2-rctrl-runlua\n" + scr);
-		public void Kick(User user, string msg) => Communicate("nb2-rctrl-kick\n" + user.Id + ";" + msg);
+		public void Kick(Account user, string msg) => Communicate("nb2-rctrl-kick\n" + user.Id + ";" + msg);
 		public void KickAll(string msg) => GetPlayers().ToList().ForEach(x => Kick(x, msg));
-		public User[] GetPlayers() => (from x in Communicate("nb2-rtcrl-getuids\n").Split(';') select Program.GetService<UserService>().GetUserByID(long.Parse(x)))
+		public Account[] GetPlayers() => (from x in Communicate("nb2-rtcrl-getuids\n").Split(';') select Program.GetService<AccountService>().GetUserByID(long.Parse(x)))
 				.ToArray();
 		public int GetPlayerCount() => Communicate("nb2-rtcrl-getuids\n").Split(';').Length;
 	}
