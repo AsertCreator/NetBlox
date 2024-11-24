@@ -1,6 +1,7 @@
 ﻿using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace NetBlox.Instances
 {
@@ -8,8 +9,10 @@ namespace NetBlox.Instances
 	{
 		public bool _anchored = false;
 		public Vector3 _position 
-		{ 
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _pivot.Position;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set 
 			{
 				_pivot.Position = value;
@@ -20,9 +23,11 @@ namespace NetBlox.Instances
 				}
 			} 
 		}
-		public Vector3 _rotation 
-		{ 
+		public Vector3 _rotation
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _pivot.Rotation;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set 
 			{
 				_pivot.Rotation = value;
@@ -35,13 +40,26 @@ namespace NetBlox.Instances
 		public CFrame _pivot;
 		public CFrame _pivotOffset;
 		[Lua([Security.Capability.None])]
-		public CFrame PivotOffset { get => _pivotOffset; set => _pivotOffset = value; }
+		public CFrame PivotOffset
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => _pivotOffset;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set => _pivotOffset = value; 
+		}
 		[Lua([Security.Capability.None])]
-		public CFrame CFrame { get => GetPivot(); set => SetPivot(value); }
+		public CFrame CFrame
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => GetPivot();
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set => SetPivot(value); 
+		}
 
 		public PVInstance(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public virtual CFrame GetPivot() => _pivot * _pivotOffset;
 		[Lua([Security.Capability.None])]
 		public virtual void SetPivot(CFrame pivot) { }

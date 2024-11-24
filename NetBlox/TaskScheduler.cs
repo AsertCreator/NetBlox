@@ -167,7 +167,7 @@ namespace NetBlox
 			{
 				var args = job.ScriptJobContext.YieldReturn;
 				if (job.ScriptJobContext.Coroutine.State == CoroutineState.Dead)
-					throw new Exception("what just happened");
+					return JobResult.CompletedSuccess;
 
 				var result = job.ScriptJobContext.Coroutine.Resume(args);
 

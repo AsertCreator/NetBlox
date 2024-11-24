@@ -46,6 +46,8 @@ namespace NetBlox
 			if (Workspace == null || DisablePhysics)
 				return;
 
+			var work = Workspace;
+
 			LocalSimulation.Timestep(1.0f / AppManager.PreferredFPS, DefaultThreadDispatcher);
 
 			for (int i = 0; i < Actors.Count; i++)
@@ -54,11 +56,17 @@ namespace NetBlox
 
 				if (!box.Anchored && box.IsDomestic) // if part is dynamic AND its domestic
 				{
+					if (!box.BodyHandle.HasValue)
+						continue;
+
 					// reflect this in rendering
-					var refer = LocalSimulation.Bodies[box.BodyHandle];
+					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
 					box._position = refer.Pose.Position;
 					box._rotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
 					box._lastvelocity = refer.Velocity.Linear;
+
+					if (box._position.Y <= work.FallenPartsDestroyHeight)
+						box.Destroy();
 				}
 			}
 		}
@@ -66,6 +74,8 @@ namespace NetBlox
 		{
 			if (Workspace == null || DisablePhysics)
 				return;
+
+			var work = Workspace;
 
 			LocalSimulation.Timestep(1.0f / 45, DefaultThreadDispatcher);
 
@@ -76,10 +86,13 @@ namespace NetBlox
 				if (!box.Anchored && box.Owner == null) // if part is dynamic AND its server-side
 				{
 					// reflect this in rendering
-					var refer = LocalSimulation.Bodies[box.BodyHandle];
+					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
 					box._position = refer.Pose.Position;
 					box._rotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
 					box._lastvelocity = refer.Velocity.Linear;
+
+					if (box._position.Y <= work.FallenPartsDestroyHeight)
+						box.Destroy();
 				}
 			}
 		}

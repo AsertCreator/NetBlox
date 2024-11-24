@@ -399,6 +399,7 @@ namespace NetBlox
 
 			Server.Start();
 			GameManager.AllowReplication = true;
+			GameManager.PhysicsManager.DisablePhysics = false;
 
 			LogManager.LogInfo($"Listening at {Server.IPAddress}:{ServerPort}");
 
@@ -586,6 +587,8 @@ namespace NetBlox
 									SendRawData(tcp, "nb2-gotchar", character.UniqueID.ToByteArray());
 								}
 							}
+
+							GameManager.PhysicsManager.DisablePhysics = false;
 						}
 						if (ins is Player player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
 						{

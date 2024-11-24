@@ -22,22 +22,21 @@ namespace NetBlox.Instances
 			get => _anchored;
 			set
 			{
-				if (_anchored != value)
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
+
+				_anchored = value;
+
+				if (IsActuallyAnchored)
 				{
-					var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-					if (_anchored)
-					{
-						localsim.Bodies.Remove(BodyHandle);
-						CreateStaticHandle();
-					}
-					else
-					{
-						localsim.Statics.Remove(StaticHandle);
-						CreateBodyHandle();
-					}
-
-					_anchored = value;
+					if (BodyHandle.HasValue)
+						localsim.Bodies.Remove(BodyHandle.Value);
+					CreateStaticHandle();
+				}
+				else
+				{
+					if (StaticHandle.HasValue)
+						localsim.Statics.Remove(StaticHandle.Value);
+					CreateBodyHandle();
 				}
 			}
 		}
@@ -77,7 +76,12 @@ namespace NetBlox.Instances
 				if (_position == value)
 					return;
 				_position = value;
-				// TODO: this
+
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
+				if (BodyHandle.HasValue)
+					localsim.Bodies[BodyHandle.Value].Pose = _position;
+				if (StaticHandle.HasValue)
+					localsim.Statics[StaticHandle.Value].Pose = _position;
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -89,7 +93,12 @@ namespace NetBlox.Instances
 				if (_rotation == value)
 					return;
 				_rotation = value;
-				// TODO: this
+
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
+				if (BodyHandle.HasValue)
+					localsim.Bodies[BodyHandle.Value].Pose.Orientation = Raymath.QuaternionFromEuler(_rotation.Z, _rotation.Y, _rotation.X);
+				if (StaticHandle.HasValue)
+					localsim.Statics[StaticHandle.Value].Pose.Orientation = Raymath.QuaternionFromEuler(_rotation.Z, _rotation.Y, _rotation.X);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -98,12 +107,38 @@ namespace NetBlox.Instances
 			get => _size;
 			set
 			{
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
+				if (_size == value)
+					return;
 				_size = value;
 
-				if (_anchored)
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
+				if (BodyHandle.HasValue) 
 				{
+					var idx = localsim.Bodies[BodyHandle.Value].Collidable.Shape;
+					var box = localsim.Shapes.GetShape<Box>(idx.Index);
 
+					localsim.Shapes.Remove(idx);
+
+					box.Width = _size.X;
+					box.Height = _size.Y;
+					box.Length = _size.Z;
+
+					idx = localsim.Shapes.Add(box);
+					localsim.Bodies[BodyHandle.Value].Collidable.Shape = idx;
+				}
+				if (StaticHandle.HasValue)
+				{
+					var idx = localsim.Statics[StaticHandle.Value].Shape;
+					var box = localsim.Shapes.GetShape<Box>(idx.Index);
+
+					localsim.Shapes.Remove(idx);
+
+					box.Width = _size.X;
+					box.Height = _size.Y;
+					box.Length = _size.Z;
+
+					idx = localsim.Shapes.Add(box);
+					localsim.Statics[StaticHandle.Value].SetShape(idx);
 				}
 			}
 		}
@@ -124,7 +159,10 @@ namespace NetBlox.Instances
 				if (_lastvelocity == value)
 					return;
 				_lastvelocity = value;
-				// TODO: this
+
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
+				if (BodyHandle.HasValue)
+					localsim.Bodies[BodyHandle.Value].Velocity.Linear = _lastvelocity;
 			}
 		}
 		/// <summary>
@@ -132,13 +170,13 @@ namespace NetBlox.Instances
 		/// ========================================<br/>
 		/// Use this if the part is server-side and its anchored
 		/// </summary>
-		public StaticHandle StaticHandle;
+		public StaticHandle? StaticHandle;
 		/// <summary>
 		/// Use this if the part is NOT anchored AND its domestic (owned by us)<br/>
 		/// ========================================<br/>
 		/// Use this if the part is server-side and its NOT anchored
 		/// </summary>
-		public BodyHandle BodyHandle;
+		public BodyHandle? BodyHandle;
 		public PartRenderCache RenderCache = new();
 		public Lighting? LocalLighing;
 		public bool IsGrounded = false;
@@ -207,7 +245,7 @@ namespace NetBlox.Instances
 		public override bool IsA(string classname) => nameof(BasePart) == classname || base.IsA(classname);
 		public override void Destroy()
 		{
-			// TODO: this
+			GameManager.PhysicsManager.Actors.Remove(this);
 			base.Destroy();
 		}
 		public override void SetPivot(CFrame pivot)
