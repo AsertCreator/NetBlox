@@ -120,12 +120,6 @@ namespace NetBlox
 					if (coregui != null)
 						coregui.TakeScreenshot();
 				});
-				Verbs.Add(KeyboardKey.P, () => 
-				{ 
-					PhysicsManager.DisablePhysics = !PhysicsManager.DisablePhysics;
-					if (!PhysicsManager.DisablePhysics)
-						PhysicsManager.Begin();
-				});
 				Verbs.Add(KeyboardKey.L, () =>
 				{
 					var light = CurrentRoot.GetService<Lighting>(true);
