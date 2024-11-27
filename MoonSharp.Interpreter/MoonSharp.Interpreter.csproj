@@ -5,7 +5,7 @@
     <Copyright>(C) 2014-2016 Marco Mastropaolo</Copyright>
     <AssemblyTitle>MoonSharp.Interpreter</AssemblyTitle>
     <VersionPrefix>2.0.0</VersionPrefix>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <DefineConstants>$(DefineConstants);DOTNET_CORE;NETFX_CORE</DefineConstants>
     <AssemblyName>MoonSharp.Interpreter</AssemblyName>
     <PackageId>MoonSharp.Interpreter.netcore</PackageId>

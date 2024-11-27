@@ -8,6 +8,7 @@ using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -90,6 +91,8 @@ namespace NetBlox
 				if (!box.Anchored && box.Owner == null) // if part is dynamic AND its server-side
 				{
 					// reflect this in rendering
+					Debug.Assert(box.BodyHandle.HasValue);
+
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
 					box._physicsposition = refer.Pose.Position;
 					box._physicsrotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);

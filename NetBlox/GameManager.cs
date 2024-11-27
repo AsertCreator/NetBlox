@@ -309,14 +309,14 @@ namespace NetBlox
 							TopSurface = SurfaceType.Studs,
 							Anchored = true
 						};
-						new SpawnLocation(this)
+						_ = new SpawnLocation(this)
 						{
 							Parent = ws,
 							Position = new(0, -45f + 2, 0),
 							TopSurface = SurfaceType.Studs
 						};
 
-						new Part(this)
+						_ = new Part(this)
 						{
 							Parent = ws,
 							Color3 = Color.DarkBlue,
@@ -324,7 +324,7 @@ namespace NetBlox
 							Size = new(1, 2, 1),
 							TopSurface = SurfaceType.Studs
 						};
-						new Part(this)
+						_ = new Part(this)
 						{
 							Parent = ws,
 							Color3 = Color.DarkBlue,
@@ -332,7 +332,7 @@ namespace NetBlox
 							Size = new(1, 2, 1),
 							TopSurface = SurfaceType.Studs
 						};
-						new Part(this)
+						_ = new Part(this)
 						{
 							Parent = ws,
 							Color3 = Color.Red,
@@ -340,7 +340,7 @@ namespace NetBlox
 							Size = new(2, 2, 1),
 							TopSurface = SurfaceType.Studs
 						};
-						new Part(this)
+						_ = new Part(this)
 						{
 							Parent = ws,
 							Color3 = Color.Yellow,
@@ -348,7 +348,7 @@ namespace NetBlox
 							Size = new(1, 2, 1),
 							TopSurface = SurfaceType.Studs
 						};
-						new Part(this)
+						_ = new Part(this)
 						{
 							Parent = ws,
 							Color3 = Color.Yellow,
