@@ -139,9 +139,6 @@ namespace NetBlox
 					// render world
 					Raylib.BeginDrawing();
 					{
-						if (FirstFrame)
-							GameManager.PhysicsManager.Begin();
-
 						FirstFrame = false;
 
 						Raylib.ClearBackground(Color.SkyBlue);

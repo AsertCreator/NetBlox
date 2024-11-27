@@ -448,13 +448,16 @@ namespace NetBlox
 								rc = [.. Clients];
 								break;
 							case Replication.REPM_BUTOWNER:
-								rc = (RemoteClient[])Clients.ToArray().Clone();
-								var oq = ins.Owner;
-								if (oq != null)
+								var cl = Clients.Count;
+								rc = new RemoteClient[cl - 1];
+								for (int i = 0, j = 0; j < cl - 1; i++, j++)
 								{
-									var lis = rc.ToList();
-									lis.Remove(oq);
-									rc = [.. lis];
+									if (Clients[i] == ins.Owner)
+									{
+										i++;
+										continue;
+									}
+									rc[j] = Clients[i];
 								}
 								break;
 							case Replication.REPM_TORECIEVERS:

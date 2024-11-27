@@ -115,7 +115,7 @@ namespace NetBlox.Instances
 			ch.Position = workspace.SpawnLocation != null ? 
 				workspace.SpawnLocation.Position
 					+ new Vector3(0, workspace.SpawnLocation.Size.Y / 2 + 1, 0)
-					+ new Vector3(0, 2, 0) : 
+					+ new Vector3(0, 20, 0) : 
 				new Vector3(0, 20, 0);
 			ch.Parent = workspace;
 			face.Texture = "rbxasset://textures/smile.png";

@@ -5,6 +5,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace NetBlox.Instances
 {
@@ -29,13 +30,19 @@ namespace NetBlox.Instances
 				if (IsActuallyAnchored)
 				{
 					if (BodyHandle.HasValue)
+					{
 						localsim.Bodies.Remove(BodyHandle.Value);
+						BodyHandle = null;
+					}
 					CreateStaticHandle();
 				}
 				else
 				{
-					if (StaticHandle.HasValue)
+					if (StaticHandle.HasValue) 
+					{ 
 						localsim.Statics.Remove(StaticHandle.Value);
+						StaticHandle = null;
+					}
 					CreateBodyHandle();
 				}
 			}
@@ -182,6 +189,39 @@ namespace NetBlox.Instances
 		public bool IsGrounded = false;
 		public Vector3 _size;
 		public Vector3 _lastvelocity;
+		public bool IsDirty = false;
+
+		// they are internal as a workaround for serializationmanager
+		internal Vector3 _physicsposition
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set
+			{
+				if (_position != value)
+					IsDirty = true;
+				_position = value;
+			}
+		}
+		internal Vector3 _physicsrotation
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set
+			{
+				if (_rotation != value)
+					IsDirty = true;
+				_rotation = value;
+			}
+		}
+		internal Vector3 _physicsvelocity
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set
+			{
+				if (_lastvelocity != value)
+					IsDirty = true;
+				_lastvelocity = value;
+			}
+		}
 
 		public BasePart(GameManager ins) : base(ins)
 		{

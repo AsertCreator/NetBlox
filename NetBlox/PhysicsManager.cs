@@ -27,7 +27,6 @@ namespace NetBlox
 		public ThreadDispatcher DefaultThreadDispatcher;
 		public List<BasePart> Actors = new();
 		public bool DisablePhysics = true; // not now
-		private DateTime LastTime = DateTime.UtcNow;
 
 		public PhysicsManager(GameManager gameManager)
 		{
@@ -40,7 +39,6 @@ namespace NetBlox
 			LocalSimulationBuffer = new BufferPool();
 			LocalSimulation = Simulation.Create(LocalSimulationBuffer, inpc, ipic, solver);
 		}
-		public void Begin() => LastTime = DateTime.UtcNow;
 		public void ClientStep()
 		{
 			if (Workspace == null || DisablePhysics)
@@ -61,12 +59,18 @@ namespace NetBlox
 
 					// reflect this in rendering
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
-					box._position = refer.Pose.Position;
-					box._rotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
-					box._lastvelocity = refer.Velocity.Linear;
+					box._physicsposition = refer.Pose.Position;
+					box._physicsrotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
+					box._physicsvelocity = refer.Velocity.Linear;
 
 					if (box._position.Y <= work.FallenPartsDestroyHeight)
+					{
 						box.Destroy();
+						continue;
+					}
+
+					if (box.IsDirty)
+						box.ReplicateProperties(["Position", "Rotation", "Velocity"], false);
 				}
 			}
 		}
@@ -87,21 +91,36 @@ namespace NetBlox
 				{
 					// reflect this in rendering
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
-					box._position = refer.Pose.Position;
-					box._rotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
-					box._lastvelocity = refer.Velocity.Linear;
+					box._physicsposition = refer.Pose.Position;
+					box._physicsrotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
+					box._physicsvelocity = refer.Velocity.Linear;
 
 					if (box._position.Y <= work.FallenPartsDestroyHeight)
+					{
 						box.Destroy();
+						continue;
+					}
+
+					if (box.IsDirty)
+						box.ReplicateProperties(["Position", "Rotation", "Velocity"], false);
 				}
 			}
 		}
 		public void Step()
 		{
-			if (GameManager.NetworkManager.IsServer)
-				ServerStep();
-			else if (GameManager.NetworkManager.IsClient)
-				ClientStep();
+			try
+			{
+				if (GameManager.NetworkManager.IsServer)
+					ServerStep();
+				else if (GameManager.NetworkManager.IsClient)
+					ClientStep();
+			}
+			catch (Exception e)
+			{
+				LogManager.LogError("Physics solver had failed! " + e.GetType() + ", msg:" + e.Message);
+				LogManager.LogError(e.StackTrace ?? "no stacktrace");
+				GameManager.Shutdown();
+			}
 		}
 	}
 	internal struct InternalNarrowPhaseCallbacks : INarrowPhaseCallbacks
@@ -119,7 +138,7 @@ namespace NetBlox
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold, out PairMaterialProperties pairMaterial) where TManifold : unmanaged, IContactManifold<TManifold>
 		{
-			pairMaterial.FrictionCoefficient = 1f;
+			pairMaterial.FrictionCoefficient = 2f;
 			pairMaterial.MaximumRecoveryVelocity = 2f;
 			pairMaterial.SpringSettings = new SpringSettings(30, 1);
 			return true;
