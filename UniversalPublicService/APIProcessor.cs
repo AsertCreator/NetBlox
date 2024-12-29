@@ -22,7 +22,7 @@ namespace NetBlox.PublicService
 				return qs[name] ?? throw new InvalidOperationException();
 			}
 
-			AddEndpoint("/api/query/general", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/query/general", delegate (HttpListenerContext x)
 			{
 				return EncodeJson(new()
 				{
@@ -32,13 +32,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/users/info", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/users/info", delegate (HttpListenerContext x)
 			{
 				Account user = Program.GetService<AccountService>().GetUserByID(long.Parse(GetQueryData(x, "id")));
 
 				if (user == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such user found",
@@ -55,12 +55,12 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/users/self", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/users/self", delegate (HttpListenerContext x)
 			{
 				var cookie = x.Request.Cookies["nblogtok"];
 				if (cookie == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -70,7 +70,7 @@ namespace NetBlox.PublicService
 				var user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -87,13 +87,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/users/login", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/users/login", delegate (HttpListenerContext x)
 			{
 				Account user = Program.GetService<AccountService>().GetUserByName(GetQueryData(x, "name"));
 
 				if (user == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such user found",
@@ -111,7 +111,7 @@ namespace NetBlox.PublicService
 					});
 				}
 
-				code = 401;
+				x.Response.StatusCode = 401;
 				return EncodeJson(new()
 				{
 					["errorText"] = "Not authorized",
@@ -119,13 +119,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/users/relogin", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/users/relogin", delegate (HttpListenerContext x)
 			{
 				Account user = Program.GetService<AccountService>().GetUserByName(GetQueryData(x, "name"));
 
 				if (user == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such user found",
@@ -144,7 +144,7 @@ namespace NetBlox.PublicService
 					});
 				}
 
-				code = 401;
+				x.Response.StatusCode = 401;
 				return EncodeJson(new()
 				{
 					["errorText"] = "Not authorized",
@@ -152,7 +152,7 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/users/create", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/users/create", delegate (HttpListenerContext x)
 			{
 				string name = GetQueryData(x, "name").TrimStart().TrimEnd();
 				AccountService us = Program.GetService<AccountService>();
@@ -160,7 +160,7 @@ namespace NetBlox.PublicService
 
 				if (user != null)
 				{
-					code = 400;
+					x.Response.StatusCode = 400;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Username is taken",
@@ -173,7 +173,7 @@ namespace NetBlox.PublicService
 
 				if (user == null)
 				{
-					code = 500;
+					x.Response.StatusCode = 500;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Could not create the user",
@@ -188,12 +188,12 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/users/setpresence", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/users/setpresence", delegate (HttpListenerContext x)
 			{
 				var cookie = x.Request.Cookies["nblogtok"];
 				if (cookie == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -203,7 +203,7 @@ namespace NetBlox.PublicService
 				var user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -218,13 +218,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/places/info", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/places/info", delegate (HttpListenerContext x)
 			{
 				Place place = Program.GetService<PlaceService>().GetPlaceByID(long.Parse(GetQueryData(x, "id")));
 
 				if (place == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such place found",
@@ -245,13 +245,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/places/icon", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/places/icon", delegate (HttpListenerContext x)
 			{
 				Place place = Program.GetService<PlaceService>().GetPlaceByID(long.Parse(GetQueryData(x, "id")));
 
 				if (place == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such place found",
@@ -265,13 +265,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/places/create", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/places/create", delegate (HttpListenerContext x)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
 				var cookie = x.Request.Cookies["nblogtok"];
 				if (cookie == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -281,7 +281,7 @@ namespace NetBlox.PublicService
 				var user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -298,7 +298,7 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/places/join", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/places/join", delegate (HttpListenerContext x)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
 				ServerService ss = Program.GetService<ServerService>();
@@ -307,7 +307,7 @@ namespace NetBlox.PublicService
 				var cookie = x.Request.Cookies["nblogtok"];
 				if (cookie == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -317,7 +317,7 @@ namespace NetBlox.PublicService
 				var user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -334,13 +334,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/places/update/content", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/places/update/content", delegate (HttpListenerContext x)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
 				var cookie = x.Request.Cookies["nblogtok"];
 				if (cookie == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -350,7 +350,7 @@ namespace NetBlox.PublicService
 				var user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -362,7 +362,7 @@ namespace NetBlox.PublicService
 
 				if (place == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such place found",
@@ -378,13 +378,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/places/update/info", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/places/update/info", delegate (HttpListenerContext x)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
 				var cookie = x.Request.Cookies["nblogtok"];
 				if (cookie == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -394,7 +394,7 @@ namespace NetBlox.PublicService
 				var user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -406,7 +406,7 @@ namespace NetBlox.PublicService
 
 				if (place == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such place found",
@@ -423,13 +423,13 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/places/shutdown", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/places/shutdown", delegate (HttpListenerContext x)
 			{
 				PlaceService ps = Program.GetService<PlaceService>();
 				var cookie = x.Request.Cookies["nblogtok"];
 				if (cookie == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -439,7 +439,7 @@ namespace NetBlox.PublicService
 				var user = Program.GetService<AccountService>().GetUserByToken(Guid.Parse(cookie.Value));
 				if (user == null)
 				{
-					code = 401;
+					x.Response.StatusCode = 401;
 					return EncodeJson(new()
 					{
 						["errorText"] = "Not authorized",
@@ -451,7 +451,7 @@ namespace NetBlox.PublicService
 
 				if (place == null)
 				{
-					code = 404;
+					x.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such place found",
@@ -467,7 +467,7 @@ namespace NetBlox.PublicService
 				});
 			});
 
-			AddEndpoint("/api/search", delegate (HttpListenerContext x, ref int code)
+			AddEndpoint("/api/search", delegate (HttpListenerContext x)
 			{
 				SearchService ss = Program.GetService<SearchService>();
 				AccountService us = Program.GetService<AccountService>();
@@ -477,7 +477,7 @@ namespace NetBlox.PublicService
 
 				if (query.Trim().Length < 3)
 				{
-					code = 400;
+					x.Response.StatusCode = 400;
 					return EncodeJson(new()
 					{
 						["success"] = false
@@ -529,30 +529,30 @@ namespace NetBlox.PublicService
 		public static void AddEndpoint(APIEndpoint endpoint) => Endpoints.Add(endpoint);
 		public static void AddEndpoint(string path, APIDelegate apid) => Endpoints.Add(new() { Path = path, Delegate = apid });
 		public static APIEndpoint? GetEndpoint(string path) => (from x in Endpoints where x.Path == path select x).FirstOrDefault();
-		public static string DispatchCall(HttpListenerContext ctx, ref int code)
+		public static string DispatchCall(HttpListenerContext ctx)
 		{
 			try
 			{
 				var end = GetEndpoint(ctx.Request.Url!.LocalPath);
 				if (end == null)
 				{
-					code = 404;
+					ctx.Response.StatusCode = 404;
 					return EncodeJson(new()
 					{
 						["errorText"] = "No such API endpoint",
 						["errorCode"] = 404
 					});
 				}
-				code = 200;
-				string res = end.Delegate(ctx, ref code);
-				if (code == 200)
+				ctx.Response.StatusCode = 200;
+				string res = end.Delegate(ctx);
+				if (ctx.Response.StatusCode == 200)
 					ctx.Response.ContentType = end.MimeType;
 
 				return res;
 			}
 			catch (Exception ex) when (ex is InvalidOperationException || ex is FormatException)
 			{
-				code = 400;
+				ctx.Response.StatusCode = 400;
 				return EncodeJson(new()
 				{
 					["errorText"] = "Invalid parameters",
@@ -561,7 +561,7 @@ namespace NetBlox.PublicService
 			}
 			catch
 			{
-				code = 500;
+				ctx.Response.StatusCode = 500;
 				return EncodeJson(new()
 				{
 					["errorText"] = "API endpoint had failed",
@@ -577,5 +577,5 @@ namespace NetBlox.PublicService
 		public string MimeType;
 		public APIDelegate Delegate;
 	}
-	public delegate string APIDelegate(HttpListenerContext ctx, ref int code);
+	public delegate string APIDelegate(HttpListenerContext ctx);
 }

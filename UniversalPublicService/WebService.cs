@@ -6,23 +6,25 @@ using System.Text.Json;
 
 namespace NetBlox.PublicService
 {
-	public class WebService : Service
+	public class WebService
 	{
-		public override string Name => nameof(WebService);
+		private bool IsRunning = true;
 		private CancellationTokenSource TokenSource = new();
 
-		private byte[] Serve(HttpListenerContext cl, string uri, ref int i, ref string mime)
+		private byte[] Serve(HttpListenerContext cl)
 		{
+			string uri = cl.Request.Url!.LocalPath;
+
 			if (uri.Contains(".."))
 			{
-				i = 403;
+				cl.Response.StatusCode = 403;
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/forbidden.html"));
 			}
 
 			if (Program.IsUnderMaintenance)
 			{
 				if (uri.StartsWith("/res"))
-					return ServeContent(cl, uri[5..], ref i, ref mime);
+					return ServeContent(cl);
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/maintenance.html"));
 			}
 
@@ -31,7 +33,7 @@ namespace NetBlox.PublicService
 			else if (uri.StartsWith("/check")) 
 				return Encoding.UTF8.GetBytes($"");
 			else if (uri.StartsWith("/res")) 
-				return ServeContent(cl, uri[5..], ref i, ref mime);
+				return ServeContent(cl);
 			else if (uri.StartsWith("/game")) 
 				return Encoding.UTF8.GetBytes(ServeGamePage(long.Parse(uri[6..]))); 
 			else if (uri.StartsWith("/join")) 
@@ -41,49 +43,51 @@ namespace NetBlox.PublicService
 			else if (uri.StartsWith("/search"))
 				return Encoding.UTF8.GetBytes(File.ReadAllText("./content/search.html"));
 			else if (uri.StartsWith("/api"))  
-				return Encoding.UTF8.GetBytes(ServeAPI(cl, uri, ref i, ref mime)!);
+				return Encoding.UTF8.GetBytes(ServeAPI(cl)!);
 
-			i = 404;
+			cl.Response.StatusCode = 404;
 			return Encoding.UTF8.GetBytes(File.ReadAllText("./content/notfound.html"));
 		}
 		private string ServeGamePage(long gameid) => File.ReadAllText("./content/gamepage.html"); // dont really do much
-		private byte[] ServeContent(HttpListenerContext cl, string uri, ref int i, ref string mime)
+		private byte[] ServeContent(HttpListenerContext cl)
 		{
-			mime = "text/plain";
+			string uri = cl.Request.Url!.LocalPath[5..];
+			cl.Response.ContentType = "text/plain";
+
 			if (uri.Contains(".."))
 			{
-				i = 403;
+				cl.Response.StatusCode = 403;
 				return Encoding.UTF8.GetBytes("Forbidden");
 			}
 			if (!File.Exists("./content/res/" + uri))
 			{
-				i = 404;
+				cl.Response.StatusCode = 404;
 				return Encoding.UTF8.GetBytes("Not found");
 			}
 			if (uri.EndsWith(".png"))
-				mime = "image/png";
+				cl.Response.ContentType = "image/png";
 			if (uri.EndsWith(".jpg"))
-				mime = "image/jpeg";
+				cl.Response.ContentType = "image/jpeg";
 			if (uri.EndsWith(".css"))
-				mime = "text/css";
+				cl.Response.ContentType = "text/css";
 			if (uri.EndsWith(".js"))
-				mime = "text/javascript";
+				cl.Response.ContentType = "text/javascript";
 			if (uri.EndsWith(".html"))
 			{
-				i = 403;
+				cl.Response.StatusCode = 403;
 				return Encoding.UTF8.GetBytes("Forbidden");
 			}
 
 			return File.ReadAllBytes("./content/res/" + uri);
 		}
-		private string? ServeAPI(HttpListenerContext cl, string uri, ref int i, ref string mime)
+		private string? ServeAPI(HttpListenerContext cl)
 		{
-			mime = "application/json";
-			string data = APIProcessor.DispatchCall(cl, ref i);
-			mime = cl.Request.ContentType!; // im so fucking tired idc atp
+			cl.Response.ContentType = "application/json";
+			string data = APIProcessor.DispatchCall(cl);
+			cl.Response.ContentType = cl.Request.ContentType!; // im so fucking tired idc atp
 			return data;
 		}
-		protected override async void OnStart()
+		public async Task Listen()
 		{
 			HttpListener listener = new HttpListener();
 			listener.Prefixes.Add("http://+:80/");
@@ -99,17 +103,26 @@ namespace NetBlox.PublicService
 
 				TokenSource.Token.ThrowIfCancellationRequested();
 
-				var code = 200;
-				var mime = "text/html";
-
 				try
 				{
 					try
 					{
-						by = Serve(cl, cl.Request.Url!.LocalPath, ref code, ref mime);
+						cl.Response.ContentType = "text/html";
+						cl.Response.StatusCode = 200;
 
-						cl.Response.ContentType = mime;
-						cl.Response.StatusCode = code;
+						by = Serve(cl);
+
+						cl.Response.ContentLength64 += by.Length;
+						st.Write(by);
+						st.Flush();
+						cl.Response.Close();
+					}
+					catch (FileNotFoundException)
+					{
+						by = Encoding.UTF8.GetBytes(File.ReadAllText("./content/notfound.html"));
+
+						cl.Response.ContentType = "text/html";
+						cl.Response.StatusCode = 404;
 						cl.Response.ContentLength64 += by.Length;
 						st.Write(by);
 						st.Flush();
@@ -117,11 +130,10 @@ namespace NetBlox.PublicService
 					}
 					catch
 					{
-						code = 404;
-						by = Encoding.UTF8.GetBytes(File.ReadAllText("./content/notfound.html"));
+						by = Encoding.UTF8.GetBytes(File.ReadAllText("./content/forbidden.html"));
 
-						cl.Response.ContentType = mime;
-						cl.Response.StatusCode = code;
+						cl.Response.ContentType = "text/html";
+						cl.Response.StatusCode = 500;
 						cl.Response.ContentLength64 += by.Length;
 						st.Write(by);
 						st.Flush();
@@ -137,6 +149,6 @@ namespace NetBlox.PublicService
 				}
 			}
 		}
-		protected override void OnStop() => TokenSource.Cancel();
+		public void StopListening() => IsRunning = false;
 	}
 }
