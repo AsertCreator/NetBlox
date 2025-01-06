@@ -10,7 +10,6 @@
     <AssemblyName>MoonSharp.Interpreter</AssemblyName>
     <PackageId>MoonSharp.Interpreter.netcore</PackageId>
     <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
-    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
