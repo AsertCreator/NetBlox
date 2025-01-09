@@ -231,11 +231,17 @@ namespace NetBlox
 			{
 				var plrs = Root.GetService<Players>(true);
 				if (plrs == null) return;
+
 				var lp = plrs.LocalPlayer;
 				if (lp == null) return;
+
+				var ba = ((Player)lp).FindFirstChild("Backpack");
+				if (ba != null)
+					RenderInstanceUI(ba);
+
 				var ch = ((Player)lp).FindFirstChild("PlayerGui");
-				if (ch == null) return;
-				RenderInstanceUI(ch);
+				if (ch != null)
+					RenderInstanceUI(ch);
 			}
 		}
 		public void RenderInstanceUI(Instance? inst)

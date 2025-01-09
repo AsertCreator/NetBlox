@@ -191,6 +191,7 @@ PlayerType.LeftAligned = true;
 PlayerType.TextColor3 = Color3.new(0.75, 0.75, 0.75);
 PlayerType.ZIndex = 4;
 
+-- local backpack = require(script.Parent.Modules.Backpack);
 local nextnum = 0;
 
 UserInputService.KeyboardPress:Connect(function(x) 
@@ -215,7 +216,13 @@ while true do
 			else -- not really lol
 				PlayerType.Text = ">13 account";
 			end
+
+			-- backpack.setBackpackInstance(game.Players.LocalPlayer.Backpack)
+			-- backpack.mount(script.Parent)
+
+			break;
 		end
 	end
+
 	wait(1);
 end

@@ -23,19 +23,22 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\Frame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\GuiObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ImageButton.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\guis\ImageLabel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ImageLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ScreenGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextBox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\TextLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Hint.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\Humanoid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Hopper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Humanoid.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\I3DRenderable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\InstanceAdornment.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Message.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\RemoteEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\SelectionBox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Chat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Debris.cs" />
@@ -47,7 +50,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\StarterPack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\UserInputService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\SpawnLocation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\SpawnLocation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Tool.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\Color3Value.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\IntValue.cs" />
@@ -55,16 +58,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\ObjectValue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\StringValue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\Vector3Value.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\Weld.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)RbxlParser.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaTypes.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\ServiceAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\TaskModule.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structs\ByteArray.cs" />
-    <Compile Include="..\NetBlox\ProfileManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Weld.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Player.cs" />
@@ -79,25 +73,34 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ReplicatedStorage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RbxlParser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ProfileManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SerializationManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaTypes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\ServiceAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\TaskModule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaYield.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\NotReplicatedAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\Security.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structs\BrickColor.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
-    <Compile Include="..\NetBlox\NetworkManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\CreatableAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaRuntime.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)SerializationManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
-    <Compile Include="..\NetBlox\Structs\RemoteClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\RemoteClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkIdentity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)structs\Skybox.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\Skybox.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\ByteArray.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\BrickColor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\SurfaceType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\UDim2.cs" />
   </ItemGroup>
@@ -114,6 +117,7 @@
     <Content Include="$(MSBuildThisFileDirectory)content\textures\blank.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\hopperDrag.png" />
     <Content Include="$(MSBuildThisFileDirectory)content\textures\menu.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -129,6 +133,7 @@
     <None Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\Sidebar.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\Backpack.lua" />
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\TeleportGui.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

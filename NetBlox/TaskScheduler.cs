@@ -106,6 +106,21 @@ namespace NetBlox
 			LastCycleTime = sw.Elapsed;
 		}
 		public static void Terminate(Job job) => RunningJobs.Remove(job);
+		public static Job Schedule(Action act)
+		{
+			return ScheduleJob(JobType.Miscellaneous, x =>
+			{
+				try
+				{
+					act();
+					return JobResult.CompletedSuccess;
+				}
+				catch
+				{
+					return JobResult.CompletedFailure;
+				}
+			});
+		}
 		public static Job ScheduleJob(JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
 		{
 			Job job = new(type, jd, level);

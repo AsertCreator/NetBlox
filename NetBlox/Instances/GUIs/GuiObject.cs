@@ -14,12 +14,20 @@ namespace NetBlox.Instances.GUIs
 		[Lua([Security.Capability.None])]
 		public UDim2 Size { get; set; }
 		[Lua([Security.Capability.None])]
+		public Vector2 AbsolutePosition => absolutePosition;
+		[Lua([Security.Capability.None])]
+		public Vector2 AbsoluteSize => absoluteSize;
+		[Lua([Security.Capability.None])]
+		public Vector2 AnchorPoint { get; set; }
+		[Lua([Security.Capability.None])]
 		public bool Visible { get; set; } = true;
 		[Lua([Security.Capability.None])]
 		public LuaSignal MouseEnter { get; set; } = new();
 		[Lua([Security.Capability.None])]
 		public LuaSignal MouseLeave { get; set; } = new();
-		private bool lastMouseState = false;
+
+		private Vector2 absolutePosition;
+		private Vector2 absoluteSize;
 
 		public GuiObject(GameManager ins) : base(ins) { }
 
@@ -33,45 +41,47 @@ namespace NetBlox.Instances.GUIs
 		{
 			if (!Visible) return;
 			var tor = from x in Children where x is GuiObject orderby -((GuiObject)x).ZIndex select x;
-			var c = tor.Count();
-			for (int i = 0; i < c; i++)
+			var count = tor.Count();
+
+			var esz = Size.Calculate(Vector2.Zero, cs);
+			var epo = Position.Calculate(cp, cs);
+
+			absolutePosition = epo - (esz * AnchorPoint);
+			absoluteSize = esz;
+
+			for (int i = 0; i < count; i++)
 			{
 				GuiObject go = (GuiObject)tor.ElementAt(i);
-				go.RenderGUI(Position.Calculate(cp, cs), Size.Calculate(Vector2.Zero, cs));
+				go.RenderGUI(epo, esz);
 			}
 		}
 		public virtual GuiObject? HitTest(Vector2 cp, Vector2 cs)
 		{
 			if (!Visible) return null;
+
 			var tor = from x in Children where x is GuiObject orderby ((GuiObject)x).ZIndex select x;
+			var count = tor.Count();
+
 			var esz = Size.Calculate(Vector2.Zero, cs);
 			var epo = Position.Calculate(cp, cs);
-			var c = tor.Count();
-			for (int i = 0; i < c; i++)
+
+			absolutePosition = epo - (esz * AnchorPoint);
+			absoluteSize = esz;
+
+			if (RenderUtils.MouseCollides(epo, esz))
 			{
-				var el = tor.ElementAt(i) as GuiObject;
-				if (el == null) continue;
-				var sz = el.Size.Calculate(Vector2.Zero, esz);
-				var po = el.Position.Calculate(epo, esz);
-
-				if (RenderUtils.MouseCollides(po, sz) != lastMouseState)
+				for (int i = 0; i < count; i++)
 				{
-					if (!lastMouseState)
-						MouseEnter.Fire();
-					else
-						MouseLeave.Fire();
+					GuiObject go = (GuiObject)tor.ElementAt(i);
+					var res = go.HitTest(epo, esz);
+					if (res != null)
+						return res;
 				}
 
-				if (RenderUtils.MouseCollides(po, sz))
-				{
-					lastMouseState = true;
-					var t = el.HitTest(epo, esz);
-					if (t != null) return t;
-				}
-				else
-					lastMouseState = false;
+				return this;
 			}
-			return this;
+
+			return null!;
 		}
 		public virtual void Activate(MouseButton mb)
 		{
