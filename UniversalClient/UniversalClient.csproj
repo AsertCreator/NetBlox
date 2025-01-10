@@ -1,35 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>NetBlox.Client</RootNamespace>
-    <AssemblyName>NetBloxClient</AssemblyName>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	<OutputType>Exe</OutputType>
+	  <TargetFramework>net8.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	<RootNamespace>NetBlox.Client</RootNamespace>
+	<AssemblyName>NetBloxClient</AssemblyName>
+	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="BepuPhysics" Version="2.4.0" />
-    <PackageReference Include="Network" Version="6.2.5.23" />
-    <PackageReference Include="Raylib-cs" Version="6.1.1" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="content\scripts\CoreScripts\Application.lua">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 	
   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-  	<DefineConstants>_WINDOWS</DefineConstants>
+	<DefineConstants>_WINDOWS</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="BepuPhysics" Version="2.4.0" />
+	<PackageReference Include="Network" Version="6.2.5.23" />
+	<PackageReference Include="Raylib-cs" Version="6.1.1" />
+	<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<None Update="content\scripts\CoreScripts\Application.lua">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
+  </ItemGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
 	

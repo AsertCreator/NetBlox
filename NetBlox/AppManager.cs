@@ -26,6 +26,9 @@ namespace NetBlox
 		public static string LibraryFolder = Path.GetFullPath("./tmp/");
 		public static string PublicServiceAPI = "";
 		public static DateTime WhenStartedRunning;
+		public static event EventHandler<GameManager>? OnGameCreated;
+		public static event EventHandler<EventArgs>? OnAppStarted;
+		public static event EventHandler<EventArgs>? OnAppShutdown;
 		public static int VersionMajor => Common.Version.VersionMajor;
 		public static int VersionMinor => Common.Version.VersionMinor;
 		public static int VersionPatch => Common.Version.VersionPatch;
@@ -53,6 +56,7 @@ namespace NetBlox
 			GameManager manager = new(gc, args, loadcallback, dmc);
 			GameManagers.Add(manager);
 			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
+			OnGameCreated?.Invoke(null, manager);
 			return manager;
 		}
 		public static void SetRenderTarget(GameManager gm) => CurrentRenderManager = gm.RenderManager;
@@ -97,6 +101,8 @@ namespace NetBlox
 
 			WhenStartedRunning = DateTime.UtcNow;
 
+			OnAppStarted?.Invoke(null, new());
+
 			while (!ShuttingDown) TaskScheduler.Step();
 		}
 		public static void Shutdown()
@@ -104,6 +110,7 @@ namespace NetBlox
 			for (int i = 0; i < GameManagers.Count; i++)
 				GameManagers[i].Shutdown();
 			ShuttingDown = true;
+			OnAppShutdown?.Invoke(null, new());
 			throw new RollbackException();
 		}
 		public static async Task<string> DownloadAssetAsync(long aid) =>

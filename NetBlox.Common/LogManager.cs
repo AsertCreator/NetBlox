@@ -7,6 +7,7 @@ namespace NetBlox
 	{
 		public static StringBuilder Log = new();
 		public static bool IsBrowser = OperatingSystem.IsBrowser();
+		public static event EventHandler<string>? OnLog;
 		private static object loglock = new();
 
 		public static void LogInfo(string message)
@@ -19,6 +20,7 @@ namespace NetBlox
 					Console.ForegroundColor = ConsoleColor.White;
 				Console.WriteLine(fm);
 				Debug.WriteLine(fm);
+				OnLog?.Invoke(null, fm);
 				if (!IsBrowser)
 					Console.ResetColor();
 			}
@@ -33,6 +35,7 @@ namespace NetBlox
 					Console.ForegroundColor = ConsoleColor.Yellow;
 				Console.WriteLine(fm);
 				Debug.WriteLine(fm);
+				OnLog?.Invoke(null, fm);
 				if (!IsBrowser)
 					Console.ResetColor();
 			}
@@ -47,6 +50,7 @@ namespace NetBlox
 					Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine(fm);
 				Debug.WriteLine(fm);
+				OnLog?.Invoke(null, fm);
 				if (!IsBrowser)
 					Console.ResetColor();
 			}

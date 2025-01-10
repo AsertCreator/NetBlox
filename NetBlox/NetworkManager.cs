@@ -850,6 +850,7 @@ namespace NetBlox
 			{
 				RemoteConnection.Close(CloseReason.ClientClosed);
 				GameManager.RenderManager?.ShowKickMessage(msg);
+				return;
 			}
 
 			// we are on server

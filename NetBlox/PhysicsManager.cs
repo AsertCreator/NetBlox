@@ -91,7 +91,8 @@ namespace NetBlox
 				if (!box.Anchored && box.Owner == null) // if part is dynamic AND its server-side
 				{
 					// reflect this in rendering
-					Debug.Assert(box.BodyHandle.HasValue);
+					if (!box.BodyHandle.HasValue)
+						continue;
 
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
 					box._physicsposition = refer.Pose.Position;

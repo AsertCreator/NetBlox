@@ -8,11 +8,6 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 using System.Diagnostics;
-using System.Net;
-using System.Reflection;
-using System.Runtime;
-using System.Xml.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NetBlox
 {
@@ -43,6 +38,7 @@ namespace NetBlox
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public int PropertyReplicationRate = 20;
+		public DateTime TimeOfCreation = DateTime.Now;
 		public Dictionary<RemoteClient, Instance> Owners = [];
 		public List<Instance> SelfOwnerships = [];
 		public ClientStartupInfo? ClientStartupInfo;
