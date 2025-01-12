@@ -9,7 +9,15 @@ namespace NetBloxPublicService
     {
         private readonly AssetContext _context;
 
-        public AssetController(AssetContext context)
+		public UserItem? GetUserIdentity()
+		{
+			string? tokenstr = Request.Cookies["nblogtok"];
+			Guid token = tokenstr != null ? Guid.Parse(tokenstr) : default;
+
+			return _context.Users.Where(x => x.LoginToken == token).FirstOrDefault();
+		}
+
+		public AssetController(AssetContext context)
         {
             _context = context;
         }
@@ -30,8 +38,13 @@ namespace NetBloxPublicService
 		[HttpPost("create")]
 		public async Task<ActionResult<CommonAssetItem>> CreateAsset(CommonAssetType assetType, string name)
 		{
+			var callerUser = GetUserIdentity();
+
+			if (callerUser == default)
+				return Forbid();
+
 			var assetItem = new CommonAssetItem();
-			assetItem.OwnerId = 0;
+			assetItem.OwnerId = callerUser.UserId;
 			assetItem.Type = assetType;
 			assetItem.Name = name;
 			assetItem.Description = "A new cool thing.";
@@ -56,10 +69,18 @@ namespace NetBloxPublicService
 		[HttpPost("updateDescription")]
         public async Task<ActionResult<CommonAssetItem>> UpdateAssetDescription(long id, string desc)
         {
+			var callerUser = GetUserIdentity();
+
+			if (callerUser == default)
+				return Forbid();
+
 			var entity = await _context.FindAsync<CommonAssetItem>(id);
 
 			if (entity == null)
 				return NotFound();
+
+			if (entity.OwnerId != callerUser.UserId)
+				return Forbid();
 
 			entity.Description = desc;
 			var entry = _context.Entry(entity);
@@ -81,10 +102,18 @@ namespace NetBloxPublicService
 		[HttpPost("updateName")]
 		public async Task<ActionResult<CommonAssetItem>> UpdateAssetName(long id, string name)
 		{
+			var callerUser = GetUserIdentity();
+
+			if (callerUser == default)
+				return Forbid();
+
 			var entity = await _context.FindAsync<CommonAssetItem>(id);
 
 			if (entity == null)
 				return NotFound();
+
+			if (entity.OwnerId != callerUser.UserId)
+				return Forbid();
 
 			entity.Name = name;
 			var entry = _context.Entry(entity);
@@ -101,5 +130,42 @@ namespace NetBloxPublicService
 
 			return entity;
 		}
-    }
+
+		// POST: api/assets/updateContent
+		[HttpPost("updateContent")]
+		public async Task<ActionResult<CommonAssetItem>> UpdateAssetContent(long id, IFormFile file)
+		{
+			var callerUser = GetUserIdentity();
+
+			if (callerUser == default)
+				return Forbid();
+
+			var entity = await _context.FindAsync<CommonAssetItem>(id);
+
+			if (entity == null)
+				return NotFound();
+
+			if (entity.OwnerId != callerUser.UserId)
+				return Forbid();
+
+			var files = file.OpenReadStream();
+			var fileb = new byte[file.Length];
+			files.Read(fileb);
+
+			entity.Content = fileb;
+			var entry = _context.Entry(entity);
+			entry.State = EntityState.Modified;
+
+			try
+			{
+				await _context.SaveChangesAsync();
+			}
+			catch (DbUpdateConcurrencyException)
+			{
+				throw;
+			}
+
+			return entity;
+		}
+	}
 }

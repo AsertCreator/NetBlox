@@ -12,7 +12,7 @@ namespace NetBloxPublicService
 	}
 	public enum CommonAssetType : byte
 	{
-		Place, Universe, User, ClothingShirt, ClothingPants
+		Place, Universe, User, Model, Image, Sound, Mesh, Lua, ClothingShirt, ClothingPants
 	}
 	public class AssetContext : DbContext
 	{
@@ -87,5 +87,6 @@ namespace NetBloxPublicService
 		public string? Description { get; set; }
 		public DateTime DateCreated { get; set; }
 		public DateTime DateUpdated { get; set; }
+		public byte[] Content { get; set; }
 	}
 }

@@ -17,6 +17,13 @@ namespace NetBloxPublicService
 		{
 			_context = context;
 		}
+		public UserItem? GetUserIdentity()
+		{
+			string? tokenstr = Request.Cookies["nblogtok"];
+			Guid token = tokenstr != null ? Guid.Parse(tokenstr) : default;
+
+			return _context.Users.Where(x => x.LoginToken == token).FirstOrDefault();
+		}
 
 		// GET: api/users/5
 		[HttpGet("{id}")]
@@ -28,6 +35,30 @@ namespace NetBloxPublicService
 				return NotFound();
 
 			return userItem;
+		}
+
+		// GET: api/users/self
+		[HttpGet("self")]
+		public ActionResult<UserItem> GetSelfUser()
+		{
+			var callerUser = GetUserIdentity();
+
+			if (callerUser == default)
+				return Forbid();
+
+			return callerUser;
+		}
+
+		// GET: api/users/feed
+		[HttpGet("feed")]
+		public ActionResult<object[]> GetUserGameFeed()
+		{
+			var callerUser = GetUserIdentity();
+
+			if (callerUser == default)
+				return Forbid();
+
+			return new object[] { callerUser };
 		}
 
 		// POST: api/users/create
@@ -65,19 +96,15 @@ namespace NetBloxPublicService
 
 		// POST: api/users/updateStatus
 		[HttpPost("updateStatus")]
-		public async Task<IActionResult> UpdateUserStatus(Guid login, string desc)
+		public async Task<IActionResult> UpdateUserStatus(string desc)
 		{
-			if (login == default)
-				return NotFound();
+			var callerUser = GetUserIdentity();
 
-			var entity = _context.Users.First(x => x.LoginToken == login);
+			if (callerUser == default)
+				return Forbid();
 
-			if (entity == null)
-				return NotFound();
-
-			entity.Status = desc;
-
-			_context.Entry(entity).State = EntityState.Modified;
+			callerUser.Status = desc;
+			_context.Entry(callerUser).State = EntityState.Modified;
 
 			try
 			{
@@ -93,19 +120,15 @@ namespace NetBloxPublicService
 
 		// POST: api/users/updatePresence
 		[HttpPost("updatePresence")]
-		public async Task<IActionResult> UpdateUserStatus(Guid login, OnlineMode mode)
+		public async Task<IActionResult> UpdateUserStatus(OnlineMode mode)
 		{
-			if (login == default)
-				return NotFound();
+			var callerUser = GetUserIdentity();
 
-			var entity = _context.Users.First(x => x.LoginToken == login);
+			if (callerUser == default)
+				return Forbid();
 
-			if (entity == null)
-				return NotFound();
-
-			entity.OnlineMode = mode;
-
-			_context.Entry(entity).State = EntityState.Modified;
+			callerUser.OnlineMode = mode;
+			_context.Entry(callerUser).State = EntityState.Modified;
 
 			try
 			{
@@ -153,19 +176,15 @@ namespace NetBloxPublicService
 
 		// POST: api/users/logoff
 		[HttpPost("logoff")]
-		public async Task<IActionResult> Logoff(Guid login)
+		public async Task<IActionResult> Logoff()
 		{
-			if (login == default)
-				return NotFound();
+			var callerUser = GetUserIdentity();
 
-			var entity = _context.Users.First(x => x.LoginToken == login);
+			if (callerUser == default)
+				return Forbid();
 
-			if (entity == null)
-				return NotFound();
-
-			entity.LoginToken = Guid.Empty;
-
-			_context.Entry(entity).State = EntityState.Modified;
+			callerUser.LoginToken = default;
+			_context.Entry(callerUser).State = EntityState.Modified;
 
 			try
 			{
