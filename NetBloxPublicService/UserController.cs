@@ -143,16 +143,16 @@ namespace NetBloxPublicService
 		}
 
 		// obfuscated password: password's bytes are altered in following fashion (x = 127 - x)
-		// POST: api/users/login
-		[HttpPost("login")]
-		public async Task<ActionResult<object>> Login(string user, string obfuscatedpassword)
+		// GET: api/users/login
+		[HttpGet("login")]
+		public async Task<ActionResult<object>> Login(string user, string pass)
 		{
 			var entity = _context.Users.First(x => x.UserName == user);
 
 			if (entity == null)
 				return NotFound();
 
-			var deobfuscated = RollString(obfuscatedpassword);
+			var deobfuscated = RollString(pass);
 
 			if (entity.HashedPassword != string.Concat(SHA256.HashData(Encoding.UTF8.GetBytes(deobfuscated))).ToLower())
 				return NotFound();
@@ -170,12 +170,12 @@ namespace NetBloxPublicService
 				throw;
 			}
 
-			var d = new { loginToken = entity.LoginToken };
+			var d = new { loginToken = entity.LoginToken.ToString() };
 			return d;
 		}
 
-		// POST: api/users/logoff
-		[HttpPost("logoff")]
+		// GET: api/users/logoff
+		[HttpGet("logoff")]
 		public async Task<IActionResult> Logoff()
 		{
 			var callerUser = GetUserIdentity();
