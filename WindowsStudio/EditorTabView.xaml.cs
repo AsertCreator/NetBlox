@@ -1,12 +1,9 @@
-﻿using NetBlox;
-using NetBlox.Instances;
+﻿using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
-using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using Raylib_cs;
 using System.Runtime.InteropServices;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
@@ -39,12 +36,14 @@ namespace NetBlox.Studio
 			var panh = pan.Handle;
 
 			propertyGrid.Child = propertyGridWF;
+			propertyGrid.SizeChanged += (x, y) => propertyGridWF.Size = new Size((int)propertyGrid.ActualWidth, (int)propertyGrid.ActualHeight);
+
 			propertyGridWF.Visible = true;
 			propertyGridWF.CommandsVisibleIfAvailable = false;
 			propertyGridWF.Location = new Point(0, 0);
 			propertyGridWF.HelpVisible = false;
 			propertyGridWF.Size = new Size((int)propertyGrid.ActualWidth, (int)propertyGrid.ActualHeight);
-			propertyGrid.SizeChanged += (x, y) => propertyGridWF.Size = new Size((int)propertyGrid.ActualWidth, (int)propertyGrid.ActualHeight);
+
 			explorerTree.SelectedItemChanged += (x, y) =>
 			{
 				var inst = Items.FirstOrDefault(x => x.Value == y.NewValue).Key;
@@ -84,8 +83,10 @@ namespace NetBlox.Studio
 						var block = new TextBlock();
 						var image = new System.Windows.Controls.Image();
 						var logo = new BitmapImage();
+
 						block.Text = inst.Name;
 						block.Margin = new System.Windows.Thickness(5, 0, 0, 0);
+
 						logo.BeginInit();
 						var classpng = AppManager.ResolveUrlAsync("rbxasset://studio/classes/" + inst.ClassName + ".png", false).WaitAndGetResult();
 						if (File.Exists(classpng))
@@ -93,11 +94,13 @@ namespace NetBlox.Studio
 						else
 							logo.UriSource = new Uri(AppManager.ResolveUrlAsync("rbxasset://studio/classes/Instance.png", false).WaitAndGetResult());
 						logo.EndInit();
+
 						image.Source = logo;
 						stack.Orientation = System.Windows.Controls.Orientation.Horizontal;
 						stack.Children.Add(image);
 						stack.Children.Add(block);
 						tvi.Header = stack;
+
 						MenuItem MakeItem(string text, bool enabled, Action act)
 						{
 							MenuItem mi = new();
@@ -111,11 +114,26 @@ namespace NetBlox.Studio
 							MenuItem mi = new();
 							mi.Header = "Insert";
 							Type[] typs = InstanceCreator.CreatableInstanceTypes;
+
 							for (int i = 0; i < typs.Length; i++)
 							{
 								int j = i;
-								MenuItem ins = new();
+								var ins = new MenuItem();
+								var image = new System.Windows.Controls.Image();
+								var logo = new BitmapImage();
+
+								logo.BeginInit();
+								var classpng = AppManager.ResolveUrlAsync("rbxasset://studio/classes/" + typs[i].Name + ".png", false).WaitAndGetResult();
+								if (File.Exists(classpng))
+									logo.UriSource = new Uri(classpng);
+								else
+									logo.UriSource = new Uri(AppManager.ResolveUrlAsync("rbxasset://studio/classes/Instance.png", false).WaitAndGetResult());
+								logo.EndInit();
+
+								image.Source = logo;
+
 								ins.Header = typs[i].Name;
+								ins.Icon = image;
 								ins.Click += (x, y) =>
 								{
 									var fabm = typs[j].GetMethod("Fabricate");
@@ -228,6 +246,7 @@ namespace NetBlox.Studio
 						});
 					});
 				});
+
 				App.EditorGame.LoadDefault();
 				AppManager.PlatformOpenBrowser = x =>
 				{
@@ -237,6 +256,7 @@ namespace NetBlox.Studio
 					});
 				};
 				AppManager.SetRenderTarget(App.EditorGame);
+
 				while (true)
 				{
 					var h = (nint)Raylib.GetWindowHandle();

@@ -1,20 +1,11 @@
-﻿using Microsoft.Web.WebView2.Wpf;
-using NetBlox;
-using NetBlox.Instances;
+﻿using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
-using NetBlox.Runtime;
 using NetBlox.Structs;
-using Raylib_cs;
 using System.Diagnostics;
 using System.Net;
-using System.Runtime.InteropServices;
-using System.Security.Policy;
-using System.Text.Json;
 using System.Windows.Controls;
 using System.Windows.Controls.Ribbon;
-using System.Windows.Forms.Integration;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace NetBlox.Studio;
 

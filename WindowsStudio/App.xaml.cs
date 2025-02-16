@@ -1,8 +1,4 @@
-﻿using NetBlox;
-using Raylib_cs;
-using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using Raylib_cs;
 using Application = System.Windows.Application;
 
 namespace NetBlox.Studio;
