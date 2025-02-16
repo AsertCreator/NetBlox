@@ -28,6 +28,8 @@
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
 
+  <Import Project="..\NetBlox.MoonSharp\NetBlox.MoonSharp.projitems" Label="Shared" />
+
   <ItemGroup>
     <None Remove="content\studio\icon16.png" />
     <None Remove="content\studio\icon32.png" />
@@ -40,10 +42,6 @@
     <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="Raylib-cs" Version="6.1.1" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
   </ItemGroup>
 
   <ItemGroup>

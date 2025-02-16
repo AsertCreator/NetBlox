@@ -17,12 +17,10 @@
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
-  </ItemGroup>
-
   <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
+
+  <Import Project="..\NetBlox.MoonSharp\NetBlox.MoonSharp.projitems" Label="Shared" />
 
 </Project>

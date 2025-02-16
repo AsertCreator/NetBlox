@@ -22,10 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\MoonSharp.Interpreter\MoonSharp.Interpreter.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
 	<None Update="content\scripts\CoreScripts\Application.lua">
 	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</None>
@@ -38,5 +34,7 @@
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />
 	
   <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
+	
+  <Import Project="..\NetBlox.MoonSharp\NetBlox.MoonSharp.projitems" Label="Shared" />
 
 </Project>

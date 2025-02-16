@@ -28,8 +28,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalInstaller", "UniversalInstaller\UniversalInstaller.csproj", "{A270E5E9-BB42-47F2-8929-54C9B975F980}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MoonSharp.Interpreter", "MoonSharp.Interpreter\MoonSharp.Interpreter.csproj", "{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversalDuoHost", "UniversalDuoHost\UniversalDuoHost.csproj", "{237FED22-581B-4767-9D33-667E88AF609D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsStudio", "WindowsStudio\WindowsStudio.csproj", "{708EB3F3-4CC6-4B26-8344-D88B54D9D8E2}"
@@ -39,6 +37,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetBloxPublicService", "NetBloxPublicService\NetBloxPublicService.csproj", "{73F7C8F0-D26C-46A4-870F-8402F0CE299A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetBloxDebug", "NetBloxDebug\NetBloxDebug.csproj", "{58355B3C-F48A-45EB-90E4-7A5779867239}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NetBlox.MoonSharp", "NetBlox.MoonSharp\NetBlox.MoonSharp.shproj", "{AF278D19-15C9-4A83-968D-BF7F516D73E7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -100,22 +100,6 @@ Global
 		{A270E5E9-BB42-47F2-8929-54C9B975F980}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A270E5E9-BB42-47F2-8929-54C9B975F980}.Release|x86.ActiveCfg = Release|Any CPU
 		{A270E5E9-BB42-47F2-8929-54C9B975F980}.Release|x86.Build.0 = Release|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Debug|x86.ActiveCfg = Debug|x86
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Debug|x86.Build.0 = Debug|x86
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Dev|Any CPU.ActiveCfg = Dev|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Dev|Any CPU.Build.0 = Dev|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Dev|x86.ActiveCfg = Dev|x86
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Dev|x86.Build.0 = Dev|x86
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Devp4|Any CPU.ActiveCfg = Devp4|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Devp4|Any CPU.Build.0 = Devp4|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Devp4|x86.ActiveCfg = Devp4|x86
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Devp4|x86.Build.0 = Devp4|x86
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Release|Any CPU.Build.0 = Release|Any CPU
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Release|x86.ActiveCfg = Release|x86
-		{91EA9B9D-FE03-4273-BDAF-8AD42EDE1E59}.Release|x86.Build.0 = Release|x86
 		{237FED22-581B-4767-9D33-667E88AF609D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{237FED22-581B-4767-9D33-667E88AF609D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{237FED22-581B-4767-9D33-667E88AF609D}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -208,15 +192,20 @@ Global
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		NetBlox.Common\NetBlox.Common.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
+		NetBlox.MoonSharp\NetBlox.MoonSharp.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{0b7472c1-325a-411e-af72-8efbfca64940}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{10d6f7d6-5588-4b13-b317-37ab34182920}*SharedItemsImports = 13
 		NetBlox.Common\NetBlox.Common.projitems*{237fed22-581b-4767-9d33-667e88af609d}*SharedItemsImports = 5
+		NetBlox.MoonSharp\NetBlox.MoonSharp.projitems*{237fed22-581b-4767-9d33-667e88af609d}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{237fed22-581b-4767-9d33-667e88af609d}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
+		NetBlox.MoonSharp\NetBlox.MoonSharp.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{708eb3f3-4cc6-4b26-8344-d88b54d9d8e2}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{73f7c8f0-d26c-46a4-870f-8402f0ce299a}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{a270e5e9-bb42-47f2-8929-54c9b975f980}*SharedItemsImports = 5
+		NetBlox.MoonSharp\NetBlox.MoonSharp.projitems*{af278d19-15c9-4a83-968d-bf7f516d73e7}*SharedItemsImports = 13
 		NetBlox.Common\NetBlox.Common.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
+		NetBlox.MoonSharp\NetBlox.MoonSharp.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox\NetBlox.projitems*{bc56b34a-8200-4966-b065-94a593b0072f}*SharedItemsImports = 5
 		NetBlox.Common\NetBlox.Common.projitems*{fa4e3ba7-1080-4ab5-925c-9be6c4a9cd1f}*SharedItemsImports = 13
 	EndGlobalSection
