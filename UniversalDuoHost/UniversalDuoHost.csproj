@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	  <Nullable>annotations</Nullable>
     <AssemblyName>NetBloxDuoHost</AssemblyName>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <RootNamespace>NetBlox.DuoHost</RootNamespace>

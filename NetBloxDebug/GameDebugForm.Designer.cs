@@ -281,7 +281,6 @@ namespace NetBloxDebug
 		private NumericUpDown luaExecutorLevelSelector;
 		private Button luaExecutorRun;
 		private TextBox luaExecutorBox;
-		private GroupBox groupBox3;
 		private TextBox gameLog;
 		private Button clearLog;
 	}
