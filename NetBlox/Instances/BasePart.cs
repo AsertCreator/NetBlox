@@ -1,6 +1,4 @@
-﻿using BepuPhysics;
-using BepuPhysics.Collidables;
-using NetBlox.Instances.Services;
+﻿using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
@@ -14,38 +12,13 @@ namespace NetBlox.Instances
 		public int DirtyCounter;
 		public Dictionary<Vector3, float>? AFSCache;
 	}
-	public class BasePart : PVInstance, I3DRenderable
+	public class BasePart : PVInstance, IPhysicsActor, I3DRenderable
 	{
-		public bool IsActuallyAnchored => IsDomestic ? _anchored : true;
 		[Lua([Security.Capability.None])]
 		public bool Anchored
 		{
 			get => _anchored;
-			set
-			{
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-				_anchored = value;
-
-				if (IsActuallyAnchored)
-				{
-					if (BodyHandle.HasValue)
-					{
-						localsim.Bodies.Remove(BodyHandle.Value);
-						BodyHandle = null;
-					}
-					CreateStaticHandle();
-				}
-				else
-				{
-					if (StaticHandle.HasValue) 
-					{ 
-						localsim.Statics.Remove(StaticHandle.Value);
-						StaticHandle = null;
-					}
-					CreateBodyHandle();
-				}
-			}
+			set => _anchored = value;
 		}
 		[Lua([Security.Capability.None])]
 		public bool Locked { get; set; }
@@ -77,76 +50,37 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Vector3 Position
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _position;
 			set
 			{
 				if (_position == value)
 					return;
 				_position = value;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Pose = _position;
-				if (StaticHandle.HasValue)
-					localsim.Statics[StaticHandle.Value].Pose = _position;
 			}
 		}
 		[Lua([Security.Capability.None])]
 		public Vector3 Rotation
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _rotation;
 			set
 			{
 				if (_rotation == value)
 					return;
 				_rotation = value;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Pose.Orientation = Raymath.QuaternionFromEuler(_rotation.Z, _rotation.Y, _rotation.X);
-				if (StaticHandle.HasValue)
-					localsim.Statics[StaticHandle.Value].Pose.Orientation = Raymath.QuaternionFromEuler(_rotation.Z, _rotation.Y, _rotation.X);
 			}
 		}
 		[Lua([Security.Capability.None])]
 		public Vector3 Size
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _size;
 			set
 			{
 				if (_size == value)
 					return;
 				_size = value;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue) 
-				{
-					var idx = localsim.Bodies[BodyHandle.Value].Collidable.Shape;
-					var box = localsim.Shapes.GetShape<Box>(idx.Index);
-
-					localsim.Shapes.Remove(idx);
-
-					box.Width = _size.X;
-					box.Height = _size.Y;
-					box.Length = _size.Z;
-
-					idx = localsim.Shapes.Add(box);
-					localsim.Bodies[BodyHandle.Value].Collidable.Shape = idx;
-				}
-				if (StaticHandle.HasValue)
-				{
-					var idx = localsim.Statics[StaticHandle.Value].Shape;
-					var box = localsim.Shapes.GetShape<Box>(idx.Index);
-
-					localsim.Shapes.Remove(idx);
-
-					box.Width = _size.X;
-					box.Height = _size.Y;
-					box.Length = _size.Z;
-
-					idx = localsim.Shapes.Add(box);
-					localsim.Statics[StaticHandle.Value].SetShape(idx);
-				}
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -160,68 +94,41 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Vector3 Velocity
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => _lastvelocity;
 			set
 			{
 				if (_lastvelocity == value)
 					return;
 				_lastvelocity = value;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Velocity.Linear = _lastvelocity;
 			}
 		}
-		/// <summary>
-		/// Use this if the part is anchored OR if its foreign (owned by another player)<br/>
-		/// ========================================<br/>
-		/// Use this if the part is server-side and its anchored
-		/// </summary>
-		public StaticHandle? StaticHandle;
-		/// <summary>
-		/// Use this if the part is NOT anchored AND its domestic (owned by us)<br/>
-		/// ========================================<br/>
-		/// Use this if the part is server-side and its NOT anchored
-		/// </summary>
-		public BodyHandle? BodyHandle;
+		public Vector3 BodyPosition 
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Position;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set => Position = value; 
+		}
+		public Vector3 BodySize
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Size;
+			set => Size = value;
+		}
+		public Vector3 BodyRotation
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => Rotation;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set => Rotation = value;
+		}
+
 		public PartRenderCache RenderCache = new();
 		public Lighting? LocalLighing;
 		public bool IsGrounded = false;
 		public Vector3 _size;
 		public Vector3 _lastvelocity;
-		public bool IsDirty = false;
-
-		// they are internal as a workaround for serializationmanager
-		internal Vector3 _physicsposition
-		{
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			set
-			{
-				if (_position != value)
-					IsDirty = true;
-				_position = value;
-			}
-		}
-		internal Vector3 _physicsrotation
-		{
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			set
-			{
-				if (_rotation != value)
-					IsDirty = true;
-				_rotation = value;
-			}
-		}
-		internal Vector3 _physicsvelocity
-		{
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			set
-			{
-				if (_lastvelocity != value)
-					IsDirty = true;
-				_lastvelocity = value;
-			}
-		}
 
 		public BasePart(GameManager ins) : base(ins)
 		{
@@ -233,42 +140,8 @@ namespace NetBlox.Instances
 				_position = new Vector3(0, 0, 0);
 				_rotation = new Vector3(0, 0, 0);
 				_lastvelocity = new Vector3(0, 0, 0);
-
-				CreateBodyHandle();
 			}
 			GameManager.PhysicsManager.Actors.Add(this);
-		}
-		public void CreateBodyHandle()
-		{
-			if (_anchored)
-				throw new InvalidOperationException("Cannot call CreateBodyHandle on anchored BaseParts");
-
-			var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-			var collidable = new Box(_size.X, _size.Y, _size.Z);
-			var inertia = collidable.ComputeInertia(1);
-			var rotation = Raymath.QuaternionFromEuler(_rotation.X, _rotation.Y, _rotation.Z);
-			var rigidpose = new RigidPose(_position, rotation);
-			var index = localsim.Shapes.Add(collidable);
-			var description = BodyDescription.CreateDynamic(rigidpose, inertia, index, 0.01f);
-			description.Velocity.Linear = _lastvelocity;
-
-			BodyHandle = localsim.Bodies.Add(description);
-		}
-		public void CreateStaticHandle()
-		{
-			// not necessarily, we might be a foreign part
-			// if (_anchored)
-			// 	throw new InvalidOperationException("Cannot call CreateBodyHandle on anchored BaseParts");
-
-			var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-			var collidable = new Box(_size.X, _size.Y, _size.Z);
-			var rotation = Raymath.QuaternionFromEuler(_rotation.X, _rotation.Y, _rotation.Z);
-			var index = localsim.Shapes.Add(collidable);
-			var description = new StaticDescription(_position, rotation, index);
-
-			StaticHandle = localsim.Statics.Add(description);
 		}
 		public virtual void Render()
 		{
@@ -294,5 +167,8 @@ namespace NetBlox.Instances
 			Rotation = pivot.Rotation;
 			PivotOffset = default;
 		}
+
+		public void ReportContactBegin() => throw new NotImplementedException();
+		public void ReportContactEnd() => throw new NotImplementedException();
 	}
 }

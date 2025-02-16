@@ -30,6 +30,8 @@
 
   <Import Project="..\NetBlox.MoonSharp\NetBlox.MoonSharp.projitems" Label="Shared" />
 
+  <Import Project="..\NetBlox.Physics\NetBlox.Physics.projitems" Label="Shared" />
+
   <ItemGroup>
     <None Remove="content\studio\icon16.png" />
     <None Remove="content\studio\icon32.png" />
@@ -37,7 +39,7 @@
 
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
-    <PackageReference Include="BepuPhysics" Version="2.4.0" />
+    
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2646-prerelease" />
     <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="Raylib-cs" Version="6.1.1" />

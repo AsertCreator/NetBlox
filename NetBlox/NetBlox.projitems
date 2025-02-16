@@ -78,7 +78,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RbxlParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ProfileManager.cs" />
