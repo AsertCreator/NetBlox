@@ -276,8 +276,8 @@ namespace NetBlox
 						nc.Player.Destroy();
 						Clients.Remove(nc);
 
-						if (Clients.Count == 0) 
-						{ 
+						if (Clients.Count == 0)
+						{
 							ReplicationQueue.Clear(); // we dont care anymore. we might as well shutdown hehe
 							GameManager.Shutdown();
 						}
@@ -499,7 +499,7 @@ namespace NetBlox
 
 			ClientHandshake ch;
 			ch.Username = GameManager.Username;
-			ch.Authorization = SerializationManager.SerializeJson<Dictionary<string, string>>(new ()
+			ch.Authorization = SerializationManager.SerializeJson<Dictionary<string, string>>(new()
 			{
 				["isguest"] = GameManager.CurrentProfile.IsOffline ? "true" : "false",
 				["userid"] = GameManager.CurrentProfile.UserId.ToString()
@@ -562,45 +562,40 @@ namespace NetBlox
 						IsLoaded = true;
 					}
 
-					TaskScheduler.ScheduleJob(JobType.Replication, x =>
+					var ins = RecieveNewInstance(rep.Data);
+					if (ins == null)
+						return;
+
+					if (ins is Workspace workspace)
 					{
-						var ins = RecieveNewInstance(rep.Data);
-						if (ins == null)
-							return JobResult.CompletedFailure;
+						Camera c = new(GameManager);
+						workspace.MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
+						c.Parent = ins;
+					}
+					if (ins is Character character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
+					{
+						character.IsLocalPlayer = true;
 
-						if (ins is Workspace workspace)
+						if (Root.GetService<Workspace>().MainCamera is not Camera cam)
+							return;
+
+						cam.CameraSubject = character;
+						if (Root.GetService<Players>(true) != null)
 						{
-							Camera c = new(GameManager);
-							workspace.MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
-							c.Parent = ins;
-						}
-						if (ins is Character character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
-						{
-							character.IsLocalPlayer = true;
-
-							if (Root.GetService<Workspace>().MainCamera is not Camera cam)
-								return JobResult.CompletedFailure; // hehe
-
-							cam.CameraSubject = character;
-							if (Root.GetService<Players>(true) != null)
+							if (Root.GetService<Players>(true).LocalPlayer != null)
 							{
-								if (Root.GetService<Players>(true).LocalPlayer != null)
-								{
-									(Root.GetService<Players>(true).LocalPlayer as Player)!.Character = character;
-									SendRawData(tcp, "nb2-gotchar", character.UniqueID.ToByteArray());
-								}
+								(Root.GetService<Players>(true).LocalPlayer as Player)!.Character = character;
+								SendRawData(tcp, "nb2-gotchar", character.UniqueID.ToByteArray());
 							}
-
-							GameManager.PhysicsManager.DisablePhysics = false;
-						}
-						if (ins is Player player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
-						{
-							player.IsLocalPlayer = true;
-							Root.GetService<Players>().CurrentPlayer = player;
 						}
 
-						return JobResult.CompletedSuccess;
-					});
+						GameManager.PhysicsManager.DisablePhysics = false;
+					}
+					if (ins is Player player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
+					{
+						player.IsLocalPlayer = true;
+						Root.GetService<Players>().CurrentPlayer = player;
+					}
 				});
 				tcp.RegisterRawDataHandler("nb2-remote", (rep, _) =>
 				{
@@ -740,8 +735,8 @@ namespace NetBlox
 								break;
 						}
 					}
-				if (ChatMessage != null) 
-				{ 
+				if (ChatMessage != null)
+				{
 					SendRawData(RemoteConnection, "nb2-chat", Encoding.UTF8.GetBytes(ChatMessage)); // we dont care if it does not get sent
 					ChatMessage = null;
 				}
@@ -789,7 +784,7 @@ namespace NetBlox
 			{
 				SendRawData(ins.Owner.Connection, "nb2-confiscate", ins.UniqueID.ToByteArray());
 				ins.Owner = null;
-			} 
+			}
 		}
 		public void SetOwner(RemoteClient nc, Instance ins)
 		{

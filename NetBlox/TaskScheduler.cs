@@ -199,6 +199,11 @@ namespace NetBlox
 					LogManager.LogError($"    at {ex.CallStack[i].Name ?? ""}:{((ex.CallStack[i].Location != null) ? ex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
 				return JobResult.CompletedFailure;
 			}
+			catch (Exception ex)
+			{
+				LogManager.LogError("Runtime error during script execution: " + ex.Message);
+				return JobResult.CompletedFailure;
+			}
 		}
 	}
 }
