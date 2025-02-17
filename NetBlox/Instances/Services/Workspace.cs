@@ -5,6 +5,7 @@ using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.Trees;
 using System.Runtime.CompilerServices;
+using NetBlox.Rendering;
 
 namespace NetBlox.Instances.Services
 {
@@ -146,40 +147,6 @@ namespace NetBlox.Instances.Services
 		}
 		public void Render()
 		{
-			if (GameManager.NetworkManager.IsServer)
-			{
-				int halfslices = 50 / 2; 
-				Rlgl.Begin(1);
-
-				for (int i = -halfslices; i <= halfslices; i++)
-				{
-					if (i == 0)
-					{
-						Rlgl.Color3f(0.5f, 0.5f, 0.5f);
-						Rlgl.Color3f(0.5f, 0.5f, 0.5f);
-						Rlgl.Color3f(0.5f, 0.5f, 0.5f);
-						Rlgl.Color3f(0.5f, 0.5f, 0.5f);
-					}
-					else
-					{
-						Rlgl.Color3f(0.75f, 0.75f, 0.75f);
-						Rlgl.Color3f(0.75f, 0.75f, 0.75f);
-						Rlgl.Color3f(0.75f, 0.75f, 0.75f);
-						Rlgl.Color3f(0.75f, 0.75f, 0.75f);
-					}
-
-					Rlgl.Vertex3f((float)i * 3, FallenPartsDestroyHeight, (float)-halfslices * 3);
-					Rlgl.Vertex3f((float)i * 3, FallenPartsDestroyHeight, (float)halfslices * 3);
-
-					Rlgl.Vertex3f((float)-halfslices * 3, FallenPartsDestroyHeight, (float)i * 3);
-					Rlgl.Vertex3f((float)halfslices * 3, FallenPartsDestroyHeight, (float)i * 3);
-				}
-
-				Rlgl.End();
-
-				RenderUtils.DrawCubeFaced(new Vector3(0, FallenPartsDestroyHeight, 0), Vector3.Zero, 
-					halfslices * 2 * 3, 0, halfslices * 2 * 3, new Color(255, 50, 50, 50), Faces.Top | Faces.Bottom);
-			}
 		}
 	}
 }

@@ -74,10 +74,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\Faces.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)RenderUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Rendering\RenderManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Rendering\RenderUtils.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PhysicsManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Profanity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RbxlParser.cs" />
@@ -194,5 +195,6 @@
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)content\scripts\Modules\" />
     <Folder Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Rendering\" />
   </ItemGroup>
 </Project>

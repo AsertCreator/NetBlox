@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using NetBlox.Rendering;
+using NetBlox.Runtime;
 using Raylib_cs;
 using System;
 using System.Collections.Generic;
@@ -33,7 +34,7 @@ namespace NetBlox.Instances.Services
 
 			int mx = Raylib.GetMouseX();
 			int my = Raylib.GetMouseY();
-			var mp = Raylib.GetMouseRay(new System.Numerics.Vector2()
+			var mp = Raylib.GetScreenToWorldRay(new System.Numerics.Vector2()
 			{
 				X = mx, Y = my
 			}, 

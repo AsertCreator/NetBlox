@@ -1,10 +1,8 @@
-﻿using Raylib_cs;
-using System;
-using System.Collections.Generic;
+﻿using NetBlox.Structs;
+using Raylib_cs;
 using System.Numerics;
-using System.Text;
 
-namespace NetBlox
+namespace NetBlox.Rendering
 {
 	public static class RenderUtils
 	{

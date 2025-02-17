@@ -57,7 +57,7 @@ namespace NetBlox.Instances
 		{
 			int mx = Raylib.GetMouseX();
 			int my = Raylib.GetMouseY();
-			var mp = Raylib.GetMouseRay(new Vector2()
+			var mp = Raylib.GetScreenToWorldRay(new Vector2()
 			{
 				X = mx,
 				Y = my
@@ -84,7 +84,7 @@ namespace NetBlox.Instances
 		{
 			int mx = Raylib.GetMouseX();
 			int my = Raylib.GetMouseY();
-			var mp = Raylib.GetMouseRay(new Vector2()
+			var mp = Raylib.GetScreenToWorldRay(new Vector2()
 			{
 				X = mx,
 				Y = my

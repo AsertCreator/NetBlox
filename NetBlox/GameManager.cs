@@ -4,6 +4,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.GUIs;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
+using NetBlox.Rendering;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
@@ -221,8 +222,8 @@ namespace NetBlox
 			ShutdownEvent?.Invoke(new(), new());
 			AppManager.GameManagers.Remove(this);
 
-			if (AppManager.CurrentRenderManager == RenderManager)
-				AppManager.CurrentRenderManager = null;
+			if (AppManager.CurrentGameManager == this)
+				AppManager.CurrentGameManager.RenderManager = null;
 
 			if (RenderManager != null)
 				RenderManager.Unload();

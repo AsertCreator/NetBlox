@@ -1,5 +1,6 @@
 ﻿#define DISABLE_EME
 using NetBlox.Instances;
+using NetBlox.Rendering;
 
 namespace NetBlox
 {
@@ -9,7 +10,7 @@ namespace NetBlox
 	public static class AppManager
 	{
 		public static List<GameManager> GameManagers = [];
-		public static RenderManager? CurrentRenderManager;
+		public static GameManager? CurrentGameManager;
 		public static Dictionary<string, string> Preferences = [];
 		public static Dictionary<string, bool> FastFlags = [];
 		public static Dictionary<string, string> FastStrings = [];
@@ -59,7 +60,6 @@ namespace NetBlox
 			OnGameCreated?.Invoke(null, manager);
 			return manager;
 		}
-		public static void SetRenderTarget(GameManager gm) => CurrentRenderManager = gm.RenderManager;
 		public static void SetPreference(string key, string val) => Preferences[key] = val;
 		public static string GetPreference(string key) => Preferences[key];
 		public static void Start()
@@ -83,10 +83,10 @@ namespace NetBlox
 			});
 			GameRenderer = TaskScheduler.ScheduleJob(JobType.Renderer, x =>
 			{
-				if (CurrentRenderManager != null)
+				if (CurrentGameManager.RenderManager != null)
 				{
-					CurrentRenderManager.RenderFrame();
-					return CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager
+					CurrentGameManager.RenderManager.RenderFrame();
+					return CurrentGameManager.ShuttingDown && CurrentGameManager.RenderManager.GameManager.MainManager
 						? JobResult.CompletedSuccess
 						: JobResult.NotCompleted;
 				}

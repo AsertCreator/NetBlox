@@ -4,6 +4,7 @@ using NetBlox.Structs;
 using System.Numerics;
 using NetBlox.Instances.Services;
 using NetBlox.Common;
+using NetBlox.Rendering;
 
 namespace NetBlox.Instances
 {

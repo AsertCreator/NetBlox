@@ -1,9 +1,7 @@
-﻿using NetBlox.Runtime;
+﻿using NetBlox.Rendering;
+using NetBlox.Runtime;
+using NetBlox.Structs;
 using Raylib_cs;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
 
 namespace NetBlox.Instances
 {

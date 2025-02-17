@@ -52,7 +52,7 @@ namespace UniversalDuoHost
 			},
 			["-cs", "{\"a\":\"http://localhost:80/\",\"b\":\"NetBlox Development\",\"e\":true,\"g\":\"127.0.0.1\"}"], (x) => { });
 			CurrentClient.MainManager = true;
-			AppManager.SetRenderTarget(CurrentClient);
+			AppManager.CurrentGameManager = CurrentClient;
 			return CurrentClient;
 		}
 		internal static int Main(string[] args)
