@@ -82,14 +82,12 @@ namespace NetBlox.Client
 				var sctx = gm.CurrentRoot.GetService<ScriptContext>();
 				sctx.AddCoreScriptLocal("CoreScripts/Application", coregui.FindFirstChild("RobloxGui")!);
 			};
-			GameManager cg = null!;
-			cg = AppManager.CreateGame(new()
-			{
-				AsClient = true,
-				GameName = "NetBlox Client"
-			},
-			["-cs", "{}"], (x) => x.CurrentRoot.IsApplication = true);
+
+			GameConfiguration gc = new() { AsClient = true, GameName = "NetBlox Client" };
+			GameManager cg = AppManager.CreateGame(gc, ["-cs", "{}"], (x) => x.CurrentRoot.IsApplication = true);
+
 			cg.MainManager = true;
+
 			return cg;
 		}
 		public static GameManager CreateGeneralGame(string[] args)
@@ -98,28 +96,24 @@ namespace NetBlox.Client
 			{
 				var gm = AppManager.GameManagers[0];
 
-				gm.NetworkManager.ClientReplicator = Task.Run(delegate ()
+				try
 				{
-					try
-					{
-						gm.NetworkManager.ConnectToServer(IPAddress.Parse(xo));
-						return Task.FromResult(new object());
-					}
-					catch (Exception ex)
-					{
-						gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
-						return Task.FromResult<object>(new());
-					}
-				}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
+					var ipaddr = IPAddress.Parse(xo[..xo.IndexOf(':')]);
+					var port = int.Parse(xo[(xo.IndexOf(':') + 1)..]);
+
+					gm.NetworkManager.StartClientNonBlocking(ipaddr, port);
+				}
+				catch (Exception ex)
+				{
+					gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
+				}
 			};
-			GameManager cg = null!;
-			cg = AppManager.CreateGame(new()
-			{
-				AsClient = true,
-				GameName = "NetBlox Client"
-			},
-			args, (x) => x.RenderManager.WhiteOut = true);
+
+			GameConfiguration gc = new() { AsClient = true, GameName = "NetBlox Client" };
+			GameManager cg = AppManager.CreateGame(gc, args, (x) => x.RenderManager.WhiteOut = true);
+
 			cg.MainManager = true;
+
 			return cg;
 		}
 	}

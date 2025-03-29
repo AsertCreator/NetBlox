@@ -14,20 +14,7 @@ namespace NetBlox.Server
 		public static void Main(string[] args)
 		{
 			LogManager.LogInfo($"NetBlox Server ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
-			/*GameManager.Start(false, true, false, args, x =>
-			{
-				DataModel dm = new();
-				RbxlParser.Load(x, Root);
 
-				Root = dm;
-
-				LuaRuntime.Setup(Root, false);
-
-				NetworkManager.StartServer();
-
-				GameManager.IsRunning = true;
-			});
-			return;*/
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,
@@ -42,11 +29,11 @@ namespace NetBlox.Server
 						Environment.Exit(1);
 
 					x.CurrentRoot.Clear();
-					x.CurrentIdentity.PlaceName = x.ServerStartupInfo.PlaceName;
-					x.CurrentIdentity.UniverseName = x.ServerStartupInfo.UniverseName;
-					x.CurrentIdentity.MaxPlayerCount = (uint)x.ServerStartupInfo.MaxPlayerCount;
-					x.CurrentIdentity.Author = x.ServerStartupInfo.PlaceAuthor;
-					x.CurrentRoot.Name = x.CurrentIdentity.PlaceName;
+					x.PlaceIdentity.PlaceName = x.ServerStartupInfo.PlaceName;
+					x.PlaceIdentity.UniverseName = x.ServerStartupInfo.UniverseName;
+					x.PlaceIdentity.MaxPlayerCount = (uint)x.ServerStartupInfo.MaxPlayerCount;
+					x.PlaceIdentity.Author = x.ServerStartupInfo.PlaceAuthor;
+					x.CurrentRoot.Name = x.PlaceIdentity.PlaceName;
 					x.CurrentRoot.InternalLoad("file://" + x.ServerStartupInfo.RbxlFilePath);
 				}
 				catch (Exception ex)
@@ -59,7 +46,8 @@ namespace NetBlox.Server
 					TaskScheduler.ScheduleScript(x, File.ReadAllText("gamestart.txt"), 8, null);
 
 				x.AllowReplication = true;
-				Task.Run(x.NetworkManager.StartServer);
+				x.NetworkManager.StartServerNonBlocking();
+
 				Task.Run(() =>
 				{
 					Console.WriteLine("NetBlox Server commmand line:");
@@ -82,11 +70,11 @@ namespace NetBlox.Server
 									try
 									{
 										x.CurrentRoot.Clear();
-										x.CurrentIdentity.PlaceName = "Place downloaded from Web";
-										x.CurrentIdentity.UniverseName = "NetBlox";
-										x.CurrentIdentity.MaxPlayerCount = 16;
-										x.CurrentIdentity.Author = "NetBlox";
-										x.CurrentRoot.Name = x.CurrentIdentity.PlaceName;
+										x.PlaceIdentity.PlaceName = "Place downloaded from Web";
+										x.PlaceIdentity.UniverseName = "NetBlox";
+										x.PlaceIdentity.MaxPlayerCount = 16;
+										x.PlaceIdentity.Author = "NetBlox";
+										x.CurrentRoot.Name = x.PlaceIdentity.PlaceName;
 										x.CurrentRoot.Load(words[1]);
 									}
 									catch (Exception ex)

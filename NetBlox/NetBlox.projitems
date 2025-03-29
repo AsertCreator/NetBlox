@@ -74,6 +74,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NetworkClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NetworkSerializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NetworkServer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RemoteClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RpcMethodInvoke.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />
@@ -96,7 +101,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\RemoteClient.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkIdentity.cs" />
+    <Compile Include="..\NetBlox\Structs\PlaceIdentity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Skybox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\ByteArray.cs" />

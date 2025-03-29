@@ -20,10 +20,10 @@ namespace NetBlox
 	{
 		public List<Instance> AllInstances = [];
 		public Dictionary<KeyboardKey, Action> Verbs = [];
-		public NetworkIdentity CurrentIdentity = new();
 		public RenderManager RenderManager;
 		public PhysicsManager PhysicsManager;
 		public NetworkManager NetworkManager;
+		public PlaceIdentity PlaceIdentity;
 		public DataModel CurrentRoot = null!;
 		public ProfileManager CurrentProfile = new();
 		public ConfigFlags CustomFlags;
@@ -33,8 +33,6 @@ namespace NetBlox
 		public bool ProhibitProcessing = false;
 		public bool ProhibitScripts = false;
 		public bool MainManager = false;
-		public bool UsePublicService = false;
-		public bool FilteringEnabled = true;
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public int PropertyReplicationRate = 20;
@@ -82,8 +80,11 @@ namespace NetBlox
 					Environment.Exit(1);
 				}
 
-				NetworkManager = new(this, gc.AsServer, gc.AsClient);
-				CurrentIdentity.Reset();
+				NetworkManager = new(this, gc.AsClient ? 
+					(gc.AsStudio ? NetworkIdentity.ClientStudio : NetworkIdentity.Client) :
+					(gc.AsStudio ? NetworkIdentity.ServerStudio : NetworkIdentity.Server));
+				PlaceIdentity = new();
+				PlaceIdentity.Reset();
 				IsStudio = gc.AsStudio;
 
 				if (gc.AsClient)
@@ -135,13 +136,13 @@ namespace NetBlox
 				LogManager.LogInfo("Initializing user interface...");
 				SetupCoreGui();
 
-				if (NetworkManager.IsClient)
+				if (gc.AsClient)
 				{
 					LogManager.LogInfo("Creating main services...");
 					CurrentRoot.GetService<SandboxService>();
 					CurrentRoot.GetService<Debris>();
 				}
-				if (NetworkManager.IsServer)
+				else if (gc.AsServer)
 				{
 					LogManager.LogInfo("Creating main services...");
 					CurrentRoot.GetService<Workspace>();
@@ -163,10 +164,11 @@ namespace NetBlox
 				rs.Parent = CurrentRoot;
 				cg.Parent = CurrentRoot;
 
-				if (NetworkManager.IsClient)
+				if (gc.AsClient)
 				{
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-					QueuedTeleportAddress = (ClientStartupInfo ?? throw new Exception()).ServerIP;
+					Debug.Assert(ClientStartupInfo != null);
+					QueuedTeleportAddress = ClientStartupInfo.ServerIP.ToString() + ':' + ClientStartupInfo.ServerPort;
 				}
 
 				loadcallback(this);
@@ -188,7 +190,7 @@ namespace NetBlox
 			// apparently roblox does not just load all corescritps on bulk.
 			var scrurl = AppManager.ResolveUrlAsync("rbxasset://scripts/Modules/", false).WaitAndGetResult();
 			string? ssurl;
-			if (NetworkManager.IsServer)
+			if (NetworkManager.IsServerGame)
 				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/ServerStarterScript.lua", false).WaitAndGetResult();
 			else
 				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/StarterScript.lua", false).WaitAndGetResult();
@@ -359,14 +361,14 @@ namespace NetBlox
 					}
 			}
 
-			CurrentIdentity.MaxPlayerCount = 8;
-			CurrentIdentity.PlaceName = "";
-			CurrentIdentity.UniverseName = "";
-			CurrentIdentity.Author = "";
-			CurrentIdentity.PlaceID = 0;
-			CurrentIdentity.UniverseID = 0;
+			PlaceIdentity.MaxPlayerCount = 8;
+			PlaceIdentity.PlaceName = "";
+			PlaceIdentity.UniverseName = "";
+			PlaceIdentity.Author = "";
+			PlaceIdentity.PlaceID = 0;
+			PlaceIdentity.UniverseID = 0;
 
-			CurrentRoot.Name = CurrentIdentity.PlaceName;
+			CurrentRoot.Name = PlaceIdentity.PlaceName;
 		}
 		public Instance? GetInstance(Guid id)
 		{
@@ -402,14 +404,6 @@ namespace NetBlox
 			{
 				// no
 			}
-		}
-		public string FilterString(string text)
-		{
-			if (!UsePublicService)
-			{
-				return "lol";
-			}
-			return "c'est ma chatte";
 		}
 	}
 }

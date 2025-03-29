@@ -251,7 +251,6 @@ namespace MoonSharp.Interpreter.Interop.LuaStateInterop
 			else
 			{
 				// convert all other special meta characters
-				//TODO: \xhhh hex and possible dec !!
 				switch (m.Groups[2].Value)
 				{
 					case "0":           // null

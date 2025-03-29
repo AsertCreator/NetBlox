@@ -100,7 +100,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public void LoadCharacterOld()
 		{
-			if (!GameManager.NetworkManager.IsServer)
+			if (!GameManager.NetworkManager.IsServerGame)
 				throw new ScriptRuntimeException("Cannot call LoadCharacter from client!");
 
 			var ch = new Character(GameManager);
@@ -148,7 +148,21 @@ namespace NetBlox.Instances
 			return bc.Value;
 		}
 		[Lua([Security.Capability.None])]
-		public void Kick(string msg) => GameManager.NetworkManager.PerformKick(Client, msg, IsLocalPlayer);
+		public void Kick(string msg)
+		{
+			if (Client != null && GameManager.NetworkManager.IsServerGame)
+			{
+				Client.RPC_Kick(msg);
+				TaskScheduler.Delay(1000, _ =>
+				{
+					GameManager.NetworkManager.NetworkServer.ForcefullyDisconnectRemoteClient(Client);
+				});
+			}
+			else if (Client != null && GameManager.NetworkManager.IsClientGame)
+			{
+				// TODO: client side kick slef
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
@@ -159,9 +173,13 @@ namespace NetBlox.Instances
 		public override void Destroy() // also destroy character
 		{
 			base.Destroy();
-			Character?.Destroy();
-			if (IsLocalPlayer || GameManager.NetworkManager.IsServer)
-				Kick("Player has been removed from this DataModel");
+
+			if (Client != null)
+			{
+				Character?.Destroy();
+				if (IsLocalPlayer || GameManager.NetworkManager.IsServerGame)
+					Kick("Player has been removed from this DataModel");
+			}
 		}
 	}
 }

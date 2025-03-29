@@ -45,6 +45,7 @@ namespace NetBlox
 		public static int JobCount => RunningJobs.Count;
 		public static double AverageTimeToRun => LastCycleTime.TotalMilliseconds / RunningJobs.Count;
 		internal static List<Job> RunningJobs = [];
+		private static int PlayerTrust = 2;
 
 		public static void Step()
 		{
@@ -62,6 +63,17 @@ namespace NetBlox
 					RunningJobs.RemoveAt(i--);
 					// just skip it
 					continue;
+				}
+
+				if ((job.SecurityLevel == 7 || job.SecurityLevel == 8) && job.ScriptJobContext.GameManager.NetworkManager.IsClientGame)
+				{
+					LogManager.LogError("Server-exclusive script threads are not expected on client!");
+					PlayerTrust--;
+				}
+
+				if (PlayerTrust <= 0)
+				{
+					var _ = "Player trust is too low";
 				}
 
 				if (job.JobTimingContext.JoinedUntil.Ticks > now)
@@ -106,6 +118,17 @@ namespace NetBlox
 			LastCycleTime = sw.Elapsed;
 		}
 		public static void Terminate(Job job) => RunningJobs.Remove(job);
+		public static void Delay(int milliseconds, Action<Job> act)
+		{
+			Task.Delay(milliseconds).ContinueWith(_ =>
+			{
+				Job job = null!;
+				job = Schedule(() =>
+				{
+					act(job);
+				});
+			});
+		}
 		public static Job Schedule(Action act)
 		{
 			return ScheduleJob(JobType.Miscellaneous, x =>
@@ -155,9 +178,6 @@ namespace NetBlox
 		}
 		public static Job ScheduleScript(GameManager gm, DynValue func, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null)
 		{
-			if ((level == 7 || level == 8) && gm.NetworkManager.IsClient)
-				throw new Exception("Server-exclusive threads are not expected on client!");
-
 			Coroutine? closure = null;
 			if (func.Type == DataType.Function) closure = gm.MainEnvironment.CreateCoroutine(func).Coroutine;
 			else if (func.Type == DataType.Thread) closure = func.Coroutine;
