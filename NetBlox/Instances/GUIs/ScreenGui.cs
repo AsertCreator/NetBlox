@@ -34,7 +34,7 @@ namespace NetBlox.Instances.GUIs
 					GuiObject go = (GuiObject)tor.ElementAt(i);
 					go.RenderGUI(Vector2.Zero, ssz);
 
-					var act = go.HitTest(Vector2.Zero, ssz);
+					var act = go.HitTest(Vector2.Zero, ssz, Raylib.GetMouseX(), Raylib.GetMouseY());
 
 					if (act != null && Raylib.IsMouseButtonPressed(MouseButton.Left))
 						act.Activate(MouseButton.Left);

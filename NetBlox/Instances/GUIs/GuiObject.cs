@@ -55,7 +55,7 @@ namespace NetBlox.Instances.GUIs
 				go.RenderGUI(epo, esz);
 			}
 		}
-		public virtual GuiObject? HitTest(Vector2 cp, Vector2 cs)
+		public virtual GuiObject? HitTest(Vector2 cp, Vector2 cs, int absMouseX, int absMouseY)
 		{
 			if (!Visible) return null;
 
@@ -73,7 +73,7 @@ namespace NetBlox.Instances.GUIs
 				for (int i = 0; i < count; i++)
 				{
 					GuiObject go = (GuiObject)tor.ElementAt(i);
-					var res = go.HitTest(epo, esz);
+					var res = go.HitTest(epo, esz, absMouseX, absMouseY);
 					if (res != null)
 						return res;
 				}

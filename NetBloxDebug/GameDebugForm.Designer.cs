@@ -40,6 +40,7 @@ namespace NetBloxDebug
 			luaExecutorLevelSelector = new NumericUpDown();
 			luaExecutorRun = new Button();
 			luaExecutorBox = new TextBox();
+			clearLog = new Button();
 			gameLog = new TextBox();
 			menuStrip1 = new MenuStrip();
 			gameToolStripMenuItem = new ToolStripMenuItem();
@@ -49,7 +50,8 @@ namespace NetBloxDebug
 			shutdownThisInstanceToolStripMenuItem = new ToolStripMenuItem();
 			shutdownAllInstancesToolStripMenuItem = new ToolStripMenuItem();
 			detachToolStripMenuItem = new ToolStripMenuItem();
-			clearLog = new Button();
+			testsToolStripMenuItem = new ToolStripMenuItem();
+			runToolStripMenuItem = new ToolStripMenuItem();
 			toolStripSeparator = new ToolStripSeparator();
 			groupBox1 = new GroupBox();
 			groupBox2 = new GroupBox();
@@ -159,6 +161,16 @@ namespace NetBloxDebug
 			groupBox3.TabStop = false;
 			groupBox3.Text = "Game log";
 			// 
+			// clearLog
+			// 
+			clearLog.Location = new Point(6, 384);
+			clearLog.Name = "clearLog";
+			clearLog.Size = new Size(60, 23);
+			clearLog.TabIndex = 1;
+			clearLog.Text = "Clear";
+			clearLog.UseVisualStyleBackColor = true;
+			clearLog.Click += clearLog_Click;
+			// 
 			// gameLog
 			// 
 			gameLog.AcceptsReturn = true;
@@ -173,7 +185,7 @@ namespace NetBloxDebug
 			// 
 			// menuStrip1
 			// 
-			menuStrip1.Items.AddRange(new ToolStripItem[] { gameToolStripMenuItem });
+			menuStrip1.Items.AddRange(new ToolStripItem[] { gameToolStripMenuItem, testsToolStripMenuItem });
 			menuStrip1.Location = new Point(0, 0);
 			menuStrip1.Name = "menuStrip1";
 			menuStrip1.Size = new Size(922, 24);
@@ -229,15 +241,18 @@ namespace NetBloxDebug
 			detachToolStripMenuItem.Text = "Detach";
 			detachToolStripMenuItem.Click += detachToolStripMenuItem_Click;
 			// 
-			// clearLog
+			// testsToolStripMenuItem
 			// 
-			clearLog.Location = new Point(6, 384);
-			clearLog.Name = "clearLog";
-			clearLog.Size = new Size(60, 23);
-			clearLog.TabIndex = 1;
-			clearLog.Text = "Clear";
-			clearLog.UseVisualStyleBackColor = true;
-			clearLog.Click += clearLog_Click;
+			testsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { runToolStripMenuItem });
+			testsToolStripMenuItem.Name = "testsToolStripMenuItem";
+			testsToolStripMenuItem.Size = new Size(45, 20);
+			testsToolStripMenuItem.Text = "Tests";
+			// 
+			// runToolStripMenuItem
+			// 
+			runToolStripMenuItem.Name = "runToolStripMenuItem";
+			runToolStripMenuItem.Size = new Size(180, 22);
+			runToolStripMenuItem.Text = "Run";
 			// 
 			// GameDebugForm
 			// 
@@ -283,5 +298,7 @@ namespace NetBloxDebug
 		private TextBox luaExecutorBox;
 		private TextBox gameLog;
 		private Button clearLog;
+		private ToolStripMenuItem testsToolStripMenuItem;
+		private ToolStripMenuItem runToolStripMenuItem;
 	}
 }

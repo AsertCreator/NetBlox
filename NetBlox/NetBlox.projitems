@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Decal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\BillboardGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ChatFrame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\Frame.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\GuiObject.cs" />
