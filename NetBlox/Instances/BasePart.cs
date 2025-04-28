@@ -225,7 +225,7 @@ namespace NetBlox.Instances
 
 		public BasePart(GameManager ins) : base(ins)
 		{
-			if (GameManager.NetworkManager.IsServer) // we are in server
+			if (GameManager.NetworkManager.IsServerGame) // we are in server
 			{
 				// by default we ARE server-side AND unanchored
 				_anchored = false;

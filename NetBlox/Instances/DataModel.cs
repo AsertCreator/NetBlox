@@ -10,18 +10,18 @@ namespace NetBlox.Instances
 	public class DataModel(GameManager gm) : ServiceProvider(gm)
 	{
 		[Lua([Security.Capability.None])]
-		public long CreatorId => GameManager.CurrentIdentity.Author.GetHashCode(); // worky around
+		public long CreatorId => GameManager.PlaceIdentity.Author.GetHashCode(); // worky around
 		[Lua([Security.Capability.None])]
-		public long GameId => (long)GameManager.CurrentIdentity.UniverseID;
+		public long GameId => (long)GameManager.PlaceIdentity.UniverseID;
 		[Lua([Security.Capability.None])]
-		public long PlaceId => (long)GameManager.CurrentIdentity.PlaceID;
+		public long PlaceId => (long)GameManager.PlaceIdentity.PlaceID;
 		[Lua([Security.Capability.None])]
 		public int PlaceVersion => 0;
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsApplication { get; set; }
 
 		[Lua([Security.Capability.None])]
-		public bool IsLoaded() => GameManager.NetworkManager.IsLoaded;
+		public bool IsLoaded() => false; // TODO: ciken jck AHHH
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool GetFastFlag(string fflag) => AppManager.FastFlags.TryGetValue(fflag, out var flag) ? flag : throw new Exception("No such FastFlag defined!");
 		[Lua([Security.Capability.CoreSecurity])]

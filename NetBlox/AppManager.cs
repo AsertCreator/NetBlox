@@ -67,9 +67,11 @@ namespace NetBlox
 			if (!Directory.Exists(LibraryFolder))
 				Directory.CreateDirectory(LibraryFolder);
 
+			DefineFastFlag("FFlagDontReachTheNetwork", false);
 			DefineFastFlag("FFlagShowCoreGui", true);
 			DefineFastFlag("FFlagShowAFSCacheReload", false);
 			DefineFastInt("FIntDefaultUIVariant", 1);
+			DefineFastInt("FIntForceServerPort", -1);
 
 			GameProcessor = TaskScheduler.ScheduleJob(JobType.Heartbeat, x =>
 			{

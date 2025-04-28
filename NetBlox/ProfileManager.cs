@@ -1,7 +1,4 @@
-﻿using NetBlox.Common;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Net;
 
 namespace NetBlox
 {
@@ -28,6 +25,11 @@ namespace NetBlox
 				Dictionary<string, string> str = new();
 				str["name"] = user;
 				str["phash"] = phash;
+
+				if (AppManager.FastFlags["FFlagDontReachTheNetwork"])
+				{
+					return Guid.NewGuid();
+				}
 
 				string json = SerializationManager.SerializeJson(str);
 				var hc = new HttpClient();
@@ -67,6 +69,11 @@ namespace NetBlox
 			{
 				if (!LastLogin.HasValue) return false;
 
+				if (AppManager.FastFlags["FFlagDontReachTheNetwork"])
+				{
+					return true;
+				}
+
 				LogManager.LogInfo("Trying to set online mode to " + pm + "...");
 				Dictionary<string, object> str = new();
 				str["token"] = LastLogin.Value.ToString();
@@ -94,6 +101,10 @@ namespace NetBlox
 			try
 			{
 				if (!LastLogin.HasValue) return false;
+				if (AppManager.FastFlags["FFlagDontReachTheNetwork"])
+				{
+					return true;
+				}
 
 				LogManager.LogInfo("Trying to set player data...");
 				Dictionary<string, object> str = new();
@@ -123,6 +134,10 @@ namespace NetBlox
 			try
 			{
 				if (!LastLogin.HasValue) return null;
+				if (AppManager.FastFlags["FFlagDontReachTheNetwork"])
+				{
+					return [];
+				}
 
 				LogManager.LogInfo("Trying to get player data...");
 				Dictionary<string, object> str = new();

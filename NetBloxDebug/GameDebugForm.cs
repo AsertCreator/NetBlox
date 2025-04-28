@@ -36,17 +36,17 @@ namespace NetBloxDebug
 
 				gameCharsLabel.Text = string.Concat(new string[]
 				{
-					at.NetworkManager.IsClient ? "Is client, " : "",
-					at.NetworkManager.IsServer ? "Is server, " : "",
-					(at.NetworkManager.RemoteConnection != null && at.NetworkManager.RemoteConnection.IsAlive) ? 
+					at.NetworkManager.IsClientGame ? "Is client, " : "",
+					at.NetworkManager.IsServerGame ? "Is server, " : "",
+					(at.NetworkManager.NetworkClient!.RemoteConnection != null && at.NetworkManager.NetworkClient!.RemoteConnection.IsAlive) ? 
 						"Connected to remote game, " : "",
-					at.NetworkManager.OnlyInternalConnections ? "Connected to internal game, " : "",
+					!at.NetworkManager.PolicyBroadcastedServer ? "Connected to internal game, " : "",
 					at.RenderManager.RenderAtAll ? "Rendering, " : "",
 					at.RenderManager.DebugInformation ? "Showing debug info, " : "",
 					!at.PhysicsManager.DisablePhysics ? "Simulating physics, " : "",
 
 					"Actor count = " + at.PhysicsManager.Actors.Count + ", ",
-					"Clients count = " + at.NetworkManager.Clients.Count + ", ",
+					"Clients count = " + at.NetworkManager.NetworkClient!.AllClients.Count + ", ",
 					"Instances count = " + at.AllInstances.Count + ", ",
 				});
 			};

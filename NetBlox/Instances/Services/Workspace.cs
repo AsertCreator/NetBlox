@@ -37,7 +37,7 @@ namespace NetBlox.Instances.Services
 			get => birdAmbient; 
 			set 
 			{
-				if (Ambient.HasValue && GameManager.NetworkManager.IsClient && birdAmbient && !value)
+				if (Ambient.HasValue && GameManager.NetworkManager.IsClientGame && birdAmbient && !value)
 					GameManager.RenderManager.StopSound(Ambient.Value);
 				birdAmbient = value;
 			} 
@@ -49,7 +49,7 @@ namespace NetBlox.Instances.Services
 		public Workspace(GameManager ins) : base(ins) 
 		{ 
 			birdAmbient = true;
-			if (GameManager.NetworkManager.IsClient)
+			if (GameManager.NetworkManager.IsClientGame)
 			{
 				RenderManager.LoadSound("rbxasset://sounds/birdsambient.mp3", x => Ambient = x);
 			}
@@ -138,7 +138,7 @@ namespace NetBlox.Instances.Services
 		{
 			base.Process();
 			GameManager.PhysicsManager.Step();
-			if (GameManager.NetworkManager.IsClient && BirdAmbient && Ambient.HasValue) 
+			if (GameManager.NetworkManager.IsClientGame && BirdAmbient && Ambient.HasValue) 
 			{
 				if (!GameManager.RenderManager.IsSoundPlaying(Ambient.Value))
 					GameManager.RenderManager.PlaySound(Ambient.Value);
@@ -146,7 +146,7 @@ namespace NetBlox.Instances.Services
 		}
 		public void Render()
 		{
-			if (GameManager.NetworkManager.IsServer)
+			if (GameManager.NetworkManager.IsServerGame)
 			{
 				int halfslices = 50 / 2; 
 				Rlgl.Begin(1);

@@ -16,7 +16,7 @@ namespace NetBlox.Instances
 
 		public override void Process()
 		{
-			if (GameManager.NetworkManager.IsServer)
+			if (GameManager.NetworkManager.IsServerGame)
 				return; // im sick of it
 			if (CameraSubject == null || !CameraSubject.IsA("BasePart"))
 			{

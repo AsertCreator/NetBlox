@@ -239,7 +239,14 @@ namespace NetBlox
 			NetworkDeserializers.Add("NetBlox.Structs.Shape", (x, y) => (Shape)BitConverter.ToInt32(x));
 			NetworkDeserializers.Add("NetBlox.Structs.Faces", (x, y) => (Faces)BitConverter.ToInt32(x));
 			NetworkDeserializers.Add("NetBlox.Structs.SurfaceType", (x, y) => (SurfaceType)BitConverter.ToInt32(x));
-			NetworkDeserializers.Add("NetBlox.Instances.Instance", (x, y) => y.GetInstance(new Guid(x))!);
+			NetworkDeserializers.Add("NetBlox.Instances.Instance", (x, y) =>
+			{
+				var guid = new Guid(x);
+				if (guid == default)
+					return null!;
+				var instance = y.GetInstance(guid);
+				return instance;
+			});
 
 			NetworkSerializers.Add("System.Byte", (x, y) => [(byte)x]);
 			NetworkSerializers.Add("System.Int16", (x, y) => BitConverter.GetBytes((short)x));
@@ -276,7 +283,12 @@ namespace NetBlox
 			NetworkSerializers.Add("NetBlox.Structs.Shape", (x, y) => NetworkSerialize((int)(Shape)x, y));
 			NetworkSerializers.Add("NetBlox.Structs.Faces", (x, y) => NetworkSerialize((int)(Faces)x, y));
 			NetworkSerializers.Add("NetBlox.Structs.SurfaceType", (x, y) => NetworkSerialize((int)(SurfaceType)x, y));
-			NetworkSerializers.Add("NetBlox.Instances.Instance", (x, y) => (x as Instance).UniqueID.ToByteArray());
+			NetworkSerializers.Add("NetBlox.Instances.Instance", (x, y) => 
+			{
+				if (x is Instance inst)
+					return inst.UniqueID.ToByteArray();
+				return new byte[16];
+			});
 
 			LuaSerializers.Add("System.Byte", (x, y) => DynValue.NewNumber((Byte)x));
 			LuaSerializers.Add("System.Int16", (x, y) => DynValue.NewNumber((Int16)x));

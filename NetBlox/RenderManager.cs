@@ -107,7 +107,7 @@ namespace NetBlox
 
 					for (int i = 0; i < 2; i++) // s p e e d
 					{
-						if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
+						if (GameManager.NetworkManager.IsServerGame && Raylib.IsMouseButtonDown(MouseButton.Right))
 						{
 							Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
 							if (Raylib.IsKeyDown(KeyboardKey.Space))
@@ -169,7 +169,7 @@ namespace NetBlox
 									Raylib.DrawTextEx(MainFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
 								}
 
-								if (GameManager.NetworkManager.IsClient)
+								if (GameManager.NetworkManager.IsClientGame)
 								{
 									RenderPlayerGui();
 									RenderInstanceUI(Root.GetService<CoreGui>());
@@ -188,7 +188,6 @@ namespace NetBlox
 								", fps: " + Raylib.GetFPS() + 
 								", instances: " + GameManager.AllInstances.Count +
 								", task scheduler pressure: " + TaskScheduler.JobCount + 
-								", outgoing traffic: " + MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + 
 								(GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled") +
 								", actors count: " + GameManager.PhysicsManager.Actors.Count,
 								new Vector2(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
@@ -227,7 +226,7 @@ namespace NetBlox
 		}
 		public void RenderPlayerGui()
 		{
-			if (GameManager.NetworkManager.IsClient)
+			if (GameManager.NetworkManager.IsClientGame)
 			{
 				var plrs = Root.GetService<Players>(true);
 				if (plrs == null) return;

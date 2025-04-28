@@ -103,7 +103,7 @@ namespace NetBlox.Instances
 			if (!GameManager.NetworkManager.IsServerGame)
 				throw new ScriptRuntimeException("Cannot call LoadCharacter from client!");
 
-			var ch = new Character(GameManager);
+			var ch = new Part(GameManager);
 			var face = new Decal(GameManager);
 			var workspace = Root.GetService<Workspace>();
 

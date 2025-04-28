@@ -17,45 +17,45 @@ namespace NetBlox.Instances
 
 		public RemoteEvent(GameManager ins) : base(ins) { }
 
-		[Lua([Security.Capability.None])]
-		public void FireServer(DynValue table)
-		{
-			if (!GameManager.NetworkManager.IsClient)
-				throw new ScriptRuntimeException("Cannot call FireServer on server!");
+		//[Lua([Security.Capability.None])]
+		//public void FireServer(DynValue table)
+		//{
+		//	if (!GameManager.NetworkManager.IsClientGame)
+		//		throw new ScriptRuntimeException("Cannot call FireServer on server!");
 
-			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
-			{
-				Data = SerializationManager.SerializeLuaObject(table, GameManager),
-				Recievers = [],
-				RemoteEventId = UniqueID
-			});
-		}
-		[Lua([Security.Capability.None])]
-		public void FireClient(Player plr, DynValue table)
-		{
-			if (!GameManager.NetworkManager.IsServer)
-				throw new ScriptRuntimeException("Cannot call FireClient on client!");
+		//	GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
+		//	{
+		//		Data = SerializationManager.SerializeLuaObject(table, GameManager),
+		//		Recievers = [],
+		//		RemoteEventId = UniqueID
+		//	});
+		//}
+		//[Lua([Security.Capability.None])]
+		//public void FireClient(Player plr, DynValue table)
+		//{
+		//	if (!GameManager.NetworkManager.IsServerGame)
+		//		throw new ScriptRuntimeException("Cannot call FireClient on client!");
 
-			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
-			{
-				Data = SerializationManager.SerializeLuaObject(table, GameManager),
-				Recievers = [plr.Client ?? throw new ScriptRuntimeException("This Player is not supported")], // say what
-				RemoteEventId = UniqueID
-			});
-		}
-		[Lua([Security.Capability.None])]
-		public void FireAllClients(DynValue table)
-		{
-			if (!GameManager.NetworkManager.IsServer)
-				throw new ScriptRuntimeException("Cannot call FireAllClients on client!");
+		//	GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
+		//	{
+		//		Data = SerializationManager.SerializeLuaObject(table, GameManager),
+		//		Recievers = [plr.Client ?? throw new ScriptRuntimeException("This Player is not supported")], // say what
+		//		RemoteEventId = UniqueID
+		//	});
+		//}
+		//[Lua([Security.Capability.None])]
+		//public void FireAllClients(DynValue table)
+		//{
+		//	if (!GameManager.NetworkManager.IsServerGame)
+		//		throw new ScriptRuntimeException("Cannot call FireAllClients on client!");
 
-			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
-			{
-				Data = SerializationManager.SerializeLuaObject(table, GameManager),
-				Recievers = [.. GameManager.NetworkManager.Clients],
-				RemoteEventId = UniqueID
-			});
-		}
+		//	GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
+		//	{
+		//		Data = SerializationManager.SerializeLuaObject(table, GameManager),
+		//		Recievers = [.. GameManager.NetworkManager.Clients],
+		//		RemoteEventId = UniqueID
+		//	});
+		//}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

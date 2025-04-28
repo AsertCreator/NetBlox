@@ -56,34 +56,7 @@ namespace NetBlox
 			ProcessQueue.Enqueue(rmi);
 			RaiseOnRpcCallQueued(rmi);
 		}
-		public void RPC_InformClientConnect(long userid, string username, int id)
-		{
-			CheckRPCRequirements();
 
-			var args = $"{userid}:{username}:{id}";
-			var rmi = new RpcMethodInvoke()
-			{
-				MethodType = RpcMethodType.InformClientConnect,
-				MethodArguments = Encoding.UTF8.GetBytes(args)
-			};
-
-			ProcessQueue.Enqueue(rmi);
-			RaiseOnRpcCallQueued(rmi);
-		}
-		public void RPC_InformClientDisconnect(int id)
-		{
-			CheckRPCRequirements();
-
-			var args = $"{id}";
-			var rmi = new RpcMethodInvoke()
-			{
-				MethodType = RpcMethodType.InformClientDisconnect,
-				MethodArguments = Encoding.UTF8.GetBytes(args)
-			};
-
-			ProcessQueue.Enqueue(rmi);
-			RaiseOnRpcCallQueued(rmi);
-		}
 		internal void RaiseOnRpcCallQueued(RpcMethodInvoke rmi) => OnRpcCallQueued?.Invoke(this, new()
 		{
 			MethodInvoke = rmi,

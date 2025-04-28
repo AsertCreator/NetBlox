@@ -54,8 +54,17 @@ namespace NetBlox
 				LogManager.LogInfo("Initializing NetBlox...");
 				ManagerName = gc.GameName;
 
-				string? csdata = args[args.ToList().IndexOf("-cs") + 1].Replace("^^", "\"");
-				string? ssdata = args[args.ToList().IndexOf("-ss") + 1].Replace("^^", "\"");
+				string? csdata = null;
+				string? ssdata = null;
+				string? fldata = null;
+
+				int csidx = Array.IndexOf(args, "-cs");
+				int ssidx = Array.IndexOf(args, "-ss");
+				int flidx = Array.IndexOf(args, "-fl");
+
+				if (csidx != -1) csdata = args[csidx + 1].Replace("^^", "\"");
+				if (ssidx != -1) ssdata = args[ssidx + 1].Replace("^^", "\"");
+				if (flidx != -1) fldata = args[flidx + 1].Replace("^^", "\"");
 
 				try
 				{
@@ -73,6 +82,22 @@ namespace NetBlox
 						gc.AsServer ?
 						(ServerStartupInfo ?? throw new Exception()).PublicServiceAPI :
 						(ClientStartupInfo ?? throw new Exception()).PublicServiceAPI;
+
+					if (fldata != null)
+					{
+						string[] defs = fldata.Split(';');
+
+						for (int i = 0; i < defs.Length; i++)
+						{
+							string def = defs[i];
+							string name = def.Substring(0, def.IndexOf('='));
+							string val = def.Substring(def.IndexOf('=') + 1);
+
+							if (def.StartsWith("FFlag")) AppManager.FastFlags[name] = (val == "1" || val == "true");
+							if (def.StartsWith("FInt")) AppManager.FastInts[name] = int.Parse(val);
+							if (def.StartsWith("FString")) AppManager.FastStrings[name] = val;
+						}
+					}
 				}
 				catch
 				{
@@ -168,7 +193,7 @@ namespace NetBlox
 				{
 					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
 					Debug.Assert(ClientStartupInfo != null);
-					QueuedTeleportAddress = ClientStartupInfo.ServerIP.ToString() + ':' + ClientStartupInfo.ServerPort;
+					QueuedTeleportAddress = ClientStartupInfo.ServerIP.ToString();
 				}
 
 				loadcallback(this);

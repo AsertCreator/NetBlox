@@ -2,7 +2,7 @@
 {
 	public enum RpcMethodType
 	{
-		Kick, InformClientConnect, InformClientDisconnect
+		Kick
 	}
     public struct RpcMethodInvoke
     {

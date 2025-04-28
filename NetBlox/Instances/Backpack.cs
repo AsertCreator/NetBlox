@@ -15,7 +15,7 @@ namespace NetBlox.Instances
 		public Backpack(GameManager ins) : base(ins)
 		{
 			// debug
-			if (GameManager.NetworkManager.IsClient)
+			if (GameManager.NetworkManager.IsClientGame)
 			{
 				Hopper hopper = new(ins);
 				hopper.Parent = this;

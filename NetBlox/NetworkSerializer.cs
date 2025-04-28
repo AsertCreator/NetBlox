@@ -4,8 +4,8 @@ using System.Reflection;
 
 namespace NetBlox
 {
-    public static class NetworkSerializer
-    {
+	public static class NetworkSerializer
+	{
 		public static byte[] SerializeInstanceDelta(Instance inst, PropertyInfo[] props)
 		{
 			var type = inst.GetType();
@@ -16,6 +16,8 @@ namespace NetBlox
 			{
 				bw.Write(inst.UniqueID.ToByteArray());
 				bw.Write(inst.ParentID.ToByteArray());
+
+				var pos = ms.Position;
 
 				bw.Write((short)0);
 
@@ -32,14 +34,14 @@ namespace NetBlox
 
 					var serialized = SerializationManager.NetworkSerializers[propType.FullName](propValue, gm);
 
-					bw.Write(prop.Name);
+					bw.Write(prop.MetadataToken);
 					bw.Write((short)serialized.Length);
 					bw.Write(serialized);
 
 					acti++;
 				}
 
-				ms.Position = 32;
+				ms.Position = pos;
 				bw.Write((short)acti);
 
 				return ms.ToArray();
@@ -64,10 +66,12 @@ namespace NetBlox
 				}
 
 				int acti = br.ReadInt16();
+				var props = type.GetProperties();
 
 				for (int i = 0; i < acti; i++)
 				{
-					var prop = type.GetProperty(br.ReadString());
+					var pid = br.ReadInt32();
+					var prop = Array.Find(props, (x) => x.MetadataToken == pid);
 					var propType = prop.PropertyType;
 					var serializedLength = br.ReadInt16();
 					var serialized = br.ReadBytes(serializedLength);
@@ -90,6 +94,8 @@ namespace NetBlox
 				bw.Write(inst.UniqueID.ToByteArray());
 				bw.Write(inst.ParentID.ToByteArray());
 
+				var pos = ms.Position;
+
 				bw.Write((short)0);
 
 				int acti = 0;
@@ -102,17 +108,24 @@ namespace NetBlox
 
 					if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
 						continue;
+					if (prop.SetMethod == null)
+						continue;
+					if (propValue is Guid || propValue is LuaSignal)
+						continue;
 
-					var serialized = SerializationManager.NetworkSerializers[propType.FullName](propValue, gm);
+					if (SerializationManager.NetworkSerializers.TryGetValue(propType.FullName, out var ser))
+					{
+						var serialized = ser(propValue, gm);
 
-					bw.Write(prop.Name);
-					bw.Write((short)serialized.Length);
-					bw.Write(serialized);
+						bw.Write(prop.GetMetadataToken());
+						bw.Write((short)serialized.Length);
+						bw.Write(serialized);
 
-					acti++;
+						acti++;
+					}
 				}
 
-				ms.Position = 32;
+				ms.Position = pos;
 				bw.Write((short)acti);
 
 				return ms.ToArray();
@@ -120,7 +133,6 @@ namespace NetBlox
 		}
 		public static Instance DeserializeInstanceComplete(byte[] full, GameManager gm)
 		{
-			Security.Impersonate(8);
 			Instance instance;
 
 			using (MemoryStream ms = new(full))
@@ -138,20 +150,23 @@ namespace NetBlox
 				instance.ParentID = parentId;
 
 				int acti = br.ReadInt16();
+				var props = type.GetProperties();
 
 				for (int i = 0; i < acti; i++)
 				{
-					var prop = type.GetProperty(br.ReadString());
+					Security.Impersonate(8);
+					var token = br.ReadInt32();
+					var prop = Array.Find(props, x => x.GetMetadataToken() == token);
 					var propType = prop.PropertyType;
 					var serializedLength = br.ReadInt16();
 					var serialized = br.ReadBytes(serializedLength);
 					var deserialized = SerializationManager.NetworkDeserializers[propType.FullName](serialized, gm);
 
 					prop.SetValue(instance, deserialized);
+					Security.EndImpersonate();
 				}
 			}
 
-			Security.EndImpersonate();
 			return instance;
 		}
 	}

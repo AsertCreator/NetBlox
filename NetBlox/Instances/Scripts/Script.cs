@@ -9,7 +9,7 @@ namespace NetBlox.Instances.Scripts
 
 		public override void Process()
 		{
-			if (!HadExecuted && GameManager.NetworkManager.IsServer && Enabled && !GameManager.ProhibitScripts)
+			if (!HadExecuted && GameManager.NetworkManager.IsServerGame && Enabled && !GameManager.ProhibitScripts)
 			{
 				TaskScheduler.ScheduleScript(GameManager, Source, 2, this);
 				HadExecuted = true;

@@ -9,8 +9,8 @@ using CloseReason = Network.Enums.CloseReason;
 
 namespace NetBlox
 {
-    public class NetworkServer(NetworkManager nm)
-    {
+	public class NetworkServer(NetworkManager nm)
+	{
 		public List<RemoteClient> AllClients = [];
 		public ServerConnectionContainer? ConnectionContainer;
 		private int NextClientId = 0;
@@ -46,12 +46,6 @@ namespace NetBlox
 		public void PerformServersideCleanup(RemoteClient rc)
 		{
 			AllClients.Remove(rc);
-
-			for (int i = 0; i < AllClients.Count; i++)
-			{
-				var client = AllClients[i];
-				client.RPC_InformClientDisconnect(rc.ClientID);
-			}
 
 			rc.RaiseOnClientDisconnected();
 			rc.ClientPlayer.Client = null;
@@ -178,6 +172,12 @@ namespace NetBlox
 				rc.Phase = RemoteClientConnectionPhase.Replicating;
 			}
 
+			nm.ReplicateInstance(Root.GetService<ReplicatedFirst>(), rc, true);
+			nm.ReplicateInstance(Root.GetService<Players>(), rc, true);
+			nm.ReplicateInstance(Root.GetService<Workspace>(), rc, true);
+			nm.ReplicateInstance(Root.GetService<ReplicatedStorage>(), rc, true);
+			nm.ReplicateInstance(Root.GetService<Lighting>(), rc, true);
+
 			Security.EndImpersonate();
 		}
 		private void ProcessRemoteClientReplication(RawData rawdata, Connection connection, RemoteClient rc)
@@ -246,6 +246,7 @@ namespace NetBlox
 		private void OnConnectionEstablished(Connection connection, ConnectionType type)
 		{
 			var remoteClient = new RemoteClient(nm, connection, NextClientId++);
+			connection.KeepAlive = false;
 			connection.ConnectionClosed += OnConnectionClosed;
 			connection.RegisterRawDataHandler("NB3REPL", OnReplicationPacketReceived);
 			connection.RegisterRawDataHandler("NB3HDSHK", OnHandshakePacketReceived);
@@ -265,7 +266,12 @@ namespace NetBlox
 
 		public Task InitializeNetworkServer(IPAddress ipa, int port)
 		{
-			ConnectionContainer = ConnectionFactory.CreateServerConnectionContainer(ipa.ToString(), port, false);
+#pragma warning disable CS0618 // Type or member is obsolete
+			if (ipa.Address != 0) // lol as if i care
+				ConnectionContainer = ConnectionFactory.CreateServerConnectionContainer(ipa.ToString(), port, false);
+			else
+				ConnectionContainer = ConnectionFactory.CreateServerConnectionContainer(port, false);
+#pragma warning restore CS0618 // Type or member is obsolete
 			ConnectionContainer.ConnectionEstablished += OnConnectionEstablished;
 			return ConnectionContainer.StartTCPListener();
 		}
@@ -273,5 +279,5 @@ namespace NetBlox
 		{
 			SendAllRpcCalls();
 		}
-    }
+	}
 }

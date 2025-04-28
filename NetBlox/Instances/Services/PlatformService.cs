@@ -30,9 +30,9 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public string[] GetConsoleArguments() => Environment.GetCommandLineArgs();
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool IsClient() => GameManager.NetworkManager.IsClient;
+		public bool IsClient() => GameManager.NetworkManager.IsClientGame;
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool IsServer() => GameManager.NetworkManager.IsServer;
+		public bool IsServer() => GameManager.NetworkManager.IsServerGame;
 		[Lua([Security.Capability.CoreSecurity])]
 		public void SetRenderFlag(string flag)
 		{
@@ -52,7 +52,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableRctlPipe()
 		{
-			if (!GameManager.NetworkManager.IsServer)
+			if (!GameManager.NetworkManager.IsServerGame)
 				throw new ScriptRuntimeException("Cannot start remote control pipe in client");
 
 			Process pr = System.Diagnostics.Process.GetCurrentProcess();

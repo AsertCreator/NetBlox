@@ -54,7 +54,7 @@ namespace NetBlox.Instances
 
 			if (GameManager.NetworkManager == null) return;
 
-			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer) && Health > 0)
+			if (IsLocalPlayer && (GameManager.NetworkManager.IsClientGame && !GameManager.NetworkManager.IsServerGame) && Health > 0)
 			{
 				bool dot = false;
 

@@ -309,8 +309,8 @@ namespace NetBlox.Instances
 
 				WasDestroyed = true;
 
-				if (GameManager.AllowReplication)
-					GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_DESTROY, false);
+				//if (GameManager.AllowReplication)
+				//	GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_DESTROY, false);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -415,10 +415,13 @@ namespace NetBlox.Instances
 		{
 			lock (Children)
 			{
-				var list = new List<Instance>(Children);
+				var list = new List<Instance>();
 
 				for (int i = 0; i < Children.Count; i++)
+				{
+					list.Add(Children[i]);
 					list.AddRange(Children[i].GetDescendants());
+				}
 
 				return [.. list];
 			}
@@ -466,12 +469,12 @@ namespace NetBlox.Instances
 		{
 			lock (this)
 			{
-				if (!GameManager.NetworkManager.IsServer)
+				if (!GameManager.NetworkManager.IsServerGame)
 					throw new ScriptRuntimeException("Cannot call Network Ownership API from client!");
 				Debug.Assert(player.Client != null);
 
-				GameManager.NetworkManager.Confiscate(this);
-				GameManager.NetworkManager.SetOwner(player.Client, this);
+				//GameManager.NetworkManager.Confiscate(this);
+				//GameManager.NetworkManager.SetOwner(player.Client, this);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -540,18 +543,18 @@ namespace NetBlox.Instances
 		{
 			lock (this)
 			{
-				if (GameManager.NetworkManager.RemoteConnection != null || GameManager.NetworkManager.IsServer)
-				{
-					if (DateTime.UtcNow > DoNotReplicateUntil || immediate)
-					{
-						var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
-						if (rep != null)
-						{
-							rep.Properties = props;
-							DoNotReplicateUntil = DateTime.UtcNow.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
-						}
-					}
-				}
+				//if (GameManager.NetworkManager.RemoteConnection != null || GameManager.NetworkManager.IsServerGame)
+				//{
+				//	if (DateTime.UtcNow > DoNotReplicateUntil || immediate)
+				//	{
+				//		var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
+				//		if (rep != null)
+				//		{
+				//			rep.Properties = props;
+				//			DoNotReplicateUntil = DateTime.UtcNow.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
+				//		}
+				//	}
+				//}
 			}
 		}
 	}

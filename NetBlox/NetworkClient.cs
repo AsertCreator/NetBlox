@@ -1,5 +1,4 @@
 using NetBlox.Instances;
-using Network.Enums;
 using Network.Packets;
 using Network;
 using System.Net;
@@ -10,13 +9,14 @@ namespace NetBlox
 {
 	public class NetworkClient(NetworkManager nm)
 	{
-		public List<RemoteClient> AllClients = [];
 		public RemoteClient? SelfRemoteClient;
 		public Connection? RemoteConnection;
+		public bool IsLoaded => AwaitingInstanceCount >= GotNewInstances;
 
 		private Guid AwaitingDataModel;
 		private Guid AwaitingPlayer;
 		private int AwaitingInstanceCount;
+		private decimal GotNewInstances;
 
 		public GameManager GameManager => nm.GameManager;
 		public DataModel Root => GameManager.CurrentRoot;
@@ -34,7 +34,7 @@ namespace NetBlox
 			{
 				var networkS2CHandshake = new NetworkS2CHandshake();
 
-				networkS2CHandshake.ProtocolVersion = br.ReadInt32();
+				networkS2CHandshake.ProtocolVersion = br.ReadInt64();
 				networkS2CHandshake.PlaceName = br.ReadString();
 				networkS2CHandshake.UniverseName = br.ReadString();
 				networkS2CHandshake.PlaceId = br.ReadInt64();
@@ -54,6 +54,9 @@ namespace NetBlox
 				GameManager.PlaceIdentity.MaxPlayerCount = (uint)networkS2CHandshake.MaxPlayerCount;
 
 				Root.Name = GameManager.PlaceIdentity.PlaceName;
+
+				Root.GetService<CoreGui>().ShowTeleportGui(GameManager.PlaceIdentity.PlaceName, GameManager.PlaceIdentity.Author,
+					(int)GameManager.PlaceIdentity.PlaceID, (int)GameManager.PlaceIdentity.UniverseID);
 			}
 
 			using (var ms = new MemoryStream())
@@ -94,36 +97,43 @@ namespace NetBlox
 				AwaitingInstanceCount = networkS2CPlayerDelivery.EstimatedInstanceCount;
 			}
 
-			// TODO: next this
+			Root.UniqueID = AwaitingDataModel;
+			GameManager.NetworkManager.SpawnReplication();
+			SelfRemoteClient.Phase = RemoteClientConnectionPhase.Replicating;
 		}
 		private void ProcessServerReplication(RawData rawdata)
 		{
 			using (var ms = new MemoryStream(rawdata.Data))
 			using (var br = new BinaryReader(ms))
 			{
-				var isComplete = br.ReadBoolean();
-				var dataLength = br.ReadInt32();
-				var data = br.ReadBytes(dataLength);
+				var header = br.ReadByte();
 
-				if (isComplete)
+				if (header == 0xF0) // complete
 				{
+					var data = rawdata.Data[1..];
 					var instance = NetworkSerializer.DeserializeInstanceComplete(data, GameManager);
 
-					if (instance.UniqueID == AwaitingDataModel)
-						GameManager.CurrentRoot.UniqueID = AwaitingDataModel;
 					if (instance.UniqueID == AwaitingPlayer)
 					{
 						var player = (Player)instance;
 						player.IsLocalPlayer = true;
 						((Players)(instance.Parent)).CurrentPlayer = player;
-					} 
-				}
-			}
+					}
 
-			using (var ms = new MemoryStream())
-			using (var bw = new BinaryWriter(ms))
-			{
-				// TODO: replication
+					if (++GotNewInstances == (int)(AwaitingInstanceCount * 0.75f)) // TODO: oh my god
+						Root.GetService<CoreGui>().HideTeleportGui();
+				}
+				else if (header == 0xF1) // delta
+				{
+					var data = rawdata.Data[1..];
+					NetworkSerializer.ApplyInstanceDelta(data, GameManager);
+				}
+				else if (header == 0xFF) // destroy
+				{
+					var guid = new Guid(br.ReadBytes(16));
+					var instance = GameManager.GetInstance(guid);
+					instance?.Destroy();
+				}
 			}
 		}
 		private void OnReplicationPacketReceived(RawData rawdata, Connection connection)
@@ -169,6 +179,7 @@ namespace NetBlox
 			if (result != ConnectionResult.Connected)
 				throw new Exception("Could not connect to the remote server!");
 
+			RemoteConnection.KeepAlive = false;
 			RemoteConnection.ConnectionClosed += OnConnectionClosed;
 			RemoteConnection.RegisterRawDataHandler("NB3REPL", OnReplicationPacketReceived);
 			RemoteConnection.RegisterRawDataHandler("NB3HDSHK", OnHandshakePacketReceived);
@@ -179,7 +190,6 @@ namespace NetBlox
 			SelfRemoteClient.ClientUserID = GameManager.CurrentProfile.UserId;
 			SelfRemoteClient.ClientUsername = GameManager.CurrentProfile.Username;
 			SelfRemoteClient.Phase = RemoteClientConnectionPhase.AwaitingHandshake;
-			AllClients.Add(remoteClient);
 
 			using (var ms = new MemoryStream())
 			using (var bw = new BinaryWriter(ms))

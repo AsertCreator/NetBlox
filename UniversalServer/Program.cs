@@ -70,7 +70,7 @@ namespace NetBlox.Server
 									try
 									{
 										x.CurrentRoot.Clear();
-										x.PlaceIdentity.PlaceName = "Place downloaded from Web";
+										x.PlaceIdentity.PlaceName = "Place downloaded from the Web";
 										x.PlaceIdentity.UniverseName = "NetBlox";
 										x.PlaceIdentity.MaxPlayerCount = 16;
 										x.PlaceIdentity.Author = "NetBlox";
@@ -106,9 +106,9 @@ namespace NetBlox.Server
 												{
 													Parent = workspace,
 												};
-												x.NetworkManager.AddReplication(p0, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
-												x.NetworkManager.AddReplication(p1, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
-												x.NetworkManager.AddReplication(anim, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+												//x.NetworkManager.AddReplication(p0, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+												//x.NetworkManager.AddReplication(p1, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+												//x.NetworkManager.AddReplication(anim, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
 												break;
 											default:
 												Console.WriteLine("No test is associated with " + idx);

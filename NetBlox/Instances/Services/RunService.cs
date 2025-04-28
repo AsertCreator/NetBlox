@@ -31,9 +31,9 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Stop() => GameManager.Shutdown();
 		[Lua([Security.Capability.None])]
-		public bool IsClient() => GameManager.NetworkManager.IsClient;
+		public bool IsClient() => GameManager.NetworkManager.IsClientGame;
 		[Lua([Security.Capability.None])]
-		public bool IsServer() => GameManager.NetworkManager.IsServer;
+		public bool IsServer() => GameManager.NetworkManager.IsServerGame;
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{

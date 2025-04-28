@@ -114,9 +114,9 @@ namespace NetBlox
 		{
 			try
 			{
-				if (GameManager.NetworkManager.IsServer)
+				if (GameManager.NetworkManager.IsServerGame)
 					ServerStep();
-				else if (GameManager.NetworkManager.IsClient)
+				else if (GameManager.NetworkManager.IsClientGame)
 					ClientStep();
 			}
 			catch (Exception e)

@@ -65,10 +65,13 @@ namespace NetBlox
 					continue;
 				}
 
-				if ((job.SecurityLevel == 7 || job.SecurityLevel == 8) && job.ScriptJobContext.GameManager.NetworkManager.IsClientGame)
+				if (job.ScriptJobContext.GameManager != null) // god help me
 				{
-					LogManager.LogError("Server-exclusive script threads are not expected on client!");
-					PlayerTrust--;
+					if ((job.SecurityLevel == 7 || job.SecurityLevel == 8) && job.ScriptJobContext.GameManager.NetworkManager.IsClientGame)
+					{
+						LogManager.LogError("Server-exclusive script threads are not expected on client!");
+						PlayerTrust--;
+					}
 				}
 
 				if (PlayerTrust <= 0)
