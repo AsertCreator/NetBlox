@@ -21,7 +21,7 @@ namespace NetBlox.Instances.GUIs
 
 			if (chat == null)
 				return;
-			var bs = GameManager.RenderManager.MainFont.BaseSize / 2;
+			var bs = GameManager.RenderManager.MainFont.FontSize / 2;
 
 			for (int i = 0; i < s.Y / bs && i < chat.Conversation.Count; i++)
 			{
@@ -29,9 +29,9 @@ namespace NetBlox.Instances.GUIs
 				var playercol = lastmsg.Player.GetPlayerColor().Color;
 				var textcol = Color.White;
 
-				Raylib.DrawTextEx(GameManager.RenderManager.MainFont, lastmsg.Player.Name + ": ", p + new Vector2(0, bs * i), 16, 1.6f, playercol);
-				var size = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, lastmsg.Player.Name + ": ", 16, 1.6f);
-				Raylib.DrawTextEx(GameManager.RenderManager.MainFont, lastmsg.Message, p + new Vector2(size.X, bs * i), 16, 1.6f, textcol);
+				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, lastmsg.Player.Name + ": ", p + new Vector2(0, bs * i), 16, 1.6f, playercol);
+				var size = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, lastmsg.Player.Name + ": ", 16, 1.6f);
+				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, lastmsg.Message, p + new Vector2(size.X, bs * i), 16, 1.6f, textcol);
 			}
 		}
 		[Lua([Security.Capability.None])]

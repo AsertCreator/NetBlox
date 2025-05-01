@@ -110,13 +110,13 @@ namespace NetBlox.Instances
 			var pos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 1f, 0), cam);
 			var siz = Vector2.Zero;
 
-			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, Name, 14, 1.4f);
-			Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
+			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, Name, 14, 1.4f);
+			Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
 
 			if (Health < 100)
 			{
-				siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, Health.ToString(), 14, 1.4f);
-				Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Health.ToString(), pos - new Vector2(siz.X / 2, -16), 14, 1.4f,
+				siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, Health.ToString(), 14, 1.4f);
+				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, Health.ToString(), pos - new Vector2(siz.X / 2, -16), 14, 1.4f,
 					new Color(255,
 						(int)MathE.Lerp(0, 255, Math.Clamp(Health, 0, 100) / 100f),
 						(int)MathE.Lerp(0, 255, Math.Clamp(Health, 0, 100) / 100f),

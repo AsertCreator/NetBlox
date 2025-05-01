@@ -170,7 +170,7 @@ namespace NetBlox.Instances
 			var cam = GameManager.RenderManager.MainCamera;
 			var pos = Raylib.GetWorldToScreen(Position + new Vector3(0, Size.Y / 2 + 1f, 0), cam);
 			var siz = Vector2.Zero;
-			var font = GameManager.RenderManager.MainFont;
+			var font = GameManager.RenderManager.MainFont14.SpriteFont;
 
 			siz = Raylib.MeasureTextEx(font, Name, 14, 1.4f);
 			Raylib.DrawTextEx(font, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);

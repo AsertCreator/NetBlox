@@ -19,9 +19,14 @@ namespace NetBlox.Instances.GUIs
 		[Lua([Security.Capability.None])]
 		public float BackgroundTransparency { get; set; } = 1;
 		[Lua([Security.Capability.None])]
-		public float FontSize { get; set; } = 16;
+		public float FontSize
+		{
+			get => _font.FontSize; 
+			set => _font = GameManager.RenderManager.GetCrispFont((int)value, _font.FontFamily);
+		}
+		private CrispFont _font;
 
-		public TextButton(GameManager ins) : base(ins) { }
+		public TextButton(GameManager ins) : base(ins) => _font = GameManager.RenderManager.MainFont;
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
@@ -35,9 +40,9 @@ namespace NetBlox.Instances.GUIs
 			{
 				var p = Position.Calculate(cp, cs);
 				var s = Size.Calculate(Vector2.Zero, cs);
-				var m = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont, Text, FontSize, FontSize / 10);
+				var m = Raylib.MeasureTextEx(_font.SpriteFont, Text, FontSize, FontSize / 10);
 				Raylib.DrawRectangle((int)p.X, (int)p.Y, (int)s.X, (int)s.Y, new Color(BackgroundColor3.R, BackgroundColor3.G, BackgroundColor3.B, (int)((1 - BackgroundTransparency) * 255)));
-				Raylib.DrawTextEx(GameManager.RenderManager.MainFont, Text, p + s / 2 - m / 2, FontSize, 0, TextColor3);
+				Raylib.DrawTextEx(_font.SpriteFont, Text, p + s / 2 - m / 2, FontSize, 0, TextColor3);
 			}
 			base.RenderGUI(cp, cs);
 		}

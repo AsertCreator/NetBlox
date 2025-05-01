@@ -8,12 +8,32 @@ using System.Numerics;
 
 namespace NetBlox
 {
+	public class CrispFont
+	{
+		public Font SpriteFont;
+		public int FontSize;
+		public string FontFamily;
+
+		public CrispFont(int fontsize, string fontfamily)
+		{
+			var font = AppManager.ResolveUrlAsync("rbxasset://fonts/" + fontfamily, false).WaitAndGetResult();
+			SpriteFont = Raylib.LoadFontEx(font, fontsize, null, 95);
+			FontFamily = fontfamily;
+			FontSize = fontsize;
+			Raylib.SetTextureFilter(SpriteFont.Texture, TextureFilter.Point);
+		}
+		~CrispFont()
+		{
+			Raylib.UnloadFont(SpriteFont);
+		}
+	}
 	public sealed class RenderManager
 	{
 		public GameManager GameManager;
 		public Action? PostRender;
 		public List<Func<int>> Coroutines = [];
 		public List<Shader> Shaders = [];
+		public List<CrispFont> CrispFonts = [];
 		public int ScreenSizeX = 1600;
 		public int ScreenSizeY = 900;
 		public int VersionMargin = 0;
@@ -30,7 +50,8 @@ namespace NetBlox
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
 		public Texture2D BlankTexture;
-		public Font MainFont;
+		public CrispFont MainFont;
+		public CrispFont MainFont14;
 		public NetBlox.Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
 		private readonly bool SkipWindowCreation = false;
@@ -39,12 +60,10 @@ namespace NetBlox
 		public static Queue<(string, Action<Texture2D>)> TextureLoadQueue = [];
 		public static Queue<(string, Action<Shader>)> ShaderLoadQueue = [];
 		public static Queue<(string, Action<Sound>)> SoundLoadQueue = [];
-		public static Queue<(string, Action<Font>)> FontLoadQueue = [];
 
 		public static Dictionary<string, Texture2D> TextureCache = [];
 		public static Dictionary<string, Shader> ShaderCache = [];
 		public static Dictionary<string, Sound> SoundCache = [];
-		public static Dictionary<string, Font> FontCache = [];
 
 		public Shader? ActiveShader;
 
@@ -64,10 +83,20 @@ namespace NetBlox
 				Initialize(render);
 			else if (render)
 			{
-				LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
+				MainFont = GetCrispFont(16, "arialbd.ttf");
+				MainFont14 = GetCrispFont(14, "arialbd.ttf");
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
 			}
+		}
+		public CrispFont GetCrispFont(int fontsize, string fontfamily)
+		{
+			var font = CrispFonts.Find(x => x.FontSize == fontsize && x.FontFamily == fontfamily);
+			if (font != null)
+				return font;
+			font = new CrispFont(fontsize, fontfamily);
+			CrispFonts.Add(font);
+			return font;
 		}
 		public unsafe void Initialize(bool render)
 		{
@@ -81,7 +110,8 @@ namespace NetBlox
 				Raylib.SetExitKey(KeyboardKey.Null);
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
 
-				LoadFont("rbxasset://fonts/arialbd.ttf", x => MainFont = x);
+				MainFont = GetCrispFont(16, "arialbd.ttf");
+				MainFont14 = GetCrispFont(14, "arialbd.ttf");
 				LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
@@ -164,9 +194,9 @@ namespace NetBlox
 
 								if (CurrentHint != null)
 								{
-									Raylib.DrawRectangle(0, ScreenSizeY - 26, ScreenSizeX, 26, Color.Black); // quite bold of me to assume that top 30 pixels are used.
-									var v = Raylib.MeasureTextEx(MainFont, CurrentHint, MainFont.BaseSize / 1.5f, 0);
-									Raylib.DrawTextEx(MainFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.BaseSize / 1.5f, 0, Color.White);
+									Raylib.DrawRectangle(0, ScreenSizeY - 26, ScreenSizeX, 26, Color.Black);
+									var v = Raylib.MeasureTextEx(MainFont.SpriteFont, CurrentHint, MainFont.SpriteFont.BaseSize, 0);
+									Raylib.DrawTextEx(MainFont.SpriteFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.SpriteFont.BaseSize, 0, Color.White);
 								}
 
 								if (GameManager.NetworkManager.IsClient)
@@ -177,14 +207,14 @@ namespace NetBlox
 								}
 							}
 
-							Raylib.DrawTextEx(MainFont, Status, new Vector2(20, 20), 16, 0, Color.White);
+							Raylib.DrawTextEx(MainFont.SpriteFont, Status, new Vector2(20, 20), 16, 0, Color.White);
 						}
 
 						PostRender?.Invoke();
 
 						if (DebugInformation)
 						{
-							Raylib.DrawTextEx(MainFont, GameManager.ManagerName + 
+							Raylib.DrawTextEx(MainFont.SpriteFont, GameManager.ManagerName + 
 								", fps: " + Raylib.GetFPS() + 
 								", instances: " + GameManager.AllInstances.Count +
 								", task scheduler pressure: " + TaskScheduler.JobCount + 
@@ -322,25 +352,6 @@ namespace NetBlox
 						return;
 					}
 				}
-				if (FontLoadQueue.Count > 0)
-				{
-					var el = FontLoadQueue.Dequeue();
-					try
-					{
-						var x = AppManager.ResolveUrlAsync(el.Item1, true);
-						x.Wait();
-						{
-							var font = Raylib.LoadFont(x.Result);
-							FontCache[el.Item1] = font;
-							el.Item2(font);
-						};
-					}
-					catch
-					{
-						LogManager.LogWarn("Could not load font from " + el.Item1);
-						return;
-					}
-				}
 				if (ShaderLoadQueue.Count > 0)
 				{
 					var el = ShaderLoadQueue.Dequeue();
@@ -387,13 +398,6 @@ namespace NetBlox
 				callback(tex);
 			else
 				TextureLoadQueue.Enqueue((path, callback));
-		}
-		public static void LoadFont(string path, Action<Font> callback)
-		{
-			if (FontCache.TryGetValue(path, out var tex))
-				callback(tex);
-			else
-				FontLoadQueue.Enqueue((path, callback));
 		}
 		public static void LoadShader(string path, Action<Shader> callback)
 		{
