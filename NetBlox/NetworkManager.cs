@@ -407,7 +407,8 @@ namespace NetBlox
 
 			while (!GameManager.ShuttingDown)
 			{
-				while (AppManager.BlockReplication) ;
+				while (AppManager.BlockReplication || Clients.Count == 0)
+					Thread.Yield();
 
 				if (RemoteEventQueue.Count != 0)
 					lock (RemoteEventQueue)
