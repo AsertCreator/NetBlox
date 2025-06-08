@@ -236,6 +236,7 @@ namespace NetBlox.Instances
 
 				CreateBodyHandle();
 			}
+			Anchored = false;
 			GameManager.PhysicsManager.Actors.Add(this);
 		}
 		public void CreateBodyHandle()

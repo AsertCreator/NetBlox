@@ -25,9 +25,9 @@ namespace NetBlox
 		}
 		public Simulation LocalSimulation;
 		public BufferPool LocalSimulationBuffer;
-		public ThreadDispatcher DefaultThreadDispatcher;
+		public ThreadDispatcher? DefaultThreadDispatcher;
 		public List<BasePart> Actors = new();
-		public bool DisablePhysics = true; // not now
+		public bool DisablePhysics = false; // not now
 
 		public PhysicsManager(GameManager gameManager)
 		{
@@ -36,7 +36,7 @@ namespace NetBlox
 			var solver = new SolveDescription(8, 1);
 
 			GameManager = gameManager;
-			DefaultThreadDispatcher = new ThreadDispatcher(2);
+			// DefaultThreadDispatcher = new ThreadDispatcher(2);
 			LocalSimulationBuffer = new BufferPool();
 			LocalSimulation = Simulation.Create(LocalSimulationBuffer, inpc, ipic, solver);
 		}
@@ -144,7 +144,7 @@ namespace NetBlox
 		{
 			pairMaterial.FrictionCoefficient = 2f;
 			pairMaterial.MaximumRecoveryVelocity = 2f;
-			pairMaterial.SpringSettings = new SpringSettings(30, 1);
+			pairMaterial.SpringSettings = new SpringSettings(20, 0.8f);
 			return true;
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

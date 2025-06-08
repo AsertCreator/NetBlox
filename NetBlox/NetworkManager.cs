@@ -655,7 +655,11 @@ namespace NetBlox
 
 					Instance? actinst = GameManager.GetInstance(inst);
 					if (actinst != null)
+					{
 						actinst.IsDomestic = true;
+						if (actinst is BasePart bp)
+							bp.Anchored = bp.Anchored;
+					}
 				});
 				tcp.RegisterRawDataHandler("nb2-confiscate", (rep, _) =>
 				{
