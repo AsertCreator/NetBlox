@@ -61,7 +61,7 @@ namespace NetBlox
 					// reflect this in rendering
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
 					box._physicsposition = refer.Pose.Position;
-					box._physicsrotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
+					box._physicsrotation = refer.Pose.Orientation;
 					box._physicsvelocity = refer.Velocity.Linear;
 
 					if (box._position.Y <= work.FallenPartsDestroyHeight)
@@ -96,7 +96,7 @@ namespace NetBlox
 
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
 					box._physicsposition = refer.Pose.Position;
-					box._physicsrotation = Raymath.QuaternionToEuler(refer.Pose.Orientation) * (180 / MathF.PI);
+					box._physicsrotation = refer.Pose.Orientation;
 					box._physicsvelocity = refer.Velocity.Linear;
 
 					if (box._position.Y <= work.FallenPartsDestroyHeight)

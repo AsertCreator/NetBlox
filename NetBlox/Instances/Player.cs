@@ -97,7 +97,7 @@ namespace NetBlox.Instances
 
 			LogManager.LogInfo("Reloaded " + Name + "'s backpack and GUI!");
 		}
-		[Lua([Security.Capability.None])]
+		[Lua([Security.Capability.CoreSecurity])]
 		public void LoadCharacterOld()
 		{
 			if (!GameManager.NetworkManager.IsServer)
@@ -122,22 +122,67 @@ namespace NetBlox.Instances
 			face.Face = Faces.Front;
 			face.Parent = ch;
 
-			if (workspace.MainCamera != null)
-				(workspace.MainCamera as Camera)!.CameraSubject = ch;
+			if (workspace.CurrentCamera != null)
+				(workspace.CurrentCamera as Camera)!.CameraSubject = ch;
 
 			Character = ch;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void LoadCharacter()
 		{
+			var workspace = Root.GetService<Workspace>();
 			var chmodel = new Model(GameManager);
-			var humanoid = new Humanoid(GameManager);
-
 			chmodel.Name = Name;
 			chmodel.Parent = Root.GetService<Workspace>();
+
+			_ = new Part(GameManager)
+			{
+				Parent = chmodel, Anchored = false, Color3 = Color.DarkBlue,
+				Position = new(0, -3f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
+				Name = "Right Leg"
+			};
+			_ = new Part(GameManager)
+			{
+				Parent = chmodel, Anchored = false, Color3 = Color.DarkBlue,
+				Position = new(-1, -3f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
+				Name = "Left Leg"
+			};
+			var torso = new Part(GameManager)
+			{
+				Parent = chmodel, Anchored = false, Color3 = Color.Red,
+				Position = new(-0.5f, -1f, 0), Size = new(2, 2, 1), TopSurface = SurfaceType.Studs,
+				Name = "Torso"
+			};
+			_ = new Part(GameManager)
+			{
+				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
+				Position = new(-2f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
+				Name = "Left Arm"
+			};
+			_ = new Part(GameManager)
+			{
+				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
+				Position = new(1f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
+				Name = "Right Arm"
+			};
+			var head = new Part(GameManager)
+			{
+				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
+				Position = new(-0.5f, 0.5f, 0), Size = new(2, 1, 1), TopSurface = SurfaceType.Studs,
+				Name = "Head"
+			};
+			_ = new Decal(GameManager)
+			{
+				Texture = "rbxasset://textures/smile.png", Face = Faces.Front, Parent = head
+			};
+
+			chmodel.PrimaryPart = torso;
+			chmodel.MoveTo(workspace.SpawnLocation.Position + new Vector3(0, 3.5f, 0));
+
+			var humanoid = new Humanoid(GameManager);
 			humanoid.Parent = chmodel;
 
-
+			Character = chmodel;
 		}
 		public BrickColor GetPlayerColor()
 		{

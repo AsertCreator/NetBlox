@@ -89,8 +89,6 @@ namespace NetBlox
 													[float.Parse(prop.ChildNodes[3].InnerText, ic), float.Parse(prop.ChildNodes[4].InnerText, ic), float.Parse(prop.ChildNodes[5].InnerText, ic)],
 													[float.Parse(prop.ChildNodes[6].InnerText, ic), float.Parse(prop.ChildNodes[7].InnerText, ic), float.Parse(prop.ChildNodes[8].InnerText, ic)],
 													[float.Parse(prop.ChildNodes[9].InnerText, ic), float.Parse(prop.ChildNodes[10].InnerText, ic), float.Parse(prop.ChildNodes[11].InnerText, ic)]);
-												Vector3 rotrad = Raymath.QuaternionToEuler(q);
-												Vector3 rotdeg = MathE.ToDegrees(rotrad);
 												SerializationManager.SetProperty(type, ins, attr.Value, new CFrame()
 												{
 													Position = new Vector3()
@@ -99,7 +97,7 @@ namespace NetBlox
 														Y = float.Parse(prop.ChildNodes[1].InnerText, ic),
 														Z = float.Parse(prop.ChildNodes[2].InnerText, ic)
 													},
-													Rotation = rotdeg
+													Rotation = q
 												});
 												break;
 											case "Color3uint8":

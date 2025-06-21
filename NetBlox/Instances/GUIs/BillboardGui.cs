@@ -21,7 +21,7 @@ namespace NetBlox.Instances.GUIs
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public PVInstance Adornee { get; set; }
+		public BasePart? Adornee { get; set; }
 
 		private UDim2 size;
 		private int onScreenOffsetX = 0;

@@ -54,7 +54,7 @@ namespace NetBlox.Instances
 						if (RenderCache.DirtyCounter > 0)
 						{
 							if (AFSShow)
-								Raylib.DrawCubeWires(_pivot.Position, _size.X, _size.Y, _size.Z, Color.Red);
+								Raylib.DrawCubeWires(PartCFrame.Position, _size.X, _size.Y, _size.Z, Color.Red);
 
 							if (LocalLighing!.SunLocality)
 								ns += Position;
@@ -79,7 +79,7 @@ namespace NetBlox.Instances
 					if (TopSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var top = AFS(0, 1, 0);
-					RenderUtils.DrawCubeTextureRec(tex, Position, Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * top), 
 							(byte)(Color3.G * top), 
@@ -89,7 +89,7 @@ namespace NetBlox.Instances
 					if (LeftSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var left = AFS(-1, 0, 0);
-					RenderUtils.DrawCubeTextureRec(tex, Position, Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * left),
 							(byte)(Color3.G * left),
@@ -99,7 +99,7 @@ namespace NetBlox.Instances
 					if (RightSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var right = AFS(1, 0, 0);
-					RenderUtils.DrawCubeTextureRec(tex, Position, Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * right),
 							(byte)(Color3.G * right),
@@ -109,7 +109,7 @@ namespace NetBlox.Instances
 					if (BottomSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var bottom = AFS(0, -1, 0);
-					RenderUtils.DrawCubeTextureRec(tex, Position, Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * bottom),
 							(byte)(Color3.G * bottom),
@@ -119,7 +119,7 @@ namespace NetBlox.Instances
 					if (FrontSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var front = AFS(0, 0, 1);
-					RenderUtils.DrawCubeTextureRec(tex, Position, Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * front),
 							(byte)(Color3.G * front),
@@ -129,7 +129,7 @@ namespace NetBlox.Instances
 					if (BackSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var back = AFS(0, 0, -1);
-					RenderUtils.DrawCubeTextureRec(tex, Position, Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * back),
 							(byte)(Color3.G * back),

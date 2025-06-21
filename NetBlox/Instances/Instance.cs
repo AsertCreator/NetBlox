@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace NetBlox.Instances
 {
-	public class Instance
+	public partial class Instance
 	{
 		[Lua([Security.Capability.None])]
 		public virtual bool Archivable { get; set; } = true;
@@ -472,6 +472,11 @@ namespace NetBlox.Instances
 
 				GameManager.NetworkManager.Confiscate(this);
 				GameManager.NetworkManager.SetOwner(player.Client, this);
+
+				for (int i = 0; i < Children.Count; i++)
+				{
+					Children[i].SetNetworkOwner(player);
+				}
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -535,6 +540,23 @@ namespace NetBlox.Instances
 				}
 			});
 			return new();
+		}
+		public Task<Instance> WaitForChildInternal(string name)
+		{
+			return Task.Run(() =>
+			{
+				while (!GameManager.ShuttingDown)
+				{
+					var ch = FindFirstChild(name);
+					if (ch == null)
+						Thread.Yield();
+					else
+					{
+						return ch;
+					}
+				}
+				return null;
+			});
 		}
 		public void ReplicateProperties(string[] props, bool immediate)
 		{

@@ -315,6 +315,7 @@ namespace NetBlox
 						_ = new Part(this)
 						{
 							Parent = ws,
+							Anchored = false,
 							Color3 = Color.DarkBlue,
 							Position = new(0, -3f, 0),
 							Size = new(1, 2, 1),
@@ -323,6 +324,7 @@ namespace NetBlox
 						_ = new Part(this)
 						{
 							Parent = ws,
+							Anchored = false,
 							Color3 = Color.DarkBlue,
 							Position = new(-1, -3f, 0),
 							Size = new(1, 2, 1),
@@ -331,6 +333,7 @@ namespace NetBlox
 						_ = new Part(this)
 						{
 							Parent = ws,
+							Anchored = false,
 							Color3 = Color.Red,
 							Position = new(-0.5f, -1f, 0),
 							Size = new(2, 2, 1),
@@ -339,6 +342,7 @@ namespace NetBlox
 						_ = new Part(this)
 						{
 							Parent = ws,
+							Anchored = false,
 							Color3 = Color.Yellow,
 							Position = new(-2f, -1f, 0),
 							Size = new(1, 2, 1),
@@ -347,6 +351,7 @@ namespace NetBlox
 						_ = new Part(this)
 						{
 							Parent = ws,
+							Anchored = false,
 							Color3 = Color.Yellow,
 							Position = new(1f, -1f, 0),
 							Size = new(1, 2, 1),

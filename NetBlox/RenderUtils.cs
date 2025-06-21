@@ -8,13 +8,12 @@ namespace NetBlox
 {
 	public static class RenderUtils
 	{
-		public static void DrawCubeTextureRec(Texture2D texture, Vector3 position, Vector3 rotation, float width, float height, float length, Color color, Faces f, bool tile = false)
+		public static void DrawCubeTextureRec(Texture2D texture, Vector3 position, Quaternion rotation, float width, float height, float length, Color color, Faces f, bool tile = false)
 		{
 			Rlgl.PushMatrix();
+			Rlgl.MatrixMode(MatrixMode.Texture);
 			Rlgl.Translatef(position.X, position.Y, position.Z);
-			Rlgl.Rotatef(rotation.X, 1, 0, 0);
-			Rlgl.Rotatef(rotation.Y, 0, 1, 0);
-			Rlgl.Rotatef(rotation.Z, 0, 0, 1);
+			Rlgl.MultMatrixf(Raymath.QuaternionToMatrix(Raymath.QuaternionNormalize(rotation)));
 			// im not willing to rewrite the whole shit
 			position = Vector3.Zero;
 
@@ -180,13 +179,12 @@ namespace NetBlox
 
 			Rlgl.PopMatrix();
 		}
-		public static void DrawCubeFaced(Vector3 position, Vector3 rotation, float width, float height, float length, Color color, Faces f)
+		public static void DrawCubeFaced(Vector3 position, Quaternion rotation, float width, float height, float length, Color color, Faces f)
 		{
 			Rlgl.PushMatrix();
+			Rlgl.MatrixMode(MatrixMode.Texture);
 			Rlgl.Translatef(position.X, position.Y, position.Z);
-			Rlgl.Rotatef(rotation.X, 1, 0, 0);
-			Rlgl.Rotatef(rotation.Y, 0, 1, 0);
-			Rlgl.Rotatef(rotation.Z, 0, 0, 1);
+			Rlgl.MultMatrixf(Raymath.QuaternionToMatrix(rotation));
 			// im not willing to rewrite the whole shit
 			position = Vector3.Zero;
 

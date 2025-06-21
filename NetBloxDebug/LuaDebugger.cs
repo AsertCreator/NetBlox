@@ -10,6 +10,7 @@ namespace NetBloxDebug
 		public List<SourceRef> Breakpoints = [];
 		public DebugService DebugService;
 		public bool Paused;
+		public static DebuggerAction NoAction = new DebuggerAction() { Action = DebuggerAction.ActionType.None };
 
 		public DebuggerAction GetAction(int ip, SourceRef sourceref)
 		{
@@ -22,7 +23,7 @@ namespace NetBloxDebug
 					SourceID = sourceref.SourceIdx
 				};
 
-			return new DebuggerAction() { Action = DebuggerAction.ActionType.None };
+			return NoAction;
 		}
 		public DebuggerCaps GetDebuggerCaps()
 		{

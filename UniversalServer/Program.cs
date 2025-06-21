@@ -31,11 +31,13 @@ namespace NetBlox.Server
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,
-				DoNotRenderAtAll = true, // how many times did i flip this switch on and off and on and off and on and off and o
-				SkipWindowCreation = true,
+				DoNotRenderAtAll = false, // how many times did i flip this switch on and off and on and off and on and off and o
+				SkipWindowCreation = false,
 				GameName = "NetBlox Server"
 			}, args, (x) =>
 			{
+				x.PhysicsManager.DisablePhysics = true;
+
 				try
 				{
 					if (x.ServerStartupInfo == null)
@@ -58,7 +60,9 @@ namespace NetBlox.Server
 				if (File.Exists("gamestart.txt"))
 					TaskScheduler.ScheduleScript(x, File.ReadAllText("gamestart.txt"), 8, null);
 
+				x.PhysicsManager.DisablePhysics = false;
 				x.AllowReplication = true;
+
 				Task.Run(x.NetworkManager.StartServer);
 				Task.Run(() =>
 				{

@@ -9,8 +9,45 @@ namespace NetBlox.Instances
 	public class Camera : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public Instance? CameraSubject { get; set; }
+		public Instance? CameraSubject
+		{
+			get => FormalSubject;
+			set
+			{
+				if (value is BasePart bp)
+				{
+					ActualSubject = bp;
+					FormalSubject = value;
+				}
+				else if (value is Model model)
+				{
+					var pp = model.GetPivotPart();
+					if (pp == null)
+						return;
+					ActualSubject = pp;
+					FormalSubject = value;
+				}
+				else if (value is Humanoid hum)
+				{
+					var head = hum.Parent.FindFirstChild("Head");
+					if (head == null)
+						return;
+					var bphead = head as BasePart;
+					ActualSubject = bphead;
+					FormalSubject = value;
+				}
+				else
+				{
+					LogManager.LogWarn("Cannot set the camera to look at non-BasePart, non-Model or non-Humanoid Instances!");
+					FormalSubject = null;
+					ActualSubject = null;
+					return;
+				}
+			}
+		}
 		public static Vector2 LastMousePosition;
+		private Instance? FormalSubject;
+		private BasePart? ActualSubject;
 
 		public Camera(GameManager ins) : base(ins) { }
 
@@ -18,14 +55,17 @@ namespace NetBlox.Instances
 		{
 			if (GameManager.NetworkManager.IsServer)
 				return; // im sick of it
-			if (CameraSubject == null || !CameraSubject.IsA("BasePart"))
+			if (CameraSubject == null)
 			{
 				GameManager.RenderManager.MainCamera.Position = new Vector3(0, 5, -6);
 				GameManager.RenderManager.MainCamera.Target = Vector3.Zero;
 			}
 			else
 			{
-				var subject = CameraSubject as BasePart ?? throw new Exception("CameraSubject is not BasePart");
+				Vector3 subjectposition = Vector3.One;
+				if (ActualSubject != null)
+					subjectposition = ActualSubject.Position;
+
 				var player = Root.GetService<Players>().LocalPlayer as Player;
 
 				if (player == null) return; // nah
@@ -81,8 +121,8 @@ namespace NetBlox.Instances
 
 				var diff = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;
 
-				GameManager.RenderManager.MainCamera.Position = subject.Position - diff;
-				GameManager.RenderManager.MainCamera.Target = subject.Position;
+				GameManager.RenderManager.MainCamera.Position = ActualSubject.Position - diff;
+				GameManager.RenderManager.MainCamera.Target = ActualSubject.Position;
 				LastMousePosition = Raylib.GetMousePosition();
 			}
 		}

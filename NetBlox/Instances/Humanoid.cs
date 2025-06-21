@@ -36,15 +36,6 @@ namespace NetBlox.Instances
 		{
 			base.Process();
 			if (Parent == null) return;
-
-			var parent = Parent;
-			var model = parent as Model;
-			if (model == null) return;
-			var head = model.FindFirstChild("Head");
-			if (head == null)
-				Health = 0;
-
-			if (GameManager.RenderManager == null) return;
 			var cam = GameManager.RenderManager.MainCamera;
 			var x1 = cam.Position.X;
 			var y1 = cam.Position.Z;
@@ -56,31 +47,7 @@ namespace NetBlox.Instances
 
 			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer) && Health > 0)
 			{
-				bool dot = false;
-
-				if (Raylib.IsKeyDown(KeyboardKey.W))
-				{
-					model.SetPivot(model.GetPivot() * new CFrame(new(0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle))));
-					dot = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.A))
-				{
-					model.SetPivot(model.GetPivot() * new CFrame(new(0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, 0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f))));
-					dot = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.S))
-				{
-					model.SetPivot(model.GetPivot() * new CFrame(new(-0.1f * WalkSpeed / 12 * MathF.Cos(angle), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle))));
-					dot = true;
-				}
-				if (Raylib.IsKeyDown(KeyboardKey.D))
-				{
-					model.SetPivot(model.GetPivot() * new CFrame(new(-0.1f * WalkSpeed / 12 * MathF.Cos(angle - 1.5708f), 0, -0.1f * WalkSpeed / 12 * MathF.Sin(angle - 1.5708f))));
-					dot = true;
-				}
-
-				if (dot)
-					ReplicateProperties(["Position", "Rotation"], false);
+				 
 			}
 
 			if (Health <= 0 && IsLocalPlayer && !isDying)
@@ -110,8 +77,10 @@ namespace NetBlox.Instances
 			var pos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 1f, 0), cam);
 			var siz = Vector2.Zero;
 
-			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, Name, 14, 1.4f);
-			Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, Name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
+			var name = Parent.Name;
+
+			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, 14, 1.4f);
+			Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
 
 			if (Health < 100)
 			{
@@ -126,11 +95,16 @@ namespace NetBlox.Instances
 		public void Die()
 		{
 			LogManager.LogInfo("Character had died!");
-			Root.GetService<Debris>().AddItem(this, 4);
-			Task.Delay(4000).ContinueWith(_ =>
+
+			if (GameManager.NetworkManager.IsServer)
 			{
-				((Player)Root.GetService<Players>().LocalPlayer!).LoadCharacterOld();
-			});
+				Root.GetService<Debris>().AddItem(this, 4);
+
+				Task.Delay(4000).ContinueWith(_ =>
+				{
+					((Player)Root.GetService<Players>().LocalPlayer!).LoadCharacter();
+				});
+			}
 		}
 	}
 }

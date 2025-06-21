@@ -233,7 +233,7 @@ namespace NetBlox
 								Security.EndImpersonate();
 
 								pl.Reload();
-								pl.LoadCharacterOld();
+								pl.LoadCharacter();
 
 								sh.PlayerInstance = pl.UniqueID.ToString();
 								sh.CharacterInstance = pl.Character!.UniqueID.ToString();
@@ -337,7 +337,6 @@ namespace NetBlox
 						Instance? target = GameManager.GetInstance(new Guid(data.Data[0..16]));
 						if (target == null)
 						{
-							LogManager.LogWarn(nc.Player.Name + " tried to replicate a client instance to server!");
 							return;
 						}
 						if (target is BaseScript)
@@ -570,27 +569,38 @@ namespace NetBlox
 					if (ins is Workspace workspace)
 					{
 						Camera c = new(GameManager);
-						workspace.MainCamera = c; // I FORGOR THAT I ALREADY HAD A Camera PROPERTY
+						workspace.CurrentCamera = c;
 						c.Parent = ins;
 					}
-					if (ins is Character character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
+					if (ins is Model character && Guid.Parse(sh.CharacterInstance) == ins.UniqueID) // i hope FOR THE JESUS CHRIST, that the Player instance had been delivered before the character
 					{
-						character.IsLocalPlayer = true;
-
-						if (Root.GetService<Workspace>().MainCamera is not Camera cam)
-							return;
-
-						cam.CameraSubject = character;
-						if (Root.GetService<Players>(true) != null)
+						character.WaitForChildInternal("Humanoid").ContinueWith(x =>
 						{
-							if (Root.GetService<Players>(true).LocalPlayer != null)
+							TaskScheduler.Schedule(() =>
 							{
-								(Root.GetService<Players>(true).LocalPlayer as Player)!.Character = character;
-								SendRawData(tcp, "nb2-gotchar", character.UniqueID.ToByteArray());
-							}
-						}
+								var humanoid = x.Result as Humanoid;
 
-						GameManager.PhysicsManager.DisablePhysics = false;
+								Debug.Assert(humanoid != null, "how did we get here?");
+
+								humanoid.IsLocalPlayer = true;
+
+								if (Root.GetService<Workspace>().CurrentCamera is not Camera cam)
+									return;
+
+								cam.CameraSubject = humanoid;
+
+								if (Root.GetService<Players>(true) != null)
+								{
+									if (Root.GetService<Players>(true).LocalPlayer != null)
+									{
+										(Root.GetService<Players>(true).LocalPlayer as Player)!.Character = character;
+										SendRawData(tcp, "nb2-gotchar", character.UniqueID.ToByteArray());
+									}
+								}
+
+								GameManager.PhysicsManager.DisablePhysics = false;
+							});
+						});
 					}
 					if (ins is Player player && Guid.Parse(sh.PlayerInstance) == ins.UniqueID)
 					{
@@ -685,7 +695,7 @@ namespace NetBlox
 							var work = Root.GetService<Workspace>();
 							var plrs = Root.GetService<Players>();
 							var lp = (Player)plrs.LocalPlayer!;
-							var c = (Camera)work.MainCamera!;
+							var c = (Camera)work.CurrentCamera!;
 
 							lp.Character = ch;
 							c.CameraSubject = ch;

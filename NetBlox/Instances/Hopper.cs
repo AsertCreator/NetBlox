@@ -141,7 +141,7 @@ namespace NetBlox.Instances
 						var pos = v3.Value.Item1;
 						var normal = v3.Value.Item2;
 
-						part.Position = pos + (normal * part.Size);
+						part.Position = pos + (normal * part.Size / 2);
 
 						await Task.Delay(1000 / Raylib.GetFPS());
 					}

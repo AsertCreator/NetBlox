@@ -26,7 +26,7 @@ namespace NetBlox.Instances.Services
 	public class Workspace : Instance, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]
-		public Instance? MainCamera { get; set; }
+		public Instance? CurrentCamera { get; set; }
 		[Lua([Security.Capability.None])]
 		public float Gravity { get; set; } = -9.8f;
 		[Lua([Security.Capability.None])]
@@ -131,7 +131,8 @@ namespace NetBlox.Instances.Services
 			{
 				Distance = handler.Distance,
 				Part = basePart,
-				Where = handler.Where
+				Where = handler.Where,
+				Normal = handler.Normal
 			};
 		}
 		public override void Process()
@@ -177,7 +178,7 @@ namespace NetBlox.Instances.Services
 
 				Rlgl.End();
 
-				RenderUtils.DrawCubeFaced(new Vector3(0, FallenPartsDestroyHeight, 0), Vector3.Zero, 
+				RenderUtils.DrawCubeFaced(new Vector3(0, FallenPartsDestroyHeight, 0), default, 
 					halfslices * 2 * 3, 0, halfslices * 2 * 3, new Color(255, 50, 50, 50), Faces.Top | Faces.Bottom);
 			}
 		}

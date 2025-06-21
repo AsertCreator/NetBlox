@@ -108,7 +108,9 @@ public partial class MainWindow : System.Windows.Window
 				SkipWindowCreation = true,
 				DoNotRenderAtAll = true,
 				GameName = "NetBlox Server (studio)"
-			}, ["-ss", "{}"], (gm) =>
+			}, ["-ss", SerializationManager.SerializeJson<ServerStartupInfo>(new() {
+				ServerPort = 25570,
+			})], (gm) =>
 			{
 				gm.CurrentRoot.ClearAllChildren();
 
@@ -126,7 +128,7 @@ public partial class MainWindow : System.Windows.Window
 					d.Parent = gm.CurrentRoot;
 				}
 
-				gm.NetworkManager.OnlyInternalConnections = true;
+				// gm.NetworkManager.OnlyInternalConnections = true;
 				Task.Run(gm.NetworkManager.StartServer);
 
 				PlatformService.QueuedTeleport = (xo) =>
@@ -155,7 +157,8 @@ public partial class MainWindow : System.Windows.Window
 					SkipWindowCreation = true,
 					GameName = "NetBlox Client (studio)"
 				}, ["-cs", SerializationManager.SerializeJson<ClientStartupInfo>(new() {
-					IsGuest = true
+					IsGuest = true,
+					ServerIP = "127.0.0.1"
 				})], (x) => { });
 
 				AppManager.SetRenderTarget(App.ClientGame);

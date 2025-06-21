@@ -50,17 +50,65 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public bool Locked { get; set; }
 		[Lua([Security.Capability.None])]
-		public SurfaceType FrontSurface { get; set; }
+		public SurfaceType FrontSurface 
+		{
+			get => frontSurface;
+			set
+			{
+				frontSurface = value;
+				OnSurfaceChanged();
+			}
+		}
 		[Lua([Security.Capability.None])]
-		public SurfaceType BackSurface { get; set; }
+		public SurfaceType BackSurface
+		{
+			get => backSurface;
+			set
+			{
+				backSurface = value;
+				OnSurfaceChanged();
+			}
+		}
 		[Lua([Security.Capability.None])]
-		public SurfaceType TopSurface { get; set; } = SurfaceType.Studs;
+		public SurfaceType TopSurface
+		{
+			get => topSurface;
+			set
+			{
+				topSurface = value;
+				OnSurfaceChanged();
+			}
+		}
 		[Lua([Security.Capability.None])]
-		public SurfaceType BottomSurface { get; set; }
+		public SurfaceType BottomSurface
+		{
+			get => bottomSurface;
+			set
+			{
+				bottomSurface = value;
+				OnSurfaceChanged();
+			}
+		}
 		[Lua([Security.Capability.None])]
-		public SurfaceType LeftSurface { get; set; }
+		public SurfaceType LeftSurface
+		{
+			get => leftSurface;
+			set
+			{
+				leftSurface = value;
+				OnSurfaceChanged();
+			}
+		}
 		[Lua([Security.Capability.None])]
-		public SurfaceType RightSurface { get; set; }
+		public SurfaceType RightSurface
+		{
+			get => rightSurface;
+			set
+			{
+				rightSurface = value;
+				OnSurfaceChanged();
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public Color Color3 { get; set; } = Color.Gray;
 		[Lua([Security.Capability.None])]
@@ -89,23 +137,26 @@ namespace NetBlox.Instances
 					localsim.Bodies[BodyHandle.Value].Pose = _position;
 				if (StaticHandle.HasValue)
 					localsim.Statics[StaticHandle.Value].Pose = _position;
+
+				OnPositionChanged(value);
 			}
 		}
 		[Lua([Security.Capability.None])]
 		public Vector3 Rotation
 		{
-			get => _rotation;
+			get => Raymath.QuaternionToEuler(_rotation) * new Vector3(180f / MathF.PI, 180f / MathF.PI, 180f / MathF.PI);
 			set
 			{
-				if (_rotation == value)
+				var rotq = Raymath.QuaternionFromEuler(value.Z, value.Y, value.X);
+				if (_rotation == rotq)
 					return;
-				_rotation = value;
+				_rotation = rotq;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Pose.Orientation = Raymath.QuaternionFromEuler(_rotation.Z, _rotation.Y, _rotation.X);
+					localsim.Bodies[BodyHandle.Value].Pose.Orientation = rotq;
 				if (StaticHandle.HasValue)
-					localsim.Statics[StaticHandle.Value].Pose.Orientation = Raymath.QuaternionFromEuler(_rotation.Z, _rotation.Y, _rotation.X);
+					localsim.Statics[StaticHandle.Value].Pose.Orientation = rotq;
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -147,6 +198,8 @@ namespace NetBlox.Instances
 					idx = localsim.Shapes.Add(box);
 					localsim.Statics[StaticHandle.Value].SetShape(idx);
 				}
+
+				OnSizeChanged(value);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -172,6 +225,41 @@ namespace NetBlox.Instances
 					localsim.Bodies[BodyHandle.Value].Velocity.Linear = _lastvelocity;
 			}
 		}
+		[Lua([Security.Capability.None])]
+		public CFrame CFrame
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => PartCFrame;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set => PartCFrame = value;
+		}
+		public Vector3 _position
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => PartCFrame.Position;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set
+			{
+				PartCFrame.Position = value;
+				if (this is BasePart bp)
+				{
+					if (bp.LocalLighing != null && bp.LocalLighing.SunLocality)
+						bp.RenderCache.DirtyCounter = 6;
+				}
+			}
+		}
+		public Quaternion _rotation
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get => PartCFrame.Rotation;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			set
+			{
+				PartCFrame.Rotation = value;
+				if (this is BasePart bp)
+					bp.RenderCache.DirtyCounter = 6;
+			}
+		}
 		/// <summary>
 		/// Use this if the part is anchored OR if its foreign (owned by another player)<br/>
 		/// ========================================<br/>
@@ -187,9 +275,19 @@ namespace NetBlox.Instances
 		public PartRenderCache RenderCache = new();
 		public Lighting? LocalLighing;
 		public bool IsGrounded = false;
+		public bool IsDirty = false;
+		public CFrame PartCFrame;
 		public Vector3 _size;
 		public Vector3 _lastvelocity;
-		public bool IsDirty = false;
+		public bool _anchored = false;
+		public Vector3 _lastposition;
+		public Quaternion _lastrotation;
+		protected SurfaceType frontSurface;
+		protected SurfaceType backSurface;
+		protected SurfaceType topSurface = SurfaceType.Studs;
+		protected SurfaceType bottomSurface;
+		protected SurfaceType leftSurface;
+		protected SurfaceType rightSurface;
 
 		// they are internal as a workaround for serializationmanager
 		internal Vector3 _physicsposition
@@ -202,7 +300,7 @@ namespace NetBlox.Instances
 				_position = value;
 			}
 		}
-		internal Vector3 _physicsrotation
+		internal Quaternion _physicsrotation
 		{
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
@@ -225,19 +323,19 @@ namespace NetBlox.Instances
 
 		public BasePart(GameManager ins) : base(ins)
 		{
-			if (GameManager.NetworkManager.IsServer) // we are in server
-			{
-				// by default we ARE server-side AND unanchored
-				_anchored = false;
-				_size = new Vector3(1, 1, 1);
-				_position = new Vector3(0, 0, 0);
-				_rotation = new Vector3(0, 0, 0);
-				_lastvelocity = new Vector3(0, 0, 0);
+			_size = new Vector3(4, 1, 2);
+			_position = new Vector3(0, 0, 0);
+			_rotation = default;
+			_lastvelocity = new Vector3(0, 0, 0);
 
-				CreateBodyHandle();
-			}
+			IsDomestic = true;
 			Anchored = false;
+
 			GameManager.PhysicsManager.Actors.Add(this);
+		}
+		public override void PivotTo(CFrame pivot)
+		{
+			CFrame = pivot;
 		}
 		public void CreateBodyHandle()
 		{
@@ -289,11 +387,10 @@ namespace NetBlox.Instances
 			GameManager.PhysicsManager.Actors.Remove(this);
 			base.Destroy();
 		}
-		public override void SetPivot(CFrame pivot)
-		{
-			Position = pivot.Position;
-			Rotation = pivot.Rotation;
-			PivotOffset = default;
-		}
+
+		protected virtual void OnSizeChanged(Vector3 newsize) { }
+		protected virtual void OnPositionChanged(Vector3 newpos) { }
+		protected virtual void OnRotationChanged(Quaternion q) { }
+		protected virtual void OnSurfaceChanged() { }
 	}
 }
