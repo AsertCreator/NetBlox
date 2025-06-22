@@ -295,12 +295,12 @@ namespace NetBlox
 			var ss = CurrentSkybox.SkyboxSize;
 			var ass = CurrentSkybox.SkyboxSize * 0.9965f; // hehe
 
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Back, new Vector3(ass, 0, 0) + pos, default, ss, ss, ss, Color.White, Faces.Left);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Front, new Vector3(-ass, 0, 0) + pos, default, ss, ss, ss, Color.White, Faces.Right);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Top, new Vector3(0, ass, 0) + pos, default, ss, ss, ss, Color.White, Faces.Bottom);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Bottom, new Vector3(0, -ass, 0) + pos, default, ss, ss, ss, Color.White, Faces.Top);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Left, new Vector3(0, 0, -ass) + pos, default, ss, ss, ss, Color.White, Faces.Front);
-			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Right, new Vector3(0, 0, ass) + pos, default, ss, ss, ss, Color.White, Faces.Back);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Back, new Vector3(ass, 0, 0) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Left);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Front, new Vector3(-ass, 0, 0) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Right);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Top, new Vector3(0, ass, 0) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Bottom);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Bottom, new Vector3(0, -ass, 0) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Top);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Left, new Vector3(0, 0, -ass) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Front);
+			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Right, new Vector3(0, 0, ass) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Back);
 		}
 		public void RenderWorld()
 		{

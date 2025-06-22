@@ -408,13 +408,5 @@ namespace NetBlox
 				// no
 			}
 		}
-		public string FilterString(string text)
-		{
-			if (!UsePublicService)
-			{
-				return "lol";
-			}
-			return "c'est ma chatte";
-		}
 	}
 }

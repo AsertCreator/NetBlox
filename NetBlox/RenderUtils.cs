@@ -6,14 +6,18 @@ using System.Text;
 
 namespace NetBlox
 {
-	public static class RenderUtils
+	public unsafe static class RenderUtils
 	{
 		public static void DrawCubeTextureRec(Texture2D texture, Vector3 position, Quaternion rotation, float width, float height, float length, Color color, Faces f, bool tile = false)
 		{
+			Vector3 axis;
+			float angle;
+			Raymath.QuaternionToAxisAngle(rotation, &axis, &angle);
+
 			Rlgl.PushMatrix();
 			Rlgl.MatrixMode(MatrixMode.Texture);
 			Rlgl.Translatef(position.X, position.Y, position.Z);
-			Rlgl.MultMatrixf(Raymath.QuaternionToMatrix(Raymath.QuaternionNormalize(rotation)));
+			Rlgl.Rotatef(angle * 180 / MathF.PI, axis.X, axis.Y, axis.Z);
 			// im not willing to rewrite the whole shit
 			position = Vector3.Zero;
 

@@ -328,7 +328,6 @@ namespace NetBlox.Instances
 			_rotation = default;
 			_lastvelocity = new Vector3(0, 0, 0);
 
-			IsDomestic = true;
 			Anchored = false;
 
 			GameManager.PhysicsManager.Actors.Add(this);
@@ -387,7 +386,7 @@ namespace NetBlox.Instances
 			GameManager.PhysicsManager.Actors.Remove(this);
 			base.Destroy();
 		}
-
+		public override void OnNetworkOwnershipChanged() => Anchored = Anchored;
 		protected virtual void OnSizeChanged(Vector3 newsize) { }
 		protected virtual void OnPositionChanged(Vector3 newpos) { }
 		protected virtual void OnRotationChanged(Quaternion q) { }

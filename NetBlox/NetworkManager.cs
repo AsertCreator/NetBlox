@@ -1,12 +1,10 @@
 ﻿using MoonSharp.Interpreter;
-using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Network;
-using Network.Enums;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
@@ -89,6 +87,7 @@ namespace NetBlox
 		public bool IsClient;
 		public bool IsLoaded = true;
 		public bool OnlyInternalConnections = false;
+		public bool NetworkProfilerLog = false;
 		public int ServerPort = 25570; // apparently that port was forbidden
 		public int OutgoingTraffic = 0;
 		public int IncomingTraffic = 0;
@@ -361,7 +360,7 @@ namespace NetBlox
 						}
 						else
 						{
-							LogManager.LogWarn(nc.Player.Name + " tried to replicate instance as if they were the owner!");
+							LogManager.LogWarn(nc.Player.Name + " tried to replicate instance as if they were the owner! " +  target.GetFullName() + ":" + target.UniqueID);
 							return;
 						}
 					});
@@ -667,8 +666,7 @@ namespace NetBlox
 					if (actinst != null)
 					{
 						actinst.IsDomestic = true;
-						if (actinst is BasePart bp)
-							bp.Anchored = bp.Anchored;
+						actinst.OnNetworkOwnershipChanged();
 					}
 				});
 				tcp.RegisterRawDataHandler("nb2-confiscate", (rep, _) =>
@@ -779,13 +777,15 @@ namespace NetBlox
 		public void ProfileIncoming(string key, byte[] data)
 		{
 			var len = Encoding.ASCII.GetBytes(key).Length + data.Length;
-			Debug.WriteLine($"!! nmprofiler, INCOMING #{incomingPacketsRecieved++}, key: {key}, data len: {data.Length}, incoming bytes/sec: {IncomingTraffic} !!");
+			if (NetworkProfilerLog)
+				Debug.WriteLine($"!! nmprofiler, INCOMING #{incomingPacketsRecieved++}, key: {key}, data len: {data.Length}, incoming bytes/sec: {IncomingTraffic} !!");
 			incomingTraffic += len;
 		}
 		public void ProfileOutgoing(string key, byte[] data)
 		{
 			var len = Encoding.ASCII.GetBytes(key).Length + data.Length;
-			Debug.WriteLine($"!! nmprofiler, OUTGOING #{outgoingPacketsSent++}, key: {key}, data len: {data.Length}, outgoing bytes/sec: {OutgoingTraffic} !!");
+			if (NetworkProfilerLog)
+				Debug.WriteLine($"!! nmprofiler, OUTGOING #{outgoingPacketsSent++}, key: {key}, data len: {data.Length}, outgoing bytes/sec: {OutgoingTraffic} !!");
 			outgoingTraffic += len;
 		}
 		public void SendRawData(Connection c, string key, byte[] data)

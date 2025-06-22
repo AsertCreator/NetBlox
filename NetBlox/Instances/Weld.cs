@@ -1,3 +1,5 @@
+using BepuPhysics;
+using BepuPhysics.Constraints;
 using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 using System;
@@ -19,19 +21,24 @@ namespace NetBlox.Instances
 			get => enabled;
 			set
 			{
-				BasePart? b0 = Part0 as BasePart;
-				BasePart? b1 = Part1 as BasePart;
-				if (b0 == null || b1 == null)
-				{
-					LogManager.LogWarn("Part0 and Part1 properties of Weld only support BaseParts!");
+				if (value == enabled)
 					return;
+
+				if (IsDomestic)
+				{
+					if (value)
+						CreateWeld();
+					else
+						DestroyWeld();
 				}
-				// TODO: this
-				else
-					LogManager.LogWarn("Part0 and Part1 properties of Weld are only supported on owned parts!");
+
 				enabled = value;
 			}
 		}
+		private BallSocket ballSocket;
+		private AngularMotor angularMotor;
+		private ConstraintHandle ballSocketHandle;
+		private ConstraintHandle angularMotorHandle;
 		private bool enabled;
 
 		public Weld(GameManager ins) : base(ins) { }
@@ -41,6 +48,59 @@ namespace NetBlox.Instances
 		{
 			if (nameof(Weld) == classname) return true;
 			return base.IsA(classname);
+		}
+		public override void OnNetworkOwnershipChanged()
+		{
+			TaskScheduler.Schedule(() =>
+			{
+				if (IsDomestic)
+				{
+					if (Enabled)
+						CreateWeld();
+					else
+						DestroyWeld();
+				}
+			});
+		}
+		private void DestroyWeld()
+		{
+			var sim = GameManager.PhysicsManager.LocalSimulation;
+
+			sim.Solver.Remove(ballSocketHandle);
+			sim.Solver.Remove(angularMotorHandle);
+		}
+		private void CreateWeld()
+		{
+			var sim = GameManager.PhysicsManager.LocalSimulation;
+			var b0 = Part0 as BasePart;
+			var b1 = Part1 as BasePart;
+
+			if (Part0 == Part1)
+			{
+				LogManager.LogWarn("Part0 and Part1 properties of Weld cannot be set to the same part!");
+				return;
+			}
+
+			if (b0 == null || b1 == null)
+			{
+				LogManager.LogWarn("Part0 and Part1 properties of Weld only support BaseParts!");
+				return;
+			}
+
+			ballSocket = new BallSocket()
+			{
+				LocalOffsetA = default,
+				LocalOffsetB = default,
+				SpringSettings = new SpringSettings(30, 1)
+			};
+			angularMotor = new AngularMotor()
+			{
+				Settings = new MotorSettings() { Damping = 1, Softness = 0 },
+				TargetVelocityLocalA = default
+			};
+
+			ballSocketHandle = sim.Solver.Add(b0.BodyHandle.Value, b1.BodyHandle.Value, ballSocket);
+			angularMotorHandle = sim.Solver.Add(b0.BodyHandle.Value, b1.BodyHandle.Value, angularMotor);
 		}
 	}
 }

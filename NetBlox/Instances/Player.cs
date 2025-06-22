@@ -135,13 +135,13 @@ namespace NetBlox.Instances
 			chmodel.Name = Name;
 			chmodel.Parent = Root.GetService<Workspace>();
 
-			_ = new Part(GameManager)
+			var rightleg = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.DarkBlue,
 				Position = new(0, -3f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
 				Name = "Right Leg"
 			};
-			_ = new Part(GameManager)
+			var leftleg = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.DarkBlue,
 				Position = new(-1, -3f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
@@ -153,13 +153,13 @@ namespace NetBlox.Instances
 				Position = new(-0.5f, -1f, 0), Size = new(2, 2, 1), TopSurface = SurfaceType.Studs,
 				Name = "Torso"
 			};
-			_ = new Part(GameManager)
+			var leftarm = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
 				Position = new(-2f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
 				Name = "Left Arm"
 			};
-			_ = new Part(GameManager)
+			var rightarm = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
 				Position = new(1f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
@@ -175,6 +175,12 @@ namespace NetBlox.Instances
 			{
 				Texture = "rbxasset://textures/smile.png", Face = Faces.Front, Parent = head
 			};
+
+			_ = new Weld(GameManager) { Part0 = torso, Part1 = leftleg, Enabled = true, Parent = leftleg };
+			_ = new Weld(GameManager) { Part0 = torso, Part1 = rightleg, Enabled = true, Parent = rightleg };
+			_ = new Weld(GameManager) { Part0 = torso, Part1 = leftarm, Enabled = true, Parent = leftarm };
+			_ = new Weld(GameManager) { Part0 = torso, Part1 = rightarm, Enabled = true, Parent = rightarm };
+			_ = new Weld(GameManager) { Part0 = torso, Part1 = head, Enabled = true, Parent = head };
 
 			chmodel.PrimaryPart = torso;
 			chmodel.MoveTo(workspace.SpawnLocation.Position + new Vector3(0, 3.5f, 0));

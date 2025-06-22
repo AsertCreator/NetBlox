@@ -511,6 +511,7 @@ namespace NetBlox.Instances
 			Parent = null;
 			ChangeOwnershipImpl(gm);
 		}
+		public virtual void OnNetworkOwnershipChanged() { }
 		public int CountDescendants()
 		{
 			lock (Children)
