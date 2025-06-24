@@ -1,15 +1,15 @@
-using NetBlox.Instances.Services;
 using NetBlox.Runtime;
-using NetBlox.Structs;
 using NetBlox.Common;
 using Raylib_cs;
-using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace NetBlox.Instances
 {
+	public enum HumanoidState
+	{
+		Idle, Falling, Sitting, Walking, Jumping, Swimming, FrozenFalling, Dead
+	}
 	[Creatable]
 	public class Humanoid : Instance
 	{
@@ -22,7 +22,25 @@ namespace NetBlox.Instances
 		public float WalkSpeed { get; set; } = 12;
 		[Lua([Security.Capability.None])]
 		public float JumpPower { get; set; } = 6;
+
+		public BasePart[] AllBodyParts => Parent.Children.Where(x => x is BasePart).Cast<BasePart>().ToArray(); // wtf
+		public BasePart? PrimaryPart => Parent is Model ? (Parent as Model).PrimaryPart : null;
+		public BasePart? Head => Parent.FindFirstChild("Head") as BasePart;
+		public BasePart? RightLeg => Parent.FindFirstChild("Right Leg") as BasePart;
+		public BasePart? LeftLeg => Parent.FindFirstChild("Left Leg") as BasePart;
+		public bool IsRightLegAbleToJump => RightLeg.IsGrounded;
+		public bool IsLeftLegAbleToJump => LeftLeg.IsGrounded;
+		public bool CanJumpInTheory => IsRightLegAbleToJump || IsLeftLegAbleToJump;
+
+		public static HumanoidControl ControlForward = HumanoidControl.GetFor(HumanoidControlType.Forward);
+		public static HumanoidControl ControlBackward = HumanoidControl.GetFor(HumanoidControlType.Backward);
+		public static HumanoidControl ControlLeft = HumanoidControl.GetFor(HumanoidControlType.WalkLeft);
+		public static HumanoidControl ControlRight = HumanoidControl.GetFor(HumanoidControlType.WalkRight);
+		public static HumanoidControl ControlJump = HumanoidControl.GetFor(HumanoidControlType.Jump);
+
+		public HumanoidState State = HumanoidState.Idle;
 		private bool isDying = false;
+		private BasePart? torsoCache;
 
 		public Humanoid(GameManager ins) : base(ins) { }
 
@@ -35,7 +53,11 @@ namespace NetBlox.Instances
 		public override void Process()
 		{
 			base.Process();
+
 			if (Parent == null) return;
+			if (torsoCache == null)
+				torsoCache = Parent.FindFirstChild("Torso") as BasePart;
+
 			var cam = GameManager.RenderManager.MainCamera;
 			var x1 = cam.Position.X;
 			var y1 = cam.Position.Z;
@@ -45,9 +67,9 @@ namespace NetBlox.Instances
 
 			if (GameManager.NetworkManager == null) return;
 
-			if (IsLocalPlayer && (GameManager.NetworkManager.IsClient && !GameManager.NetworkManager.IsServer) && Health > 0)
+			if (IsLocalPlayer && GameManager.NetworkManager.IsClient && Health > 0)
 			{
-				 
+				ProcessInput();
 			}
 
 			if (Health <= 0 && IsLocalPlayer && !isDying)
@@ -57,6 +79,76 @@ namespace NetBlox.Instances
 			}
 
 			Health = Math.Max(Health, 0);
+		}
+		private void ProcessInput()
+		{
+			var primary = PrimaryPart;
+			if (primary == null)
+				return;
+
+			if (!CanJumpInTheory && State != HumanoidState.Falling)
+				State = HumanoidState.Falling;
+			if (Health <= 0)
+				State = HumanoidState.Dead;
+
+			switch (State)
+			{
+				case HumanoidState.Idle:
+					torsoCache.Rotation = default;
+					DoWalking();
+					break;
+				case HumanoidState.Falling:
+					torsoCache.Rotation = default;
+					DoFalling();
+					break;
+				case HumanoidState.Sitting:
+					DoSitting();
+					break;
+				case HumanoidState.Walking:
+					DoWalking();
+					break;
+				case HumanoidState.Jumping:
+					DoWalking();
+					break;
+				case HumanoidState.Swimming:
+					break;
+				case HumanoidState.FrozenFalling:
+					DoSitting();
+					break;
+				case HumanoidState.Dead:
+					Health = 0;
+					(Parent as Model)?.BreakJoints();
+					break;
+			}
+		}
+		private void DoWalking()
+		{
+			State = HumanoidState.Walking;
+		}
+		private void DoSitting()
+		{
+			if (ControlJump.IsPressed())
+				StandUp();
+		}
+		private void DoFalling()
+		{
+			if (CanJumpInTheory || ControlJump.IsPressed())
+				StandUp();
+		}
+		private void StandUp()
+		{
+			var parts = AllBodyParts;
+			for (int i = 0; i < parts.Length; i++)
+			{
+				var part = parts[i];
+				part.Velocity += new Vector3(0, 5, 0);
+				if (part.Velocity.Y >= 7)
+					part.Velocity = new Vector3(part.Velocity.X, 7, part.Velocity.Z);
+				part.RenderPositionOffset = default;
+				part.RenderRotationOffset = Quaternion.Identity;
+			}
+
+			State = HumanoidState.Idle;
 		}
 		public override void RenderUI()
 		{
@@ -77,7 +169,7 @@ namespace NetBlox.Instances
 			var pos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 1f, 0), cam);
 			var siz = Vector2.Zero;
 
-			var name = Parent.Name;
+			var name = Parent.Name + " - " + State;
 
 			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, 14, 1.4f);
 			Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
@@ -95,16 +187,6 @@ namespace NetBlox.Instances
 		public void Die()
 		{
 			LogManager.LogInfo("Character had died!");
-
-			if (GameManager.NetworkManager.IsServer)
-			{
-				Root.GetService<Debris>().AddItem(this, 4);
-
-				Task.Delay(4000).ContinueWith(_ =>
-				{
-					((Player)Root.GetService<Players>().LocalPlayer!).LoadCharacter();
-				});
-			}
 		}
 	}
 }

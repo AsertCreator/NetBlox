@@ -64,6 +64,7 @@ namespace NetBlox.Instances
 					part.Position += pos;
 			}
 		}
+		[Lua([Security.Capability.None])]
 		public BasePart? GetPivotPart()
 		{
 			if (PrimaryPart != null)
@@ -81,6 +82,18 @@ namespace NetBlox.Instances
 				}
 			}
 			return null;
+		}
+		[Lua([Security.Capability.None])]
+		public void BreakJoints()
+		{
+			Instance[] descendants = GetDescendants();
+			for (int i = 0; i < descendants.Length; i++)
+			{
+				if (descendants[i] is Weld weld)
+				{
+					weld.Destroy();
+				}
+			}
 		}
 		public override void PivotTo(CFrame pivot) => throw new NotImplementedException();
 	}

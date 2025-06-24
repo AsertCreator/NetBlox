@@ -97,6 +97,7 @@ namespace NetBlox
 		public Task<object>? ClientReplicator;
 		private readonly static object replock = new();
 		private readonly static Type LST = typeof(LuaSignal);
+		private readonly static Type InstanceType = typeof(Instance);
 		private int outgoingPacketsSent = 0;
 		private int incomingPacketsRecieved = 0;
 		private int outgoingTraffic = 0;
@@ -550,15 +551,17 @@ namespace NetBlox
 
 				int actinstc = sh.InstanceCount;
 				int gotinsts = 0;
+				bool yeahyeahstfu = false;
 
 				tcp.RegisterRawDataHandler("nb2-replicate", (rep, _) =>
 				{
 					ProfileIncoming(rep.Key, rep.Data);
 
-					if (++gotinsts >= actinstc)
+					if (++gotinsts >= actinstc && !yeahyeahstfu)
 					{
 						Root.GetService<CoreGui>().HideTeleportGui();
 						IsLoaded = true;
+						yeahyeahstfu = true;
 					}
 
 					var ins = RecieveNewInstance(rep.Data);
@@ -892,17 +895,33 @@ namespace NetBlox
 
 				if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
 					continue;
-				if (prop.PropertyType == LST)
-					continue;
 				if (!prop.CanWrite)
 					continue;
-				if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName ?? "", out var x))
+				if (prop.PropertyType == LST)
 					continue;
 
-				var v = prop.GetValue(ins);
-				if (v == null) continue;
-				c++;
-				var b = x(v, gm);
+				byte[] b;
+
+				if (prop.PropertyType.IsAssignableTo(InstanceType))
+				{
+					if (!SerializationManager.NetworkSerializers.TryGetValue(InstanceType.FullName, out var x))
+						continue;
+
+					var v = prop.GetValue(ins);
+					if (v == null) continue;
+					c++;
+					b = x(v, gm);
+				}
+				else
+				{
+					if (!SerializationManager.NetworkSerializers.TryGetValue(prop.PropertyType.FullName ?? "", out var x))
+						continue;
+
+					var v = prop.GetValue(ins);
+					if (v == null) continue;
+					c++;
+					b = x(v, gm);
+				}
 
 				bw.Write(prop.Name);
 				bw.Write((short)b.Length);
@@ -949,10 +968,12 @@ namespace NetBlox
 				}
 				ins.UniqueID = guid;
 				ins.WasReplicated = true;
-				var type = ins.GetType();
 
-				if (classname == "Player") // ugly hack
-					Security.Impersonate(8);
+				var type = ins.GetType();
+				var impattrib = type.GetCustomAttribute<ImpersonateDuringReplicationAttribute>();
+
+				if (impattrib != null)
+					Security.Impersonate(impattrib.Level);
 
 				for (int i = 0; i < propc; i++)
 				{
@@ -966,11 +987,47 @@ namespace NetBlox
 					var bc = br.ReadInt16();
 					var pbytes = br.ReadBytes(bc);
 
-					if (SerializationManager.NetworkDeserializers.TryGetValue(pnam, out var x) && prop.CanWrite)
-						prop.SetValue(ins, x(pbytes, GameManager));
+					if (!prop.CanWrite)
+						continue;
+
+					if (ptyp.IsAssignableTo(InstanceType))
+					{
+						var instser = SerializationManager.NetworkDeserializers.TryGetValue(InstanceType.FullName, out var x);
+						var inst = x(pbytes, GameManager);
+
+						if (inst == null)
+						{
+							void TryToResetProperty(int reentrancy = 3)
+							{
+								inst = x(pbytes, GameManager);
+								if (inst != null)
+									prop.SetValue(ins, inst);
+								else
+								{
+									if (reentrancy == 0)
+										return;
+									TaskScheduler.Schedule(() =>
+									{
+										TryToResetProperty(reentrancy - 1);
+									});
+								}
+							}
+							TaskScheduler.Schedule(() =>
+							{
+								TryToResetProperty();
+							});
+						}
+						else
+							prop.SetValue(ins, inst);
+					}
+					else
+					{
+						if (SerializationManager.NetworkDeserializers.TryGetValue(pnam, out var x))
+							prop.SetValue(ins, x(pbytes, GameManager));
+					}
 				}
 
-				if (classname == "Player")
+				if (impattrib != null)
 					Security.EndImpersonate();
 
 				GameManager.IsRunning = true; // i cant find better place

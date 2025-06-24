@@ -1,10 +1,7 @@
 using BepuPhysics;
 using BepuPhysics.Constraints;
-using MoonSharp.Interpreter;
 using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Numerics;
 
 namespace NetBlox.Instances
 {
@@ -12,9 +9,33 @@ namespace NetBlox.Instances
 	public class Weld : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public Instance? Part0 { get; set; }
+		public Instance? Part0
+		{
+			get => part0;
+			set
+			{
+				if (part0 == value) return;
+				var enabled = Enabled;
+				Enabled = false;
+				part0 = value;
+				Enabled = enabled;
+			}
+		}
 		[Lua([Security.Capability.None])]
-		public Instance? Part1 { get; set; }
+		public Instance? Part1
+		{
+			get => part1;
+			set
+			{
+				if (part1 == value) return;
+				var enabled = Enabled;
+				Enabled = false;
+				part1 = value;
+				Enabled = enabled;
+			}
+		}
+		[Lua([Security.Capability.None])]
+		public Vector3 PartOffset { get; set; }
 		[Lua([Security.Capability.None])]
 		public bool Enabled 
 		{
@@ -35,10 +56,11 @@ namespace NetBlox.Instances
 				enabled = value;
 			}
 		}
-		private BallSocket ballSocket;
-		private AngularMotor angularMotor;
-		private ConstraintHandle ballSocketHandle;
-		private ConstraintHandle angularMotorHandle;
+
+		private BepuPhysics.Constraints.Weld weld;
+		private ConstraintHandle weldHandle;
+		private Instance? part0;
+		private Instance? part1;
 		private bool enabled;
 
 		public Weld(GameManager ins) : base(ins) { }
@@ -51,23 +73,25 @@ namespace NetBlox.Instances
 		}
 		public override void OnNetworkOwnershipChanged()
 		{
-			TaskScheduler.Schedule(() =>
+			if (IsDomestic)
 			{
-				if (IsDomestic)
-				{
-					if (Enabled)
-						CreateWeld();
-					else
-						DestroyWeld();
-				}
-			});
+				if (Enabled)
+					CreateWeld();
+				else
+					DestroyWeld();
+			}
+		}
+		public override void Destroy()
+		{
+			if (Enabled)
+				DestroyWeld();
+			base.Destroy();
 		}
 		private void DestroyWeld()
 		{
 			var sim = GameManager.PhysicsManager.LocalSimulation;
 
-			sim.Solver.Remove(ballSocketHandle);
-			sim.Solver.Remove(angularMotorHandle);
+			sim.Solver.Remove(weldHandle);
 		}
 		private void CreateWeld()
 		{
@@ -87,20 +111,25 @@ namespace NetBlox.Instances
 				return;
 			}
 
-			ballSocket = new BallSocket()
-			{
-				LocalOffsetA = default,
-				LocalOffsetB = default,
-				SpringSettings = new SpringSettings(30, 1)
-			};
-			angularMotor = new AngularMotor()
-			{
-				Settings = new MotorSettings() { Damping = 1, Softness = 0 },
-				TargetVelocityLocalA = default
-			};
+			PartOffset = b1.PartCFrame.Position - b0.PartCFrame.Position;
 
-			ballSocketHandle = sim.Solver.Add(b0.BodyHandle.Value, b1.BodyHandle.Value, ballSocket);
-			angularMotorHandle = sim.Solver.Add(b0.BodyHandle.Value, b1.BodyHandle.Value, angularMotor);
+			Task.Run(async () => // god kill me
+			{
+				while (!b0.BodyHandle.HasValue || !b1.BodyHandle.HasValue)
+					await Task.Delay(1);
+
+				weld = new BepuPhysics.Constraints.Weld()
+				{
+					LocalOffset = PartOffset,
+					LocalOrientation = Quaternion.Identity,
+					SpringSettings = new SpringSettings(30, 0.1f)
+				};
+
+				TaskScheduler.Schedule(() =>
+				{
+					weldHandle = sim.Solver.Add(b0.BodyHandle.Value, b1.BodyHandle.Value, weld);
+				});
+			});
 		}
 	}
 }

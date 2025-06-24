@@ -1,4 +1,4 @@
-﻿# The Netblox Project [![.github/workflows/dotnet-desktop.yml](https://github.com/AsertCreator/NetBlox/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/AsertCreator/NetBlox/actions/workflows/dotnet-desktop.yml)
+﻿# The NetBlox Project [![.github/workflows/dotnet-desktop.yml](https://github.com/AsertCreator/NetBlox/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/AsertCreator/NetBlox/actions/workflows/dotnet-desktop.yml)
 i f̵̞̼͈́͐̉̀͘ų̵͙͉̩̳̝̜̈́͂͐c̶͇̀͌̚͝k̸͍̈̓̌̅̀ȉ̷̦̙̦̝͖̾̀n̷͓̠͆g̵͕͋͌ love roblox. thats why i decided to 
 dedicate my two weeks school break on creating the clone of it on c#. it lowkey
 looks like some "pixel gun 3d" type of game you would find on play store. and
@@ -40,15 +40,16 @@ rendering and its social network part. so far, little was achieved, but scriptin
 works at a level that i can call "normal".
 
 ## Licenses
-The NetBlox project is licensed under MIT license, check LICENSE.txt file in the repository 
+The NetBlox Project is licensed under MIT license, check LICENSE.txt file in the repository 
 root.
 
 ### Software dependencies
-NetBlox. Copyright (c) 2024-2025, The NetBlox Project's contributors. <br/>
-Raylib. Copyright (c) 2013-2025, Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))<br/>
-Raylib-cs. Copyright (c) 2018-2025, ChrisDill (check [license](https://github.com/ChrisDill/Raylib-cs/blob/master/LICENSE))<br/>
-MoonSharp. Copyright (c) 2014-2016, Marco Mastropaolo (check [license](https://github.com/moonsharp-devs/moonsharp/blob/master/LICENSE))<br/>
-Network. Copyright (c) 2024, Toemsel (check [license](https://github.com/Toemsel/Network/blob/main/LICENSE))<br/>
+- NetBlox. Copyright (c) 2024-2025, The NetBlox Project's contributors. 
+- Raylib. Copyright (c) 2013-2025, Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))
+- Raylib-cs. Copyright (c) 2018-2025, ChrisDill (check [license](https://github.com/ChrisDill/Raylib-cs/blob/master/LICENSE))
+- BepuPhysics v2. Copyright (c) 2017-2025, Bepu Entertainment (check [license](https://github.com/bepu/bepuphysics2/blob/master/LICENSE.md))
+- MoonSharp. Copyright (c) 2014-2016, Marco Mastropaolo (check [license](https://github.com/moonsharp-devs/moonsharp/blob/master/LICENSE))
+- Network. Copyright (c) 2024, Toemsel (check [license](https://github.com/Toemsel/Network/blob/main/LICENSE))
 
 ### Sound effects
 

@@ -8,6 +8,7 @@ namespace NetBlox
 	/// </summary>
 	public static class AppManager
 	{
+		public static GameManager? CurrentGameManager;
 		public static List<GameManager> GameManagers = [];
 		public static RenderManager? CurrentRenderManager;
 		public static Dictionary<string, string> Preferences = [];
@@ -32,6 +33,11 @@ namespace NetBlox
 		public static int VersionMajor => Common.Version.VersionMajor;
 		public static int VersionMinor => Common.Version.VersionMinor;
 		public static int VersionPatch => Common.Version.VersionPatch;
+
+		static AppManager()
+		{
+			LogManager.LogPrefixer = () => CurrentGameManager == null ? "<nogm>" : CurrentGameManager.ManagerName;
+		}
 
 		/// <summary>
 		/// Defines a fast flag, must be called after loading current fast flags
@@ -76,6 +82,7 @@ namespace NetBlox
 				for (int i = 0; i < GameManagers.Count; i++)
 				{
 					var gm = GameManagers[i];
+					CurrentGameManager = gm;
 					if (gm.IsRunning)
 						gm.ProcessInstance(gm.CurrentRoot);
 				}

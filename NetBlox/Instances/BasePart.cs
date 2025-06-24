@@ -134,9 +134,9 @@ namespace NetBlox.Instances
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Pose = _position;
+					localsim.Bodies[BodyHandle.Value].Pose.Position = _position;
 				if (StaticHandle.HasValue)
-					localsim.Statics[StaticHandle.Value].Pose = _position;
+					localsim.Statics[StaticHandle.Value].Pose.Position = _position;
 
 				OnPositionChanged(value);
 			}
@@ -147,16 +147,26 @@ namespace NetBlox.Instances
 			get => Raymath.QuaternionToEuler(_rotation) * new Vector3(180f / MathF.PI, 180f / MathF.PI, 180f / MathF.PI);
 			set
 			{
-				var rotq = Raymath.QuaternionFromEuler(value.Z, value.Y, value.X);
+				var rotq = Raymath.QuaternionFromEuler(value.Z / 180f * MathF.PI, value.Y / 180f * MathF.PI, value.X / 180f * MathF.PI);
 				if (_rotation == rotq)
 					return;
 				_rotation = rotq;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Pose.Orientation = rotq;
+				{
+					var body = localsim.Bodies[BodyHandle.Value];
+					body.Pose.Orientation = rotq;
+					body.UpdateBounds();
+				}
 				if (StaticHandle.HasValue)
-					localsim.Statics[StaticHandle.Value].Pose.Orientation = rotq;
+				{
+					var stat = localsim.Statics[StaticHandle.Value];
+					stat.Pose.Orientation = rotq;
+					stat.UpdateBounds();
+				}
+
+				OnRotationChanged(rotq);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -213,16 +223,16 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Vector3 Velocity
 		{
-			get => _lastvelocity;
+			get => LinearVelocity;
 			set
 			{
-				if (_lastvelocity == value)
+				if (LinearVelocity == value)
 					return;
-				_lastvelocity = value;
+				LinearVelocity = value;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Velocity.Linear = _lastvelocity;
+					localsim.Bodies[BodyHandle.Value].Velocity.Linear = LinearVelocity;
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -233,6 +243,8 @@ namespace NetBlox.Instances
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set => PartCFrame = value;
 		}
+		[Lua([Security.Capability.None])]
+		public LuaSignal Touched { get; } = new LuaSignal();
 		public Vector3 _position
 		{
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -278,10 +290,10 @@ namespace NetBlox.Instances
 		public bool IsDirty = false;
 		public CFrame PartCFrame;
 		public Vector3 _size;
-		public Vector3 _lastvelocity;
+		public Vector3 LinearVelocity;
 		public bool _anchored = false;
-		public Vector3 _lastposition;
-		public Quaternion _lastrotation;
+		public Vector3 RenderPositionOffset = default;
+		public Quaternion RenderRotationOffset = Quaternion.Identity;
 		protected SurfaceType frontSurface;
 		protected SurfaceType backSurface;
 		protected SurfaceType topSurface = SurfaceType.Studs;
@@ -315,9 +327,9 @@ namespace NetBlox.Instances
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
-				if (_lastvelocity != value)
+				if (LinearVelocity != value)
 					IsDirty = true;
-				_lastvelocity = value;
+				LinearVelocity = value;
 			}
 		}
 
@@ -326,15 +338,23 @@ namespace NetBlox.Instances
 			_size = new Vector3(4, 1, 2);
 			_position = new Vector3(0, 0, 0);
 			_rotation = default;
-			_lastvelocity = new Vector3(0, 0, 0);
+			LinearVelocity = new Vector3(0, 0, 0);
 
 			Anchored = false;
 
 			GameManager.PhysicsManager.Actors.Add(this);
+			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
 		}
 		public override void PivotTo(CFrame pivot)
 		{
 			CFrame = pivot;
+		}
+		public CollidableReference GetCollidableReference()
+		{
+			if (BodyHandle.HasValue)
+				return new CollidableReference(CollidableMobility.Dynamic, BodyHandle.Value);
+			else
+				return new CollidableReference(StaticHandle.Value);
 		}
 		public void CreateBodyHandle()
 		{
@@ -349,9 +369,12 @@ namespace NetBlox.Instances
 			var rigidpose = new RigidPose(_position, rotation);
 			var index = localsim.Shapes.Add(collidable);
 			var description = BodyDescription.CreateDynamic(rigidpose, inertia, index, 0.01f);
-			description.Velocity.Linear = _lastvelocity;
+			description.Velocity.Linear = LinearVelocity;
 
 			BodyHandle = localsim.Bodies.Add(description);
+			if (StaticHandle.HasValue)
+				GameManager.PhysicsManager.contactEvents.Unregister(GetCollidableReference());
+			GameManager.PhysicsManager.contactEvents.Register(GetCollidableReference(), GameManager.PhysicsManager.contactEventHandler);
 		}
 		public void CreateStaticHandle()
 		{
@@ -367,6 +390,9 @@ namespace NetBlox.Instances
 			var description = new StaticDescription(_position, rotation, index);
 
 			StaticHandle = localsim.Statics.Add(description);
+			if (BodyHandle.HasValue)
+				GameManager.PhysicsManager.contactEvents.Unregister(GetCollidableReference());
+			GameManager.PhysicsManager.contactEvents.Register(GetCollidableReference(), GameManager.PhysicsManager.contactEventHandler);
 		}
 		public virtual void Render()
 		{
@@ -378,13 +404,21 @@ namespace NetBlox.Instances
 				LocalLighing = Root.GetService<Lighting>(true);
 				return;  // now parts REQUIRE Lighting service to be present in order to render (because sun)
 			}
+
+			if (IsGrounded)
+				Raylib.DrawCubeWires(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Red);
 		}
 		public override void Process() => base.Process();
 		public override bool IsA(string classname) => nameof(BasePart) == classname || base.IsA(classname);
 		public override void Destroy()
 		{
-			GameManager.PhysicsManager.Actors.Remove(this);
 			base.Destroy();
+			GameManager.PhysicsManager.Collidable2BasePartMap.Remove(GetCollidableReference().Packed);
+			if (BodyHandle.HasValue)
+				GameManager.PhysicsManager.LocalSimulation.Bodies.Remove(BodyHandle.Value);
+			if (StaticHandle.HasValue)
+				GameManager.PhysicsManager.LocalSimulation.Statics.Remove(StaticHandle.Value);
+			GameManager.PhysicsManager.Actors.Remove(this);
 		}
 		public override void OnNetworkOwnershipChanged() => Anchored = Anchored;
 		protected virtual void OnSizeChanged(Vector3 newsize) { }

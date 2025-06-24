@@ -39,7 +39,7 @@ namespace NetBlox.Instances
 						RenderCache.DirtyCounter = 6;
 
 					[MethodImpl(MethodImplOptions.AggressiveInlining)]
-					float AFS(float nx, float ny, float nz)
+					unsafe float AFS(float nx, float ny, float nz)
 					{
 						float retu = 0;
 						var og = new Vector3(nx, ny, nz);
@@ -59,9 +59,11 @@ namespace NetBlox.Instances
 							if (LocalLighing!.SunLocality)
 								ns += Position;
 
-							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitX, Rotation.X / 180 * MathF.PI);
-							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitY, Rotation.Y / 180 * MathF.PI);
-							ns = Raymath.Vector3RotateByAxisAngle(ns, Vector3.UnitZ, Rotation.Z / 180 * MathF.PI);
+							Vector3 axis;
+							float angle;
+							Raymath.QuaternionToAxisAngle(PartCFrame.Rotation * RenderRotationOffset, &axis, &angle);
+
+							ns = Raymath.Vector3RotateByAxisAngle(ns, axis, angle);
 
 							var sl = sun.Length();
 							var nl = ns.Length();
@@ -79,7 +81,8 @@ namespace NetBlox.Instances
 					if (TopSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var top = AFS(0, 1, 0);
-					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position + RenderPositionOffset, 
+						PartCFrame.Rotation * RenderRotationOffset, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * top), 
 							(byte)(Color3.G * top), 
@@ -89,7 +92,8 @@ namespace NetBlox.Instances
 					if (LeftSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var left = AFS(-1, 0, 0);
-					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position + RenderPositionOffset, 
+						PartCFrame.Rotation * RenderRotationOffset, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * left),
 							(byte)(Color3.G * left),
@@ -99,7 +103,8 @@ namespace NetBlox.Instances
 					if (RightSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var right = AFS(1, 0, 0);
-					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position + RenderPositionOffset, 
+						PartCFrame.Rotation * RenderRotationOffset, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * right),
 							(byte)(Color3.G * right),
@@ -109,7 +114,8 @@ namespace NetBlox.Instances
 					if (BottomSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var bottom = AFS(0, -1, 0);
-					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position + RenderPositionOffset, 
+						PartCFrame.Rotation * RenderRotationOffset, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * bottom),
 							(byte)(Color3.G * bottom),
@@ -119,7 +125,8 @@ namespace NetBlox.Instances
 					if (FrontSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var front = AFS(0, 0, 1);
-					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position + RenderPositionOffset, 
+						PartCFrame.Rotation * RenderRotationOffset, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * front),
 							(byte)(Color3.G * front),
@@ -129,7 +136,8 @@ namespace NetBlox.Instances
 					if (BackSurface == SurfaceType.Studs) tex = st;
 					else tex = bt;
 					var back = AFS(0, 0, -1);
-					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position, PartCFrame.Rotation, Size.X, Size.Y, Size.Z,
+					RenderUtils.DrawCubeTextureRec(tex, PartCFrame.Position + RenderPositionOffset, 
+						PartCFrame.Rotation * RenderRotationOffset, Size.X, Size.Y, Size.Z,
 						new Color(
 							(byte)(Color3.R * back),
 							(byte)(Color3.G * back),

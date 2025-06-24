@@ -51,10 +51,14 @@ namespace NetBlox
 
 		public GameManager(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
+			ManagerName = gc.GameName;
+
+			var oldgm = AppManager.CurrentGameManager;
+			AppManager.CurrentGameManager = this;
+
 			try
 			{
 				LogManager.LogInfo("Initializing NetBlox...");
-				ManagerName = gc.GameName;
 
 				string? csdata = args[args.ToList().IndexOf("-cs") + 1].Replace("^^", "\"");
 				string? ssdata = args[args.ToList().IndexOf("-ss") + 1].Replace("^^", "\"");
@@ -176,6 +180,10 @@ namespace NetBlox
 				LogManager.LogError("A fatal error had occurred during NetBlox initialization! " + ex.GetType() + ", msg: " + ex.Message + ", stacktrace: " + ex.StackTrace);
 				Environment.Exit(ex.GetHashCode());
 				for (;;); // perhaps platform we're running on does not support exiting.
+			}
+			finally
+			{
+				AppManager.CurrentGameManager = oldgm;
 			}
 		}
 		public void SetupCoreGui()

@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)GameConfiguration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GameManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HumanoidControl.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Animation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Backpack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
@@ -75,6 +76,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)runtime\ImpersonateDuringReplicationAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />

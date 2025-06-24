@@ -105,7 +105,7 @@ ResetButton.MouseButton1Click:Connect(function() -- how do i debug this 😭
 	local pls = game.Players;
 	local lpr = pls.LocalPlayer;
 	local chr = lpr.Character;
-	chr.Health = 0;
+	chr.Humanoid.Health = 0;
 end)
 
 local DamageButton = Instance.new("TextButton");
@@ -120,7 +120,7 @@ DamageButton.MouseButton1Click:Connect(function()
 	local pls = game.Players;
 	local lpr = pls.LocalPlayer;
 	local chr = lpr.Character;
-	chr.Health = chr.Health - 1;
+	chr.Humanoid.Health = chr.Humanoid.Health - 5;
 end)
 
 local CloseButton = Instance.new("TextButton");

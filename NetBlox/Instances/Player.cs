@@ -8,6 +8,7 @@ using System.Text;
 namespace NetBlox.Instances
 {
 	[Creatable]
+	[ImpersonateDuringReplication(Level = 8)]
 	public class Player : Instance
 	{
 		[Lua([Security.Capability.None])]
@@ -157,18 +158,18 @@ namespace NetBlox.Instances
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
 				Position = new(-2f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Left Arm"
+				Name = "Left Arm", CanCollide = false
 			};
 			var rightarm = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
 				Position = new(1f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Right Arm"
+				Name = "Right Arm", CanCollide = false
 			};
 			var head = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
-				Position = new(-0.5f, 0.5f, 0), Size = new(2, 1, 1), TopSurface = SurfaceType.Studs,
+				Position = new(-0.5f, 0.5f, 0), Size = new(1, 1, 1), TopSurface = SurfaceType.Studs,
 				Name = "Head"
 			};
 			_ = new Decal(GameManager)
