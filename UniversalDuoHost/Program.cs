@@ -24,7 +24,7 @@ namespace UniversalDuoHost
 			}, ["-ss", "{\"f\":" + port + "}"], (x) =>
 			{
 				if (rbxlfile == null)
-					x.LoadDefault();
+					x.LoadDefault(1);
 				else
 				{
 					x.CurrentRoot.Load(rbxlfile);

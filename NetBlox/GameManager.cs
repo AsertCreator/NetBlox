@@ -271,6 +271,7 @@ namespace NetBlox
 									Color3 = Color.White,
 									Position = new(i * 1.5f, 60 + j * 1.5f, i * 1.5f),
 									Size = new(1, 1, 1),
+									Anchored = false,
 									TopSurface = SurfaceType.Studs,
 									BottomSurface = SurfaceType.Studs,
 									LeftSurface = SurfaceType.Studs,

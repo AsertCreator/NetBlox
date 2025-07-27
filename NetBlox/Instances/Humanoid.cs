@@ -3,6 +3,7 @@ using NetBlox.Common;
 using Raylib_cs;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using NetBlox.Instances.Services;
 
 namespace NetBlox.Instances
 {
@@ -39,6 +40,7 @@ namespace NetBlox.Instances
 		public static HumanoidControl ControlJump = HumanoidControl.GetFor(HumanoidControlType.Jump);
 
 		public HumanoidState State = HumanoidState.Idle;
+		private Workspace? workspace;
 		private bool isDying = false;
 		private BasePart? torsoCache;
 
@@ -90,6 +92,15 @@ namespace NetBlox.Instances
 				State = HumanoidState.Falling;
 			if (Health <= 0)
 				State = HumanoidState.Dead;
+			if (State != HumanoidState.FrozenFalling && primary.LinearVelocity.Length() < 3)
+				State = HumanoidState.Idle;
+
+			if (workspace == null)
+			{
+				workspace = Root.GetService<Workspace>(true);
+				if (workspace == null) // no humanoids may function without a workspace
+					return;
+			}
 
 			switch (State)
 			{
@@ -123,7 +134,41 @@ namespace NetBlox.Instances
 		}
 		private void DoWalking()
 		{
-			State = HumanoidState.Walking;
+			bool ismovingforward = ControlForward.IsPressed();
+			bool ismovingbackward = ControlBackward.IsPressed();
+			bool ismovingsideleft = ControlLeft.IsPressed();
+			bool ismovingsideright = ControlRight.IsPressed();
+
+			var camera = GameManager.RenderManager.MainCamera;
+			float x1 = camera.Position.X;
+			float y1 = camera.Position.Z;
+			float x2 = camera.Target.X;
+			float y2 = camera.Target.Z;
+			float angle = MathF.Atan2(y2 - y1, x2 - x1);
+			float deltatime = (float)TaskScheduler.LastCycleTime.TotalSeconds;
+
+			Vector3 veldelta = default;
+
+			if (ismovingforward)
+				veldelta += new Vector3(
+					WalkSpeed * MathF.Cos(angle) * deltatime, 0, WalkSpeed * MathF.Sin(angle) * deltatime);
+			if (ismovingsideleft)
+				veldelta += new Vector3(
+					WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+			if (ismovingbackward)
+				veldelta += new Vector3(
+					-WalkSpeed * MathF.Cos(angle) * deltatime, 0, -WalkSpeed * MathF.Sin(angle) * deltatime);
+			if (ismovingsideright)
+				veldelta += new Vector3(
+					-WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, -WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+			veldelta = Vector3.Normalize(veldelta);
+
+			if (ismovingbackward || ismovingforward || ismovingsideleft || ismovingsideright)
+			{
+				State = HumanoidState.Walking;
+				PrimaryPart.Velocity = new Vector3((PrimaryPart.Velocity.X + veldelta.X) / 2,
+					PrimaryPart.LinearVelocity.Y, (PrimaryPart.Velocity.Z + veldelta.Z) / 2);
+			}
 		}
 		private void DoSitting()
 		{

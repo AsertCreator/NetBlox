@@ -12,7 +12,14 @@ namespace NetBlox.Instances
 	public class Player : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public Instance? Character { get; set; }
+		public Instance? Character 
+		{ 
+			get => character; 
+			set
+			{
+				character = value;
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public Instance? RespawnLocation { get; set; }
 		[Lua([Security.Capability.None])]
@@ -39,6 +46,8 @@ namespace NetBlox.Instances
 			}
 		}
 
+		public Instance? character;
+		public Vector3 ownershipZoneCenter = default;
 		public bool IsLocalPlayer = false;
 		public RemoteClient? Client;
 		public long userId;
@@ -184,7 +193,10 @@ namespace NetBlox.Instances
 			_ = new Weld(GameManager) { Part0 = torso, Part1 = head, Enabled = true, Parent = head };
 
 			chmodel.PrimaryPart = torso;
-			chmodel.MoveTo(workspace.SpawnLocation.Position + new Vector3(0, 3.5f, 0));
+			if (workspace.SpawnLocation != null)
+				chmodel.MoveTo(workspace.SpawnLocation.Position + new Vector3(0, 3.5f, 0));
+			else
+				chmodel.MoveTo(new Vector3(0, 10, 0));
 
 			var humanoid = new Humanoid(GameManager);
 			humanoid.Parent = chmodel;

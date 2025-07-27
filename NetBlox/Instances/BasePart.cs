@@ -232,7 +232,11 @@ namespace NetBlox.Instances
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
-					localsim.Bodies[BodyHandle.Value].Velocity.Linear = LinearVelocity;
+				{
+					var body = localsim.Bodies[BodyHandle.Value];
+					body.Velocity.Linear = LinearVelocity;
+					body.Awake = true;
+				}
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -407,6 +411,8 @@ namespace NetBlox.Instances
 
 			if (IsGrounded)
 				Raylib.DrawCubeWires(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Red);
+			if (IsDomestic)
+				Raylib.DrawCubeWires(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Blue);
 		}
 		public override void Process() => base.Process();
 		public override bool IsA(string classname) => nameof(BasePart) == classname || base.IsA(classname);
