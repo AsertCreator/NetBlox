@@ -1,6 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
-using NetBlox.Structs;
+using NetBlox.Network;
 using System.Diagnostics;
 
 namespace NetBlox.Instances
@@ -32,7 +32,7 @@ namespace NetBlox.Instances
 								parent.Children.Remove(this);
 							if (GameManager.MainEnvironment != null)
 							{
-								parent.ChildRemoved.Fire(LuaRuntime.PushInstance(this, GameManager));
+								parent.ChildRemoved.Fire(LuaRuntime.PushInstance(this));
 								RaiseDescendantRemoved(this);
 							}
 						}
@@ -47,7 +47,7 @@ namespace NetBlox.Instances
 								value.Children.Add(this);
 							if (GameManager.MainEnvironment != null)
 							{
-								value.ChildAdded.Fire(LuaRuntime.PushInstance(this, GameManager));
+								value.ChildAdded.Fire(LuaRuntime.PushInstance(this));
 								RaiseDescendantAdded(this);
 							}
 						}
@@ -97,6 +97,7 @@ namespace NetBlox.Instances
 		public static Dictionary<int, Table> MetaTables = [];
 		public Table? Table;
 		private Instance? parent;
+		private Type? ThisType;
 		protected DataModel Root => GameManager.CurrentRoot;
 
 		public Instance(GameManager gm)
@@ -109,12 +110,13 @@ namespace NetBlox.Instances
 
 				gm.AllInstances.Add(this);
 			}
+			ThisType = GetType();
 		}
 		public void RaiseDescendantAdded(Instance descendantInQuestion) // not anymore
 		{
 			if (Parent != null)
 			{
-				Parent.DescendantAdded.Fire(LuaRuntime.PushInstance(descendantInQuestion, GameManager));
+				Parent.DescendantAdded.Fire(LuaRuntime.PushInstance(descendantInQuestion));
 				Parent.RaiseDescendantAdded(descendantInQuestion);
 			}
 		}
@@ -122,7 +124,7 @@ namespace NetBlox.Instances
 		{
 			if (Parent != null)
 			{
-				Parent.DescendantRemoved.Fire(LuaRuntime.PushInstance(descendantInQuestion, GameManager));
+				Parent.DescendantRemoved.Fire(LuaRuntime.PushInstance(descendantInQuestion));
 				Parent.RaiseDescendantRemoved(descendantInQuestion);
 			}
 		}
@@ -310,7 +312,7 @@ namespace NetBlox.Instances
 				WasDestroyed = true;
 
 				if (GameManager.AllowReplication)
-					GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_DESTROY, false);
+					GameManager.NetworkManager.AddReplication(this, Replication.REPM_TOALL, Replication.REPW_DESTROY, false);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -470,8 +472,21 @@ namespace NetBlox.Instances
 					throw new ScriptRuntimeException("Cannot call Network Ownership API from client!");
 				Debug.Assert(player.Client != null);
 
-				GameManager.NetworkManager.Confiscate(this);
-				GameManager.NetworkManager.SetOwner(player.Client, this);
+				var prevowner = Owner.Player;
+				var newowner = player;
+
+				if (prevowner != null)
+					prevowner.Client.SendPacket(NPUpdatePlayerOwnership.Create(this, false));
+				else
+					IsDomestic = false;
+				if (newowner != null)
+					newowner.Client.SendPacket(NPUpdatePlayerOwnership.Create(this, true));
+				else
+					IsDomestic = true;
+
+				Owner = newowner.Client;
+
+				OnNetworkOwnershipChanged();
 
 				for (int i = 0; i < Children.Count; i++)
 				{
@@ -535,7 +550,7 @@ namespace NetBlox.Instances
 						Thread.Sleep(50);
 					else
 					{
-						job.ScriptJobContext.YieldReturn = [ LuaRuntime.PushInstance(ch, ch.GameManager) ];
+						job.ScriptJobContext.YieldReturn = [ LuaRuntime.PushInstance(ch) ];
 						return;
 					}
 				}
@@ -567,10 +582,11 @@ namespace NetBlox.Instances
 				{
 					if (DateTime.UtcNow > DoNotReplicateUntil || immediate)
 					{
-						var rep = GameManager.NetworkManager.AddReplication(this, NetworkManager.Replication.REPM_BUTOWNER, NetworkManager.Replication.REPW_PROPCHG, false);
+						var rep = GameManager.NetworkManager.AddReplication(this, Replication.REPM_BUTOWNER, Replication.REPW_PROPCHG, false);
+
 						if (rep != null)
 						{
-							rep.Properties = props;
+							rep.Properties = (from x in props select ThisType.GetProperty(x)).ToArray();
 							DoNotReplicateUntil = DateTime.UtcNow.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
 						}
 					}

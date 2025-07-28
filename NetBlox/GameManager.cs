@@ -6,6 +6,7 @@ using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using NetBlox.Network;
 using Raylib_cs;
 using System.Diagnostics;
 

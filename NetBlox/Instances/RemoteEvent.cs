@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,6 @@ namespace NetBlox.Instances
 		public LuaSignal OnClientEvent { get; set; } = new();
 		[Lua([Security.Capability.None])]
 		public LuaSignal OnServerEvent { get; set; } = new();
-		public Action<object[]>? FastCallback;
 
 		public RemoteEvent(GameManager ins) : base(ins) { }
 
@@ -23,12 +23,8 @@ namespace NetBlox.Instances
 			if (!GameManager.NetworkManager.IsClient)
 				throw new ScriptRuntimeException("Cannot call FireServer on server!");
 
-			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
-			{
-				Data = SerializationManager.SerializeLuaObject(table, GameManager),
-				Recievers = [],
-				RemoteEventId = UniqueID
-			});
+			NetworkPacket packet = NPRemoteEvent.Create(this, table);
+			GameManager.NetworkManager.SendServerboundPacket(packet);
 		}
 		[Lua([Security.Capability.None])]
 		public void FireClient(Player plr, DynValue table)
@@ -36,12 +32,8 @@ namespace NetBlox.Instances
 			if (!GameManager.NetworkManager.IsServer)
 				throw new ScriptRuntimeException("Cannot call FireClient on client!");
 
-			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
-			{
-				Data = SerializationManager.SerializeLuaObject(table, GameManager),
-				Recievers = [plr.Client ?? throw new ScriptRuntimeException("This Player is not supported")], // say what
-				RemoteEventId = UniqueID
-			});
+			NetworkPacket packet = NPRemoteEvent.Create(this, table);
+			plr.Client.SendPacket(packet);
 		}
 		[Lua([Security.Capability.None])]
 		public void FireAllClients(DynValue table)
@@ -49,12 +41,13 @@ namespace NetBlox.Instances
 			if (!GameManager.NetworkManager.IsServer)
 				throw new ScriptRuntimeException("Cannot call FireAllClients on client!");
 
-			GameManager.NetworkManager.RemoteEventQueue.Enqueue(new NetworkManager.RemoteEventPacket()
+			NetworkPacket packet = NPRemoteEvent.Create(this, table);
+
+			for (int i = 0; i < GameManager.NetworkManager.Clients.Count; i++)
 			{
-				Data = SerializationManager.SerializeLuaObject(table, GameManager),
-				Recievers = [.. GameManager.NetworkManager.Clients],
-				RemoteEventId = UniqueID
-			});
+				var rc = GameManager.NetworkManager.Clients[i];
+				rc.SendPacket(packet);
+			}
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

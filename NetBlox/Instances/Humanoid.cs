@@ -4,6 +4,7 @@ using Raylib_cs;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 
 namespace NetBlox.Instances
 {
@@ -51,6 +52,11 @@ namespace NetBlox.Instances
 		{
 			if (nameof(Humanoid) == classname) return true;
 			return base.IsA(classname);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void ResetCharacter()
+		{
+			GameManager.NetworkManager.SendServerboundPacket(NPCharacterReset.Create(Parent));
 		}
 		public override void Process()
 		{
@@ -128,7 +134,11 @@ namespace NetBlox.Instances
 					break;
 				case HumanoidState.Dead:
 					Health = 0;
-					(Parent as Model)?.BreakJoints();
+					if (!isDying)
+					{
+						Die();
+						isDying = true;
+					}
 					break;
 			}
 		}
@@ -231,7 +241,17 @@ namespace NetBlox.Instances
 		}
 		public void Die()
 		{
-			LogManager.LogInfo("Character had died!");
+			if (GameManager.NetworkManager.IsServer)
+			{
+				(Parent as Model)?.BreakJoints();
+				Task.Delay(4000).ContinueWith(_ =>
+				{
+					TaskScheduler.Schedule(() =>
+					{
+
+					});
+				});
+			}
 		}
 	}
 }

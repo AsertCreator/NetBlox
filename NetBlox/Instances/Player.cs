@@ -2,6 +2,7 @@
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using NetBlox.Network;
 using System.Numerics;
 using System.Text;
 
@@ -23,7 +24,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public Instance? RespawnLocation { get; set; }
 		[Lua([Security.Capability.None])]
-		public bool Guest { get; set; }
+		public bool Guest => userId < 0;
 		[Lua([Security.Capability.None])]
 		public long UserId => userId;
 		[Lua([Security.Capability.None])]
@@ -47,7 +48,6 @@ namespace NetBlox.Instances
 		}
 
 		public Instance? character;
-		public Vector3 ownershipZoneCenter = default;
 		public bool IsLocalPlayer = false;
 		public RemoteClient? Client;
 		public long userId;

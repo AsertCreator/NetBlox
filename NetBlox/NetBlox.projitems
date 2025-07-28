@@ -76,6 +76,18 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Workspace.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NetworkPacket.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NetworkPacketHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPCharacterReset.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPChat.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPClientDisconnect.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPClientIntroduction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPRemoteEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPReplication.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPServerIntroduction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPUpdatePlayerBufferZone.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPUpdatePlayerOwnership.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\Replication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)runtime\ImpersonateDuringReplicationAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
@@ -98,7 +110,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaRuntime.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\LuaSignal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\CFrame.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structs\RemoteClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\RemoteClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\NetworkIdentity.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Shape.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Skybox.cs" />

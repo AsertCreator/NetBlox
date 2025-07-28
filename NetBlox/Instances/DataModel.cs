@@ -12,6 +12,8 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public long CreatorId => GameManager.CurrentIdentity.Author.GetHashCode(); // worky around
 		[Lua([Security.Capability.None])]
+		public string AuthorName => GameManager.CurrentIdentity.Author;
+		[Lua([Security.Capability.None])]
 		public long GameId => (long)GameManager.CurrentIdentity.UniverseID;
 		[Lua([Security.Capability.None])]
 		public long PlaceId => (long)GameManager.CurrentIdentity.PlaceID;
@@ -91,6 +93,11 @@ namespace NetBlox.Instances
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableWhiteOut(bool huh) =>	GameManager.RenderManager.WhiteOut = huh;
+		[Lua([Security.Capability.CoreSecurity])]
+		public int CountReplicatableClientObjects()
+		{
+			return 5; // TODO: normal instance counting
+		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Load(string url)
 		{

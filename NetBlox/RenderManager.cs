@@ -342,6 +342,7 @@ namespace NetBlox
 						x.Wait();
 						{
 							var tex = Raylib.LoadTexture(x.Result);
+							Raylib.SetTextureFilter(tex, TextureFilter.Anisotropic16X);
 							TextureCache[el.Item1] = tex;
 							el.Item2(tex);
 						};

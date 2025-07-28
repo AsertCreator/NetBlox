@@ -1,17 +1,13 @@
 ﻿using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.DataTypes;
-using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Structs;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime;
-using System.Text;
-using System.Threading;
 using Script = MoonSharp.Interpreter.Script;
 
 namespace NetBlox.Runtime
@@ -20,6 +16,7 @@ namespace NetBlox.Runtime
 	{
 		public static Exception? LastException;
 		public static int ScriptExecutionTimeout = 700;
+		public static object GlobalLock = new();
 		private readonly static Type DynValueType = typeof(DynValue);
 
 		public static void Setup(GameManager gm)
@@ -40,7 +37,7 @@ namespace NetBlox.Runtime
 				tenv.Globals["shared"] = DynValue.NewTable(tenv);
 				tenv.Globals["_VERSION"] = gm.CurrentRoot.GetService<PlatformService>().FormatVersion();
 
-				tenv.Globals["game"] = PushInstance(gm.CurrentRoot, gm);
+				tenv.Globals["game"] = PushInstance(gm.CurrentRoot);
 				tenv.Globals["Game"] = tenv.Globals["game"];
 
 				tenv.Globals["load"] = DynValue.Nil;
@@ -185,7 +182,7 @@ namespace NetBlox.Runtime
 						part.Table.RequireType(MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Instance, 1, "Instance.new");
 						inst.Parent = (Instance)parent;
 					}
-					return PushInstance(inst, gm);
+					return PushInstance(inst);
 				}
 				catch
 				{
@@ -290,12 +287,13 @@ namespace NetBlox.Runtime
 		{
 			LogManager.LogError(msg);
 		}
-		public static DynValue PushInstance(Instance? targetInstanceIWantToForget, GameManager gm)
+		public static DynValue PushInstance(Instance? targetInstanceIWantToForget)
 		{
-			var scr = gm.MainEnvironment;
-
 			if (targetInstanceIWantToForget == null)
 				return DynValue.Nil;
+
+			var gm = targetInstanceIWantToForget.GameManager;
+			var scr = gm.MainEnvironment;
 
 			// i want to bulge out my eyes
 			if (targetInstanceIWantToForget.Table != null) return DynValue.NewTable(targetInstanceIWantToForget.Table);
@@ -421,7 +419,7 @@ namespace NetBlox.Runtime
 
 						return child == null
 							? throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"")
-							: PushInstance(child, gm);
+							: PushInstance(child);
 					}
 				});
 				meta["__newindex"] = DynValue.NewCallback((x, y) =>
@@ -455,9 +453,7 @@ namespace NetBlox.Runtime
 								value.Fire(val);
 
 							if (gm.NetworkManager.IsServer || inst.IsDomestic)
-								gm.NetworkManager.AddReplication(inst, 
-									NetworkManager.Replication.REPM_TOALL, 
-									NetworkManager.Replication.REPW_PROPCHG, false);
+								gm.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_PROPCHG, false);
 						}
 					}
 
@@ -471,7 +467,7 @@ namespace NetBlox.Runtime
 				{
 					MetaTable = meta,
 					AssociatedObject = targetInstanceIWantToForget,
-					ObjectType = MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Instance,
+					ObjectType = AssociatedObjectType.Instance,
 					IsProtected = true
 				};
 				targetInstanceIWantToForget.Table = table;

@@ -26,14 +26,13 @@ namespace UniversalDuoHost
 				if (rbxlfile == null)
 					x.LoadDefault(1);
 				else
-				{
 					x.CurrentRoot.Load(rbxlfile);
-					x.CurrentIdentity.PlaceName = "Personal Place";
-					x.CurrentIdentity.UniverseName = "NetBlox Defaults";
-					x.CurrentIdentity.Author = "The Lord";
-					x.CurrentIdentity.MaxPlayerCount = 5;
-					x.CurrentRoot.Name = x.CurrentRoot.Name;
-				}
+
+				x.CurrentIdentity.PlaceName = "Personal Place";
+				x.CurrentIdentity.UniverseName = "NetBlox Defaults";
+				x.CurrentIdentity.Author = "The Lord";
+				x.CurrentIdentity.MaxPlayerCount = 5;
+				x.CurrentRoot.Name = x.CurrentRoot.Name;
 
 				Task.Run(x.NetworkManager.StartServer);
 			});
