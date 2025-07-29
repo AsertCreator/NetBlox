@@ -133,7 +133,7 @@ namespace NetBlox.Network
 			if (impattrib != null)
 				Security.EndImpersonate();
 
-			if (gm.NetworkManager.LoadedInstanceCount++ >= gm.NetworkManager.TargetInstanceCount && !gm.NetworkManager.IsLoaded)
+			if (++gm.NetworkManager.LoadedInstanceCount >= gm.NetworkManager.TargetInstanceCount && !gm.NetworkManager.IsLoaded)
 			{
 				gm.NetworkManager.IsLoaded = true;
 				gm.CurrentRoot.GetService<CoreGui>().HideTeleportGui();

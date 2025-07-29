@@ -2,6 +2,7 @@
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Runtime;
 using NetBlox.Server;
 using NetBlox.Structs;
@@ -122,9 +123,9 @@ namespace NetBlox.Server
 												{
 													Parent = workspace,
 												};
-												x.NetworkManager.AddReplication(p0, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
-												x.NetworkManager.AddReplication(p1, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
-												x.NetworkManager.AddReplication(anim, NetworkManager.Replication.REPM_TOALL, NetworkManager.Replication.REPW_NEWINST);
+												x.NetworkManager.AddReplication(p0, Replication.REPM_TOALL, Replication.REPW_NEWINST);
+												x.NetworkManager.AddReplication(p1, Replication.REPM_TOALL, Replication.REPW_NEWINST);
+												x.NetworkManager.AddReplication(anim, Replication.REPM_TOALL, Replication.REPW_NEWINST);
 												break;
 											default:
 												Console.WriteLine("No test is associated with " + idx);

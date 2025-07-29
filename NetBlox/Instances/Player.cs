@@ -23,10 +23,8 @@ namespace NetBlox.Instances
 
 				var humanoid = value.FindFirstChild("Humanoid") as Humanoid;
 				if (humanoid == null)
-				{
-					LogManager.LogWarn("Cannot set Character property of Player to non-character model!");
 					return;
-				}
+
 				character = value;
 				if (GameManager.NetworkManager.IsServer)
 				{
