@@ -18,7 +18,33 @@ namespace NetBlox.Instances
 			get => character; 
 			set
 			{
+				if (value == null)
+					return;
+
+				var humanoid = value.FindFirstChild("Humanoid") as Humanoid;
+				if (humanoid == null)
+				{
+					LogManager.LogWarn("Cannot set Character property of Player to non-character model!");
+					return;
+				}
 				character = value;
+				if (GameManager.NetworkManager.IsServer)
+				{
+					Client.WaitForInstanceArrival(humanoid, () =>
+					{
+						// we're "hopefully" guaranteed that character's model had already replicated, so
+						// it technically qualifies as a working humanoid
+						character.SetNetworkOwner(this);
+						Client.SendPacket(NPSetPlayableCharacter.Create(character as Model));
+					});
+				}
+				else
+				{
+					humanoid.IsLocalPlayer = true;
+
+					var camera = GameManager.CurrentRoot.GetService<Workspace>().CurrentCamera as Camera;
+					camera.CameraSubject = humanoid;
+				}
 			}
 		}
 		[Lua([Security.Capability.None])]

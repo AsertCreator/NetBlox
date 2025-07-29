@@ -47,6 +47,15 @@ namespace NetBlox.Network
 
 			Connection.SendRawData("nb3-packet", stream.ToArray());
 		}
+		public void	WaitForInstanceArrival(Instance inst, Action callback)
+		{
+			SendPacket(NPCallbackOnInstanceArrival.Create(inst.UniqueID));
+			Replication.AwaitingInstanceMap[(this, inst.UniqueID)] = () =>
+			{
+				Replication.AwaitingInstanceMap.Remove((this, inst.UniqueID));
+				callback();
+			};
+		}
 		public override string ToString()
 		{
 			if (Username == null)

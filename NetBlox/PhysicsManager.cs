@@ -8,6 +8,7 @@ using BepuUtilities.Memory;
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Runtime;
 using Raylib_cs;
 using System.Diagnostics;
@@ -81,7 +82,7 @@ namespace NetBlox
 					}
 
 					if (box.IsDirty)
-						box.ReplicateProperties(["Position", "Rotation", "Velocity"], false);
+						GameManager.NetworkManager.SendServerboundPacket(NPPhysicsReplication.Create(box));
 				}
 			}
 		}
@@ -117,7 +118,13 @@ namespace NetBlox
 					}
 
 					if (box.IsDirty)
-						box.ReplicateProperties(["Position", "Rotation", "Velocity"], false);
+					{
+						var clients = GameManager.NetworkManager.Clients;
+						var packet = NPPhysicsReplication.Create(box);
+
+						for (int j = 0; j < clients.Count; j++)
+							clients[j].SendPacket(packet);
+					}
 				}
 			}
 		}
@@ -216,7 +223,7 @@ namespace NetBlox
 			}
 			if (GameManager.PhysicsManager.Collidable2BasePartMap.TryGetValue(pair.B.Packed, out bp1))
 			{
-				bp0.IsGrounded = true;
+				bp1.IsGrounded = true;
 			}
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -231,7 +238,7 @@ namespace NetBlox
 			}
 			if (GameManager.PhysicsManager.Collidable2BasePartMap.TryGetValue(pair.B.Packed, out bp1))
 			{
-				bp0.IsGrounded = false;
+				bp1.IsGrounded = false;
 			}
 		}
 	}
@@ -364,7 +371,8 @@ namespace NetBlox
 		/// <param name="handler">Handlers to use for the collidable.</param>
 		public void Register(CollidableReference collidable, IContactEventHandler handler)
 		{
-			Debug.Assert(!IsListener(collidable), "Should only try to register listeners that weren't previously registered");
+			if (!IsListener(collidable))
+				return;
 			if (collidable.Mobility == CollidableMobility.Static)
 				staticListenerFlags.Add(collidable.RawHandleValue, pool);
 			else
@@ -405,7 +413,8 @@ namespace NetBlox
 		/// <param name="collidable">Collidable to stop listening for.</param>
 		public void Unregister(CollidableReference collidable)
 		{
-			Debug.Assert(IsListener(collidable), "Should only try to unregister listeners that actually exist.");
+			if (IsListener(collidable))
+				return;
 			if (collidable.Mobility == CollidableMobility.Static)
 			{
 				staticListenerFlags.Remove(collidable.RawHandleValue);

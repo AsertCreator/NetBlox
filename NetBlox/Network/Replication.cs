@@ -23,6 +23,8 @@ namespace NetBlox.Network
 		public const int REPW_REPARNT = 2;
 		public const int REPW_DESTROY = 3;
 
+		public static Dictionary<(RemoteClient, Guid), Action> AwaitingInstanceMap = [];
+
 		public Replication(int m, int w, Instance t)
 		{
 			Mode = m;
@@ -106,30 +108,17 @@ namespace NetBlox.Network
 
 				if (ptyp.IsAssignableTo(NetworkManager.InstanceType))
 				{
-					var instser = SerializationManager.NetworkDeserializers.TryGetValue(NetworkManager.InstanceType.FullName, out var x);
-					var inst = x(pbytes, gm);
+					var propguid = new Guid(pbytes);
+					var inst = gm.GetInstance(propguid);
 
 					if (inst == null)
 					{
-						void TryToResetProperty(int reentrancy = 3)
+						gm.NetworkManager.AwaitingForArrival[propguid] = () =>
 						{
-							inst = x(pbytes, gm);
-							if (inst != null)
-								prop.SetValue(ins, inst);
-							else
-							{
-								if (reentrancy == 0)
-									return;
-								TaskScheduler.Schedule(() =>
-								{
-									TryToResetProperty(reentrancy - 1);
-								});
-							}
-						}
-						TaskScheduler.Schedule(() =>
-						{
-							TryToResetProperty();
-						});
+							gm.NetworkManager.AwaitingForArrival[propguid] = null;
+							inst = gm.GetInstance(propguid);
+							prop.SetValue(ins, inst);
+						};
 					}
 					else
 						prop.SetValue(ins, inst);
@@ -148,6 +137,14 @@ namespace NetBlox.Network
 			{
 				gm.NetworkManager.IsLoaded = true;
 				gm.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
+			}
+			if (gm.NetworkManager.AwaitingForArrival.TryGetValue(guid, out var act))
+				act();
+			if (ins is Workspace ws)
+			{
+				Camera cam = new Camera(ws.GameManager);
+				cam.Parent = ws;
+				ws.CurrentCamera = cam;
 			}
 		}
 		private static void ApplyReparent(GameManager gm, RemoteClient? sender, Guid unique, Guid parent)
@@ -233,7 +230,7 @@ namespace NetBlox.Network
 
 				if (prop.PropertyType.IsAssignableTo(NetworkManager.InstanceType))
 				{
-					if (!SerializationManager.NetworkSerializers.TryGetValue("NetBlox.Targettances.Targettance", out var x))
+					if (!SerializationManager.NetworkSerializers.TryGetValue("NetBlox.Instances.Instance", out var x))
 						continue;
 
 					var v = prop.GetValue(Target);

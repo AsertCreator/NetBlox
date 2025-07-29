@@ -472,7 +472,7 @@ namespace NetBlox.Instances
 					throw new ScriptRuntimeException("Cannot call Network Ownership API from client!");
 				Debug.Assert(player.Client != null);
 
-				var prevowner = Owner.Player;
+				var prevowner = Owner != null ? Owner.Player : null;
 				var newowner = player;
 
 				if (prevowner != null)

@@ -328,7 +328,13 @@ namespace NetBlox
 			for (int i = 0; i < c.Length; i++)
 				RenderInstance(c[i]!);
 		}
-		public void ShowKickMessage(string msg) => Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
+		public void ShowKickMessage(string msg, bool isSystemMessage = false)
+		{
+			if (!isSystemMessage)
+				Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
+			else
+				Status = msg;
+		}
 		public void PerformResourceLoading() // e F f I c I e N t  resource loader
 		{
 			for (int i = 0; i < LoadBatchSize; i++)

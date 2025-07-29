@@ -7,7 +7,7 @@ namespace NetBlox.Network
 	{
 		public override int ProbeTargetPacketId => TargetPacketId;
 
-		public const int TargetPacketId = 6;
+		public const int TargetPacketId = (int)NetworkPacketTypeEnum.NPChat;
 
 		public static NetworkPacket Create(ChatMessage message)
 		{

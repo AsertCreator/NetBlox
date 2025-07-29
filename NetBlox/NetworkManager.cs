@@ -31,6 +31,7 @@ namespace NetBlox
 		public Guid ExpectedLocalPlayerGuid = default;
 
 		public Queue<Replication> ReplicationQueue = [];
+		public Dictionary<Guid, Action> AwaitingForArrival = [];
 
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer? Server;
@@ -175,6 +176,8 @@ namespace NetBlox
 		}
 		public void SendServerboundPacket(NetworkPacket packet)
 		{
+			ProfileOutgoing(packet.Id, packet.Data);
+
 			using MemoryStream stream = new();
 			using BinaryWriter writer = new(stream);
 
@@ -214,6 +217,8 @@ namespace NetBlox
 				networkpacket.Data = data;
 				networkpacket.Sender = null;
 				networkpacket.Id = pid;
+
+				ProfileIncoming(pid, data);
 
 				NetworkPacket.DispatchNetworkPacket(GameManager, networkpacket);
 			});

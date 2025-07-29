@@ -45,7 +45,7 @@ namespace NetBlox.Instances
 				if (value == enabled)
 					return;
 
-				if (IsDomestic)
+				if (NormalizeOwnerships(Part0 as BasePart, Part1 as BasePart))
 				{
 					if (value)
 						CreateWeld();
@@ -73,7 +73,7 @@ namespace NetBlox.Instances
 		}
 		public override void OnNetworkOwnershipChanged()
 		{
-			if (IsDomestic)
+			if (NormalizeOwnerships(Part0 as BasePart, Part1 as BasePart))
 			{
 				if (Enabled)
 					CreateWeld();
@@ -93,6 +93,61 @@ namespace NetBlox.Instances
 
 			sim.Solver.Remove(weldHandle);
 		}
+		/// <summary>
+		/// Normalizes network ownerships between two parts for weld to work.
+		/// </summary>
+		/// <returns>true, if the weld can be simulated locally, otherwise false</returns>
+		private bool NormalizeOwnerships(BasePart p0, BasePart p1)
+		{
+			if (p0 == null || p1 == null)
+				return false;
+
+			if (GameManager.NetworkManager.IsServer)
+			{
+				// p0 and p1 are both server-owned, we result in nothing
+				if (p0.Owner == null && p1.Owner == null)
+					return true;
+				// p0 is client-owned and p1 is server-owned, we result in both being client-sided
+				if (p0.Owner != null && p1.Owner == null)
+				{
+					p1.SetNetworkOwner(p0.Owner.Player);
+					this.SetNetworkOwner(p0.Owner.Player);
+					return false;
+				}
+				// p0 is server-owned and p1 is client-owned, we result in both being client-sided
+				if (p0.Owner == null && p1.Owner != null)
+				{
+					p0.SetNetworkOwner(p1.Owner.Player);
+					this.SetNetworkOwner(p1.Owner.Player);
+					return false;
+				}
+				// p0 and p1 are both client-owned by different people, we result in both being server-sided
+				if (p0.Owner != null && p1.Owner != null && p0.Owner != p1.Owner)
+				{
+					p0.SetNetworkOwner(null);
+					p1.SetNetworkOwner(null);
+					return true;
+				}
+				// p0 and p1 are both client-owned by the same person, we result in weld not being simulated here
+				if (p0.Owner != null && p1.Owner != null && p0.Owner != p1.Owner)
+				{
+					this.SetNetworkOwner(p0.Owner.Player);
+					return false;
+				}
+				return false;
+			}
+			else
+			{
+				if (p0.IsDomestic && p1.IsDomestic) // both are domestic
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
 		private void CreateWeld()
 		{
 			var sim = GameManager.PhysicsManager.LocalSimulation;
@@ -102,12 +157,6 @@ namespace NetBlox.Instances
 			if (Part0 == Part1)
 			{
 				LogManager.LogWarn("Part0 and Part1 properties of Weld cannot be set to the same part!");
-				return;
-			}
-
-			if (b0 == null || b1 == null)
-			{
-				LogManager.LogWarn("Part0 and Part1 properties of Weld only support BaseParts!");
 				return;
 			}
 

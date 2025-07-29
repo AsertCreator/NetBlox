@@ -7,7 +7,7 @@ namespace NetBlox.Network
 	{
 		public override int ProbeTargetPacketId => TargetPacketId;
 
-		public const int TargetPacketId = 7;
+		public const int TargetPacketId = (int)NetworkPacketTypeEnum.NPCharacterReset;
 
 		public static NetworkPacket Create(Instance character)
 		{

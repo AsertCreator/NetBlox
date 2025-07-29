@@ -7,7 +7,7 @@ namespace NetBlox.Network
 	{
 		public override int ProbeTargetPacketId => TargetPacketId;
 
-		public const int TargetPacketId = 4;
+		public const int TargetPacketId = (int)NetworkPacketTypeEnum.NPUpdatePlayerBufferZone;
 
 		private struct UpdatePlayerBufferZone
 		{

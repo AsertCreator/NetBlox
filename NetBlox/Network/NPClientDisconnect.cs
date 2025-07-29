@@ -4,7 +4,7 @@ namespace NetBlox.Network
 	{
 		public override int ProbeTargetPacketId => TargetPacketId;
 
-		public const int TargetPacketId = -1;
+		public const int TargetPacketId = (int)NetworkPacketTypeEnum.NPClientDisconnection;
 
 		private struct ClientDisconnection
 		{
@@ -12,11 +12,12 @@ namespace NetBlox.Network
 			public ushort ServerVersionMinor;
 			public ushort ServerVersionPatch;
 			public string KickMessage;
+			public bool IsSystemMessage;
 		}
 
 		// i wish c# had "static method contracts" so i could make these statics standardized.
 
-		public static NetworkPacket Create(string message)
+		public static NetworkPacket Create(string message, bool isSystemMessage = false)
 		{
 			using MemoryStream stream = new();
 			using BinaryWriter writer = new(stream);
@@ -25,6 +26,7 @@ namespace NetBlox.Network
 			writer.Write((ushort)Common.Version.VersionMinor);
 			writer.Write((ushort)Common.Version.VersionPatch);
 			writer.Write(message);
+			writer.Write(isSystemMessage);
 
 			return new NetworkPacket(TargetPacketId, stream.ToArray(), null);
 		}
@@ -36,9 +38,10 @@ namespace NetBlox.Network
 			disconnection.ServerVersionMinor = reader.ReadUInt16();
 			disconnection.ServerVersionPatch = reader.ReadUInt16();
 			disconnection.KickMessage = reader.ReadString();
+			disconnection.IsSystemMessage = reader.ReadBoolean();
 
 			packet.Sender.Connection.Close(global::Network.Enums.CloseReason.ClientClosed);
-			gm.RenderManager?.ShowKickMessage(disconnection.KickMessage);
+			gm.RenderManager?.ShowKickMessage(disconnection.KickMessage, disconnection.IsSystemMessage);
 			gm.ProhibitScripts = true;
 			gm.IsRunning = false;
 

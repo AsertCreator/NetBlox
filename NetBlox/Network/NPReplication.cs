@@ -4,7 +4,7 @@ namespace NetBlox.Network
 	{
 		public override int ProbeTargetPacketId => TargetPacketId;
 
-		public const int TargetPacketId = 3;
+		public const int TargetPacketId = (int)NetworkPacketTypeEnum.NPReplication;
 
 		// i wish c# had "static method contracts" so i could make these statics standardized.
 
@@ -25,6 +25,8 @@ namespace NetBlox.Network
 			int mode = reader.ReadInt32();
 			int what = reader.ReadInt32();
 			byte[] data = packet.Data[8..];
+
+			gm.IsRunning = true;
 
 			Replication.ApplyFromBytes(gm, packet.Sender, mode, what, data);
 			return;

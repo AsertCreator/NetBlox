@@ -240,6 +240,25 @@ namespace NetBlox.Instances
 			}
 		}
 		[Lua([Security.Capability.None])]
+		public Vector3 AngularVelocity
+		{
+			get => RotationalVelocity;
+			set
+			{
+				if (RotationalVelocity == value)
+					return;
+				RotationalVelocity = value;
+
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
+				if (BodyHandle.HasValue)
+				{
+					var body = localsim.Bodies[BodyHandle.Value];
+					body.Velocity.Angular = RotationalVelocity;
+					body.Awake = true;
+				}
+			}
+		}
+		[Lua([Security.Capability.None])]
 		public CFrame CFrame
 		{
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -295,6 +314,7 @@ namespace NetBlox.Instances
 		public CFrame PartCFrame;
 		public Vector3 _size;
 		public Vector3 LinearVelocity;
+		public Vector3 RotationalVelocity; // what
 		public bool _anchored = false;
 		public Vector3 RenderPositionOffset = default;
 		public Quaternion RenderRotationOffset = Quaternion.Identity;

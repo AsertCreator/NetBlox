@@ -6,7 +6,7 @@ namespace NetBlox.Network
 	{
 		public override int ProbeTargetPacketId => TargetPacketId;
 
-		public const int TargetPacketId = 2;
+		public const int TargetPacketId = (int)NetworkPacketTypeEnum.NPServerIntroduction;
 
 		private unsafe struct ServerHandshake
 		{

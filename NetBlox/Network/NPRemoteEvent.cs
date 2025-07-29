@@ -9,7 +9,7 @@ namespace NetBlox.Network
 	{
 		public override int ProbeTargetPacketId => TargetPacketId;
 
-		public const int TargetPacketId = 8;
+		public const int TargetPacketId = (int)NetworkPacketTypeEnum.NPRemoteEvent;
 
 		public static NetworkPacket Create(RemoteEvent even, DynValue value)
 		{
