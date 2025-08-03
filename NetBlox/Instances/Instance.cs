@@ -98,6 +98,7 @@ namespace NetBlox.Instances
 		public Table? Table;
 		private Instance? parent;
 		private Type? ThisType;
+		private bool containsInstanceReferences;
 		protected DataModel Root => GameManager.CurrentRoot;
 
 		public Instance(GameManager gm)
@@ -107,6 +108,9 @@ namespace NetBlox.Instances
 				Name = ClassName;
 				UniqueID = Guid.NewGuid();
 				GameManager = gm;
+
+				if (InstanceCreator.InstancesWithInstanceReferences.Contains(GetType()))
+					containsInstanceReferences = true;
 
 				gm.AllInstances.Add(this);
 			}
@@ -304,6 +308,16 @@ namespace NetBlox.Instances
 			if (!WasDestroyed)
 			{
 				Destroying.Fire();
+
+				// fck it im gonna delete all references old fashioned way
+				for (int i = 0; i < GameManager.AllInstances.Count; i++)
+				{
+					var inst = GameManager.AllInstances[i];
+					if (inst.containsInstanceReferences)
+					{
+						inst.ClearReferencesTo(this);
+					}
+				}
 
 				Parent = null;
 				ClearAllChildren();
@@ -556,6 +570,24 @@ namespace NetBlox.Instances
 				}
 			});
 			return new();
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void ClearReferencesTo(Instance inst)
+		{
+			var props = GetType().GetProperties();
+			for (int i = 0; i < props.Length; i++)
+			{
+				var prop = props[i];
+				if (prop.PropertyType.IsAssignableTo(NetworkManager.InstanceType))
+				{
+					if (prop.Name != "Parent")
+					{
+						var obj = prop.GetValue(this);
+						if (obj == inst)
+							prop.SetValue(this, null);
+					}
+				}
+			}
 		}
 		public Task<Instance> WaitForChildInternal(string name)
 		{

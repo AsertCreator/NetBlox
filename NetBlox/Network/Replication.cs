@@ -2,6 +2,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
+using System.Net.Sockets;
 using System.Reflection;
 
 namespace NetBlox.Network
@@ -113,12 +114,16 @@ namespace NetBlox.Network
 
 					if (inst == null)
 					{
-						gm.NetworkManager.AwaitingForArrival[propguid] = () =>
+						(Guid, Action)? shitit = null;
+
+						shitit = (propguid, () =>
 						{
-							gm.NetworkManager.AwaitingForArrival[propguid] = null;
+							gm.NetworkManager.AwaitingForArrival.Remove(shitit.Value);
 							inst = gm.GetInstance(propguid);
 							prop.SetValue(ins, inst);
-						};
+						});
+
+						gm.NetworkManager.AwaitingForArrival.Add(shitit.Value);
 					}
 					else
 						prop.SetValue(ins, inst);
@@ -138,8 +143,11 @@ namespace NetBlox.Network
 				gm.NetworkManager.IsLoaded = true;
 				gm.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
 			}
-			if (gm.NetworkManager.AwaitingForArrival.TryGetValue(guid, out var act))
-				act();
+
+			var shit = gm.NetworkManager.AwaitingForArrival.FindIndex(x => x.Item1 == guid);
+			if (shit != -1)
+				gm.NetworkManager.AwaitingForArrival[shit].Item2();
+
 			if (ins is Workspace ws)
 			{
 				Camera cam = new Camera(ws.GameManager);

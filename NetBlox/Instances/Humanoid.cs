@@ -104,12 +104,13 @@ namespace NetBlox.Instances
 			switch (State)
 			{
 				case HumanoidState.Idle:
-					torsoCache.Rotation = default;
+					// torsoCache.Rotation = default;
 					DoWalking();
 					break;
 				case HumanoidState.Falling:
-					torsoCache.Rotation = default;
+					// torsoCache.Rotation = default;
 					DoFalling();
+					DoWalking();
 					break;
 				case HumanoidState.Sitting:
 					DoSitting();
@@ -152,6 +153,9 @@ namespace NetBlox.Instances
 
 			Vector3 veldelta = default;
 
+			if (ControlJump.IsPressed() && State != HumanoidState.Falling)
+				StandUp();
+
 			if (ismovingforward)
 				veldelta += new Vector3(
 					WalkSpeed * MathF.Cos(angle) * deltatime, 0, WalkSpeed * MathF.Sin(angle) * deltatime);
@@ -164,13 +168,16 @@ namespace NetBlox.Instances
 			if (ismovingsideright)
 				veldelta += new Vector3(
 					-WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, -WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
-			veldelta = Vector3.Normalize(veldelta);
+			veldelta = Vector3.Normalize(veldelta) * WalkSpeed;
 
 			if (ismovingbackward || ismovingforward || ismovingsideleft || ismovingsideright)
 			{
-				State = HumanoidState.Walking;
-				PrimaryPart.Velocity = new Vector3((PrimaryPart.Velocity.X + veldelta.X) / 2,
-					PrimaryPart.LinearVelocity.Y, (PrimaryPart.Velocity.Z + veldelta.Z) / 2);
+				if (State != HumanoidState.Falling)
+				{
+					State = HumanoidState.Walking;
+				}
+				PrimaryPart.Velocity = new Vector3((PrimaryPart.LinearVelocity.X + veldelta.X) / 2,
+					PrimaryPart.LinearVelocity.Y, (PrimaryPart.LinearVelocity.Z + veldelta.Z) / 2);
 			}
 		}
 		private void DoSitting()

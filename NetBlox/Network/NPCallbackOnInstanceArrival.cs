@@ -33,11 +33,15 @@ namespace NetBlox.Network
 				return;
 			}
 
-			gm.NetworkManager.AwaitingForArrival[guid] = () =>
+			(Guid, Action)? tuple = null;
+
+			tuple = (guid, new Action(() =>
 			{
-				gm.NetworkManager.AwaitingForArrival.Remove(guid);
+				gm.NetworkManager.AwaitingForArrival.Remove(tuple.Value); // c# go to hell
 				gm.NetworkManager.SendServerboundPacket(Create(guid));
-			};
+			}));
+
+			gm.NetworkManager.AwaitingForArrival.Add(tuple.Value);
 		}
 		public override void HandleServerbound(GameManager gm, NetworkPacket packet, BinaryReader reader)
 		{

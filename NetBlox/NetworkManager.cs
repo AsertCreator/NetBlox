@@ -31,7 +31,7 @@ namespace NetBlox
 		public Guid ExpectedLocalPlayerGuid = default;
 
 		public Queue<Replication> ReplicationQueue = [];
-		public Dictionary<Guid, Action> AwaitingForArrival = [];
+		public List<(Guid, Action)> AwaitingForArrival = [];
 
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer? Server;
