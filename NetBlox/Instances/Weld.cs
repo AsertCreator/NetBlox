@@ -92,6 +92,7 @@ namespace NetBlox.Instances
 			var sim = GameManager.PhysicsManager.LocalSimulation;
 
 			sim.Solver.Remove(weldHandle);
+			weldHandle = default;
 		}
 		/// <summary>
 		/// Normalizes network ownerships between two parts for weld to work.

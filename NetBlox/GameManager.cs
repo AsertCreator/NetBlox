@@ -256,30 +256,42 @@ namespace NetBlox
 						{
 							Parent = ws,
 							Color3 = Color.DarkGreen,
-							Position = new(0, -45f, 0),
+							Position = new(0, 5f, 0),
 							Size = new(512, 2, 512),
 							TopSurface = SurfaceType.Studs,
 							Anchored = true
 						};
-
-						for (int i = 0; i < 7; i++)
+						SpawnLocation sloc = new(this)
 						{
-							for (int j = 0; j < i; j++)
+							Parent = ws,
+							Color3 = Color.Gray,
+							Position = new(0, 6f, 0),
+							Size = new(6, 1, 6),
+							TopSurface = SurfaceType.Studs,
+							Anchored = true
+						};
+
+						for (int k = 0; k < 7; k++)
+						{
+							for (int i = 0; i < 7; i++)
 							{
-								_ = new Part(this)
+								for (int j = 0; j < i; j++)
 								{
-									Parent = ws,
-									Color3 = Color.White,
-									Position = new(i * 1.5f, 60 + j * 1.5f, i * 1.5f),
-									Size = new(1, 1, 1),
-									Anchored = false,
-									TopSurface = SurfaceType.Studs,
-									BottomSurface = SurfaceType.Studs,
-									LeftSurface = SurfaceType.Studs,
-									RightSurface = SurfaceType.Studs,
-									FrontSurface = SurfaceType.Studs,
-									BackSurface = SurfaceType.Studs,
-								};
+									_ = new Part(this)
+									{
+										Parent = ws,
+										Color3 = Color.White,
+										Position = new(k * 1.5f, 20 + j * 1.5f, i * 1.5f),
+										Size = new(1, 1, 1),
+										Anchored = false,
+										TopSurface = SurfaceType.Studs,
+										BottomSurface = SurfaceType.Studs,
+										LeftSurface = SurfaceType.Studs,
+										RightSurface = SurfaceType.Studs,
+										FrontSurface = SurfaceType.Studs,
+										BackSurface = SurfaceType.Studs,
+									};
+								}
 							}
 						}
 
@@ -287,7 +299,7 @@ namespace NetBlox
 						{
 							Parent = ws,
 							Color3 = Color.White,
-							Position = new(-10, 70, -10),
+							Position = new(-10, 40, -10),
 							Size = new(1, 40, 1),
 							TopSurface = SurfaceType.Studs,
 							BottomSurface = SurfaceType.Studs,
@@ -382,15 +394,23 @@ namespace NetBlox
 			CurrentIdentity.UniverseID = 0;
 
 			CurrentRoot.Name = CurrentIdentity.PlaceName;
+			CurrentRoot.GetService<Workspace>().SetNetworkOwner(null);
 		}
 		public Instance? GetInstance(Guid id)
 		{
-			for (int i = 0; i < AllInstances.Count; i++)
+			try
 			{
-				if (AllInstances[i].UniqueID == id)
-					return AllInstances[i];
+				for (int i = 0; i < AllInstances.Count; i++)
+				{
+					if (AllInstances[i].UniqueID == id)
+						return AllInstances[i];
+				}
+				return null;
 			}
-			return null;
+			catch (NullReferenceException ex) // may devil save me
+			{
+				return null;
+			}
 		}
 		public void ProcessInstance(Instance inst)
 		{
@@ -418,5 +438,6 @@ namespace NetBlox
 				// no
 			}
 		}
+		public override string ToString() => "GM-" + ManagerName;
 	}
 }

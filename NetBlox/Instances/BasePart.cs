@@ -195,6 +195,36 @@ namespace NetBlox.Instances
 				OnRotationChanged(rotq);
 			}
 		}
+		internal Quaternion QuaternionRotation
+		{
+			get => _rotation;
+			set
+			{
+				if (_rotation == value)
+					return;
+				_rotation = value;
+
+				var localsim = GameManager.PhysicsManager.LocalSimulation;
+				if (BodyHandle.HasValue)
+				{
+					var body = localsim.Bodies[BodyHandle.Value];
+					if (!body.Exists)
+						return;
+					body.Pose.Orientation = value;
+					body.UpdateBounds();
+				}
+				if (StaticHandle.HasValue)
+				{
+					var stat = localsim.Statics[StaticHandle.Value];
+					if (!stat.Exists)
+						return;
+					stat.Pose.Orientation = value;
+					stat.UpdateBounds();
+				}
+
+				OnRotationChanged(value);
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public Vector3 Size
 		{

@@ -175,11 +175,12 @@ namespace NetBlox.Runtime
 					var key = y[0].CastToString();
 					var inst = InstanceCreator.CreateAccessibleInstanceIfExists(key, gm)
 						?? throw new ScriptRuntimeException("Unable to create Instance of type " + key);
+					inst.IsDomestic = true;
 					if (y.Count > 1)
 					{
 						var part = y[1];
 						var parent = part.Table.AssociatedObject;
-						part.Table.RequireType(MoonSharp.Interpreter.DataTypes.AssociatedObjectType.Instance, 1, "Instance.new");
+						part.Table.RequireType(AssociatedObjectType.Instance, 1, "Instance.new");
 						inst.Parent = (Instance)parent;
 					}
 					return PushInstance(inst);
@@ -452,7 +453,7 @@ namespace NetBlox.Runtime
 							if (inst.ChangedSignals.TryGetValue(key, out LuaSignal? value))
 								value.Fire(val);
 
-							if (gm.NetworkManager.IsServer || inst.IsDomestic)
+							if (gm.NetworkManager.IsServer)
 								gm.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_PROPCHG, false);
 						}
 					}

@@ -40,6 +40,9 @@ namespace NetBlox.Network
 			Vector3 linear = default;
 			Vector3 angular = default;
 
+			if (basepart is null)
+				return;
+
 			position.X = reader.ReadSingle();
 			position.Y = reader.ReadSingle();
 			position.Z = reader.ReadSingle();
@@ -54,9 +57,9 @@ namespace NetBlox.Network
 			angular.Y = reader.ReadSingle();
 			angular.Z = reader.ReadSingle();
 
-			basepart._physicsposition = position;
-			basepart._physicsrotation = rotation;
-			basepart._physicsvelocity = linear;
+			basepart.Position = position;
+			basepart.QuaternionRotation = rotation;
+			basepart.Velocity = linear;
 			basepart.AngularVelocity = angular;
 		}
 		public override void HandleServerbound(GameManager gm, NetworkPacket packet, BinaryReader reader)
@@ -68,6 +71,8 @@ namespace NetBlox.Network
 			Vector3 linear = default;
 			Vector3 angular = default;
 
+			if (basepart is null)
+				return;
 			if (basepart.Owner != player.Client)
 			{
 				LogManager.LogWarn(player.Client + " tried to replicate physics for a part that they don't own!");
@@ -88,10 +93,19 @@ namespace NetBlox.Network
 			angular.Y = reader.ReadSingle();
 			angular.Z = reader.ReadSingle();
 
-			basepart._physicsposition = position;
-			basepart._physicsrotation = rotation;
-			basepart._physicsvelocity = linear;
+			basepart.Position = position;
+			basepart.QuaternionRotation = rotation;
+			basepart.Velocity = linear;
 			basepart.AngularVelocity = angular;
+
+			for (int i = 0; i < gm.NetworkManager.Clients.Count; i++)
+			{
+				var client = gm.NetworkManager.Clients[i];
+				if (client != packet.Sender)
+				{
+					client.SendPacket(packet);
+				}
+			}
 		}
 	}
 }

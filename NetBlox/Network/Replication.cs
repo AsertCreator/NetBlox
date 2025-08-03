@@ -85,6 +85,8 @@ namespace NetBlox.Network
 
 			ins.UniqueID = guid;
 			ins.WasReplicated = true;
+			ins.IsDomestic = false;
+			ins.OnNetworkOwnershipChanged();
 
 			var type = ins.GetType();
 			var impattrib = type.GetCustomAttribute<ImpersonateDuringReplicationAttribute>();

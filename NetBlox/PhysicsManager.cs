@@ -91,15 +91,20 @@ namespace NetBlox
 			if (Workspace == null || DisablePhysics)
 				return;
 
+			// nuhuh
+			return; // TODO: fix server physics
+
 			var work = Workspace;
 
 			LocalSimulation.Timestep(1.0f / 45, DefaultThreadDispatcher);
+
+			var clients = GameManager.NetworkManager.Clients;
 
 			for (int i = 0; i < Actors.Count; i++)
 			{
 				var box = Actors[i];
 
-				if (!box.Anchored && box.Owner == null) // if part is dynamic AND its server-side
+				if (!box.Anchored && box.IsDomestic) // if part is dynamic AND its server-side
 				{
 					// reflect this in rendering
 					if (!box.BodyHandle.HasValue)
@@ -117,14 +122,10 @@ namespace NetBlox
 						continue;
 					}
 
-					if (box.IsDirty)
-					{
-						var clients = GameManager.NetworkManager.Clients;
-						var packet = NPPhysicsReplication.Create(box);
+					var packet = NPPhysicsReplication.Create(box);
 
-						for (int j = 0; j < clients.Count; j++)
-							clients[j].SendPacket(packet);
-					}
+					for (int j = 0; j < clients.Count; j++)
+						clients[j].SendPacket(packet);
 				}
 			}
 		}

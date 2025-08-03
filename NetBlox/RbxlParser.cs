@@ -1,5 +1,6 @@
 ﻿using NetBlox.Common;
 using NetBlox.Instances;
+using NetBlox.Instances.Services;
 using NetBlox.Structs;
 using Raylib_cs;
 using System.Globalization;
@@ -132,6 +133,8 @@ namespace NetBlox
 					var arr = slist.ToArray();
 					LogManager.LogWarn(string.Join(", ", arr));
 				}
+
+				dm.GameManager.CurrentRoot.GetService<Workspace>().SetNetworkOwner(null);
 
 				dm.GameManager.IsRunning = ogr;
 			}

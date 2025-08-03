@@ -30,6 +30,8 @@ namespace NetBlox.Instances
 		public BasePart? Head => Parent.FindFirstChild("Head") as BasePart;
 		public BasePart? RightLeg => Parent.FindFirstChild("Right Leg") as BasePart;
 		public BasePart? LeftLeg => Parent.FindFirstChild("Left Leg") as BasePart;
+		public BasePart? RightArm => Parent.FindFirstChild("Right Arm") as BasePart;
+		public BasePart? LeftArm => Parent.FindFirstChild("Left Arm") as BasePart;
 		public bool IsRightLegAbleToJump => RightLeg.IsGrounded;
 		public bool IsLeftLegAbleToJump => LeftLeg.IsGrounded;
 		public bool CanJumpInTheory => IsRightLegAbleToJump || IsLeftLegAbleToJump;

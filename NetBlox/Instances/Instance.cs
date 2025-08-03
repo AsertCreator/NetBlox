@@ -484,7 +484,8 @@ namespace NetBlox.Instances
 			{
 				if (!GameManager.NetworkManager.IsServer)
 					throw new ScriptRuntimeException("Cannot call Network Ownership API from client!");
-				Debug.Assert(player.Client != null);
+				if (player != null)
+					Debug.Assert(player.Client != null);
 
 				var prevowner = Owner != null ? Owner.Player : null;
 				var newowner = player;
@@ -498,7 +499,10 @@ namespace NetBlox.Instances
 				else
 					IsDomestic = true;
 
-				Owner = newowner.Client;
+				if (newowner != null)
+					Owner = newowner.Client;
+				else
+					Owner = null;
 
 				OnNetworkOwnershipChanged();
 
