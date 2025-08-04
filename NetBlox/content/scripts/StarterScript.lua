@@ -6,9 +6,9 @@ local StarterGui = game:GetService("StarterGui");
 local CoreGui = game:GetService("CoreGui");
 local Debris = game:GetService("Debris");
 local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
-local guivar = game:GetFastInt("FIntDefaultUIVariant");
+local guivar = game:GetFastInt("FIntDefaultUIVariant") or 1;
 
-if not game:GetFastFlag("FFlagShowCoreGui") then
+if game:GetFastFlag("FFlagHideCoreGui") then
 	return;
 end
 

@@ -22,14 +22,18 @@ namespace NetBlox.Instances.GUIs
 		[Lua([Security.Capability.None])]
 		public bool Visible { get; set; } = true;
 		[Lua([Security.Capability.None])]
-		public LuaSignal MouseEnter { get; set; } = new();
+		public LuaSignal MouseEnter { get; set; }
 		[Lua([Security.Capability.None])]
-		public LuaSignal MouseLeave { get; set; } = new();
+		public LuaSignal MouseLeave { get; set; }
 
 		private Vector2 absolutePosition;
 		private Vector2 absoluteSize;
 
-		public GuiObject(GameManager ins) : base(ins) { }
+		public GuiObject(GameManager ins) : base(ins) 
+		{ 
+			MouseEnter = new LuaSignal(ins);
+			MouseLeave = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

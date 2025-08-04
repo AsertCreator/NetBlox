@@ -17,6 +17,12 @@
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="gameVariation.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <Import Project="..\NetBlox.Common\NetBlox.Common.projitems" Label="Shared" />
 
   <Import Project="..\NetBlox\NetBlox.projitems" Label="Shared" />

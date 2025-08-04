@@ -1,10 +1,12 @@
 ﻿global using Font = Raylib_cs.Font;
 using ConsoleTables;
+using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Structs;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -54,11 +56,12 @@ namespace NetBlox
 		public Texture2D BlankTexture;
 		public CrispFont MainFont;
 		public CrispFont MainFont14;
-		public NetBlox.Instances.GUIs.TextBox? FocusedBox;
+		public Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
 		public Thread? FrustumCullingThread;
 		public bool FrustumCullingPaused = true;
 		private readonly bool SkipWindowCreation = false;
+		private Stopwatch renderStopwatch = new();
 		private DataModel Root => GameManager.CurrentRoot;
 
 		public static Queue<(string, Action<Texture2D>)> TextureLoadQueue = [];
@@ -172,6 +175,10 @@ namespace NetBlox
 
 					PerformResourceLoading();
 
+					GameManager.CurrentRunService.PreRender.Fire(DynValue.NewNumber(renderStopwatch.Elapsed.TotalSeconds));
+					renderStopwatch.Reset();
+					renderStopwatch.Start();
+
 					// render world
 					Raylib.BeginDrawing();
 					{
@@ -236,6 +243,9 @@ namespace NetBlox
 						if (!GameManager.ShuttingDown)
 							Raylib.EndDrawing();
 					}
+
+					renderStopwatch.Stop();
+					GameManager.CurrentRunService.RenderStepped.Fire(DynValue.NewNumber(renderStopwatch.Elapsed.TotalSeconds));
 
 					if (Raylib.WindowShouldClose() && !SkipWindowCreation)
 						GameManager.Shutdown();

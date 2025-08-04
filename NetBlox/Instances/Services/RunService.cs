@@ -1,10 +1,5 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetBlox.Instances.Services
 {
@@ -12,12 +7,25 @@ namespace NetBlox.Instances.Services
 	public class RunService : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public LuaSignal Heartbeat { get; init; } = new();
+		public LuaSignal Heartbeat { get; init; }
+		[Lua([Security.Capability.None])]
+		public LuaSignal PostSimulation { get; init; }
+		[Lua([Security.Capability.None])]
+		public LuaSignal PreRender { get; init; }
+		[Lua([Security.Capability.None])]
+		public LuaSignal PreSimulation { get; init; }
+		[Lua([Security.Capability.None])]
+		public LuaSignal RenderStepped { get; init; }
 		public DateTime LastTimeStartedRunning = DateTime.MinValue;
 
 		public RunService(GameManager gm) : base(gm) 
 		{
 			Name = "Run Service";
+			Heartbeat = new LuaSignal(gm);
+			PostSimulation = new LuaSignal(gm);
+			PreRender = new LuaSignal(gm);
+			PreSimulation = new LuaSignal(gm);
+			RenderStepped = new LuaSignal(gm);
 		}
 
 		[Lua([Security.Capability.CoreSecurity])]

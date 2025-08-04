@@ -1,8 +1,18 @@
-﻿#define DISABLE_EME
-using NetBlox.Instances;
+﻿using NetBlox.Instances;
+using System.Text.Json.Serialization;
 
 namespace NetBlox
 {
+	public class GameVariation
+	{
+		[JsonPropertyName("flagMap")]
+		public Dictionary<string, bool>? FastFlags;
+		[JsonPropertyName("intMap")]
+		public Dictionary<string, int>? FastInts;
+		[JsonPropertyName("stringMap")]
+		public Dictionary<string, string>? FastStrings;
+	}
+
 	/// <summary>
 	/// Provides some APIs for the whole NetBlox environment
 	/// </summary>
@@ -39,24 +49,6 @@ namespace NetBlox
 			LogManager.LogPrefixer = () => CurrentGameManager == null ? "<nogm>" : CurrentGameManager.ManagerName;
 		}
 
-		/// <summary>
-		/// Defines a fast flag, must be called after loading current fast flags
-		/// </summary>
-		public static void DefineFastFlag(string fflag, bool def)
-		{
-			if (!FastFlags.TryGetValue(fflag, out var _))
-				FastFlags[fflag] = def;
-		}
-		public static void DefineFastInt(string fflag, int def)
-		{
-			if (!FastInts.TryGetValue(fflag, out var _))
-				FastInts[fflag] = def;
-		}
-		public static void DefineFastString(string fflag, string def)
-		{
-			if (!FastStrings.TryGetValue(fflag, out var _))
-				FastStrings[fflag] = def;
-		}
 		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
 			GameManager manager = new(gc, args, loadcallback, dmc);
@@ -73,9 +65,23 @@ namespace NetBlox
 			if (!Directory.Exists(LibraryFolder))
 				Directory.CreateDirectory(LibraryFolder);
 
-			DefineFastFlag("FFlagShowCoreGui", true);
-			DefineFastFlag("FFlagShowAFSCacheReload", false);
-			DefineFastInt("FIntDefaultUIVariant", 1);
+			if (!File.Exists("./gameVariation.json"))
+			{
+				try
+				{
+					var data = SerializationManager.DeserializeJson<GameVariation>(File.ReadAllText("./gameVariation.json"));
+					if (data.FastFlags != null)
+						FastFlags = data.FastFlags;
+					if (data.FastInts!= null)
+						FastInts = data.FastInts;
+					if (data.FastStrings != null)
+						FastStrings = data.FastStrings;
+				}
+				catch (Exception ex)
+				{
+					LogManager.LogError("Couldn't load game variation file, error: " + ex.GetType() + ", msg: " + ex.Message);
+				}
+			}
 
 			GameProcessor = TaskScheduler.ScheduleJob(JobType.Heartbeat, x =>
 			{

@@ -12,12 +12,8 @@ namespace NetBlox.Instances
 	{
 		[Lua([Security.Capability.None])]
 		public Shape Shape { get; set; } = Shape.Block;
-		public bool AFSShow = false;
 
-		public Part(GameManager ins) : base(ins)
-		{
-			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out AFSShow);
-		}
+		public Part(GameManager ins) : base(ins) { }
 
 		public override void Render()
 		{
@@ -54,7 +50,7 @@ namespace NetBlox.Instances
 
 						if (RenderCache.DirtyCounter > 0)
 						{
-							if (AFSShow)
+							if (FFlagShowAFSCacheReload)
 								Raylib.DrawCubeWires(PartCFrame.Position, _size.X, _size.Y, _size.Z, Color.Red);
 
 							if (LocalLighing!.SunLocality)

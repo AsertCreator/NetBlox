@@ -16,6 +16,10 @@ namespace NetBlox.Instances
 	}
 	public class BasePart : PVInstance, I3DRenderable
 	{
+		public static bool FFlagShowAFSCacheReload = false;
+		public static bool FFlagShowPartOwnerhsip = false;
+		public static bool FFlagShowPartGroundedness = false;
+
 		public bool IsActuallyAnchored => IsDomestic ? _anchored : true;
 		[Lua([Security.Capability.None])]
 		public bool Anchored
@@ -343,7 +347,7 @@ namespace NetBlox.Instances
 			set => PartCFrame = value;
 		}
 		[Lua([Security.Capability.None])]
-		public LuaSignal Touched { get; } = new LuaSignal();
+		public LuaSignal Touched { get; }
 		public Vector3 _position
 		{
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -434,6 +438,13 @@ namespace NetBlox.Instances
 			}
 		}
 
+		static BasePart()
+		{
+			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
+			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
+			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
+		}
+
 		public BasePart(GameManager ins) : base(ins)
 		{
 			_size = new Vector3(4, 1, 2);
@@ -445,6 +456,8 @@ namespace NetBlox.Instances
 
 			GameManager.PhysicsManager.Actors.Add(this);
 			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
+
+			Touched = new LuaSignal(ins);
 		}
 		public override void PivotTo(CFrame pivot)
 		{
@@ -506,9 +519,9 @@ namespace NetBlox.Instances
 				return;  // now parts REQUIRE Lighting service to be present in order to render (because sun)
 			}
 
-			if (IsGrounded)
+			if (IsGrounded && FFlagShowPartGroundedness)
 				Raylib.DrawCubeWires(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Red);
-			if (IsDomestic)
+			if (IsDomestic && FFlagShowPartOwnerhsip)
 				Raylib.DrawCubeWires(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Blue);
 		}
 		public override void Process() => base.Process();

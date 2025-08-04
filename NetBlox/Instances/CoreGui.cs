@@ -16,11 +16,15 @@ namespace NetBlox.Instances
 		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
 		[Lua([Security.Capability.CoreSecurity])]
-		public LuaSignal OnTeleportStarts { get; init; } = new LuaSignal();
+		public LuaSignal OnTeleportStarts { get; init; }
 		[Lua([Security.Capability.CoreSecurity])]
-		public LuaSignal OnTeleportEnds { get; init; } = new LuaSignal();
+		public LuaSignal OnTeleportEnds { get; init; }
 
-		public CoreGui(GameManager ins) : base(ins) { }
+		public CoreGui(GameManager ins) : base(ins) 
+		{
+			OnTeleportStarts = new LuaSignal(ins);
+			OnTeleportEnds = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

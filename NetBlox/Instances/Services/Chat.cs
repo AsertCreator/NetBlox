@@ -1,4 +1,5 @@
-﻿using NetBlox.Network;
+﻿using MoonSharp.Interpreter;
+using NetBlox.Network;
 using NetBlox.Runtime;
 
 namespace NetBlox.Instances.Services
@@ -13,13 +14,14 @@ namespace NetBlox.Instances.Services
 	public class Chat : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public LuaSignal Chatted { get; init; } = new();
-		[Lua([Security.Capability.None])]
-		public LuaSignal MessageRecieved { get; init; } = new();
+		public LuaSignal Chatted { get; init; }
 		public DateTime LastTimeChatted;
 		public List<ChatMessage> Conversation = [];
 
-		public Chat(GameManager ins) : base(ins) { }
+		public Chat(GameManager ins) : base(ins) 
+		{
+			Chatted = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
@@ -33,13 +35,16 @@ namespace NetBlox.Instances.Services
 		}
 		public void ProcessMessage(ChatMessage message)
 		{
+			message.Message = Profanity.Filter(message.Message);
+
+			Chatted.Fire(LuaRuntime.PushInstance(message.Sender), DynValue.NewString(message.Message));
+
 			if (GameManager.NetworkManager.IsClient)
 			{
 				Conversation.Add(message);
 			}
 			if (GameManager.NetworkManager.IsServer)
 			{
-				message.Message = Profanity.Filter(message.Message);
 				for (int i = 0; i < GameManager.NetworkManager.Clients.Count; i++)
 				{
 					var rc = GameManager.NetworkManager.Clients[i];
