@@ -4,6 +4,7 @@ using Raylib_cs;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 
 namespace NetBlox.Instances
 {
@@ -29,6 +30,8 @@ namespace NetBlox.Instances
 		public BasePart? Head => Parent.FindFirstChild("Head") as BasePart;
 		public BasePart? RightLeg => Parent.FindFirstChild("Right Leg") as BasePart;
 		public BasePart? LeftLeg => Parent.FindFirstChild("Left Leg") as BasePart;
+		public BasePart? RightArm => Parent.FindFirstChild("Right Arm") as BasePart;
+		public BasePart? LeftArm => Parent.FindFirstChild("Left Arm") as BasePart;
 		public bool IsRightLegAbleToJump => RightLeg.IsGrounded;
 		public bool IsLeftLegAbleToJump => LeftLeg.IsGrounded;
 		public bool CanJumpInTheory => IsRightLegAbleToJump || IsLeftLegAbleToJump;
@@ -45,12 +48,11 @@ namespace NetBlox.Instances
 		private BasePart? torsoCache;
 
 		public Humanoid(GameManager ins) : base(ins) { }
-
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
+		
+		[Lua([Security.Capability.CoreSecurity])]
+		public void ResetCharacter()
 		{
-			if (nameof(Humanoid) == classname) return true;
-			return base.IsA(classname);
+			GameManager.NetworkManager.SendServerboundPacket(NPCharacterReset.Create(Parent));
 		}
 		public override void Process()
 		{
@@ -59,13 +61,6 @@ namespace NetBlox.Instances
 			if (Parent == null) return;
 			if (torsoCache == null)
 				torsoCache = Parent.FindFirstChild("Torso") as BasePart;
-
-			var cam = GameManager.RenderManager.MainCamera;
-			var x1 = cam.Position.X;
-			var y1 = cam.Position.Z;
-			var x2 = cam.Target.X;
-			var y2 = cam.Target.Z;
-			var angle = MathF.Atan2(y2 - y1, x2 - x1);
 
 			if (GameManager.NetworkManager == null) return;
 
@@ -105,12 +100,13 @@ namespace NetBlox.Instances
 			switch (State)
 			{
 				case HumanoidState.Idle:
-					torsoCache.Rotation = default;
+					// torsoCache.Rotation = default;
 					DoWalking();
 					break;
 				case HumanoidState.Falling:
-					torsoCache.Rotation = default;
+					// torsoCache.Rotation = default;
 					DoFalling();
+					DoWalking();
 					break;
 				case HumanoidState.Sitting:
 					DoSitting();
@@ -128,7 +124,11 @@ namespace NetBlox.Instances
 					break;
 				case HumanoidState.Dead:
 					Health = 0;
-					(Parent as Model)?.BreakJoints();
+					if (!isDying)
+					{
+						Die();
+						isDying = true;
+					}
 					break;
 			}
 		}
@@ -149,6 +149,9 @@ namespace NetBlox.Instances
 
 			Vector3 veldelta = default;
 
+			if (ControlJump.IsPressed() && State != HumanoidState.Falling)
+				StandUp();
+
 			if (ismovingforward)
 				veldelta += new Vector3(
 					WalkSpeed * MathF.Cos(angle) * deltatime, 0, WalkSpeed * MathF.Sin(angle) * deltatime);
@@ -161,13 +164,16 @@ namespace NetBlox.Instances
 			if (ismovingsideright)
 				veldelta += new Vector3(
 					-WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, -WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
-			veldelta = Vector3.Normalize(veldelta);
+			veldelta = Vector3.Normalize(veldelta) * WalkSpeed;
 
 			if (ismovingbackward || ismovingforward || ismovingsideleft || ismovingsideright)
 			{
-				State = HumanoidState.Walking;
-				PrimaryPart.Velocity = new Vector3((PrimaryPart.Velocity.X + veldelta.X) / 2,
-					PrimaryPart.LinearVelocity.Y, (PrimaryPart.Velocity.Z + veldelta.Z) / 2);
+				if (State != HumanoidState.Falling)
+				{
+					State = HumanoidState.Walking;
+				}
+				PrimaryPart.Velocity = new Vector3((PrimaryPart.LinearVelocity.X + veldelta.X) / 2,
+					PrimaryPart.LinearVelocity.Y, (PrimaryPart.LinearVelocity.Z + veldelta.Z) / 2);
 			}
 		}
 		private void DoSitting()
@@ -231,7 +237,17 @@ namespace NetBlox.Instances
 		}
 		public void Die()
 		{
-			LogManager.LogInfo("Character had died!");
+			if (GameManager.NetworkManager.IsServer)
+			{
+				(Parent as Model)?.BreakJoints();
+				Task.Delay(4000).ContinueWith(_ =>
+				{
+					TaskScheduler.Schedule(() =>
+					{
+
+					});
+				});
+			}
 		}
 	}
 }

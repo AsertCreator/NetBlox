@@ -4,6 +4,7 @@ using NetBlox.Structs;
 using System.Numerics;
 using NetBlox.Instances.Services;
 using NetBlox.Common;
+using NetBlox.Network;
 
 namespace NetBlox.Instances
 {
@@ -151,11 +152,8 @@ namespace NetBlox.Instances
 						plr.LoadCharacterOld();
 
 						GameManager.NetworkManager.AddReplication(plr.Character!,
-							NetworkManager.Replication.REPM_TOALL,
-							NetworkManager.Replication.REPW_NEWINST);
-
-						GameManager.NetworkManager.SetOwner(plr.Client!, plr.Character!);
-						GameManager.NetworkManager.SetCharacter(plr.Client!, plr.Character!);
+							Replication.REPM_TOALL,
+							Replication.REPW_NEWINST);
 
 						return JobResult.CompletedSuccess;
 					});

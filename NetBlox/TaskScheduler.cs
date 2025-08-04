@@ -34,6 +34,10 @@ namespace NetBlox
 		public ScriptJobContext ScriptJobContext = new();
 		public JobTimingContext JobTimingContext = new();
 		public JobResult Result;
+
+		public override string ToString() =>
+			(ScriptJobContext.GameManager != null ? ScriptJobContext.GameManager.ManagerName : "<none>") + 
+			"-" + Type + ",level=" + SecurityLevel;
 	}
 	public enum JobType { Replication, Renderer, Heartbeat, Miscellaneous, Script }
 	public enum JobResult { CompletedSuccess, CompletedFailure, NotCompleted }
@@ -137,9 +141,9 @@ namespace NetBlox
 					IsProtected = true,
 					ObjectType = AssociatedObjectType.Misc,
 
-					["script"] = LuaRuntime.PushInstance(self, gm),
-					["workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true), gm),
-					["Workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true), gm),
+					["script"] = LuaRuntime.PushInstance(self),
+					["workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true)),
+					["Workspace"] = LuaRuntime.PushInstance(gm.CurrentRoot.GetService<Workspace>(true)),
 
 					MetaTable = new Table(gm.MainEnvironment)
 					{
@@ -180,17 +184,20 @@ namespace NetBlox
 
 			try
 			{
-				var args = job.ScriptJobContext.YieldReturn;
-				if (job.ScriptJobContext.Coroutine.State == CoroutineState.Dead)
+				lock (LuaRuntime.GlobalLock)
+				{
+					var args = job.ScriptJobContext.YieldReturn;
+					if (job.ScriptJobContext.Coroutine.State == CoroutineState.Dead)
+						return JobResult.CompletedSuccess;
+
+					var result = job.ScriptJobContext.Coroutine.Resume(args);
+
+					if (job.ScriptJobContext.Coroutine.State == CoroutineState.Suspended)
+						return JobResult.NotCompleted;
+					else
+						job.ScriptJobContext.YieldAnswer = result;
 					return JobResult.CompletedSuccess;
-
-				var result = job.ScriptJobContext.Coroutine.Resume(args);
-
-				if (job.ScriptJobContext.Coroutine.State == CoroutineState.Suspended)
-					return JobResult.NotCompleted;
-				else
-					job.ScriptJobContext.YieldAnswer = result;
-				return JobResult.CompletedSuccess;
+				}
 			}
 			catch (ScriptRuntimeException ex)
 			{

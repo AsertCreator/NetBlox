@@ -57,7 +57,7 @@ namespace NetBlox.Instances.Services
 
 			Process pr = System.Diagnostics.Process.GetCurrentProcess();
 
-			Task.Run(() =>
+			Task.Run(async () =>
 			{
 				while (GameManager.IsRunning)
 				{
@@ -65,7 +65,7 @@ namespace NetBlox.Instances.Services
 					{
 						try
 						{
-							ss.WaitForConnection();
+							await ss.WaitForConnectionAsync();
 							string str = ss.ReadToEnd();
 							string[] blobs = str.Split('\n');
 							string cmdblob = blobs[0];

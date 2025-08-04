@@ -26,11 +26,12 @@ namespace NetBlox.Instances.GUIs
 			for (int i = 0; i < s.Y / bs && i < chat.Conversation.Count; i++)
 			{
 				var lastmsg = (chat.Conversation.Count >= s.Y / bs) ? chat.Conversation[^((int)(s.Y / bs) - i + 1)] : chat.Conversation[i];
-				var playercol = lastmsg.Player.GetPlayerColor().Color;
+				var playername = lastmsg.Sender == null ? "[System]" : lastmsg.Sender.Name;
+				var playercol = lastmsg.Sender == null ? Color.White : lastmsg.Sender.GetPlayerColor().Color;
 				var textcol = Color.White;
+				var size = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, playername + ": ", 16, 1.6f);
 
-				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, lastmsg.Player.Name + ": ", p + new Vector2(0, bs * i), 16, 1.6f, playercol);
-				var size = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, lastmsg.Player.Name + ": ", 16, 1.6f);
+				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, playername + ": ", p + new Vector2(0, bs * i), 16, 1.6f, playercol);
 				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, lastmsg.Message, p + new Vector2(size.X, bs * i), 16, 1.6f, textcol);
 			}
 		}

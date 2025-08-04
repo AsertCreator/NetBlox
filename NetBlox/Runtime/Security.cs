@@ -22,7 +22,8 @@ namespace NetBlox.Runtime
 		private static int implevel = 0;
 		public static void Impersonate(int level)
 		{
-			while (impmutex) ;
+			while (impmutex) 
+				Thread.Yield();
 			impmutex = true;
 			implevel = level;
 		}

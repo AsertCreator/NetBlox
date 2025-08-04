@@ -1,10 +1,12 @@
 ﻿global using Font = Raylib_cs.Font;
+using ConsoleTables;
 using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Structs;
 using Raylib_cs;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace NetBlox
 {
@@ -54,6 +56,8 @@ namespace NetBlox
 		public CrispFont MainFont14;
 		public NetBlox.Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
+		public Thread? FrustumCullingThread;
+		public bool FrustumCullingPaused = true;
 		private readonly bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
 
@@ -87,6 +91,7 @@ namespace NetBlox
 				MainFont14 = GetCrispFont(14, "arialbd.ttf");
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
+				BeginFustumCullingThread();
 			}
 		}
 		public CrispFont GetCrispFont(int fontsize, string fontfamily)
@@ -115,6 +120,7 @@ namespace NetBlox
 				LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
+				BeginFustumCullingThread();
 			}
 		}
 		public unsafe void RenderFrame()
@@ -328,7 +334,13 @@ namespace NetBlox
 			for (int i = 0; i < c.Length; i++)
 				RenderInstance(c[i]!);
 		}
-		public void ShowKickMessage(string msg) => Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
+		public void ShowKickMessage(string msg, bool isSystemMessage = false)
+		{
+			if (!isSystemMessage)
+				Status = "You've been kicked from this server: " + msg + ".\nYou may or may not been banned from this place.";
+			else
+				Status = msg;
+		}
 		public void PerformResourceLoading() // e F f I c I e N t  resource loader
 		{
 			for (int i = 0; i < LoadBatchSize; i++)
@@ -342,6 +354,7 @@ namespace NetBlox
 						x.Wait();
 						{
 							var tex = Raylib.LoadTexture(x.Result);
+							Raylib.SetTextureFilter(tex, TextureFilter.Anisotropic16X);
 							TextureCache[el.Item1] = tex;
 							el.Item2(tex);
 						};
@@ -413,6 +426,122 @@ namespace NetBlox
 			else
 				SoundLoadQueue.Enqueue((path, callback));
 		}
+		public void BeginFustumCullingThread()
+		{
+			if (FrustumCullingThread == null) 
+			{
+				FrustumCullingThread = new Thread(() =>
+				{
+					var frustum = CaptureFrustum(Raylib.GetCameraMatrix(MainCamera));
+
+					while (!GameManager.ShuttingDown)
+					{
+						while (FrustumCullingPaused) Thread.Yield();
+						for (int i = 0; i < GameManager.PhysicsManager.Actors.Count; i++)
+						{
+							var actor = GameManager.PhysicsManager.Actors[i];
+							if (actor == null)
+								continue;
+							actor.IsCulled = IsToBeCulled(frustum, actor);
+						}
+					}
+				});
+				FrustumCullingThread.Name = "uh";
+				FrustumCullingThread.Start();
+			}
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool IsToBeCulled(Frustum frustum, BasePart part)
+		{
+			BoundingBox box = new BoundingBox(part.Position - part.Size / 2, part.Position + part.Size / 2);
+			for (int i = 0; i < 6; i++)
+			{
+				Plane plane = frustum.Planes[i];
+				Vector3 positiveVertex = box.Min;
+
+				if (plane.Normal.X >= 0) positiveVertex.X = box.Max.X;
+				if (plane.Normal.Y >= 0) positiveVertex.Y = box.Max.Y;
+				if (plane.Normal.Z >= 0) positiveVertex.Z = box.Max.Z;
+
+				if (plane.DistanceToPoint(positiveVertex) < 0)
+					return true;
+			}
+			return false;
+		}
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Frustum CaptureFrustum(Matrix4x4 viewProj)
+		{
+			Frustum frustum;
+			frustum.Planes = new Plane[6];
+
+			frustum.Planes[0].Normal.X = viewProj[0, 3] + viewProj[0, 0];
+			frustum.Planes[0].Normal.Y = viewProj[1, 3] + viewProj[1, 0];
+			frustum.Planes[0].Normal.Z = viewProj[2, 3] + viewProj[2, 0];
+			frustum.Planes[0].Distance = viewProj[3, 3] + viewProj[3, 0];
+
+			// Right plane
+			frustum.Planes[1].Normal.X = viewProj[0, 3] - viewProj[0, 0];
+			frustum.Planes[1].Normal.Y = viewProj[1, 3] - viewProj[1, 0];
+			frustum.Planes[1].Normal.Z = viewProj[2, 3] - viewProj[2, 0];
+			frustum.Planes[1].Distance = viewProj[3, 3] - viewProj[3, 0];
+
+			// Bottom plane
+			frustum.Planes[2].Normal.X = viewProj[0, 3] + viewProj[0, 1];
+			frustum.Planes[2].Normal.Y = viewProj[1, 3] + viewProj[1, 1];
+			frustum.Planes[2].Normal.Z = viewProj[2, 3] + viewProj[2, 1];
+			frustum.Planes[2].Distance = viewProj[3, 3] + viewProj[3, 1];
+
+			// Top plane
+			frustum.Planes[3].Normal.X = viewProj[0, 3] - viewProj[0, 1];
+			frustum.Planes[3].Normal.Y = viewProj[1, 3] - viewProj[1, 1];
+			frustum.Planes[3].Normal.Z = viewProj[2, 3] - viewProj[2, 1];
+			frustum.Planes[3].Distance = viewProj[3, 3] - viewProj[3, 1];
+
+			// Near plane
+			frustum.Planes[4].Normal.X = viewProj[0, 3] + viewProj[0, 2];
+			frustum.Planes[4].Normal.Y = viewProj[1, 3] + viewProj[1, 2];
+			frustum.Planes[4].Normal.Z = viewProj[2, 3] + viewProj[2, 2];
+			frustum.Planes[4].Distance = viewProj[3, 3] + viewProj[3, 2];
+
+			// Far plane
+			frustum.Planes[5].Normal.X = viewProj[0, 3] - viewProj[0, 2];
+			frustum.Planes[5].Normal.Y = viewProj[1, 3] - viewProj[1, 2];
+			frustum.Planes[5].Normal.Z = viewProj[2, 3] - viewProj[2, 2];
+			frustum.Planes[5].Distance = viewProj[3, 3] - viewProj[3, 2];
+
+			// Normalize all planes
+			for (int i = 0; i < 6; i++)
+			{
+				float length = frustum.Planes[i].Normal.Length();
+				frustum.Planes[i].Normal /= length;
+				frustum.Planes[i].Distance /= length;
+			}
+			return frustum;
+		}
+	}
+	// ty chatgpt
+	public struct Plane
+	{
+		public Vector3 Normal;
+		public float Distance;
+
+		public Plane()
+		{
+			Normal = new Vector3(0, 1, 0);
+			Distance = 0;
+		}
+		public Plane(Vector3 normal, Vector3 position)
+		{
+			Normal = Vector3.Normalize(Normal);
+			Distance = Vector3.Dot(Normal, position);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public float DistanceToPoint(Vector3 point) => Vector3.Dot(Normal, point) + Distance;
+	}
+	public ref struct Frustum
+	{
+		public Plane[] Planes;
 	}
 	[Flags]
 	public enum Faces

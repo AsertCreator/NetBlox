@@ -2,6 +2,7 @@
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using NetBlox.Network;
 using System.Numerics;
 using System.Text;
 
@@ -17,13 +18,37 @@ namespace NetBlox.Instances
 			get => character; 
 			set
 			{
+				if (value == null)
+					return;
+
+				var humanoid = value.FindFirstChild("Humanoid") as Humanoid;
+				if (humanoid == null)
+					return;
+
 				character = value;
+				if (GameManager.NetworkManager.IsServer)
+				{
+					Client.WaitForInstanceArrival(humanoid, () =>
+					{
+						// we're "hopefully" guaranteed that character's model had already replicated, so
+						// it technically qualifies as a working humanoid
+						character.SetNetworkOwner(this);
+						Client.SendPacket(NPSetPlayableCharacter.Create(character as Model));
+					});
+				}
+				else
+				{
+					humanoid.IsLocalPlayer = true;
+
+					var camera = GameManager.CurrentRoot.GetService<Workspace>().CurrentCamera as Camera;
+					camera.CameraSubject = humanoid;
+				}
 			}
 		}
 		[Lua([Security.Capability.None])]
 		public Instance? RespawnLocation { get; set; }
 		[Lua([Security.Capability.None])]
-		public bool Guest { get; set; }
+		public bool Guest => userId < 0;
 		[Lua([Security.Capability.None])]
 		public long UserId => userId;
 		[Lua([Security.Capability.None])]
@@ -47,7 +72,6 @@ namespace NetBlox.Instances
 		}
 
 		public Instance? character;
-		public Vector3 ownershipZoneCenter = default;
 		public bool IsLocalPlayer = false;
 		public RemoteClient? Client;
 		public long userId;
@@ -145,41 +169,51 @@ namespace NetBlox.Instances
 			chmodel.Name = Name;
 			chmodel.Parent = Root.GetService<Workspace>();
 
-			var rightleg = new Part(GameManager)
-			{
-				Parent = chmodel, Anchored = false, Color3 = Color.DarkBlue,
-				Position = new(0, -3f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Right Leg"
-			};
-			var leftleg = new Part(GameManager)
-			{
-				Parent = chmodel, Anchored = false, Color3 = Color.DarkBlue,
-				Position = new(-1, -3f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Left Leg"
-			};
 			var torso = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Red,
 				Position = new(-0.5f, -1f, 0), Size = new(2, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Torso"
+				Name = "Torso", Locked = true
+			};
+			var leftleg = new Part(GameManager)
+			{
+				Parent = chmodel,
+				Anchored = false,
+				Color3 = Color.DarkBlue,
+				Position = new(-1, -3f, 0),
+				Size = new(1, 2, 1),
+				TopSurface = SurfaceType.Studs,
+				Name = "Left Leg",
+				Locked = true
+			};
+			var rightleg = new Part(GameManager)
+			{
+				Parent = chmodel,
+				Anchored = false,
+				Color3 = Color.DarkBlue,
+				Position = new(0, -3f, 0),
+				Size = new(1, 2, 1),
+				TopSurface = SurfaceType.Studs,
+				Name = "Right Leg",
+				Locked = true
 			};
 			var leftarm = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
 				Position = new(-2f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Left Arm", CanCollide = false
+				Name = "Left Arm", CanCollide = false, Locked = true
 			};
 			var rightarm = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
 				Position = new(1f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Right Arm", CanCollide = false
+				Name = "Right Arm", CanCollide = false, Locked = true
 			};
 			var head = new Part(GameManager)
 			{
 				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
 				Position = new(-0.5f, 0.5f, 0), Size = new(1, 1, 1), TopSurface = SurfaceType.Studs,
-				Name = "Head"
+				Name = "Head", Locked = true
 			};
 			_ = new Decal(GameManager)
 			{

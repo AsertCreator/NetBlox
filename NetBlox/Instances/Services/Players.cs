@@ -39,9 +39,9 @@ namespace NetBlox.Instances.Services
 			{
 				Name = GameManager.Username,
 				Parent = this,
-				IsLocalPlayer = true,
-				Guest = GameManager.CurrentProfile.IsOffline
+				IsLocalPlayer = true
 			};
+			player.SetUserId(GameManager.CurrentProfile.UserId);
 			CurrentPlayer = player;
 			Security.EndImpersonate();
 

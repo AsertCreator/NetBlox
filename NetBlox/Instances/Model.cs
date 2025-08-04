@@ -13,6 +13,8 @@ namespace NetBlox.Instances
 			get => _primarypart;
 			set
 			{
+				if (value == null)
+					return;
 				if (!value.IsDescendantOf(this))
 					throw new Exception("Can't set PrimaryPart property of a Model to a part outside of the model");
 				_primarypart = value;

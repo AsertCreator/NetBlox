@@ -75,9 +75,19 @@ TitleLabel.TextColor3 = Color3.new(1, 1, 1);
 TitleLabel.LeftAligned = true;
 TitleLabel.Text = game.Name;
 
+local AuthorLabel = Instance.new("TextLabel");
+AuthorLabel.Parent = Sidebar;
+AuthorLabel.Position = UDim2.new(0, 30, 0, 10);
+AuthorLabel.Size = UDim2.new(1, -60, 0, 100);
+AuthorLabel.FontSize = TitleLabel.FontSize * 0.75;
+AuthorLabel.BackgroundColor3 = Color3.new(1, 1, 1);
+AuthorLabel.TextColor3 = Color3.new(1, 1, 1);
+AuthorLabel.LeftAligned = true;
+AuthorLabel.Text = "by some guy";
+
 local ExitButton = Instance.new("TextButton");
 ExitButton.Parent = Sidebar;
-ExitButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 1);
+ExitButton.Position = UDim2.new(0, 30, 0, 60 + 40 * 1);
 ExitButton.Size = UDim2.new(1, -60, 0, 35);
 ExitButton.BackgroundColor3 = Color3.new(1, 1, 1);
 ExitButton.TextColor3 = Color3.new(1, 1, 1);
@@ -92,7 +102,7 @@ end)
 
 local ResetButton = Instance.new("TextButton");
 ResetButton.Parent = Sidebar;
-ResetButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 2);
+ResetButton.Position = UDim2.new(0, 30, 0, 60 + 40 * 2);
 ResetButton.Size = UDim2.new(1, -60, 0, 35);
 ResetButton.BackgroundColor3 = Color3.new(1, 1, 1);
 ResetButton.TextColor3 = Color3.new(1, 1, 1);
@@ -105,27 +115,15 @@ ResetButton.MouseButton1Click:Connect(function() -- how do i debug this 😭
 	local pls = game.Players;
 	local lpr = pls.LocalPlayer;
 	local chr = lpr.Character;
-	chr.Humanoid.Health = 0;
-end)
 
-local DamageButton = Instance.new("TextButton");
-DamageButton.Parent = Sidebar;
-DamageButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 3);
-DamageButton.Size = UDim2.new(1, -60, 0, 35);
-DamageButton.BackgroundColor3 = Color3.new(1, 1, 1);
-DamageButton.TextColor3 = Color3.new(1, 1, 1);
-DamageButton.BackgroundTransparency = 0.7;
-DamageButton.Text = "Damage yourself";
-DamageButton.MouseButton1Click:Connect(function()
-	local pls = game.Players;
-	local lpr = pls.LocalPlayer;
-	local chr = lpr.Character;
-	chr.Humanoid.Health = chr.Humanoid.Health - 5;
+	if chr then
+		chr.Humanoid:ResetCharacter();
+	end
 end)
 
 local CloseButton = Instance.new("TextButton");
 CloseButton.Parent = Sidebar;
-CloseButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 4);
+CloseButton.Position = UDim2.new(0, 30, 0, 60 + 40 * 3);
 CloseButton.Size = UDim2.new(1, -60, 0, 35);
 CloseButton.BackgroundColor3 = Color3.new(1, 1, 1);
 CloseButton.TextColor3 = Color3.new(1, 1, 1);
@@ -138,7 +136,7 @@ end)
 
 local MuteButton = Instance.new("TextButton");
 MuteButton.Parent = Sidebar;
-MuteButton.Position = UDim2.new(0, 30, 0, 30 + 40 * 5);
+MuteButton.Position = UDim2.new(0, 30, 0, 60 + 40 * 4);
 MuteButton.Size = UDim2.new(1, -60, 0, 35);
 MuteButton.BackgroundColor3 = Color3.new(1, 1, 1);
 MuteButton.TextColor3 = Color3.new(1, 1, 1);
@@ -155,10 +153,9 @@ end)
 
 local VersionText = Instance.new("TextLabel");
 VersionText.Parent = Sidebar;
-VersionText.Position = UDim2.new(0, 10, 1, -35);
-VersionText.Size = UDim2.new(1, 0, 0, 30);
+VersionText.Position = UDim2.new(0, 0, 1, -35);
+VersionText.Size = UDim2.new(1, 0, 0, 35);
 VersionText.TextColor3 = Color3.new(1, 1, 1);
-VersionText.LeftAligned = true;
 VersionText.Text = PlatformService:FormatVersion();
 
 -- here we stop init Sidebar
@@ -197,6 +194,7 @@ local nextnum = 0;
 UserInputService.KeyboardPress:Connect(function(x) 
 	if x == 256 then
 		TitleLabel.Text = game.Name; -- lol
+		AuthorLabel.Text = "by " .. game.AuthorName;
 		Sidebar.Visible = not Sidebar.Visible;
 		BlackOut.Visible = Sidebar.Visible;
 	elseif x == 72 then
