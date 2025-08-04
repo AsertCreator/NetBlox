@@ -26,6 +26,7 @@ namespace NetBlox
 		public PhysicsManager PhysicsManager;
 		public NetworkManager NetworkManager;
 		public DataModel CurrentRoot = null!;
+		public RunService? CurrentRunService;
 		public ProfileManager CurrentProfile = new();
 		public ConfigFlags CustomFlags;
 		public bool IsStudio = false;
@@ -169,8 +170,7 @@ namespace NetBlox
 
 				var rs = CurrentRoot.GetService<RunService>();
 				var cg = CurrentRoot.GetService<CoreGui>();
-				rs.Parent = CurrentRoot;
-				cg.Parent = CurrentRoot;
+				CurrentRunService = rs;
 
 				if (NetworkManager.IsClient)
 				{

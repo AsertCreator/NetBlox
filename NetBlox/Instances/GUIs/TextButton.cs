@@ -11,7 +11,7 @@ namespace NetBlox.Instances.GUIs
 		[Lua([Security.Capability.None])]
 		public string Text { get; set; } = "";
 		[Lua([Security.Capability.None])]
-		public LuaSignal MouseButton1Click { get; init; } = new();
+		public LuaSignal MouseButton1Click { get; init; }
 		[Lua([Security.Capability.None])]
 		public Color BackgroundColor3 { get; set; } = Color.White;
 		[Lua([Security.Capability.None])]
@@ -26,7 +26,11 @@ namespace NetBlox.Instances.GUIs
 		}
 		private CrispFont _font;
 
-		public TextButton(GameManager ins) : base(ins) => _font = GameManager.RenderManager.MainFont;
+		public TextButton(GameManager ins) : base(ins) 
+		{ 
+			_font = GameManager.RenderManager.MainFont;
+			MouseButton1Click = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

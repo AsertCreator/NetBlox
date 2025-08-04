@@ -35,6 +35,7 @@ namespace NetBlox
 		public bool DisablePhysics = false; // not now
 		internal BasePartContactEventHandler contactEventHandler = new();
 		internal ContactEvents contactEvents = new();
+		internal Stopwatch physicsStopwatch = new();
 
 		public PhysicsManager(GameManager gameManager)
 		{
@@ -133,10 +134,18 @@ namespace NetBlox
 		{
 			try
 			{
+				GameManager.CurrentRunService.PreSimulation.Fire(DynValue.NewNumber(physicsStopwatch.Elapsed.TotalSeconds));
+				physicsStopwatch.Reset();
+				physicsStopwatch.Start();
+
 				if (GameManager.NetworkManager.IsServer)
 					ServerStep();
 				else if (GameManager.NetworkManager.IsClient)
 					ClientStep();
+
+				physicsStopwatch.Stop();
+
+				GameManager.CurrentRunService.PostSimulation.Fire(DynValue.NewNumber(physicsStopwatch.Elapsed.TotalSeconds));
 			}
 			catch (Exception e)
 			{

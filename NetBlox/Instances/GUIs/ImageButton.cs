@@ -19,13 +19,16 @@ namespace NetBlox.Instances.GUIs
 			} 
 		}
 		[Lua([Security.Capability.None])]
-		public LuaSignal MouseButton1Click { get; init; } = new();
+		public LuaSignal MouseButton1Click { get; init; }
 		[Lua([Security.Capability.None])]
 		public float BackgroundTransparency { get; set; } = 0;
 		private Texture2D? texture;
 		private string fp = "";
 
-		public ImageButton(GameManager ins) : base(ins) { }
+		public ImageButton(GameManager ins) : base(ins) 
+		{ 
+			MouseButton1Click = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

@@ -10,12 +10,16 @@ namespace NetBlox.Instances.Services
 	[Service]
 	public class UserInputService : Instance
 	{
-		public UserInputService(GameManager ins) : base(ins) { }
 		[Lua([Security.Capability.None])]
 		// TOCUH I CANT
 		public bool TouchEnabled => GameManager.CurrentProfile.IsTouchDevice;
 		[Lua([Security.Capability.CoreSecurity])]
-		public LuaSignal KeyboardPress { get; init; } = new();
+		public LuaSignal KeyboardPress { get; init; }
+
+		public UserInputService(GameManager ins) : base(ins)
+		{
+			KeyboardPress = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

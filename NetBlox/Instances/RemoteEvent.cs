@@ -11,11 +11,15 @@ namespace NetBlox.Instances
 	public class RemoteEvent : Instance
 	{
 		[Lua([Security.Capability.None])]
-		public LuaSignal OnClientEvent { get; set; } = new();
+		public LuaSignal OnClientEvent { get; set; }
 		[Lua([Security.Capability.None])]
-		public LuaSignal OnServerEvent { get; set; } = new();
+		public LuaSignal OnServerEvent { get; set; }
 
-		public RemoteEvent(GameManager ins) : base(ins) { }
+		public RemoteEvent(GameManager ins) : base(ins) 
+		{
+			OnClientEvent = new LuaSignal(ins);
+			OnServerEvent = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public void FireServer(DynValue table)

@@ -1,7 +1,8 @@
 ﻿using MoonSharp.Interpreter;
-using NetBlox.Runtime;
 using NetBlox.Network;
+using NetBlox.Runtime;
 using System.Diagnostics;
+using System.Net;
 
 namespace NetBlox.Instances
 {
@@ -68,22 +69,22 @@ namespace NetBlox.Instances
 		public Guid UniqueID { get; set; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal DescendantAdded { get; init; } = new();
+		public LuaSignal DescendantAdded { get; init; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal DescendantRemoved { get; init; } = new();
+		public LuaSignal DescendantRemoved { get; init; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal ChildAdded { get; init; } = new();
+		public LuaSignal ChildAdded { get; init; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal ChildRemoved { get; init; } = new();
+		public LuaSignal ChildRemoved { get; init; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal Changed { get; init; } = new();
+		public LuaSignal Changed { get; init; }
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
-		public LuaSignal Destroying { get; init; } = new();
+		public LuaSignal Destroying { get; init; }
 		public virtual Security.Capability[] RequiredCapabilities => [];
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
@@ -115,6 +116,13 @@ namespace NetBlox.Instances
 				gm.AllInstances.Add(this);
 			}
 			ThisType = GetType();
+
+			DescendantAdded = new LuaSignal(gm);
+			DescendantRemoved = new LuaSignal(gm);
+			ChildAdded = new LuaSignal(gm);
+			ChildRemoved = new LuaSignal(gm);
+			Changed = new LuaSignal(gm);
+			Destroying = new LuaSignal(gm);
 		}
 		public void RaiseDescendantAdded(Instance descendantInQuestion) // not anymore
 		{
@@ -416,7 +424,7 @@ namespace NetBlox.Instances
 			lock (ChangedSignals)
 			{
 				if (!ChangedSignals.ContainsKey(prop))
-					ChangedSignals[prop] = new();
+					ChangedSignals[prop] = new(GameManager);
 				return ChangedSignals[prop];
 			}
 		}

@@ -6,7 +6,7 @@ using System.Text;
 namespace NetBlox.Instances
 {
 	[Creatable]
-	public class Animation(GameManager ins) : Instance(ins)
+	public class Animation : Instance
 	{
 		[Lua([Security.Capability.None])]
 		public Instance[] Subjects { get; set; } = [];
@@ -26,13 +26,19 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.CoreSecurity])]
 		public string AnimationRawData { get; set; }
 		[Lua([Security.Capability.None])]
-		public LuaSignal AnimationStarted { get; set; } = new();
+		public LuaSignal AnimationStarted { get; set; }
 		[Lua([Security.Capability.None])]
-		public LuaSignal AnimationEnded { get; set; } = new();
+		public LuaSignal AnimationEnded { get; set; }
 		[Lua([Security.Capability.None])]
 		public bool IsPlaying => isPlaying;
 		private string animationUrl = "";
 		private bool isPlaying = false;
+
+		public Animation(GameManager ins) : base(ins)
+		{
+			AnimationStarted = new LuaSignal(ins);
+			AnimationEnded = new LuaSignal(ins);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

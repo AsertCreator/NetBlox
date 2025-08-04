@@ -25,11 +25,14 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public bool IsLoaded() => GameManager.NetworkManager.IsLoaded;
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool GetFastFlag(string fflag) => AppManager.FastFlags.TryGetValue(fflag, out var flag) ? flag : throw new Exception("No such FastFlag defined!");
+		public DynValue GetFastFlag(string fflag) => 
+			AppManager.FastFlags.TryGetValue(fflag, out var flag) ? DynValue.NewBoolean(flag) : DynValue.Nil;
 		[Lua([Security.Capability.CoreSecurity])]
-		public int GetFastInt(string fflag) => AppManager.FastInts.TryGetValue(fflag, out var flag) ? flag : throw new Exception("No such FastInt defined!");
+		public DynValue GetFastInt(string fflag) => 
+			AppManager.FastInts.TryGetValue(fflag, out var flag) ? DynValue.NewNumber(flag) : DynValue.Nil;
 		[Lua([Security.Capability.CoreSecurity])]
-		public string GetFastString(string fflag) => AppManager.FastStrings.TryGetValue(fflag, out var flag) ? flag : throw new Exception("No such FastString defined!");
+		public DynValue GetFastString(string fflag) => 
+			AppManager.FastStrings.TryGetValue(fflag, out var flag) ? DynValue.NewString(flag) : DynValue.Nil;
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Clear()
 		{
