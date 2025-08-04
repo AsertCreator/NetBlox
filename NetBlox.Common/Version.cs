@@ -2,8 +2,8 @@
 {
 	public static class Version
 	{
-		public const int VersionMajor = 16;
-		public const int VersionMinor = 18;
-		public const int VersionPatch = 3;
+		public const int VersionMajor = 17;
+		public const int VersionMinor = 0;
+		public const int VersionPatch = 0;
 	}
 }
