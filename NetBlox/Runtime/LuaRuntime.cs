@@ -79,7 +79,7 @@ namespace NetBlox.Runtime
 					tenv.Globals["hang__"] = DynValue.NewCallback((x, y) =>
 					{
 						LogManager.LogError("NetBlox's hang__ function was called");
-						while (true) ;
+						while (true) Thread.Yield();
 					});
 				}
 

@@ -559,13 +559,13 @@ namespace NetBlox.Instances
 		public LuaYield WaitForChild(string name)
 		{
 			var job = TaskScheduler.CurrentJob;
-			job.JobTimingContext.TaskJoinedTo = Task.Run(() =>
+			job.JobTimingContext.TaskJoinedTo = Task.Run(async () =>
 			{
 				while (!GameManager.ShuttingDown)
 				{
 					var ch = FindFirstChild(name);
 					if (ch == null)
-						Thread.Sleep(50);
+						await Task.Yield();
 					else
 					{
 						job.ScriptJobContext.YieldReturn = [ LuaRuntime.PushInstance(ch) ];

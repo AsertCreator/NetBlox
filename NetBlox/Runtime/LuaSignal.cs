@@ -1,14 +1,21 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Instances.Scripts;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace NetBlox.Runtime
 {
 	public class LuaSignal
 	{
+		public GameManager GameManager;
 		public List<LuaConnection> Attached = [];
 		public List<Action<DynValue[]>> NativeAttached = [];
-		public int FireCount = 0;
+		public ulong FireCount = 0;
+
+		public LuaSignal(GameManager gameManager)
+		{
+			GameManager = gameManager;
+		}
 
 		[Lua([Security.Capability.None])]
 		public void Connect(DynValue dv)
@@ -23,17 +30,33 @@ namespace NetBlox.Runtime
 				Attached.Add(new LuaConnection()
 				{
 					Function = dv,
-					Level = (int)TaskScheduler.CurrentJob.SecurityLevel,
+					Level = TaskScheduler.CurrentJob.SecurityLevel,
 					Manager = TaskScheduler.CurrentJob.ScriptJobContext.BaseScript.GameManager,
 					Script = TaskScheduler.CurrentJob.ScriptJobContext.BaseScript
 				});
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public void Wait()
+		public LuaYield Wait()
 		{
-			int c = FireCount;
-			while (c == FireCount) ;
+			var c = FireCount;
+			var job = TaskScheduler.CurrentJob;
+
+			job.JobTimingContext.TaskJoinedTo = Task.Run(async() =>
+			{
+				while (!GameManager.ShuttingDown)
+				{
+					if (c == FireCount)
+						await Task.Yield();
+					else
+					{
+						job.ScriptJobContext.YieldReturn = [DynValue.Void];
+						return;
+					}
+				}
+			});
+
+			return new();
 		}
 		public void Fire(params DynValue[] dvs)
 		{

@@ -57,7 +57,7 @@ namespace NetBlox
 		public NetBlox.Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
 		public Thread? FrustumCullingThread;
-		public bool FrustumCullingPaused;
+		public bool FrustumCullingPaused = true;
 		private readonly bool SkipWindowCreation = false;
 		private DataModel Root => GameManager.CurrentRoot;
 

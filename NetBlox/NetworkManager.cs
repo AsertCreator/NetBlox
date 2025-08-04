@@ -233,7 +233,8 @@ namespace NetBlox
 
 			while (!GameManager.ShuttingDown)
 			{
-				while (AppManager.BlockReplication) ;
+				while (AppManager.BlockReplication)
+					Thread.Yield();
 
 				if (ReplicationQueue.Count != 0)
 				{
@@ -254,11 +255,11 @@ namespace NetBlox
 		}
 		public void StartProfiling()
 		{
-			Task.Run(() =>
+			Task.Run(async () =>
 			{
 				while (!GameManager.ShuttingDown)
 				{
-					Thread.Sleep(1000);
+					await Task.Delay(1000);
 					OutgoingTraffic = outgoingTraffic;
 					outgoingTraffic = 0;
 					IncomingTraffic = incomingTraffic;

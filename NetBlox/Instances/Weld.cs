@@ -166,7 +166,7 @@ namespace NetBlox.Instances
 			Task.Run(async () => // god kill me
 			{
 				while (!b0.BodyHandle.HasValue || !b1.BodyHandle.HasValue)
-					await Task.Delay(1);
+					await Task.Yield();
 
 				weld = new BepuPhysics.Constraints.Weld()
 				{
