@@ -1,5 +1,13 @@
 on:
   push:
+    paths-ignore:
+      - '.github/**'
+      - 'README.md'
+      - '.editorconfig'
+      - '.gitattributes'
+      - '.gitignore'
+      - 'LICENSE.txt'
+      - 'docs/**'
     branches:
       - master
   pull_request:
