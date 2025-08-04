@@ -121,6 +121,10 @@ namespace NetBlox
 					if (coregui != null)
 						coregui.TakeScreenshot();
 				});
+				Verbs.Add(KeyboardKey.K, () =>
+				{
+					RenderManager.FrustumCullingPaused = !RenderManager.FrustumCullingPaused;
+				});
 				Verbs.Add(KeyboardKey.L, () =>
 				{
 					var light = CurrentRoot.GetService<Lighting>(true);

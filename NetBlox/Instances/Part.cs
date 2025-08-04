@@ -24,6 +24,7 @@ namespace NetBlox.Instances
 			base.Render();
 
 			if (LocalLighing == null) return;
+			if (IsCulled) return;
 
 			switch (Shape)
 			{

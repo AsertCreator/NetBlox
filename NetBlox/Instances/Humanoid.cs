@@ -48,13 +48,7 @@ namespace NetBlox.Instances
 		private BasePart? torsoCache;
 
 		public Humanoid(GameManager ins) : base(ins) { }
-
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(Humanoid) == classname) return true;
-			return base.IsA(classname);
-		}
+		
 		[Lua([Security.Capability.CoreSecurity])]
 		public void ResetCharacter()
 		{

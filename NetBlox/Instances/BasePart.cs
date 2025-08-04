@@ -141,6 +141,8 @@ namespace NetBlox.Instances
 				if (_position == value)
 					return;
 				_position = value;
+				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					return;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
@@ -173,6 +175,8 @@ namespace NetBlox.Instances
 				if (_rotation == rotq)
 					return;
 				_rotation = rotq;
+				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					return;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
@@ -203,6 +207,8 @@ namespace NetBlox.Instances
 				if (_rotation == value)
 					return;
 				_rotation = value;
+				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					return;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
@@ -234,6 +240,8 @@ namespace NetBlox.Instances
 				if (_size == value)
 					return;
 				_size = value;
+				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					return;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue) 
@@ -291,6 +299,8 @@ namespace NetBlox.Instances
 				if (LinearVelocity == value)
 					return;
 				LinearVelocity = value;
+				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					return;
 
 				var localsim = GameManager.PhysicsManager.LocalSimulation;
 				if (BodyHandle.HasValue)
@@ -384,6 +394,7 @@ namespace NetBlox.Instances
 		public bool _anchored = false;
 		public Vector3 RenderPositionOffset = default;
 		public Quaternion RenderRotationOffset = Quaternion.Identity;
+		public bool IsCulled = false;
 		protected SurfaceType frontSurface;
 		protected SurfaceType backSurface;
 		protected SurfaceType topSurface = SurfaceType.Studs;

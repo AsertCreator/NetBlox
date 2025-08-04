@@ -50,8 +50,7 @@ namespace NetBlox.Network
 			}
 			else
 			{
-				lock (LuaRuntime.GlobalLock)
-					ApplyFromBytesImpl();
+				ApplyFromBytesImpl();
 			}
 		}
 		private static void ApplyChanges(GameManager gm, RemoteClient? sender, byte[] data)
