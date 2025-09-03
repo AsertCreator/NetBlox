@@ -6,10 +6,10 @@ using System.Numerics;
 namespace NetBlox.Instances
 {
 	[Creatable]
-	public class Weld : Instance
+	public class Weld : Constraint
 	{
 		[Lua([Security.Capability.None])]
-		public Instance? Part0
+		public BasePart? Part0
 		{
 			get => part0;
 			set
@@ -17,12 +17,16 @@ namespace NetBlox.Instances
 				if (part0 == value) return;
 				var enabled = Enabled;
 				Enabled = false;
+				if (part0 != null)
+					part0.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
 				part0 = value;
+				if (part0 != null)
+					part0.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
 				Enabled = enabled;
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public Instance? Part1
+		public BasePart? Part1
 		{
 			get => part1;
 			set
@@ -30,7 +34,11 @@ namespace NetBlox.Instances
 				if (part1 == value) return;
 				var enabled = Enabled;
 				Enabled = false;
+				if (part1 != null)
+					part1.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
 				part1 = value;
+				if (part1 != null)
+					part1.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
 				Enabled = enabled;
 			}
 		}
@@ -45,7 +53,7 @@ namespace NetBlox.Instances
 				if (value == enabled)
 					return;
 
-				if (NormalizeOwnerships(Part0 as BasePart, Part1 as BasePart))
+				if (part0.IsDomestic && part1.IsDomestic)
 				{
 					if (value)
 						CreateWeld();
@@ -59,27 +67,22 @@ namespace NetBlox.Instances
 
 		private BepuPhysics.Constraints.Weld weld;
 		private ConstraintHandle weldHandle;
-		private Instance? part0;
-		private Instance? part1;
+		private BasePart? part0;
+		private BasePart? part1;
 		private bool enabled;
 
 		public Weld(GameManager ins) : base(ins) { }
 
+		private void NetworkOwnershipChangedHandler(object sender, EventArgs args)
+		{
+			Enabled = !Enabled;
+			Enabled = !Enabled;
+		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
 			if (nameof(Weld) == classname) return true;
 			return base.IsA(classname);
-		}
-		public override void OnNetworkOwnershipChanged()
-		{
-			if (NormalizeOwnerships(Part0 as BasePart, Part1 as BasePart))
-			{
-				if (Enabled)
-					CreateWeld();
-				else
-					DestroyWeld();
-			}
 		}
 		public override void Destroy()
 		{
@@ -90,82 +93,26 @@ namespace NetBlox.Instances
 		private void DestroyWeld()
 		{
 			var sim = GameManager.PhysicsManager.LocalSimulation;
-
-			sim.Solver.Remove(weldHandle);
-			weldHandle = default;
-		}
-		/// <summary>
-		/// Normalizes network ownerships between two parts for weld to work.
-		/// </summary>
-		/// <returns>true, if the weld can be simulated locally, otherwise false</returns>
-		private bool NormalizeOwnerships(BasePart p0, BasePart p1)
-		{
-			if (p0 == null || p1 == null)
-				return false;
-
-			if (GameManager.NetworkManager.IsServer)
+			if (sim.Solver.ConstraintExists(weldHandle)) 
 			{
-				// p0 and p1 are both server-owned, we result in nothing
-				if (p0.Owner == null && p1.Owner == null)
-					return true;
-				// p0 is client-owned and p1 is server-owned, we result in both being client-sided
-				if (p0.Owner != null && p1.Owner == null)
-				{
-					p1.SetNetworkOwner(p0.Owner.Player);
-					this.SetNetworkOwner(p0.Owner.Player);
-					return false;
-				}
-				// p0 is server-owned and p1 is client-owned, we result in both being client-sided
-				if (p0.Owner == null && p1.Owner != null)
-				{
-					p0.SetNetworkOwner(p1.Owner.Player);
-					this.SetNetworkOwner(p1.Owner.Player);
-					return false;
-				}
-				// p0 and p1 are both client-owned by different people, we result in both being server-sided
-				if (p0.Owner != null && p1.Owner != null && p0.Owner != p1.Owner)
-				{
-					p0.SetNetworkOwner(null);
-					p1.SetNetworkOwner(null);
-					return true;
-				}
-				// p0 and p1 are both client-owned by the same person, we result in weld not being simulated here
-				if (p0.Owner != null && p1.Owner != null && p0.Owner != p1.Owner)
-				{
-					this.SetNetworkOwner(p0.Owner.Player);
-					return false;
-				}
-				return false;
-			}
-			else
-			{
-				if (p0.IsDomestic && p1.IsDomestic) // both are domestic
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
+				sim.Solver.Remove(weldHandle); 
 			}
 		}
 		private void CreateWeld()
 		{
 			var sim = GameManager.PhysicsManager.LocalSimulation;
-			var b0 = Part0 as BasePart;
-			var b1 = Part1 as BasePart;
 
-			if (Part0 == Part1)
+			if (part0 == part1)
 			{
 				LogManager.LogWarn("Part0 and Part1 properties of Weld cannot be set to the same part!");
 				return;
 			}
 
-			PartOffset = b1.PartCFrame.Position - b0.PartCFrame.Position;
+			PartOffset = part1.PartCFrame.Position - part0.PartCFrame.Position;
 
 			Task.Run(async () => // god kill me
 			{
-				while (!b0.BodyHandle.HasValue || !b1.BodyHandle.HasValue)
+				while (!part0.BodyHandle.HasValue || !part1.BodyHandle.HasValue)
 					await Task.Yield();
 
 				weld = new BepuPhysics.Constraints.Weld()
@@ -177,7 +124,7 @@ namespace NetBlox.Instances
 
 				TaskScheduler.Schedule(() =>
 				{
-					weldHandle = sim.Solver.Add(b0.BodyHandle.Value, b1.BodyHandle.Value, weld);
+					weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
 				});
 			});
 		}

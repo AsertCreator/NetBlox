@@ -49,12 +49,13 @@ namespace NetBlox.Network
 		}
 		public void	WaitForInstanceArrival(Instance inst, Action callback)
 		{
-			SendPacket(NPCallbackOnInstanceArrival.Create(inst.UniqueID));
-			Replication.AwaitingInstanceMap[(this, inst.UniqueID)] = () =>
+			Enclosure.NetworkManager.awaitingForRemoteArrival.Add(new()
 			{
-				Replication.AwaitingInstanceMap.Remove((this, inst.UniqueID));
-				callback();
-			};
+				Client = this,
+				Guid = inst.UniqueID,
+				Callback = callback
+			});
+			SendPacket(NPCallbackOnInstanceArrival.Create(inst.UniqueID));
 		}
 		public override string ToString()
 		{

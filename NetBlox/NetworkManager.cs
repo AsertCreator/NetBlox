@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Net;
 using CloseReason = Network.Enums.CloseReason;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace NetBlox
 {
@@ -31,7 +32,6 @@ namespace NetBlox
 		public Guid ExpectedLocalPlayerGuid = default;
 
 		public Queue<Replication> ReplicationQueue = [];
-		public List<(Guid, Action)> AwaitingForArrival = [];
 
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer? Server;
@@ -42,14 +42,27 @@ namespace NetBlox
 		public int TargetInstanceCount;
 		public bool SynchronousReplication = true;
 
-		private readonly static object replock = new();
-		private int outgoingPacketsSent = 0;
-		private int incomingPacketsRecieved = 0;
-		private int outgoingTraffic = 0;
-		private int incomingTraffic = 0;
-		private DataModel Root => GameManager.CurrentRoot;
-		private uint nextpid = 0;
-		private bool init;
+		internal int outgoingPacketsSent = 0;
+		internal int incomingPacketsRecieved = 0;
+		internal int outgoingTraffic = 0;
+		internal int incomingTraffic = 0;
+
+		internal List<NetworkAwaiter> awaitingForArrival = [];
+		internal List<RemoteNetworkAwaiter> awaitingForRemoteArrival = [];
+		internal uint nextpid = 0;
+		internal bool init;
+
+		internal class NetworkAwaiter
+		{
+			public Guid Guid;
+			public Action Callback;
+		}
+		internal class RemoteNetworkAwaiter
+		{
+			public RemoteClient Client;
+			public Guid Guid;
+			public Action Callback;
+		}
 
 		public NetworkManager(GameManager gm, bool server, bool client)
 		{
@@ -141,6 +154,9 @@ namespace NetBlox
 						var rc = rq.Recievers;
 						var ins = rq.Target;
 
+						if (ins is not BasePart)
+							rq.Mode = Replication.REPM_TOALL;
+
 						switch (rq.Mode)
 						{
 							case Replication.REPM_TOALL:
@@ -148,10 +164,12 @@ namespace NetBlox
 								break;
 							case Replication.REPM_BUTOWNER:
 								var cl = Clients.Count;
+								var bp = ins as BasePart;
 								rc = new RemoteClient[cl - 1];
+
 								for (int i = 0, j = 0; j < cl - 1; i++, j++)
 								{
-									if (Clients[i] == ins.Owner)
+									if (Clients[i] == bp.Owner)
 									{
 										i++;
 										continue;
@@ -297,6 +315,52 @@ namespace NetBlox
 			// we are on server
 			if (nc == null) throw new ScriptRuntimeException("RemoteClient object not preserved!");
 			nc.KickOut(msg);
+		}
+		public void WaitForInstanceArrival(Guid guid, Action act)
+		{
+			lock (awaitingForArrival)
+			{
+				Instance inst = GameManager.GetInstance(guid);
+				if (inst != null)
+					act();
+
+				NetworkAwaiter awaiter = new();
+				awaiter.Guid = guid;
+				awaiter.Callback = act;
+				awaitingForArrival.Add(awaiter);
+			}
+		}
+		public void CallAllInstanceRemoteAwaiters(Guid guid, RemoteClient client)
+		{
+			lock (awaitingForRemoteArrival)
+			{
+				for (int i = 0; i < awaitingForRemoteArrival.Count; i++)
+				{
+					var awaiter = awaitingForRemoteArrival[i];
+					if (awaiter.Guid == guid && awaiter.Client == client)
+					{
+						awaitingForRemoteArrival.Remove(awaiter);
+						awaiter.Callback();
+						i--;
+					}
+				}
+			}
+		}
+		public void CallAllInstanceAwaiters(Guid guid)
+		{
+			lock (awaitingForArrival)
+			{
+				for (int i = 0; i < awaitingForArrival.Count; i++)
+				{
+					var awaiter = awaitingForArrival[i];
+					if (awaiter.Guid == guid)
+					{
+						awaitingForArrival.Remove(awaiter);
+						awaiter.Callback();
+						i--;
+					}
+				}
+			}
 		}
 		public Replication? AddReplication(Instance inst, int m, int w, bool rc = true, RemoteClient[]? nc = null)
 		{

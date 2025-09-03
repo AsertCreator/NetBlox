@@ -1,10 +1,12 @@
-using NetBlox.Runtime;
 using NetBlox.Common;
-using Raylib_cs;
-using System.Numerics;
-using System.Runtime.CompilerServices;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
+using NetBlox.Runtime;
+using Raylib_cs;
+using System.Drawing;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 
 namespace NetBlox.Instances
 {
@@ -32,8 +34,8 @@ namespace NetBlox.Instances
 		public BasePart? LeftLeg => Parent.FindFirstChild("Left Leg") as BasePart;
 		public BasePart? RightArm => Parent.FindFirstChild("Right Arm") as BasePart;
 		public BasePart? LeftArm => Parent.FindFirstChild("Left Arm") as BasePart;
-		public bool IsRightLegAbleToJump => RightLeg.IsGrounded;
-		public bool IsLeftLegAbleToJump => LeftLeg.IsGrounded;
+		public bool IsRightLegAbleToJump => RightLeg == null ? false : RightLeg.IsGrounded;
+		public bool IsLeftLegAbleToJump => LeftLeg == null ? false : LeftLeg.IsGrounded;
 		public bool CanJumpInTheory => IsRightLegAbleToJump || IsLeftLegAbleToJump;
 
 		public static HumanoidControl ControlForward = HumanoidControl.GetFor(HumanoidControlType.Forward);
@@ -46,6 +48,7 @@ namespace NetBlox.Instances
 		private Workspace? workspace;
 		private bool isDying = false;
 		private BasePart? torsoCache;
+		private RenderTexture2D debugTexture;
 
 		public Humanoid(GameManager ins) : base(ins) { }
 		
@@ -69,7 +72,7 @@ namespace NetBlox.Instances
 				ProcessInput();
 			}
 
-			if (Health <= 0 && IsLocalPlayer && !isDying)
+			if (Health <= 0 && !IsLocalPlayer && !isDying)
 			{
 				isDying = true;
 				Die();
@@ -83,8 +86,11 @@ namespace NetBlox.Instances
 			if (primary == null)
 				return;
 
-			if (!CanJumpInTheory && State != HumanoidState.Falling)
+			if (!CanJumpInTheory && State != HumanoidState.Falling && State != HumanoidState.FrozenFalling && 
+				MathF.Abs(torsoCache.Velocity.Y) > 2)
 				State = HumanoidState.Falling;
+			if (MathF.Abs(torsoCache.Velocity.Y) < 2)
+				State = HumanoidState.Idle;
 			if (Health <= 0)
 				State = HumanoidState.Dead;
 			if (State != HumanoidState.FrozenFalling && primary.LinearVelocity.Length() < 3)
@@ -100,11 +106,11 @@ namespace NetBlox.Instances
 			switch (State)
 			{
 				case HumanoidState.Idle:
-					// torsoCache.Rotation = default;
+					StabilizeHumanoid();
 					DoWalking();
 					break;
 				case HumanoidState.Falling:
-					// torsoCache.Rotation = default;
+					StabilizeHumanoid();
 					DoFalling();
 					DoWalking();
 					break;
@@ -112,9 +118,11 @@ namespace NetBlox.Instances
 					DoSitting();
 					break;
 				case HumanoidState.Walking:
+					StabilizeHumanoid();
 					DoWalking();
 					break;
 				case HumanoidState.Jumping:
+					StabilizeHumanoid();
 					DoWalking();
 					break;
 				case HumanoidState.Swimming:
@@ -153,17 +161,14 @@ namespace NetBlox.Instances
 				StandUp();
 
 			if (ismovingforward)
-				veldelta += new Vector3(
-					WalkSpeed * MathF.Cos(angle) * deltatime, 0, WalkSpeed * MathF.Sin(angle) * deltatime);
+				veldelta += new Vector3(MathF.Cos(angle) * deltatime, 0, MathF.Sin(angle) * deltatime);
 			if (ismovingsideleft)
-				veldelta += new Vector3(
-					WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+				veldelta += new Vector3(MathF.Cos(angle - 1.5708f) * deltatime, 0, MathF.Sin(angle - 1.5708f) * deltatime);
 			if (ismovingbackward)
-				veldelta += new Vector3(
-					-WalkSpeed * MathF.Cos(angle) * deltatime, 0, -WalkSpeed * MathF.Sin(angle) * deltatime);
+				veldelta += new Vector3(-MathF.Cos(angle) * deltatime, 0, -MathF.Sin(angle) * deltatime);
 			if (ismovingsideright)
-				veldelta += new Vector3(
-					-WalkSpeed * MathF.Cos(angle - 1.5708f) * deltatime, 0, -WalkSpeed * MathF.Sin(angle - 1.5708f) * deltatime);
+				veldelta += new Vector3(-MathF.Cos(angle - 1.5708f) * deltatime, 0, -MathF.Sin(angle - 1.5708f) * deltatime);
+
 			veldelta = Vector3.Normalize(veldelta) * WalkSpeed;
 
 			if (ismovingbackward || ismovingforward || ismovingsideleft || ismovingsideright)
@@ -172,8 +177,47 @@ namespace NetBlox.Instances
 				{
 					State = HumanoidState.Walking;
 				}
-				PrimaryPart.Velocity = new Vector3((PrimaryPart.LinearVelocity.X + veldelta.X) / 2,
-					PrimaryPart.LinearVelocity.Y, (PrimaryPart.LinearVelocity.Z + veldelta.Z) / 2);
+				torsoCache.Velocity = new Vector3(MathE.Lerp(torsoCache.LinearVelocity.X, veldelta.X, 0.7f),
+					torsoCache.LinearVelocity.Y, MathE.Lerp(torsoCache.LinearVelocity.Z, veldelta.Z, 0.7f));
+
+				Vector3 characterForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitZ, torsoCache.QuaternionRotation);
+				Vector3 cameraForward = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;
+				cameraForward.Y = 0;
+				cameraForward = Vector3.Normalize(cameraForward);
+				characterForward.Y = 0;
+				characterForward = Vector3.Normalize(characterForward);
+
+				float anglediff = MathF.Atan2(
+					cameraForward.X * characterForward.Z - cameraForward.Z * characterForward.X,
+					cameraForward.X * characterForward.X + cameraForward.Z * characterForward.Z);
+				float angular_velocity = MathE.Clamp(-5, anglediff, 5);
+
+				var angular = torsoCache.AngularVelocity;
+				angular.Y = angular_velocity * 3;
+				var body = GameManager.PhysicsManager.LocalSimulation.Bodies[torsoCache.BodyHandle.Value];
+				body.ApplyAngularImpulse(angular);
+				body.Awake = true;
+			}
+			else
+			{
+				torsoCache.Velocity = new Vector3(torsoCache.LinearVelocity.X / 8,
+					torsoCache.LinearVelocity.Y, torsoCache.LinearVelocity.Z / 8);
+			}
+		}
+		private void StabilizeHumanoid()
+		{
+			if (torsoCache.BodyHandle.HasValue)
+			{
+				// may chatgpt help me
+				Vector3 up = Raymath.Vector3RotateByQuaternion(Vector3.UnitY, torsoCache.QuaternionRotation);
+				Vector3 correctionAxis = Raymath.Vector3CrossProduct(up, Vector3.UnitY);
+				float angleError = MathF.Acos(Raymath.Vector3DotProduct(up, Vector3.UnitY));
+				var torque = Raymath.Vector3Normalize(correctionAxis) * (angleError * 240) - torsoCache.AngularVelocity * 1f;
+				if (float.IsNaN(torque.X) || float.IsNaN(torque.Y) || float.IsNaN(torque.Z))
+					return;
+				if (float.IsInfinity(torque.X) || float.IsInfinity(torque.Y) || float.IsInfinity(torque.Z))
+					return;
+				torsoCache.AngularVelocity += torque;
 			}
 		}
 		private void DoSitting()
@@ -188,16 +232,10 @@ namespace NetBlox.Instances
 		}
 		private void StandUp()
 		{
-			var parts = AllBodyParts;
-			for (int i = 0; i < parts.Length; i++)
-			{
-				var part = parts[i];
-				part.Velocity += new Vector3(0, 5, 0);
-				if (part.Velocity.Y >= 7)
-					part.Velocity = new Vector3(part.Velocity.X, 7, part.Velocity.Z);
-				part.RenderPositionOffset = default;
-				part.RenderRotationOffset = Quaternion.Identity;
-			}
+			var part = torsoCache;
+			part.Velocity += new Vector3(0, 25, 0);
+			if (part.Velocity.Y >= 28)
+				part.Velocity = new Vector3(part.Velocity.X, 28, part.Velocity.Z);
 
 			State = HumanoidState.Idle;
 		}
@@ -228,23 +266,64 @@ namespace NetBlox.Instances
 			if (Health < 100)
 			{
 				siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, Health.ToString(), 14, 1.4f);
-				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, Health.ToString(), pos - new Vector2(siz.X / 2, -16), 14, 1.4f,
+				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, Health.ToString(), pos - new Vector2(siz.X / 2, -16), 14, 1.4f, 
 					new Color(255,
 						(int)MathE.Lerp(0, 255, Math.Clamp(Health, 0, 100) / 100f),
 						(int)MathE.Lerp(0, 255, Math.Clamp(Health, 0, 100) / 100f),
 						255));
 			}
+
+			RenderDebugHud();
+		}
+		public void RenderDebugHud()
+		{
+			var head = Parent.FindFirstChild("Head") as BasePart;
+			if (head == null) return;
+
+			var cam = GameManager.RenderManager.MainCamera;
+			var debugbillboardpos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 2f, 0), cam);
+			var scale = 10 / Vector3.Distance(cam.Position, head.Position + new Vector3(0, head.Size.Y / 2 + 2f, 0));
+			var font = GameManager.RenderManager.MainFont.SpriteFont;
+
+			if (debugTexture.Id == default)
+			{
+				debugTexture = Raylib.LoadRenderTexture(400, 300);
+			}
+
+			Raylib.BeginTextureMode(debugTexture);
+			Raylib.ClearBackground(new Color(0, 0, 0, 40));
+
+			Raylib.DrawTextEx(font, $"Torso position: {torsoCache.Position.X:F5} {torsoCache.Position.Y:F5} {torsoCache.Position.Z:F5}", 
+				new Vector2(5, 5 + 14 * 0), 14, 1.4f, Color.White);
+
+			Raylib.DrawTextEx(font, $"Torso rotation: {torsoCache.Rotation.X:F5} {torsoCache.Rotation.Y:F5} {torsoCache.Rotation.Z:F5}",
+				new Vector2(5, 5 + 14 * 1), 14, 1.4f, Color.White);
+
+			Raylib.DrawTextEx(font, $"Torso velocity: {torsoCache.LinearVelocity.X:F5} {torsoCache.LinearVelocity.Y:F5} {torsoCache.LinearVelocity.Z:F5}",
+				new Vector2(5, 5 + 14 * 2), 14, 1.4f, Color.White);
+
+			Raylib.DrawTextEx(font, $"Torso angular velocity: {torsoCache.AngularVelocity.X:F5} {torsoCache.AngularVelocity.Y:F5} {torsoCache.AngularVelocity.Z:F5}",
+				new Vector2(5, 5 + 14 * 3), 14, 1.4f, Color.White);
+
+			Raylib.EndTextureMode();
+
+			Raylib.DrawTextureRec(debugTexture.Texture, new Raylib_cs.Rectangle(0, 300, 400, -300), debugbillboardpos, Color.White);
 		}
 		public void Die()
 		{
 			if (GameManager.NetworkManager.IsServer)
 			{
-				(Parent as Model)?.BreakJoints();
+				var character = Parent as Model;
+				var player = Root.GetService<Players>().GetPlayerFromCharacter(Parent);
+
+				character?.BreakJoints();
+
 				Task.Delay(4000).ContinueWith(_ =>
 				{
 					TaskScheduler.Schedule(() =>
 					{
-
+						Parent.Destroy();
+						player.LoadCharacter();
 					});
 				});
 			}

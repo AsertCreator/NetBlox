@@ -28,7 +28,11 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public Instance? CurrentCamera { get; set; }
 		[Lua([Security.Capability.None])]
-		public float Gravity { get; set; } = -9.8f;
+		public float Gravity 
+		{ 
+			get => GameManager.PhysicsManager.Gravity;
+			set => GameManager.PhysicsManager.Gravity = value;
+		}
 		[Lua([Security.Capability.None])]
 		public float FallenPartsDestroyHeight { get; set; } = -50;
 		[Lua([Security.Capability.None])]

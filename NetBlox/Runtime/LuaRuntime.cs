@@ -8,6 +8,7 @@ using NetBlox.Structs;
 using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using Script = MoonSharp.Interpreter.Script;
 
 namespace NetBlox.Runtime
@@ -175,7 +176,6 @@ namespace NetBlox.Runtime
 					var key = y[0].CastToString();
 					var inst = InstanceCreator.CreateAccessibleInstanceIfExists(key, gm)
 						?? throw new ScriptRuntimeException("Unable to create Instance of type " + key);
-					inst.IsDomestic = true;
 					if (y.Count > 1)
 					{
 						var part = y[1];
@@ -434,6 +434,21 @@ namespace NetBlox.Runtime
 					if (!prop.CanWrite)
 						throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" is read-only");
 
+					if (prop.Name == "Parent")
+					{
+						var newp = val.Table.AssociatedObject as Instance;
+						var oldr = inst.EligibleForReplication;
+
+						inst.Parent = newp;
+
+						if (!gm.NetworkManager.IsServer)
+							return DynValue.Void;
+
+						gm.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_REPARNT, false);
+
+						return DynValue.Void;
+					}
+
 					if (val.IsNil())
 						prop.SetValue(inst!, null);
 					else
@@ -453,12 +468,12 @@ namespace NetBlox.Runtime
 							if (inst.ChangedSignals.TryGetValue(key, out LuaSignal? value))
 								value.Fire(val);
 
-							if (gm.NetworkManager.IsServer)
+							if (gm.NetworkManager.IsServer && inst.EligibleForReplication)
 								gm.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_PROPCHG, false);
 						}
 					}
 
-					return DynValue.Nil;
+					return DynValue.Void;
 				});
 				meta["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString((y[0].Table.AssociatedObject as Instance)!.Name));
 				meta.IsProtected = true;

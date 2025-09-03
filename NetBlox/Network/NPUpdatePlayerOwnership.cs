@@ -31,10 +31,13 @@ namespace NetBlox.Network
 			updatePlayerOwnership.Instance = new Guid(reader.ReadBytes(16));
 			updatePlayerOwnership.Status = reader.ReadBoolean();
 
-			Instance inst = gm.GetInstance(updatePlayerOwnership.Instance);
-			inst.IsDomestic = updatePlayerOwnership.Status;
+			BasePart inst = gm.GetInstance(updatePlayerOwnership.Instance) as BasePart;
+			if (inst == null)
+				return;
 
-			inst.OnNetworkOwnershipChanged();
+			inst.IsDomestic = updatePlayerOwnership.Status;
+			inst.Anchored = inst.Anchored;
+			inst.InvokeChangeNetworkOwnership();
 
 			return;
 		}

@@ -1,4 +1,5 @@
 ﻿using NetBlox.Runtime;
+using System.Diagnostics;
 
 namespace NetBlox.Instances.Services
 {
@@ -16,6 +17,19 @@ namespace NetBlox.Instances.Services
 		{
 			if (nameof(Players) == classname) return true;
 			return base.IsA(classname);
+		}
+		[Lua([Security.Capability.None])]
+		public Player? GetPlayerFromCharacter(Instance inst)
+		{
+			var children = Children.ToArray();
+			for (int i = 0; i < children.Length; i++)
+			{
+				var player = children[i] as Player;
+				Debug.Assert(player != null);
+				if (player.Character == inst)
+					return player;
+			}
+			return null;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public Player CreateNewPlayer(string name, bool local)

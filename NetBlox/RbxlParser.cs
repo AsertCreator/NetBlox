@@ -134,8 +134,6 @@ namespace NetBlox
 					LogManager.LogWarn(string.Join(", ", arr));
 				}
 
-				dm.GameManager.CurrentRoot.GetService<Workspace>().SetNetworkOwner(null);
-
 				dm.GameManager.IsRunning = ogr;
 			}
 			catch

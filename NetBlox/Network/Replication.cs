@@ -24,8 +24,6 @@ namespace NetBlox.Network
 		public const int REPW_REPARNT = 2;
 		public const int REPW_DESTROY = 3;
 
-		public static Dictionary<(RemoteClient, Guid), Action> AwaitingInstanceMap = [];
-
 		public Replication(int m, int w, Instance t)
 		{
 			Mode = m;
@@ -84,8 +82,11 @@ namespace NetBlox.Network
 
 			ins.UniqueID = guid;
 			ins.WasReplicated = true;
-			ins.IsDomestic = false;
-			ins.OnNetworkOwnershipChanged();
+
+			if (ins is BasePart bp)
+			{
+				bp.IsDomestic = false;
+			}
 
 			var type = ins.GetType();
 			var impattrib = type.GetCustomAttribute<ImpersonateDuringReplicationAttribute>();
@@ -115,16 +116,11 @@ namespace NetBlox.Network
 
 					if (inst == null)
 					{
-						(Guid, Action)? shitit = null;
-
-						shitit = (propguid, () =>
+						gm.NetworkManager.WaitForInstanceArrival(propguid, () =>
 						{
-							gm.NetworkManager.AwaitingForArrival.Remove(shitit.Value);
 							inst = gm.GetInstance(propguid);
 							prop.SetValue(ins, inst);
 						});
-
-						gm.NetworkManager.AwaitingForArrival.Add(shitit.Value);
 					}
 					else
 						prop.SetValue(ins, inst);
@@ -145,9 +141,7 @@ namespace NetBlox.Network
 				gm.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
 			}
 
-			var shit = gm.NetworkManager.AwaitingForArrival.FindIndex(x => x.Item1 == guid);
-			if (shit != -1)
-				gm.NetworkManager.AwaitingForArrival[shit].Item2();
+			gm.NetworkManager.CallAllInstanceAwaiters(guid);
 
 			if (ins is Workspace ws)
 			{
@@ -167,7 +161,8 @@ namespace NetBlox.Network
 				return;
 			}
 
-			instance.Parent = newparent;
+			if (instance != null)
+				instance.Parent = newparent;
 		}
 		private static void ApplyDestroy(GameManager gm, RemoteClient? sender, Guid unique)
 		{
@@ -179,7 +174,7 @@ namespace NetBlox.Network
 				return;
 			}
 
-			instance.Destroy();
+			instance?.Destroy();
 		}
 
 		public byte[] Serialize()

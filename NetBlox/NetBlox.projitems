@@ -17,6 +17,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Camera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Character.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Constraint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Decal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
@@ -78,8 +79,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)AppManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NetworkPacket.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NetworkPacketHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)network\NetworkPacketTypeEnum.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)network\NPCallbackOnInstanceArrival.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NetworkPacketTypeEnum.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NPCallbackOnInstanceArrival.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPCharacterReset.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPChat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPClientDisconnect.cs" />
@@ -88,11 +89,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPRemoteEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPServerIntroduction.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)network\NPSetPlayableCharacter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NPSetPlayableCharacter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPUpdatePlayerBufferZone.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPUpdatePlayerOwnership.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\Replication.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)runtime\ImpersonateDuringReplicationAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\ImpersonateDuringReplicationAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\PhysicsAssembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RenderManager.cs" />

@@ -65,7 +65,7 @@ namespace NetBlox
 			if (!Directory.Exists(LibraryFolder))
 				Directory.CreateDirectory(LibraryFolder);
 
-			if (!File.Exists("./gameVariation.json"))
+			if (File.Exists("./gameVariation.json"))
 			{
 				try
 				{

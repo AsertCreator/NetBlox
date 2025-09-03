@@ -39,5 +39,14 @@ namespace NetBlox.Common
 			Y = rotrad.Y * 57.2958f,
 			Z = rotrad.Z * 57.2958f
 		};
+		public static bool IsAround(this float a, float b, float error) => a + error >= b && a - error <= b;
+		public static float Clamp(float min, float a, float max)
+		{
+			if (a < min)
+				return min;
+			if (a > max)
+				return max;
+			return a;
+		}
 	}
 }

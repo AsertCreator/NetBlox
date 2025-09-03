@@ -1,9 +1,14 @@
 ﻿using BepuPhysics;
 using BepuPhysics.Collidables;
+using BepuPhysics.CollisionDetection;
+using MoonSharp.Interpreter;
+using NetBlox.Common;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -19,6 +24,8 @@ namespace NetBlox.Instances
 		public static bool FFlagShowAFSCacheReload = false;
 		public static bool FFlagShowPartOwnerhsip = false;
 		public static bool FFlagShowPartGroundedness = false;
+
+		public PhysicsAssembly? Assembly;
 
 		public bool IsActuallyAnchored => IsDomestic ? _anchored : true;
 		[Lua([Security.Capability.None])]
@@ -375,6 +382,42 @@ namespace NetBlox.Instances
 					bp.RenderCache.DirtyCounter = 6;
 			}
 		}
+		public bool IsGrounded
+		{
+			get
+			{
+				var bb = BoundingBox;
+				var size = bb.Max - bb.Min;
+				var center = bb.Min + size / 2;
+				var lec = new Vector3(center.X, center.Y - size.Y / 2, center.Z);
+				var letl = new Vector3(center.X + size.X / 2, center.Y - size.Y / 2, center.Z + size.Z / 2);
+				var letr = new Vector3(center.X - size.X / 2, center.Y - size.Y / 2, center.Z + size.Z / 2);
+				var lebl = new Vector3(center.X + size.X / 2, center.Y - size.Y / 2, center.Z - size.Z / 2);
+				var lebr = new Vector3(center.X - size.X / 2, center.Y - size.Y / 2, center.Z - size.Z / 2);
+
+				if (GameManager.PhysicsManager.QuickRaycast(lec, -Vector3.UnitY, size.Y / 2 + 2).IsAround(size.Y / 2, 1) ||
+					GameManager.PhysicsManager.QuickRaycast(letl, -Vector3.UnitY, size.Y / 2 + 2).IsAround(size.Y / 2, 1) || 
+					GameManager.PhysicsManager.QuickRaycast(letr, -Vector3.UnitY, size.Y / 2 + 2).IsAround(size.Y / 2, 1) ||
+					GameManager.PhysicsManager.QuickRaycast(lebl, -Vector3.UnitY, size.Y / 2 + 2).IsAround(size.Y / 2, 1) ||
+					GameManager.PhysicsManager.QuickRaycast(lebr, -Vector3.UnitY, size.Y / 2 + 2).IsAround(size.Y / 2, 1))
+					return true;
+				return false;
+			}
+		}
+		public BoundingBox BoundingBox
+		{
+			get
+			{
+				var mat = Raymath.QuaternionToMatrix(QuaternionRotation);
+				float hx = Size.X / 2, hy = Size.Y / 2, hz = Size.Z / 2;
+				float ex = MathF.Abs(mat.M11) * hx + MathF.Abs(mat.M12) * hy + MathF.Abs(mat.M13) * hz;
+				float ey = MathF.Abs(mat.M21) * hx + MathF.Abs(mat.M22) * hy + MathF.Abs(mat.M23) * hz;
+				float ez = MathF.Abs(mat.M31) * hx + MathF.Abs(mat.M32) * hy + MathF.Abs(mat.M33) * hz;
+				Vector3 extents = new Vector3(ex, ey, ez);
+				return new BoundingBox(Position - extents, Position + extents);
+			}
+		}
+		public event EventHandler? OnNetworkOwnershipChanged;
 		/// <summary>
 		/// Use this if the part is anchored OR if its foreign (owned by another player)<br/>
 		/// ========================================<br/>
@@ -389,7 +432,6 @@ namespace NetBlox.Instances
 		public BodyHandle? BodyHandle;
 		public PartRenderCache RenderCache = new();
 		public Lighting? LocalLighing;
-		public bool IsGrounded = false;
 		public bool IsDirty = false;
 		public CFrame PartCFrame;
 		public Vector3 _size;
@@ -399,6 +441,11 @@ namespace NetBlox.Instances
 		public Vector3 RenderPositionOffset = default;
 		public Quaternion RenderRotationOffset = Quaternion.Identity;
 		public bool IsCulled = false;
+		public bool IsDomestic = true;
+		public RemoteClient? Owner;
+		public List<BasePart> TouchingWith = [];
+		public HashSet<CollidablePair> currentPairs = [];
+		public HashSet<CollidablePair> previousPairs = [];
 		protected SurfaceType frontSurface;
 		protected SurfaceType backSurface;
 		protected SurfaceType topSurface = SurfaceType.Studs;
@@ -438,13 +485,6 @@ namespace NetBlox.Instances
 			}
 		}
 
-		static BasePart()
-		{
-			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
-			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
-			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
-		}
-
 		public BasePart(GameManager ins) : base(ins)
 		{
 			_size = new Vector3(4, 1, 2);
@@ -455,9 +495,12 @@ namespace NetBlox.Instances
 			Anchored = false;
 
 			GameManager.PhysicsManager.Actors.Add(this);
-			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
 
 			Touched = new LuaSignal(ins);
+
+			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
+			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
+			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
 		}
 		public override void PivotTo(CFrame pivot)
 		{
@@ -486,9 +529,7 @@ namespace NetBlox.Instances
 			description.Velocity.Linear = LinearVelocity;
 
 			BodyHandle = localsim.Bodies.Add(description);
-			if (StaticHandle.HasValue)
-				GameManager.PhysicsManager.contactEvents.Unregister(GetCollidableReference());
-			GameManager.PhysicsManager.contactEvents.Register(GetCollidableReference(), GameManager.PhysicsManager.contactEventHandler);
+			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
 		}
 		public void CreateStaticHandle()
 		{
@@ -504,9 +545,7 @@ namespace NetBlox.Instances
 			var description = new StaticDescription(_position, rotation, index);
 
 			StaticHandle = localsim.Statics.Add(description);
-			if (BodyHandle.HasValue)
-				GameManager.PhysicsManager.contactEvents.Unregister(GetCollidableReference());
-			GameManager.PhysicsManager.contactEvents.Register(GetCollidableReference(), GameManager.PhysicsManager.contactEventHandler);
+			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
 		}
 		public virtual void Render()
 		{
@@ -520,7 +559,7 @@ namespace NetBlox.Instances
 			}
 
 			if (IsGrounded && FFlagShowPartGroundedness)
-				Raylib.DrawCubeWires(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Red);
+				Raylib.DrawCube(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Red);
 			if (IsDomestic && FFlagShowPartOwnerhsip)
 				Raylib.DrawCubeWires(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Blue);
 		}
@@ -536,7 +575,91 @@ namespace NetBlox.Instances
 				GameManager.PhysicsManager.LocalSimulation.Statics.Remove(StaticHandle.Value);
 			GameManager.PhysicsManager.Actors.Remove(this);
 		}
-		public override void OnNetworkOwnershipChanged() => Anchored = Anchored;
+		public void InvokeChangeNetworkOwnership() => OnNetworkOwnershipChanged?.Invoke(this, new());
+
+		[Lua([Security.Capability.None])]
+		public virtual void SetNetworkOwner(Player player)
+		{
+			if (!GameManager.NetworkManager.IsServer)
+				throw new ScriptRuntimeException("Cannot call SetNetworkOwner on client!");
+
+			if (player == null)
+			{
+				if (Owner == null)
+					return;
+				IsDomestic = true;
+				Anchored = Anchored;
+				Owner.SendPacket(NPUpdatePlayerOwnership.Create(this, false));
+				Owner = null;
+			}
+			else
+			{
+				RemoteClient client = player.Client;
+				IsDomestic = false;
+				Anchored = Anchored;
+				if (Owner != null)
+					Owner.SendPacket(NPUpdatePlayerOwnership.Create(this, false));
+				Owner = client;
+				Owner.SendPacket(NPUpdatePlayerOwnership.Create(this, true));
+			}
+		}
+		public void AddTouchingPart(BasePart basePart)
+		{
+			if (!TouchingWith.Contains(basePart))
+			{
+				TouchingWith.Add(basePart);
+				Touched.Fire(LuaRuntime.PushInstance(basePart));
+			}
+		}
+		public void RemoveTouchingPart(BasePart basePart)
+		{
+			if (TouchingWith.Contains(basePart))
+			{
+				TouchingWith.Remove(basePart);
+				Touched.Fire(LuaRuntime.PushInstance(basePart));
+			}
+		}
+		public void AddCollidablePair(CollidablePair pair) => currentPairs.Add(pair);
+		public void Reset()
+		{
+			try 
+			{ 
+				foreach (var pair in currentPairs) // is this the only foreach in this whole thing
+				{
+					if (!previousPairs.Contains(pair))
+					{
+						BasePart bpa = GameManager.PhysicsManager.Collidable2BasePartMap[pair.A.Packed];
+						BasePart bpb = GameManager.PhysicsManager.Collidable2BasePartMap[pair.B.Packed];
+						if (bpa == this)
+							AddTouchingPart(bpb);
+						else
+							AddTouchingPart(bpa);
+					}
+				}
+				foreach (var pair in previousPairs)
+				{
+					if (!currentPairs.Contains(pair))
+					{
+						BasePart bpa = GameManager.PhysicsManager.Collidable2BasePartMap[pair.A.Packed];
+						BasePart bpb = GameManager.PhysicsManager.Collidable2BasePartMap[pair.B.Packed];
+						if (bpa == this)
+							RemoveTouchingPart(bpb);
+						else
+							RemoveTouchingPart(bpa);
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				LogManager.LogError("Failed to comprehend collisions: " + ex.GetType() + ", msg: " + ex.Message);
+			}
+
+			var a = previousPairs;
+			previousPairs = currentPairs;
+			currentPairs = a;
+			currentPairs.Clear();
+		}
+
 		protected virtual void OnSizeChanged(Vector3 newsize) { }
 		protected virtual void OnPositionChanged(Vector3 newpos) { }
 		protected virtual void OnRotationChanged(Quaternion q) { }

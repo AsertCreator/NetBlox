@@ -33,15 +33,10 @@ namespace NetBlox.Network
 				return;
 			}
 
-			(Guid, Action)? tuple = null;
-
-			tuple = (guid, new Action(() =>
+			gm.NetworkManager.WaitForInstanceArrival(guid, () =>
 			{
-				gm.NetworkManager.AwaitingForArrival.Remove(tuple.Value); // c# go to hell
 				gm.NetworkManager.SendServerboundPacket(Create(guid));
-			}));
-
-			gm.NetworkManager.AwaitingForArrival.Add(tuple.Value);
+			});
 		}
 		public override void HandleServerbound(GameManager gm, NetworkPacket packet, BinaryReader reader)
 		{
@@ -49,7 +44,7 @@ namespace NetBlox.Network
 
 			Guid guid = new Guid(reader.ReadBytes(16));
 
-			Replication.AwaitingInstanceMap[(packet.Sender, guid)]();
+			gm.NetworkManager.CallAllInstanceRemoteAwaiters(guid, packet.Sender);
 		}
 	}
 }

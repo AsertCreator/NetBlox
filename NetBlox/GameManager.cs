@@ -398,7 +398,6 @@ namespace NetBlox
 			CurrentIdentity.UniverseID = 0;
 
 			CurrentRoot.Name = CurrentIdentity.PlaceName;
-			CurrentRoot.GetService<Workspace>().SetNetworkOwner(null);
 		}
 		public Instance? GetInstance(Guid id)
 		{

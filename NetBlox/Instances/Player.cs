@@ -32,7 +32,7 @@ namespace NetBlox.Instances
 					{
 						// we're "hopefully" guaranteed that character's model had already replicated, so
 						// it technically qualifies as a working humanoid
-						character.SetNetworkOwner(this);
+						character.GetDescendantsOfType<BasePart>().ForEach(x => x.SetNetworkOwner(this));
 						Client.SendPacket(NPSetPlayableCharacter.Create(character as Model));
 					});
 				}

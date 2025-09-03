@@ -1,4 +1,5 @@
 ﻿using MoonSharp.Interpreter;
+using NetBlox.Instances.Services;
 using NetBlox.Network;
 using NetBlox.Runtime;
 using System.Diagnostics;
@@ -85,11 +86,21 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		[NotReplicated]
 		public LuaSignal Destroying { get; init; }
+		public bool EligibleForReplication 
+		{ 
+			get
+			{
+				if (Parent == null)
+					return false;
+				if (Parent is Workspace || Parent is ReplicatedFirst || Parent is ReplicatedStorage || Parent is Players ||
+					Parent is Lighting || Parent is StarterGui || Parent is StarterPack)
+					return true;
+				return Parent.EligibleForReplication;
+			} 
+		}
 		public virtual Security.Capability[] RequiredCapabilities => [];
 		public bool WasDestroyed = false;
 		public bool WasReplicated = false;
-		public bool IsDomestic = false;
-		public RemoteClient? Owner;
 		public GameManager GameManager;
 		public List<Instance> Children = [];
 		public DateTime DestroyAt = DateTime.MaxValue;
@@ -333,7 +344,7 @@ namespace NetBlox.Instances
 
 				WasDestroyed = true;
 
-				if (GameManager.AllowReplication)
+				if (GameManager.AllowReplication && GameManager.NetworkManager.IsServer)
 					GameManager.NetworkManager.AddReplication(this, Replication.REPM_TOALL, Replication.REPW_DESTROY, false);
 			}
 		}
@@ -434,6 +445,23 @@ namespace NetBlox.Instances
 			lock (Children) // that sounds interesting
 				return [.. Children];
 		}
+		// poorly optimized
+		public virtual T[] GetDescendantsOfType<T>()
+		{
+			lock (Children)
+			{
+				var list = new List<T>();
+
+				for (int i = 0; i < Children.Count; i++)
+				{
+					if (Children[i] is T inst)
+						list.Add(inst);
+					list.AddRange(Children[i].GetDescendantsOfType<T>());
+				}
+
+				return [.. list];
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public virtual Instance[] GetDescendants()
 		{
@@ -486,41 +514,6 @@ namespace NetBlox.Instances
 			return string.Join('.', strings);
 		}
 		[Lua([Security.Capability.None])]
-		public virtual void SetNetworkOwner(Player player)
-		{
-			lock (this)
-			{
-				if (!GameManager.NetworkManager.IsServer)
-					throw new ScriptRuntimeException("Cannot call Network Ownership API from client!");
-				if (player != null)
-					Debug.Assert(player.Client != null);
-
-				var prevowner = Owner != null ? Owner.Player : null;
-				var newowner = player;
-
-				if (prevowner != null)
-					prevowner.Client.SendPacket(NPUpdatePlayerOwnership.Create(this, false));
-				else
-					IsDomestic = false;
-				if (newowner != null)
-					newowner.Client.SendPacket(NPUpdatePlayerOwnership.Create(this, true));
-				else
-					IsDomestic = true;
-
-				if (newowner != null)
-					Owner = newowner.Client;
-				else
-					Owner = null;
-
-				OnNetworkOwnershipChanged();
-
-				for (int i = 0; i < Children.Count; i++)
-				{
-					Children[i].SetNetworkOwner(player);
-				}
-			}
-		}
-		[Lua([Security.Capability.None])]
 		public virtual bool IsDescendantOf(Instance instance) => GetAncestors().Contains(instance);
 		[Lua([Security.Capability.None])]
 		public virtual bool IsAncestorOf(Instance instance) => GetDescendants().Contains(instance);
@@ -532,27 +525,6 @@ namespace NetBlox.Instances
 		public virtual void RemoveTag(string tag) => Tags.Remove(tag);
 		[Lua([Security.Capability.None])]
 		public virtual bool IsA(string classname) => nameof(Instance) == classname;
-		private void ChangeOwnershipImpl(GameManager gm)
-		{
-			GameManager.AllInstances.Remove(this);
-			Owner = null;
-			IsDomestic = false;
-			GameManager = gm;
-			WasReplicated = false;
-			WasDestroyed = false;
-			GameManager.AllInstances.Add(this);
-
-			for (int i = 0; i < Children.Count; i++)
-			{
-				Children[i].ChangeOwnershipImpl(gm);
-			}
-		}
-		public void ChangeOwnership(GameManager gm)
-		{
-			Parent = null;
-			ChangeOwnershipImpl(gm);
-		}
-		public virtual void OnNetworkOwnershipChanged() { }
 		public int CountDescendants()
 		{
 			lock (Children)
