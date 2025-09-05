@@ -26,14 +26,30 @@ namespace NetBlox.Instances
 		public float WalkSpeed { get; set; } = 12;
 		[Lua([Security.Capability.None])]
 		public float JumpPower { get; set; } = 6;
+		public override Instance? Parent 
+		{
+			get => base.Parent;
+			set 
+			{
+				if (value is not Model)
+				{
+					LogManager.LogWarn("Humanoid instance must be parented to a Model!");
+					return;
+				}
+
+				base.Parent = value;
+
+				SetupBodyPartsAutomation();
+			}
+		}
 
 		public BasePart[] AllBodyParts => Parent.Children.Where(x => x is BasePart).Cast<BasePart>().ToArray(); // wtf
 		public BasePart? PrimaryPart => Parent is Model ? (Parent as Model).PrimaryPart : null;
-		public BasePart? Head => Parent.FindFirstChild("Head") as BasePart;
-		public BasePart? RightLeg => Parent.FindFirstChild("Right Leg") as BasePart;
-		public BasePart? LeftLeg => Parent.FindFirstChild("Left Leg") as BasePart;
-		public BasePart? RightArm => Parent.FindFirstChild("Right Arm") as BasePart;
-		public BasePart? LeftArm => Parent.FindFirstChild("Left Arm") as BasePart;
+		public BasePart? Head => head;
+		public BasePart? RightLeg => rightLeg;
+		public BasePart? LeftLeg => leftLeg;
+		public BasePart? RightArm => rightArm;
+		public BasePart? LeftArm => leftArm;
 		public bool IsRightLegAbleToJump => RightLeg == null ? false : RightLeg.IsGrounded;
 		public bool IsLeftLegAbleToJump => LeftLeg == null ? false : LeftLeg.IsGrounded;
 		public bool CanJumpInTheory => IsRightLegAbleToJump || IsLeftLegAbleToJump;
@@ -44,10 +60,28 @@ namespace NetBlox.Instances
 		public static HumanoidControl ControlRight = HumanoidControl.GetFor(HumanoidControlType.WalkRight);
 		public static HumanoidControl ControlJump = HumanoidControl.GetFor(HumanoidControlType.Jump);
 
-		public HumanoidState State = HumanoidState.Idle;
+		public HumanoidState State
+		{
+			get => currentState;
+			set
+			{
+				var old = currentState;
+				currentState = value;
+				var newv = value;
+				if (old != newv)
+					DoStateTransition(old, newv);
+			}
+		}
+
+		private HumanoidState currentState = HumanoidState.Idle;
 		private Workspace? workspace;
 		private bool isDying = false;
 		private BasePart? torsoCache;
+		private BasePart? leftLeg;
+		private BasePart? rightLeg;
+		private BasePart? leftArm;
+		private BasePart? rightArm;
+		private BasePart? head;
 		private RenderTexture2D debugTexture;
 
 		public Humanoid(GameManager ins) : base(ins) { }
@@ -57,14 +91,26 @@ namespace NetBlox.Instances
 		{
 			GameManager.NetworkManager.SendServerboundPacket(NPCharacterReset.Create(Parent));
 		}
+		private void RenewBodyPartsEventHandler(object sender, Instance descendant) => RenewBodyParts();
+		public void RenewBodyParts()
+		{
+			torsoCache = Parent.FindFirstChild("Torso") as BasePart;
+			leftLeg = Parent.FindFirstChild("Left Leg") as BasePart;
+			rightLeg = Parent.FindFirstChild("Right Leg") as BasePart;
+			leftArm = Parent.FindFirstChild("Left Arm") as BasePart;
+			rightArm = Parent.FindFirstChild("Right Arm") as BasePart;
+		}
+		public void SetupBodyPartsAutomation()
+		{
+			RenewBodyParts();
+			Parent.NativeChildAdded += RenewBodyPartsEventHandler;
+			Parent.NativeChildRemoved += RenewBodyPartsEventHandler;
+		}
 		public override void Process()
 		{
 			base.Process();
 
 			if (Parent == null) return;
-			if (torsoCache == null)
-				torsoCache = Parent.FindFirstChild("Torso") as BasePart;
-
 			if (GameManager.NetworkManager == null) return;
 
 			if (IsLocalPlayer && GameManager.NetworkManager.IsClient && Health > 0)
@@ -180,23 +226,26 @@ namespace NetBlox.Instances
 				torsoCache.Velocity = new Vector3(MathE.Lerp(torsoCache.LinearVelocity.X, veldelta.X, 0.7f),
 					torsoCache.LinearVelocity.Y, MathE.Lerp(torsoCache.LinearVelocity.Z, veldelta.Z, 0.7f));
 
-				Vector3 characterForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitZ, torsoCache.QuaternionRotation);
-				Vector3 cameraForward = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;
-				cameraForward.Y = 0;
-				cameraForward = Vector3.Normalize(cameraForward);
-				characterForward.Y = 0;
-				characterForward = Vector3.Normalize(characterForward);
+				if (torsoCache.BodyHandle.HasValue)
+				{
+					Vector3 characterForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitZ, torsoCache.QuaternionRotation);
+					Vector3 cameraForward = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;
+					cameraForward.Y = 0;
+					cameraForward = Vector3.Normalize(cameraForward);
+					characterForward.Y = 0;
+					characterForward = Vector3.Normalize(characterForward);
 
-				float anglediff = MathF.Atan2(
-					cameraForward.X * characterForward.Z - cameraForward.Z * characterForward.X,
-					cameraForward.X * characterForward.X + cameraForward.Z * characterForward.Z);
-				float angular_velocity = MathE.Clamp(-5, anglediff, 5);
+					float anglediff = MathF.Atan2(
+						cameraForward.X * characterForward.Z - cameraForward.Z * characterForward.X,
+						cameraForward.X * characterForward.X + cameraForward.Z * characterForward.Z);
+					float angular_velocity = MathE.Clamp(-5, anglediff, 5);
 
-				var angular = torsoCache.AngularVelocity;
-				angular.Y = angular_velocity * 3;
-				var body = GameManager.PhysicsManager.LocalSimulation.Bodies[torsoCache.BodyHandle.Value];
-				body.ApplyAngularImpulse(angular);
-				body.Awake = true;
+					var angular = torsoCache.AngularVelocity;
+					angular.Y = angular_velocity * 3;
+					var body = GameManager.PhysicsManager.LocalSimulation.Bodies[torsoCache.BodyHandle.Value];
+					body.ApplyAngularImpulse(angular);
+					body.Awake = true;
+				}
 			}
 			else
 			{
@@ -220,6 +269,10 @@ namespace NetBlox.Instances
 				torsoCache.AngularVelocity += torque;
 			}
 		}
+		private void DoStateTransition(HumanoidState from, HumanoidState to)
+		{
+
+		}
 		private void DoSitting()
 		{
 			if (ControlJump.IsPressed())
@@ -239,16 +292,20 @@ namespace NetBlox.Instances
 
 			State = HumanoidState.Idle;
 		}
+		public override void Destroy()
+		{
+			Parent.NativeChildAdded -= RenewBodyPartsEventHandler;
+			Parent.NativeChildRemoved -= RenewBodyPartsEventHandler;
+			base.Destroy();
+		}
 		public override void RenderUI()
 		{
 			if (Parent == null) return;
 
 			var parent = Parent;
 			if (parent is not Model)
-			{
-				LogManager.LogWarn("Humanoid instance must be parented to a Model!");
 				return;
-			}
+
 			if (GameManager.RenderManager == null) return;
 
 			var head = parent.FindFirstChild("Head") as BasePart;
@@ -258,7 +315,7 @@ namespace NetBlox.Instances
 			var pos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 1f, 0), cam);
 			var siz = Vector2.Zero;
 
-			var name = Parent.Name + " - " + State;
+			var name = Parent.Name;
 
 			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, 14, 1.4f);
 			Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
@@ -280,14 +337,19 @@ namespace NetBlox.Instances
 			var head = Parent.FindFirstChild("Head") as BasePart;
 			if (head == null) return;
 
+			const int windowWidth = 350;
+			const int windowHeight = 150;
+
 			var cam = GameManager.RenderManager.MainCamera;
 			var debugbillboardpos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 2f, 0), cam);
 			var scale = 10 / Vector3.Distance(cam.Position, head.Position + new Vector3(0, head.Size.Y / 2 + 2f, 0));
 			var font = GameManager.RenderManager.MainFont.SpriteFont;
 
+			debugbillboardpos += new Vector2(-windowWidth / 2, -windowHeight / 1.2f);
+
 			if (debugTexture.Id == default)
 			{
-				debugTexture = Raylib.LoadRenderTexture(400, 300);
+				debugTexture = Raylib.LoadRenderTexture(windowWidth, windowHeight);
 			}
 
 			Raylib.BeginTextureMode(debugTexture);
@@ -305,9 +367,12 @@ namespace NetBlox.Instances
 			Raylib.DrawTextEx(font, $"Torso angular velocity: {torsoCache.AngularVelocity.X:F5} {torsoCache.AngularVelocity.Y:F5} {torsoCache.AngularVelocity.Z:F5}",
 				new Vector2(5, 5 + 14 * 3), 14, 1.4f, Color.White);
 
+			Raylib.DrawTextEx(font, $"Humanoid state: {currentState}",
+				new Vector2(5, 5 + 14 * 4), 14, 1.4f, Color.White);
+
 			Raylib.EndTextureMode();
 
-			Raylib.DrawTextureRec(debugTexture.Texture, new Raylib_cs.Rectangle(0, 300, 400, -300), debugbillboardpos, Color.White);
+			Raylib.DrawTextureRec(debugTexture.Texture, new Raylib_cs.Rectangle(0, windowHeight, windowWidth, -windowHeight), debugbillboardpos, Color.White);
 		}
 		public void Die()
 		{

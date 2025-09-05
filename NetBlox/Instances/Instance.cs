@@ -34,8 +34,8 @@ namespace NetBlox.Instances
 								parent.Children.Remove(this);
 							if (GameManager.MainEnvironment != null)
 							{
-								parent.ChildRemoved.Fire(LuaRuntime.PushInstance(this));
-								RaiseDescendantRemoved(this);
+								parent.NativeChildRemoved?.Invoke(parent, this);
+								parent.NativeDescendantRemoved?.Invoke(parent, this);
 							}
 						}
 					}
@@ -49,8 +49,8 @@ namespace NetBlox.Instances
 								value.Children.Add(this);
 							if (GameManager.MainEnvironment != null)
 							{
-								value.ChildAdded.Fire(LuaRuntime.PushInstance(this));
-								RaiseDescendantAdded(this);
+								parent.NativeChildAdded?.Invoke(parent, this);
+								parent.NativeDescendantAdded?.Invoke(parent, this);
 							}
 						}
 					}
@@ -108,6 +108,12 @@ namespace NetBlox.Instances
 		public Dictionary<string, LuaSignal> ChangedSignals = [];
 		public static Dictionary<int, Table> MetaTables = [];
 		public Table? Table;
+
+		public event EventHandler<Instance> NativeChildAdded;
+		public event EventHandler<Instance> NativeChildRemoved;
+		public event EventHandler<Instance> NativeDescendantAdded;
+		public event EventHandler<Instance> NativeDescendantRemoved;
+
 		private Instance? parent;
 		private Type? ThisType;
 		private bool containsInstanceReferences;
@@ -134,22 +140,13 @@ namespace NetBlox.Instances
 			ChildRemoved = new LuaSignal(gm);
 			Changed = new LuaSignal(gm);
 			Destroying = new LuaSignal(gm);
-		}
-		public void RaiseDescendantAdded(Instance descendantInQuestion) // not anymore
-		{
-			if (Parent != null)
-			{
-				Parent.DescendantAdded.Fire(LuaRuntime.PushInstance(descendantInQuestion));
-				Parent.RaiseDescendantAdded(descendantInQuestion);
-			}
-		}
-		public void RaiseDescendantRemoved(Instance descendantInQuestion) // not anymore
-		{
-			if (Parent != null)
-			{
-				Parent.DescendantRemoved.Fire(LuaRuntime.PushInstance(descendantInQuestion));
-				Parent.RaiseDescendantRemoved(descendantInQuestion);
-			}
+
+			NativeChildAdded += (_, descendant) => ChildAdded.Fire(LuaRuntime.PushInstance(descendant));
+			NativeChildRemoved += (_, descendant) => ChildRemoved.Fire(LuaRuntime.PushInstance(descendant));
+			NativeDescendantAdded += (_, descendant) => DescendantAdded.Fire(LuaRuntime.PushInstance(descendant));
+			NativeDescendantRemoved += (_, descendant) => DescendantRemoved.Fire(LuaRuntime.PushInstance(descendant));
+			NativeDescendantAdded += (_, descendant) => Parent?.NativeDescendantAdded?.Invoke(_, descendant);
+			NativeDescendantRemoved += (_, descendant) => Parent?.NativeDescendantRemoved?.Invoke(_, descendant);
 		}
 		public virtual void Process()
 		{
