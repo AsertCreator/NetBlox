@@ -136,14 +136,18 @@ namespace NetBlox
 				return path;
 			using var stream = await HttpClient.GetStreamAsync(from);
 			using var file = File.OpenWrite(path);
-			int b = stream.ReadByte();
-			while (b != -1)
+
+			try
 			{
-				file.Write([(byte)b]);
-				b = stream.ReadByte();
+				await stream.CopyToAsync(file);
+				file.Flush();
+				return Path.GetFullPath(path).Replace('\\', '/');
 			}
-			file.Flush();
-			return Path.GetFullPath(path).Replace('\\', '/');
+			finally
+			{
+				stream.Close();
+				throw new Exception("Failed to download an asset from " + from + " to " + to + "!");
+			}
 		}
 		/// <summary>
 		/// Resolves a URL used within this whole game, always returns local path (downloads files from internet when necessary)

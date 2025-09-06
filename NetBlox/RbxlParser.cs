@@ -1,14 +1,9 @@
 ﻿using NetBlox.Common;
 using NetBlox.Instances;
-using NetBlox.Instances.Services;
 using NetBlox.Structs;
-using Raylib_cs;
 using System.Globalization;
 using System.Numerics;
 using System.Xml;
-
-// NOBODY ASKED YOU VISUAL STUDIO. LITERALLY NO ONE
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
 
 namespace NetBlox
 {
@@ -144,4 +139,3 @@ namespace NetBlox
 		}
 	}
 }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace NetBlox.Runtime
+﻿namespace NetBlox.Runtime
 {
 	public static class Security
 	{
@@ -11,27 +6,18 @@ namespace NetBlox.Runtime
 		{
 			get
 			{
-				if (impmutex) return implevel;
+				if (implevels.Count > 0) return implevels.Peek();
 				object? lvl = TaskScheduler.CurrentJob.SecurityLevel;
 				if (lvl == null)
 					return 0;
 				return (int)lvl;
 			}
 		}
-		private static bool impmutex = false;
-		private static int implevel = 0;
-		public static void Impersonate(int level)
-		{
-			while (impmutex) 
-				Thread.Yield();
-			impmutex = true;
-			implevel = level;
-		}
-		public static void EndImpersonate()
-		{
-			implevel = 0;
-			impmutex = false;
-		}
+		private static Stack<int> implevels = [];
+
+		public static void Impersonate(int level) => implevels.Push(level);
+		public static void EndImpersonate() => implevels.Pop();
+
 		public static void Require(string name, params Capability[] caps)
 		{
 			if (caps.Length == 0) return;

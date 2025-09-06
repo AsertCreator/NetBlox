@@ -124,7 +124,9 @@ public partial class MainWindow : System.Windows.Window
 				for (int i = 0; i < chd.Length; i++)
 				{
 					var d = chd[i];
-					d.ChangeOwnership(gm);
+					var nbif = Instances.Instance.SerializeToNBIF(d);
+					using var ms = new MemoryStream(nbif);
+					d = Instances.Instance.DeserializeFromNBIF(gm, ms);
 					d.Parent = gm.CurrentRoot;
 				}
 

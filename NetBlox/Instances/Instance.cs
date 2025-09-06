@@ -4,6 +4,8 @@ using NetBlox.Network;
 using NetBlox.Runtime;
 using System.Diagnostics;
 using System.Net;
+using System.Reflection;
+using System.Text;
 
 namespace NetBlox.Instances
 {
@@ -605,6 +607,151 @@ namespace NetBlox.Instances
 					}
 				}
 			}
+		}
+		public static byte[] SerializeToNBIF(Instance inst)
+		{
+			using MemoryStream ms = new();
+			using BinaryWriter bw = new(ms);
+
+			var type = inst.GetType();
+
+			bw.Write(inst.ClassName);
+			bw.Write(inst.UniqueID.ToByteArray());
+			bw.Write(inst.ParentID.ToByteArray());
+			bw.Write(inst.Tags.Count);
+			for (int i = 0; i < inst.Tags.Count; i++)
+				bw.Write(inst.Tags[i]);
+
+			var props = type.GetProperties();
+			var goodprops = new List<PropertyInfo>();
+
+			for (int i = 0; i < props.Length; i++)
+			{
+				var prop = props[i];
+				if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
+					continue;
+				if (!prop.CanWrite)
+					continue;
+				goodprops.Add(prop);
+			}
+
+			bw.Write(goodprops.Count);
+
+			for (int i = 0; i < goodprops.Count; i++)
+			{
+				var prop = goodprops[i];
+				var value = prop.GetValue(inst);
+				var valuetype = value.GetType();
+				var valbts = SerializationManager.NetworkSerializers[valuetype.FullName](value, inst.GameManager);
+
+				bw.Write(prop.Name);
+				bw.Write(valbts.Length);
+				bw.Write(valbts);
+			}
+
+			bw.Write(inst.Children.Count);
+
+			for (int i = 0; i < inst.Children.Count; i++)
+				bw.Write(SerializeToNBIF(inst.Children[i]));
+
+			return ms.ToArray();
+		}
+		private struct DelayedProperty
+		{
+			public PropertyInfo Property;
+			public Instance Target;
+			public byte[] ValueBytes;
+		}
+		public static Instance? DeserializeFromNBIF(GameManager gm, Stream stream)
+		{
+			List<DelayedProperty> delayedProperties = [];
+
+			Instance? Deserialize()
+			{
+				string? classname = null;
+				string? name = null;
+
+				try
+				{
+					using BinaryReader br = new(stream);
+
+					classname = br.ReadString();
+					var uniqueid = br.ReadBytes(16);
+					var parentid = br.ReadBytes(16);
+					var tagcount = br.ReadInt32();
+					var tags = new List<string>();
+
+					for (int i = 0; i < tagcount; i++)
+						tags.Add(br.ReadString());
+
+					var insttype = InstanceCreator.InstanceTypes.First(x => x.Name == classname);
+					var impersonation = insttype.GetCustomAttribute<ImpersonateDuringReplicationAttribute>();
+
+					if (impersonation != null)
+						Security.Impersonate(impersonation.Level);
+
+					var inst = InstanceCreator.CreateInstanceIfExists(classname, gm);
+					inst.Tags = tags;
+
+					var propcount = br.ReadInt32();
+
+					for (int i = 0; i < propcount; i++)
+					{
+						var propname = br.ReadString();
+						var propvalcount = br.ReadInt32();
+						var propvalbts = br.ReadBytes(propvalcount);
+						var prop = insttype.GetProperty(propname);
+						var propval = SerializationManager.NetworkDeserializers[propname](propvalbts, gm);
+
+						if (propval == null)
+						{
+							delayedProperties.Add(new()
+							{
+								Property = prop,
+								Target = inst,
+								ValueBytes = propvalbts
+							});
+							continue;
+						}
+						if (propname == "Name")
+							name = propval as string;
+
+						prop.SetValue(inst, propval);
+					}
+
+					var childcount = br.ReadInt32();
+
+					for (int i = 0; i < childcount; i++)
+					{
+						Instance? child = Deserialize();
+						if (child == null)
+							continue;
+						child.Parent = inst;
+					}
+
+					if (impersonation != null)
+						Security.EndImpersonate();
+
+					return inst;
+				}
+				catch (Exception ex)
+				{
+					LogManager.LogError($"Failed to deserialize {classname ?? "<unk>"} - {name ?? "<unk>"} - {ex.GetType()} - {ex.Message}!");
+					return null;
+				}
+			}
+
+			for (int i = 0; i < delayedProperties.Count; i++)
+			{
+				var delayed = delayedProperties[i];
+				var insttype = delayed.Target.GetType();
+				var instprop = delayed.Property;
+				var value = SerializationManager.NetworkDeserializers[instprop.PropertyType.FullName](delayed.ValueBytes, gm);
+
+				instprop.SetValue(delayed.Target, value);
+			}
+
+			return Deserialize();
 		}
 	}
 }

@@ -173,11 +173,10 @@ namespace NetBlox.Studio
 						};
 						return tvi;
 					}
-					x.DescendantAdded.NativeAttached.Add(i =>
+					x.NativeDescendantAdded += (_, inst) =>
 					{
 						Dispatcher.Invoke(() =>
 						{
-							Instance inst = (Instance)i[0].Table.AssociatedObject;
 							TreeViewItem? parent = null;
 							bool noparent = false;
 							if (inst.Parent != x && inst.Parent != null)
@@ -219,12 +218,11 @@ namespace NetBlox.Studio
 								}
 							}
 						});
-					});
-					x.DescendantRemoved.NativeAttached.Add(i =>
+					};
+					x.NativeDescendantRemoved += (i, inst) =>
 					{
 						Dispatcher.Invoke(() =>
 						{
-							Instance inst = (Instance)i[0].Table.AssociatedObject;
 							TreeViewItem? parent = null;
 							if (inst.Parent != x && inst.Parent != null)
 							{
@@ -244,7 +242,7 @@ namespace NetBlox.Studio
 								}
 							}
 						});
-					});
+					};
 				});
 
 				App.EditorGame.LoadDefault();
