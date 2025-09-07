@@ -1,8 +1,9 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using NetBlox.Network;
+using Raylib_cs;
 using System.Numerics;
 using System.Text;
 
@@ -165,85 +166,20 @@ namespace NetBlox.Instances
 		public void LoadCharacter()
 		{
 			var workspace = Root.GetService<Workspace>();
-			var chmodel = new Model(GameManager);
-			chmodel.Name = Name;
-			chmodel.Parent = Root.GetService<Workspace>();
+			var chmodel = Root.GetService<PlatformService>().SpawnCharacterFor(CharacterAppearanceId, Name);
 
-			var torso = new Part(GameManager)
-			{
-				Parent = chmodel, Anchored = false, Color3 = Color.Red,
-				Position = new(-0.5f, -1f, 0), Size = new(2, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Torso", Locked = true
-			};
-			var leftleg = new Part(GameManager)
-			{
-				Parent = chmodel,
-				Anchored = false,
-				Color3 = Color.DarkBlue,
-				Position = new(-1, -3f, 0),
-				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs,
-				Name = "Left Leg",
-				Locked = true
-			};
-			var rightleg = new Part(GameManager)
-			{
-				Parent = chmodel,
-				Anchored = false,
-				Color3 = Color.DarkBlue,
-				Position = new(0, -3f, 0),
-				Size = new(1, 2, 1),
-				TopSurface = SurfaceType.Studs,
-				Name = "Right Leg",
-				Locked = true
-			};
-			var leftarm = new Part(GameManager)
-			{
-				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
-				Position = new(-2f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Left Arm", CanCollide = false, Locked = true
-			};
-			var rightarm = new Part(GameManager)
-			{
-				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
-				Position = new(1f, -1f, 0), Size = new(1, 2, 1), TopSurface = SurfaceType.Studs,
-				Name = "Right Arm", CanCollide = false, Locked = true
-			};
-			var head = new Part(GameManager)
-			{
-				Parent = chmodel, Anchored = false, Color3 = Color.Yellow,
-				Position = new(-0.5f, 0.5f, 0), Size = new(1, 1, 1), TopSurface = SurfaceType.Studs,
-				Name = "Head", Locked = true
-			};
-			_ = new Decal(GameManager)
-			{
-				Texture = "rbxasset://textures/smile.png", Face = Faces.Front, Parent = head
-			};
-
-			_ = new Weld(GameManager) { Part0 = torso, Part1 = leftleg, Enabled = true, Parent = leftleg };
-			_ = new Weld(GameManager) { Part0 = torso, Part1 = rightleg, Enabled = true, Parent = rightleg };
-			_ = new Weld(GameManager) { Part0 = torso, Part1 = leftarm, Enabled = true, Parent = leftarm };
-			_ = new Weld(GameManager) { Part0 = torso, Part1 = rightarm, Enabled = true, Parent = rightarm };
-			_ = new Weld(GameManager) { Part0 = torso, Part1 = head, Enabled = true, Parent = head };
-
-			chmodel.PrimaryPart = torso;
 			if (workspace.SpawnLocation != null)
 				chmodel.MoveTo(workspace.SpawnLocation.Position + new Vector3(0, 3.5f, 0));
 			else
 				chmodel.MoveTo(new Vector3(0, 10, 0));
 
-			var humanoid = new Humanoid(GameManager);
-			humanoid.Parent = chmodel;
-
+			chmodel.Parent = workspace;
 			Character = chmodel;
 		}
+		[Lua([Security.Capability.None])]
 		public BrickColor GetPlayerColor()
 		{
-			int idx = (int)(Math.Abs(CharacterAppearanceId) % 100);
-			BrickColor? bc = BrickColor.ByIndex(idx);
-			while (!bc.HasValue)
-				bc = BrickColor.ByIndex(++idx);
-			return bc.Value;
+			return Root.GetService<PlatformService>().GetPlayerColor(CharacterAppearanceId);
 		}
 		[Lua([Security.Capability.None])]
 		public void Kick(string msg) => GameManager.NetworkManager.PerformKick(Client, msg, IsLocalPlayer);

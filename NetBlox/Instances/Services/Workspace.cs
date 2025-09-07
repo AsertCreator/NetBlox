@@ -30,8 +30,8 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.None])]
 		public float Gravity 
 		{ 
-			get => GameManager.PhysicsManager.Gravity;
-			set => GameManager.PhysicsManager.Gravity = value;
+			get => GameManager.PhysicsManager.Gravity * -10;
+			set => GameManager.PhysicsManager.Gravity = value / -10;
 		}
 		[Lua([Security.Capability.None])]
 		public float FallenPartsDestroyHeight { get; set; } = -50;

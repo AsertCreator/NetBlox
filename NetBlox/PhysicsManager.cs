@@ -62,20 +62,27 @@ namespace NetBlox
 
 					// reflect this in rendering
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
-					box._physicsposition = refer.Pose.Position;
-					box._physicsrotation = refer.Pose.Orientation;
-					box._physicsvelocity = refer.Velocity.Linear;
 
-					box.Reset();
-
-					if (box._position.Y <= work.FallenPartsDestroyHeight)
+					if (box.IsDescendantOf(work))
 					{
-						box.Destroy();
-						continue;
-					}
+						box._physicsposition = refer.Pose.Position;
+						box._physicsrotation = refer.Pose.Orientation;
+						box._physicsvelocity = refer.Velocity.Linear;
 
-					if (box.IsDirty)
-						GameManager.NetworkManager.SendServerboundPacket(NPPhysicsReplication.Create(box));
+						box.Reset();
+
+						if (box._position.Y <= work.FallenPartsDestroyHeight)
+						{
+							box.Destroy();
+							continue;
+						}
+
+						if (box.IsDirty)
+						{
+							GameManager.NetworkManager.SendServerboundPacket(NPPhysicsReplication.Create(box));
+							box.IsDirty = false;
+						}
+					}
 				}
 			}
 		}
@@ -84,12 +91,11 @@ namespace NetBlox
 			if (Workspace == null || DisablePhysics)
 				return;
 
-			// nuhuh
-			return; // TODO: fix server physics
-
 			var work = Workspace;
 
-			LocalSimulation.Timestep(1.0f / 45, DefaultThreadDispatcher);
+			return;
+
+			LocalSimulation.Timestep(1.0f / AppManager.PreferredFPS, DefaultThreadDispatcher);
 
 			var clients = GameManager.NetworkManager.Clients;
 
@@ -105,20 +111,30 @@ namespace NetBlox
 
 					var refer = LocalSimulation.Bodies[box.BodyHandle.Value];
 
-					box._physicsposition = refer.Pose.Position;
-					box._physicsrotation = refer.Pose.Orientation;
-					box._physicsvelocity = refer.Velocity.Linear;
-
-					if (box._position.Y <= work.FallenPartsDestroyHeight)
+					if (box.IsDescendantOf(work))
 					{
-						box.Destroy();
-						continue;
+						box._physicsposition = refer.Pose.Position;
+						box._physicsrotation = refer.Pose.Orientation;
+						box._physicsvelocity = refer.Velocity.Linear;
+
+						if (box._position.Y <= work.FallenPartsDestroyHeight)
+						{
+							box.Destroy();
+							continue;
+						}
+
+						var packet = NPPhysicsReplication.Create(box);
+
+						if (box.IsDirty)
+						{
+							for (int j = 0; j < clients.Count; j++)
+								clients[j].SendPacket(packet);
+						}
 					}
-
-					var packet = NPPhysicsReplication.Create(box);
-
-					for (int j = 0; j < clients.Count; j++)
-						clients[j].SendPacket(packet);
+					else
+					{
+						refer.Awake = false;
+					}
 				}
 			}
 		}
