@@ -48,6 +48,9 @@ namespace NetBlox.Instances
 							RenderCache.DirtyCounter = 6;
 						}
 
+						if (LocalLighing.SunLocality)
+							RenderCache.DirtyCounter = 6;
+
 						if (RenderCache.DirtyCounter > 0)
 						{
 							if (FFlagShowAFSCacheReload)

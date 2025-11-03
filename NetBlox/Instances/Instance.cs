@@ -753,5 +753,16 @@ namespace NetBlox.Instances
 
 			return Deserialize();
 		}
+		public Humanoid? GetHumanoidForInstance()
+		{
+			Instance ins = this;
+			while (ins != null)
+			{
+				if (ins is Humanoid hum)
+					return hum;
+				ins = ins.Parent;
+			}
+			return null;
+		}
 	}
 }

@@ -245,9 +245,20 @@ namespace NetBlox
 			var p0 = GameManager.PhysicsManager.Collidable2BasePartMap[pair.A.Packed];
 			var p1 = GameManager.PhysicsManager.Collidable2BasePartMap[pair.B.Packed];
 
-			pairMaterial.FrictionCoefficient = 2f;
-			pairMaterial.MaximumRecoveryVelocity = 2f;
-			pairMaterial.SpringSettings = new SpringSettings(20, 0.8f);
+			var humanoid = p0.GetHumanoidForInstance() ?? p1.GetHumanoidForInstance();
+
+			if (humanoid == null)
+			{
+				pairMaterial.FrictionCoefficient = 2f;
+				pairMaterial.MaximumRecoveryVelocity = 2f;
+				pairMaterial.SpringSettings = new SpringSettings(20, 0.8f);
+			}
+			else
+			{
+				pairMaterial.FrictionCoefficient = 0.4f;
+				pairMaterial.MaximumRecoveryVelocity = 0.02f;
+				pairMaterial.SpringSettings = new SpringSettings(2, 0.3f);
+			}
 
 			if (manifold.Count > 0)
 			{
