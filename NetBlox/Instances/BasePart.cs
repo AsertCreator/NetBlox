@@ -616,7 +616,7 @@ namespace NetBlox.Instances
 			if (TouchingWith.Contains(basePart))
 			{
 				TouchingWith.Remove(basePart);
-				Touched.Fire(LuaRuntime.PushInstance(basePart));
+				// Touched.Fire(LuaRuntime.PushInstance(basePart));
 			}
 		}
 		public void AddCollidablePair(CollidablePair pair) => currentPairs.Add(pair);

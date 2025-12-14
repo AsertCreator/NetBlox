@@ -267,6 +267,7 @@ namespace NetBlox.Instances
 				if (float.IsInfinity(torque.X) || float.IsInfinity(torque.Y) || float.IsInfinity(torque.Z))
 					return;
 				torsoCache.AngularVelocity += torque;
+				torsoCache.Velocity += new Vector3(0, 0.1f, 0);
 			}
 		}
 		private void DoStateTransition(HumanoidState from, HumanoidState to)
@@ -285,12 +286,18 @@ namespace NetBlox.Instances
 		}
 		private void StandUp()
 		{
-			var part = torsoCache;
-			part.Velocity += new Vector3(0, 25, 0);
-			if (part.Velocity.Y >= 28)
-				part.Velocity = new Vector3(part.Velocity.X, 28, part.Velocity.Z);
+			if (State == HumanoidState.Falling || State == HumanoidState.Jumping)
+				return;
 
-			State = HumanoidState.Idle;
+			if (!IsLeftLegAbleToJump && !IsRightLegAbleToJump)
+				return;
+
+			var part = torsoCache;
+			part.Velocity += new Vector3(0, 35, 0);
+			if (part.Velocity.Y >= 38)
+				part.Velocity = new Vector3(part.Velocity.X, 38, part.Velocity.Z);
+
+			State = HumanoidState.Jumping;
 		}
 		public override void Destroy()
 		{
@@ -317,13 +324,13 @@ namespace NetBlox.Instances
 
 			var name = Parent.Name;
 
-			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, 14, 1.4f);
-			Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
+			siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont14.SpriteFont, name, 14, 1.4f);
+			Raylib.DrawTextEx(GameManager.RenderManager.MainFont14.SpriteFont, name, pos - new Vector2(siz.X / 2, 0), 14, 1.4f, Color.White);
 
 			if (Health < 100)
 			{
-				siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont.SpriteFont, Health.ToString(), 14, 1.4f);
-				Raylib.DrawTextEx(GameManager.RenderManager.MainFont.SpriteFont, Health.ToString(), pos - new Vector2(siz.X / 2, -16), 14, 1.4f, 
+				siz = Raylib.MeasureTextEx(GameManager.RenderManager.MainFont14.SpriteFont, Health.ToString(), 14, 1.4f);
+				Raylib.DrawTextEx(GameManager.RenderManager.MainFont14.SpriteFont, Health.ToString(), pos - new Vector2(siz.X / 2, -16), 14, 1.4f, 
 					new Color(255,
 						(int)MathE.Lerp(0, 255, Math.Clamp(Health, 0, 100) / 100f),
 						(int)MathE.Lerp(0, 255, Math.Clamp(Health, 0, 100) / 100f),
@@ -343,7 +350,7 @@ namespace NetBlox.Instances
 			var cam = GameManager.RenderManager.MainCamera;
 			var debugbillboardpos = Raylib.GetWorldToScreen(head.Position + new Vector3(0, head.Size.Y / 2 + 2f, 0), cam);
 			var scale = 10 / Vector3.Distance(cam.Position, head.Position + new Vector3(0, head.Size.Y / 2 + 2f, 0));
-			var font = GameManager.RenderManager.MainFont.SpriteFont;
+			var font = GameManager.RenderManager.MainFont14.SpriteFont;
 
 			debugbillboardpos += new Vector2(-windowWidth / 2, -windowHeight / 1.2f);
 
