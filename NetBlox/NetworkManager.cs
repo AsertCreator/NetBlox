@@ -301,10 +301,12 @@ namespace NetBlox
 		}
 		public void PerformKick(RemoteClient? nc, string msg, bool islocal)
 		{
-			// it's not really constitutionally defined, but idc.
 			if (RemoteConnection == null) return;
 			if (IsClient && !islocal)
 				throw new ScriptRuntimeException("Cannot kick non-local player from client");
+
+			nc.Player.WasKicked = true;
+
 			if (IsClient && islocal)
 			{
 				RemoteConnection.Close(CloseReason.ClientClosed);
@@ -313,7 +315,9 @@ namespace NetBlox
 			}
 
 			// we are on server
-			if (nc == null) throw new ScriptRuntimeException("RemoteClient object not preserved!");
+			if (nc == null) 
+				throw new ScriptRuntimeException("RemoteClient object not preserved!");
+
 			nc.KickOut(msg);
 		}
 		public void WaitForInstanceArrival(Guid guid, Action act)

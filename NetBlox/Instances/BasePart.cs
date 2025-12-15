@@ -27,6 +27,8 @@ namespace NetBlox.Instances
 
 		public PhysicsAssembly? Assembly;
 
+		private object physicsRepresentationLock = new();
+
 		public bool IsActuallyAnchored => IsDomestic ? _anchored : true;
 		[Lua([Security.Capability.None])]
 		public bool Anchored
@@ -34,37 +36,42 @@ namespace NetBlox.Instances
 			get => _anchored;
 			set
 			{
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-				_anchored = value;
-
-				if (IsActuallyAnchored)
+				lock (physicsRepresentationLock)
 				{
-					if (BodyHandle.HasValue)
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+
+					_anchored = value;
+
+					if (IsActuallyAnchored)
 					{
-						if (!localsim.Bodies[BodyHandle.Value].Exists)
+						if (BodyHandle.HasValue)
 						{
+							if (!localsim.Bodies[BodyHandle.Value].Exists)
+							{
+								BodyHandle = null;
+								return;
+							}
+							localsim.Bodies.Remove(BodyHandle.Value);
 							BodyHandle = null;
-							return;
 						}
-						localsim.Bodies.Remove(BodyHandle.Value);
-						BodyHandle = null;
+						CreateStaticHandle();
 					}
-					CreateStaticHandle();
-				}
-				else
-				{
-					if (StaticHandle.HasValue)
+					else
 					{
-						if (!localsim.Statics[StaticHandle.Value].Exists)
+						if (StaticHandle.HasValue)
 						{
+							if (!localsim.Statics[StaticHandle.Value].Exists)
+							{
+								StaticHandle = null;
+								return;
+							}
+							localsim.Statics.Remove(StaticHandle.Value);
 							StaticHandle = null;
-							return;
 						}
-						localsim.Statics.Remove(StaticHandle.Value);
-						StaticHandle = null;
+						CreateBodyHandle();
 					}
-					CreateBodyHandle();
+
+					OnPhysicsRepresentationChanged?.Invoke(this, new());
 				}
 			}
 		}
@@ -149,31 +156,34 @@ namespace NetBlox.Instances
 			get => _position;
 			set
 			{
-				if (_position == value)
-					return;
-				_position = value;
-				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
-					return;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
+				lock (physicsRepresentationLock)
 				{
-					var body = localsim.Bodies[BodyHandle.Value];
-					if (!body.Exists)
+					if (_position == value)
 						return;
-					body.Pose.Position = _position;
-					body.UpdateBounds();
-				}
-				if (StaticHandle.HasValue)
-				{
-					var stat = localsim.Statics[StaticHandle.Value];
-					if (!stat.Exists)
+					_position = value;
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
 						return;
-					stat.Pose.Position = _position;
-					stat.UpdateBounds();
-				}
 
-				OnPositionChanged(value);
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+					if (BodyHandle.HasValue)
+					{
+						var body = localsim.Bodies[BodyHandle.Value];
+						if (!body.Exists)
+							return;
+						body.Pose.Position = _position;
+						body.UpdateBounds();
+					}
+					if (StaticHandle.HasValue)
+					{
+						var stat = localsim.Statics[StaticHandle.Value];
+						if (!stat.Exists)
+							return;
+						stat.Pose.Position = _position;
+						stat.UpdateBounds();
+					}
+
+					OnPositionChanged(value);
+				}
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -182,32 +192,35 @@ namespace NetBlox.Instances
 			get => Raymath.QuaternionToEuler(_rotation) * new Vector3(180f / MathF.PI, 180f / MathF.PI, 180f / MathF.PI);
 			set
 			{
-				var rotq = Raymath.QuaternionFromEuler(value.Z / 180f * MathF.PI, value.Y / 180f * MathF.PI, value.X / 180f * MathF.PI);
-				if (_rotation == rotq)
-					return;
-				_rotation = rotq;
-				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
-					return;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
+				lock (physicsRepresentationLock)
 				{
-					var body = localsim.Bodies[BodyHandle.Value];
-					if (!body.Exists)
+					var rotq = Raymath.QuaternionFromEuler(value.Z / 180f * MathF.PI, value.Y / 180f * MathF.PI, value.X / 180f * MathF.PI);
+					if (_rotation == rotq)
 						return;
-					body.Pose.Orientation = rotq;
-					body.UpdateBounds();
-				}
-				if (StaticHandle.HasValue)
-				{
-					var stat = localsim.Statics[StaticHandle.Value];
-					if (!stat.Exists)
+					_rotation = rotq;
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
 						return;
-					stat.Pose.Orientation = rotq;
-					stat.UpdateBounds();
-				}
 
-				OnRotationChanged(rotq);
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+					if (BodyHandle.HasValue)
+					{
+						var body = localsim.Bodies[BodyHandle.Value];
+						if (!body.Exists)
+							return;
+						body.Pose.Orientation = rotq;
+						body.UpdateBounds();
+					}
+					if (StaticHandle.HasValue)
+					{
+						var stat = localsim.Statics[StaticHandle.Value];
+						if (!stat.Exists)
+							return;
+						stat.Pose.Orientation = rotq;
+						stat.UpdateBounds();
+					}
+
+					OnRotationChanged(rotq);
+				}
 			}
 		}
 		internal Quaternion QuaternionRotation
@@ -215,31 +228,34 @@ namespace NetBlox.Instances
 			get => _rotation;
 			set
 			{
-				if (_rotation == value)
-					return;
-				_rotation = value;
-				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
-					return;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
+				lock (physicsRepresentationLock)
 				{
-					var body = localsim.Bodies[BodyHandle.Value];
-					if (!body.Exists)
+					if (_rotation == value)
 						return;
-					body.Pose.Orientation = value;
-					body.UpdateBounds();
-				}
-				if (StaticHandle.HasValue)
-				{
-					var stat = localsim.Statics[StaticHandle.Value];
-					if (!stat.Exists)
+					_rotation = value;
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
 						return;
-					stat.Pose.Orientation = value;
-					stat.UpdateBounds();
-				}
 
-				OnRotationChanged(value);
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+					if (BodyHandle.HasValue)
+					{
+						var body = localsim.Bodies[BodyHandle.Value];
+						if (!body.Exists)
+							return;
+						body.Pose.Orientation = value;
+						body.UpdateBounds();
+					}
+					if (StaticHandle.HasValue)
+					{
+						var stat = localsim.Statics[StaticHandle.Value];
+						if (!stat.Exists)
+							return;
+						stat.Pose.Orientation = value;
+						stat.UpdateBounds();
+					}
+
+					OnRotationChanged(value);
+				}
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -248,49 +264,52 @@ namespace NetBlox.Instances
 			get => _size;
 			set
 			{
-				if (_size == value)
-					return;
-				_size = value;
-				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
-					return;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue) 
+				lock (physicsRepresentationLock)
 				{
-					var body = localsim.Bodies[BodyHandle.Value];
-					if (!body.Exists)
+					if (_size == value)
 						return;
-					var idx = body.Collidable.Shape;
-					var box = localsim.Shapes.GetShape<Box>(idx.Index);
-
-					localsim.Shapes.Remove(idx);
-
-					box.Width = _size.X;
-					box.Height = _size.Y;
-					box.Length = _size.Z;
-
-					idx = localsim.Shapes.Add(box);
-					body.Collidable.Shape = idx;
-				}
-				if (StaticHandle.HasValue)
-				{
-					var stat = localsim.Statics[StaticHandle.Value];
-					if (!stat.Exists)
+					_size = value;
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
 						return;
-					var idx = stat.Shape;
-					var box = localsim.Shapes.GetShape<Box>(idx.Index);
 
-					localsim.Shapes.Remove(idx);
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+					if (BodyHandle.HasValue) 
+					{
+						var body = localsim.Bodies[BodyHandle.Value];
+						if (!body.Exists)
+							return;
+						var idx = body.Collidable.Shape;
+						var box = localsim.Shapes.GetShape<Box>(idx.Index);
 
-					box.Width = _size.X;
-					box.Height = _size.Y;
-					box.Length = _size.Z;
+						localsim.Shapes.Remove(idx);
 
-					idx = localsim.Shapes.Add(box);
-					stat.SetShape(idx);
+						box.Width = _size.X;
+						box.Height = _size.Y;
+						box.Length = _size.Z;
+
+						idx = localsim.Shapes.Add(box);
+						body.Collidable.Shape = idx;
+					}
+					if (StaticHandle.HasValue)
+					{
+						var stat = localsim.Statics[StaticHandle.Value];
+						if (!stat.Exists)
+							return;
+						var idx = stat.Shape;
+						var box = localsim.Shapes.GetShape<Box>(idx.Index);
+
+						localsim.Shapes.Remove(idx);
+
+						box.Width = _size.X;
+						box.Height = _size.Y;
+						box.Length = _size.Z;
+
+						idx = localsim.Shapes.Add(box);
+						stat.SetShape(idx);
+					}
+
+					OnSizeChanged(value);
 				}
-
-				OnSizeChanged(value);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -307,20 +326,23 @@ namespace NetBlox.Instances
 			get => LinearVelocity;
 			set
 			{
-				if (LinearVelocity == value)
-					return;
-				LinearVelocity = value;
-				if (float.IsNaN(value.X) || !float.IsFinite(value.X))
-					return;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
+				lock (physicsRepresentationLock)
 				{
-					var body = localsim.Bodies[BodyHandle.Value];
-					if (!body.Exists)
+					if (LinearVelocity == value)
 						return;
-					body.ApplyLinearImpulse(LinearVelocity - body.Velocity.Linear);
-					body.Awake = true;
+					LinearVelocity = value;
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+						return;
+
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+					if (BodyHandle.HasValue)
+					{
+						var body = localsim.Bodies[BodyHandle.Value];
+						if (!body.Exists)
+							return;
+						body.ApplyLinearImpulse(LinearVelocity - body.Velocity.Linear);
+						body.Awake = true;
+					}
 				}
 			}
 		}
@@ -330,18 +352,21 @@ namespace NetBlox.Instances
 			get => RotationalVelocity;
 			set
 			{
-				if (RotationalVelocity == value)
-					return;
-				RotationalVelocity = value;
-
-				var localsim = GameManager.PhysicsManager.LocalSimulation;
-				if (BodyHandle.HasValue)
+				lock (physicsRepresentationLock)
 				{
-					var body = localsim.Bodies[BodyHandle.Value];
-					if (!body.Exists)
+					if (RotationalVelocity == value)
 						return;
-					body.ApplyAngularImpulse(RotationalVelocity - body.Velocity.Angular);
-					body.Awake = true;
+					RotationalVelocity = value;
+
+					var localsim = GameManager.PhysicsManager.LocalSimulation;
+					if (BodyHandle.HasValue)
+					{
+						var body = localsim.Bodies[BodyHandle.Value];
+						if (!body.Exists)
+							return;
+						body.ApplyAngularImpulse(RotationalVelocity - body.Velocity.Angular);
+						body.Awake = true;
+					}
 				}
 			}
 		}
@@ -417,7 +442,19 @@ namespace NetBlox.Instances
 				return new BoundingBox(Position - extents, Position + extents);
 			}
 		}
+
+		public bool IsDomestic 
+		{
+			get => isDomestic;
+			set
+			{
+				OnPhysicsRepresentationChanged?.Invoke(this, new());
+				isDomestic = value;
+			}
+		}
+
 		public event EventHandler? OnNetworkOwnershipChanged;
+		public event EventHandler? OnPhysicsRepresentationChanged;
 		/// <summary>
 		/// Use this if the part is anchored OR if its foreign (owned by another player)<br/>
 		/// ========================================<br/>
@@ -441,9 +478,9 @@ namespace NetBlox.Instances
 		public Vector3 RenderPositionOffset = default;
 		public Quaternion RenderRotationOffset = Quaternion.Identity;
 		public bool IsCulled = false;
-		public bool IsDomestic = true;
 		public RemoteClient? Owner;
 		public List<BasePart> TouchingWith = [];
+		public List<Constraint> ActiveConstraints = [];
 		public HashSet<CollidablePair> currentPairs = [];
 		public HashSet<CollidablePair> previousPairs = [];
 		protected SurfaceType frontSurface;
@@ -452,6 +489,7 @@ namespace NetBlox.Instances
 		protected SurfaceType bottomSurface;
 		protected SurfaceType leftSurface;
 		protected SurfaceType rightSurface;
+		protected bool isDomestic = true;
 
 		// they are internal as a workaround for serializationmanager
 		internal Vector3 _physicsposition
@@ -530,6 +568,10 @@ namespace NetBlox.Instances
 
 			BodyHandle = localsim.Bodies.Add(description);
 			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
+
+			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
+			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
+			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
 		}
 		public void CreateStaticHandle()
 		{
@@ -568,12 +610,16 @@ namespace NetBlox.Instances
 		public override void Destroy()
 		{
 			base.Destroy();
-			GameManager.PhysicsManager.Collidable2BasePartMap.Remove(GetCollidableReference().Packed);
-			if (BodyHandle.HasValue)
-				GameManager.PhysicsManager.LocalSimulation.Bodies.Remove(BodyHandle.Value);
-			if (StaticHandle.HasValue)
-				GameManager.PhysicsManager.LocalSimulation.Statics.Remove(StaticHandle.Value);
-			GameManager.PhysicsManager.Actors.Remove(this);
+
+			lock (physicsRepresentationLock)
+			{
+				GameManager.PhysicsManager.Collidable2BasePartMap.Remove(GetCollidableReference().Packed);
+				if (BodyHandle.HasValue)
+					GameManager.PhysicsManager.LocalSimulation.Bodies.Remove(BodyHandle.Value);
+				if (StaticHandle.HasValue)
+					GameManager.PhysicsManager.LocalSimulation.Statics.Remove(StaticHandle.Value);
+				GameManager.PhysicsManager.Actors.Remove(this);
+			}
 		}
 		public void InvokeChangeNetworkOwnership() => OnNetworkOwnershipChanged?.Invoke(this, new());
 
@@ -587,18 +633,27 @@ namespace NetBlox.Instances
 			{
 				if (Owner == null)
 					return;
+
+				var aanchor = IsActuallyAnchored;
 				IsDomestic = true;
-				Anchored = Anchored;
+				if (IsActuallyAnchored != aanchor)
+					Anchored = Anchored;
+
 				Owner.SendPacket(NPUpdatePlayerOwnership.Create(this, false));
 				Owner = null;
 			}
 			else
 			{
 				RemoteClient client = player.Client;
+
+				var aanchor = IsActuallyAnchored;
 				IsDomestic = false;
-				Anchored = Anchored;
+				if (IsActuallyAnchored != aanchor)
+					Anchored = Anchored;
+
 				if (Owner != null)
 					Owner.SendPacket(NPUpdatePlayerOwnership.Create(this, false));
+
 				Owner = client;
 				Owner.SendPacket(NPUpdatePlayerOwnership.Create(this, true));
 			}

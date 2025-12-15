@@ -26,7 +26,23 @@ namespace NetBlox.Instances.Services
 	public class Workspace : Instance, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]
-		public Instance? CurrentCamera { get; set; }
+		public Camera? CurrentCamera 
+		{ 
+			get 
+			{
+				if (CachedCamera == null)
+				{
+					Camera cam = new Camera(GameManager);
+					cam.Parent = this;
+					CurrentCamera = cam;
+				}
+				return CachedCamera;
+			}
+			set 
+			{
+				CachedCamera = value;
+			} 
+		}
 		[Lua([Security.Capability.None])]
 		public float Gravity 
 		{ 
@@ -46,6 +62,8 @@ namespace NetBlox.Instances.Services
 				birdAmbient = value;
 			} 
 		}
+
+		public Camera? CachedCamera;
 		public SpawnLocation? SpawnLocation;
 		public Sound? Ambient;
 		private bool birdAmbient = true;
@@ -142,7 +160,6 @@ namespace NetBlox.Instances.Services
 		public override void Process()
 		{
 			base.Process();
-			GameManager.PhysicsManager.Step();
 			if (GameManager.NetworkManager.IsClient && BirdAmbient && Ambient.HasValue) 
 			{
 				if (!GameManager.RenderManager.IsSoundPlaying(Ambient.Value))

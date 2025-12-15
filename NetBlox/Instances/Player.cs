@@ -27,18 +27,25 @@ namespace NetBlox.Instances
 					return;
 
 				character = value;
+
 				if (GameManager.NetworkManager.IsServer)
 				{
 					Client.WaitForInstanceArrival(humanoid, () =>
 					{
-						// we're "hopefully" guaranteed that character's model had already replicated, so
-						// it technically qualifies as a working humanoid
-						character.GetDescendantsOfType<BasePart>().ForEach(x => x.SetNetworkOwner(this));
-						Client.SendPacket(NPSetPlayableCharacter.Create(character as Model));
+						TaskScheduler.Schedule(() =>
+						{
+							// we're "hopefully" guaranteed that character's model had already replicated, so
+							// it technically qualifies as a working humanoid
+							character.GetDescendantsOfType<BasePart>().ForEach(x => x.SetNetworkOwner(this));
+							Client.SendPacket(NPSetPlayableCharacter.Create(character as Model));
+						});
 					});
 				}
 				else
 				{
+					if (!IsLocalPlayer)
+						return;
+
 					humanoid.IsLocalPlayer = true;
 
 					var camera = GameManager.CurrentRoot.GetService<Workspace>().CurrentCamera as Camera;
@@ -72,6 +79,7 @@ namespace NetBlox.Instances
 			}
 		}
 
+		public bool WasKicked = false;
 		public Instance? character;
 		public bool IsLocalPlayer = false;
 		public RemoteClient? Client;
@@ -84,23 +92,47 @@ namespace NetBlox.Instances
 		}
 
 		[Lua([Security.Capability.None])]
-		public void SaveNumber(string key, int num) =>
+		public void SaveNumber(string key, int num)
+		{
+			if (!IsLocalPlayer)
+				throw new Exception("Cannot call Save-/Load- Player APIs on other players!");
 			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), BitConverter.GetBytes(num)).ConfigureAwait(false);
+		}
 		[Lua([Security.Capability.None])]
-		public void SaveString(string key, string data) =>
+		public void SaveString(string key, string data)
+		{
+			if (!IsLocalPlayer)
+				throw new Exception("Cannot call Save-/Load- Player APIs on other players!");
 			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), Encoding.UTF8.GetBytes(data)).ConfigureAwait(false);
+		}
 		[Lua([Security.Capability.None])]
-		public void SaveBool(string key, bool data) =>
+		public void SaveBool(string key, bool data)
+		{
+			if (!IsLocalPlayer)
+				throw new Exception("Cannot call Save-/Load- Player APIs on other players!");
 			GameManager.CurrentProfile.SetPlayerDataAsync(key.GetHashCode(), [((byte)(data ? 1 : 0))]).ConfigureAwait(false);
+		}
 		[Lua([Security.Capability.None])]
-		public int LoadNumber(string key) =>
-			BitConverter.ToInt32(GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult());
+		public int LoadNumber(string key)
+		{
+			if (!IsLocalPlayer)
+				throw new Exception("Cannot call Save-/Load- Player APIs on other players!");
+			return BitConverter.ToInt32(GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult());
+		}
 		[Lua([Security.Capability.None])]
-		public string LoadString(string key) =>
-			Encoding.UTF8.GetString(GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult()!);
+		public string LoadString(string key)
+		{
+			if (!IsLocalPlayer)
+				throw new Exception("Cannot call Save-/Load- Player APIs on other players!");
+			return Encoding.UTF8.GetString(GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult()!);
+		}
 		[Lua([Security.Capability.None])]
-		public bool LoadBool(string key) =>
-			GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult()![0] == 1;
+		public bool LoadBool(string key)
+		{
+			if (!IsLocalPlayer)
+				throw new Exception("Cannot call Save-/Load- Player APIs on other players!");
+			return GameManager.CurrentProfile.GetPlayerDataAsync(key.GetHashCode()).WaitAndGetResult()![0] == 1;
+		}
 		[Lua([Security.Capability.RobloxScriptSecurity])]
 		public void SetUserId(long userid) => userId = userid;
 		[Lua([Security.Capability.RobloxScriptSecurity])]
@@ -109,6 +141,7 @@ namespace NetBlox.Instances
 		public void Reload()
 		{
 			ClearAllChildren();
+
 			Backpack bc = new(GameManager);
 			PlayerGui pg = new(GameManager);
 			bc.Parent = this;
@@ -120,6 +153,9 @@ namespace NetBlox.Instances
 				var cl = sg[i].Clone();
 				if (cl == null) return;
 				cl.Parent = pg;
+
+				if (GameManager.NetworkManager.IsServer)
+					GameManager.NetworkManager.AddReplication(cl, Replication.REPM_TOALL, Replication.REPW_NEWINST);
 			}
 
 			var sp = Root.GetService<StarterPack>().GetChildren();
@@ -128,6 +164,9 @@ namespace NetBlox.Instances
 				var cl = sp[i].Clone();
 				if (cl == null) return;
 				cl.Parent = bc;
+
+				if (GameManager.NetworkManager.IsServer)
+					GameManager.NetworkManager.AddReplication(cl, Replication.REPM_TOALL, Replication.REPW_NEWINST);
 			}
 
 			LogManager.LogInfo("Reloaded " + Name + "'s backpack and GUI!");
@@ -174,6 +213,10 @@ namespace NetBlox.Instances
 				chmodel.MoveTo(new Vector3(0, 10, 0));
 
 			chmodel.Parent = workspace;
+
+			if (GameManager.NetworkManager.IsServer)
+				GameManager.NetworkManager.AddReplication(chmodel, Replication.REPM_TOALL, Replication.REPW_NEWINST);
+
 			Character = chmodel;
 		}
 		[Lua([Security.Capability.None])]
@@ -194,7 +237,7 @@ namespace NetBlox.Instances
 		{
 			base.Destroy();
 			Character?.Destroy();
-			if (IsLocalPlayer || GameManager.NetworkManager.IsServer)
+			if (!WasKicked && (IsLocalPlayer || GameManager.NetworkManager.IsServer))
 				Kick("Player has been removed from this DataModel");
 		}
 	}

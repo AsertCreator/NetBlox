@@ -15,13 +15,18 @@ namespace NetBlox.Instances
 			set
 			{
 				if (part0 == value) return;
+
 				var enabled = Enabled;
+
 				Enabled = false;
+
 				if (part0 != null)
 					part0.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
+
 				part0 = value;
 				if (part0 != null)
 					part0.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
+
 				Enabled = enabled;
 			}
 		}
@@ -32,13 +37,18 @@ namespace NetBlox.Instances
 			set
 			{
 				if (part1 == value) return;
+
 				var enabled = Enabled;
+
 				Enabled = false;
+
 				if (part1 != null)
 					part1.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
+
 				part1 = value;
 				if (part1 != null)
 					part1.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
+
 				Enabled = enabled;
 			}
 		}
@@ -78,6 +88,11 @@ namespace NetBlox.Instances
 			Enabled = !Enabled;
 			Enabled = !Enabled;
 		}
+		private void PhysicsRepresentationChangedHandler(object sender, EventArgs args)
+		{
+			Enabled = !Enabled;
+			Enabled = !Enabled;
+		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
@@ -110,23 +125,14 @@ namespace NetBlox.Instances
 
 			PartOffset = part1.PartCFrame.Position - part0.PartCFrame.Position;
 
-			Task.Run(async () => // god kill me
+			weld = new BepuPhysics.Constraints.Weld()
 			{
-				while (!part0.BodyHandle.HasValue || !part1.BodyHandle.HasValue)
-					await Task.Yield();
+				LocalOffset = PartOffset,
+				LocalOrientation = Quaternion.Identity,
+				SpringSettings = new SpringSettings(30, 0.1f)
+			};
 
-				weld = new BepuPhysics.Constraints.Weld()
-				{
-					LocalOffset = PartOffset,
-					LocalOrientation = Quaternion.Identity,
-					SpringSettings = new SpringSettings(30, 0.1f)
-				};
 
-				TaskScheduler.Schedule(() =>
-				{
-					weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
-				});
-			});
 		}
 	}
 }

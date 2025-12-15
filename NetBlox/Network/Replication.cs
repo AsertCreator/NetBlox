@@ -65,12 +65,15 @@ namespace NetBlox.Network
 			if (ins == null)
 			{
 				ins = InstanceCreator.CreateReplicatedInstance(classname, gm);
+
 				if (ins is BaseScript && gm.NetworkManager.IsServer)
 				{
 					LogManager.LogWarn("A client (" + sender + ") tried to replicate a script to server!");
 					return;
 				}
+
 				ins.Parent = gm.GetInstance(newp);
+
 				if (guid == gm.NetworkManager.ExpectedLocalPlayerGuid)
 				{
 					var player = ins as Player;
@@ -142,13 +145,6 @@ namespace NetBlox.Network
 			}
 
 			gm.NetworkManager.CallAllInstanceAwaiters(guid);
-
-			if (ins is Workspace ws)
-			{
-				Camera cam = new Camera(ws.GameManager);
-				cam.Parent = ws;
-				ws.CurrentCamera = cam;
-			}
 		}
 		private static void ApplyReparent(GameManager gm, RemoteClient? sender, Guid unique, Guid parent)
 		{

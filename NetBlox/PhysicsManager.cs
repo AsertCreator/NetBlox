@@ -93,8 +93,6 @@ namespace NetBlox
 
 			var work = Workspace;
 
-			return;
-
 			LocalSimulation.Timestep(1.0f / AppManager.PreferredFPS, DefaultThreadDispatcher);
 
 			var clients = GameManager.NetworkManager.Clients;
@@ -221,7 +219,7 @@ namespace NetBlox
 			velocity.Linear += gravityWideDt;
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, 
+		public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b,
 			ref float speculativeMargin)
 		{
 			bool yeah = a.Mobility == CollidableMobility.Dynamic || b.Mobility == CollidableMobility.Dynamic;
@@ -239,21 +237,20 @@ namespace NetBlox
 			return true;
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold, 
+		public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold,
 			out PairMaterialProperties pairMaterial) where TManifold : unmanaged, IContactManifold<TManifold>
 		{
-			var p0 = GameManager.PhysicsManager.Collidable2BasePartMap[pair.A.Packed];
-			var p1 = GameManager.PhysicsManager.Collidable2BasePartMap[pair.B.Packed];
+			pairMaterial.FrictionCoefficient = 2f;
+			pairMaterial.MaximumRecoveryVelocity = 2f;
+			pairMaterial.SpringSettings = new SpringSettings(20, 0.8f);
+
+			if (!GameManager.PhysicsManager.Collidable2BasePartMap.TryGetValue(pair.A.Packed, out var p0))
+				return false;
+			if (!GameManager.PhysicsManager.Collidable2BasePartMap.TryGetValue(pair.B.Packed, out var p1))
+				return false;
 
 			var humanoid = p0.GetHumanoidForInstance() ?? p1.GetHumanoidForInstance();
-
-			if (humanoid == null)
-			{
-				pairMaterial.FrictionCoefficient = 2f;
-				pairMaterial.MaximumRecoveryVelocity = 2f;
-				pairMaterial.SpringSettings = new SpringSettings(20, 0.8f);
-			}
-			else
+			if (humanoid != null)
 			{
 				pairMaterial.FrictionCoefficient = 0.4f;
 				pairMaterial.MaximumRecoveryVelocity = 0.02f;
@@ -265,7 +262,7 @@ namespace NetBlox
 				p0.AddCollidablePair(pair);
 				p1.AddCollidablePair(pair);
 			}
-			
+
 			return true;
 		}
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]

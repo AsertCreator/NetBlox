@@ -286,12 +286,6 @@ namespace NetBlox.Instances
 		}
 		private void StandUp()
 		{
-			if (State == HumanoidState.Falling || State == HumanoidState.Jumping)
-				return;
-
-			if (!IsLeftLegAbleToJump && !IsRightLegAbleToJump)
-				return;
-
 			var part = torsoCache;
 			part.Velocity += new Vector3(0, 35, 0);
 			if (part.Velocity.Y >= 38)

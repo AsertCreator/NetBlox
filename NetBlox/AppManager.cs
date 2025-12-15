@@ -90,7 +90,10 @@ namespace NetBlox
 					var gm = GameManagers[i];
 					CurrentGameManager = gm;
 					if (gm.IsRunning)
+					{
+						gm.PhysicsManager.Step();
 						gm.ProcessInstance(gm.CurrentRoot);
+					}
 				}
 				return JobResult.NotCompleted;
 			});
