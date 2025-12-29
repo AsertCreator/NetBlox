@@ -71,9 +71,12 @@ namespace NetBlox.Structs
 
 		public static void RemovePartFromAssembly(BasePart target)
 		{
-			// this atuomatically separates assemblies when needed
+			// this automatically separates assemblies when needed
 			// is this actually efficient?
 
+			return;
+
+#if false
 			if (target.Assembly == null)
 				return;
 
@@ -152,7 +155,7 @@ namespace NetBlox.Structs
 				}
 			}
 
-
+#endif
 		}
 		public static void AddTwoPartsToAssembly(BasePart part0, BasePart part1)
 		{

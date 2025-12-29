@@ -117,6 +117,9 @@ namespace NetBlox.Instances
 		{
 			var sim = GameManager.PhysicsManager.LocalSimulation;
 
+			if (part0 == null || part1 == null)
+				return;
+
 			if (part0 == part1)
 			{
 				LogManager.LogWarn("Part0 and Part1 properties of Weld cannot be set to the same part!");
@@ -132,7 +135,23 @@ namespace NetBlox.Instances
 				SpringSettings = new SpringSettings(30, 0.1f)
 			};
 
+			TaskScheduler.ScheduleJob(JobType.Miscellaneous, _ =>
+			{
+				BasePart? originalPart0 = Part0;
+				BasePart? originalPart1 = Part1;
 
+				if (originalPart0 == null || originalPart1 == null)
+					return JobResult.CompletedFailure;
+
+				while (originalPart0 == part0 && originalPart1 == part1 &&
+					(!originalPart0.BodyHandle.HasValue || !originalPart1.BodyHandle.HasValue))
+				{
+					return JobResult.NotCompleted;
+				}
+
+				weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
+				return JobResult.CompletedSuccess;
+			});
 		}
 	}
 }

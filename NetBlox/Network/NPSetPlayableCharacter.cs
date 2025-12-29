@@ -27,9 +27,25 @@ namespace NetBlox.Network
 			if (humanoid == null)
 				return;
 
-			Player localPlayer = gm.CurrentRoot.GetService<Players>().LocalPlayer as Player;
+			int reentrancy = 0;
 
-			localPlayer.Character = model;
+			TaskScheduler.ScheduleJob(JobType.Miscellaneous, _ =>
+			{
+				Player? localPlayer = gm.CurrentRoot.GetService<Players>().LocalPlayer as Player;
+
+				if (localPlayer == null)
+				{
+					if (++reentrancy == 100)
+					{
+						LogManager.LogError("Got a NPSetPlayableCharacter packet but no local Player arrived!");
+						return JobResult.CompletedFailure;
+					}
+					return JobResult.NotCompleted;
+				}
+
+				localPlayer.Character = model;
+				return JobResult.CompletedSuccess;
+			});
 		}
 		public override void HandleServerbound(GameManager gm, NetworkPacket packet, BinaryReader reader) { }
 	}
