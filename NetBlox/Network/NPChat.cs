@@ -14,9 +14,10 @@ namespace NetBlox.Network
 			using MemoryStream stream = new();
 			using BinaryWriter writer = new(stream);
 
-			writer.Write(message.Sender != null);
 			if (message.Sender != null)
 				writer.Write(message.Sender.UniqueID.ToByteArray());
+			else
+				writer.Write(default(Guid).ToByteArray());
 			writer.Write(message.Message);
 
 			return new NetworkPacket(TargetPacketId, stream.ToArray(), null);

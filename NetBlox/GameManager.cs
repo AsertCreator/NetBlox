@@ -40,16 +40,14 @@ namespace NetBlox
 		public string QueuedTeleportAddress = "";
 		public string ManagerName = "";
 		public int PropertyReplicationRate = 20;
-		public DateTime TimeOfCreation = DateTime.Now;
-		public Dictionary<RemoteClient, Instance> Owners = [];
-		public List<Instance> SelfOwnerships = [];
+		public DateTime TimeOfCreation = DateTime.UtcNow;
 		public ClientStartupInfo? ClientStartupInfo;
 		public ServerStartupInfo? ServerStartupInfo;
 		public Dictionary<ModuleScript, DynValue> LoadedModules = new();
 		public MoonSharp.Interpreter.Script MainEnvironment = null!;
 		public string Username => CurrentProfile.Username; // bye bye DevDevDev
 		public event EventHandler? ShutdownEvent;
-		public bool AllowReplication = false;
+		public bool PauseReplication = false;
 
 		public GameManager(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
@@ -121,6 +119,14 @@ namespace NetBlox
 					var coregui = CurrentRoot.GetService<CoreGui>(true);
 					if (coregui != null)
 						coregui.TakeScreenshot();
+				});
+				Verbs.Add(KeyboardKey.F4, () =>
+				{
+					RenderManager.DoRenderDebugCharts = !RenderManager.DoRenderDebugCharts;
+				});
+				Verbs.Add(KeyboardKey.F5, () =>
+				{
+					RenderManager.UnlimitFramerate = !RenderManager.UnlimitFramerate;
 				});
 				Verbs.Add(KeyboardKey.K, () =>
 				{

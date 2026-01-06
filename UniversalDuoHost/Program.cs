@@ -34,7 +34,7 @@ namespace UniversalDuoHost
 				x.CurrentIdentity.MaxPlayerCount = 5;
 				x.CurrentRoot.Name = x.CurrentRoot.Name;
 
-				Task.Run(x.NetworkManager.StartServer);
+				x.NetworkManager.StartServerNonBlocking();
 			});
 		}
 		internal static GameManager CreateClient()
@@ -105,19 +105,14 @@ namespace UniversalDuoHost
 		}
 		internal static void ConnectLoopback(this GameManager gm)
 		{
-			gm.NetworkManager.ClientReplicator = Task.Run(delegate ()
+			try
 			{
-				try
-				{
-					gm.NetworkManager.ConnectToServer(IPAddress.Loopback);
-					return Task.FromResult(new object());
-				}
-				catch (Exception ex)
-				{
-					gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
-					return Task.FromResult<object>(new());
-				}
-			}).AsCancellable(gm.NetworkManager.ClientReplicatorCanceller.Token);
+				gm.NetworkManager.ConnectToServer(IPAddress.Loopback);
+			}
+			catch (Exception ex)
+			{
+				gm.RenderManager.Status = "Could not connect to the server: " + ex.Message;
+			}
 		}
 	}
 }

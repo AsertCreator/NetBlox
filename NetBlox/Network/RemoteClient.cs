@@ -3,6 +3,11 @@ using Network;
 
 namespace NetBlox.Network
 {
+	public enum InstanceReplicationStatus
+	{
+		NotReplicatedYet, Replicated, Updated
+	}
+
 	/// <summary>
 	/// Represents a client from server's POV
 	/// </summary>
@@ -15,6 +20,12 @@ namespace NetBlox.Network
 		public GameManager Enclosure;
 		public bool IsAboutToLeave;
 		public int BufferZoneLimits;
+
+		public Dictionary<Instance, InstanceReplicationStatus> ReplicatedStatus = [];
+
+		public event EventHandler<Instance>? OnInstanceNewReplicatedTo;
+		public event EventHandler<Instance>? OnInstancePropchgReplicatedTo;
+		public event EventHandler<Instance>? OnInstancePropchgReplicatedFrom;
 
 		public RemoteClient(GameManager gm, uint uniquePlayerID, Connection connection)
 		{
@@ -30,6 +41,10 @@ namespace NetBlox.Network
 		public void CleanUpRemains()
 		{
 			if (!IsAboutToLeave) return;
+
+			Enclosure.NetworkManager.Clients.Remove(this);
+			Enclosure.NetworkManager.ClientsReadyForReplication.Remove(this);
+			Player?.Destroy();
 		}
 		public void KickOut(string message)
 		{
@@ -56,6 +71,18 @@ namespace NetBlox.Network
 				Callback = callback
 			});
 			SendPacket(NPCallbackOnInstanceArrival.Create(inst.UniqueID));
+		}
+		public void NotifyNewReplicatedTo(Instance inst)
+		{
+
+		}
+		public void NotifyPropchgReplicatedTo(Instance inst)
+		{
+
+		}
+		public void NotifyPropchgReplicatedFrom(Instance inst)
+		{
+
 		}
 		public override string ToString()
 		{

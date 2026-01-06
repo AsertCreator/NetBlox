@@ -19,6 +19,7 @@ namespace NetBlox
 
 		public GameManager GameManager;
 		public List<RemoteClient> Clients = [];
+		public HashSet<RemoteClient> ClientsReadyForReplication = [];
 		public bool IsServer;
 		public bool IsClient;
 		public bool IsLoaded = true;
@@ -31,16 +32,18 @@ namespace NetBlox
 		public Vector3 LocalBufferZoneCenter = default;
 		public Guid ExpectedLocalPlayerGuid = default;
 
-		public Queue<Replication> ReplicationQueue = [];
+		public List<Replication> ReplicationQueue = [];
 
 		public Connection? RemoteConnection;
 		public ServerConnectionContainer? Server;
 		public CancellationTokenSource ClientReplicatorCanceller = new();
 		public Task<object>? ClientReplicator;
 
+		public Job? ReplicationJob;
+
 		public int LoadedInstanceCount;
 		public int TargetInstanceCount;
-		public bool SynchronousReplication = true;
+		public bool LogReplication = false;
 
 		internal int outgoingPacketsSent = 0;
 		internal int incomingPacketsRecieved = 0;
@@ -78,9 +81,9 @@ namespace NetBlox
 			}
 		}
 		/// <summary>
-		/// Starts NetBlox server on current <seealso cref="NetworkManager"/>, this function is blocking, start it in other thread.
+		/// Starts NetBlox server on current <seealso cref="NetworkManager"/>, this function is NOT blocking, start it in THE server thread.
 		/// </summary>
-		public unsafe void StartServer()
+		public void StartServerNonBlocking()
 		{
 			if (!IsServer)
 				throw new NotSupportedException("Cannot start server in non-server configuration!");
@@ -134,63 +137,69 @@ namespace NetBlox
 			};
 
 			Server.Start();
-			GameManager.AllowReplication = true;
+			GameManager.PauseReplication = false;
 			GameManager.PhysicsManager.DisablePhysics = false;
 
 			LogManager.LogInfo($"Listening at {Server.IPAddress}:{ServerPort}");
 
 			// but actually we are not done
 
-			while (!GameManager.ShuttingDown)
+			ReplicationJob = TaskScheduler.ScheduleNamedJob("MasterReplicator", JobType.Network, _ =>
 			{
-				while (AppManager.BlockReplication || Clients.Count == 0)
-					Thread.Yield();
+				if (GameManager.ShuttingDown)
+					return JobResult.CompletedSuccess;
+
+				if (AppManager.BlockReplication || GameManager.PauseReplication || ClientsReadyForReplication.Count == 0)
+					return JobResult.NotCompleted;
 
 				if (ReplicationQueue.Count != 0)
 				{
-					lock (ReplicationQueue)
+					var rq = ReplicationQueue[0];
+
+					ReplicationQueue.RemoveAt(0);
+
+					var rc = rq.Recievers;
+					var ins = rq.Target;
+
+					if (ins is not BasePart)
+						rq.Mode = Replication.REPM_TOALL;
+
+					switch (rq.Mode)
 					{
-						var rq = ReplicationQueue.Dequeue();
-						var rc = rq.Recievers;
-						var ins = rq.Target;
+						case Replication.REPM_TOALL:
+							rc = [.. ClientsReadyForReplication];
+							break;
+						case Replication.REPM_BUTOWNER:
+							var cl = ClientsReadyForReplication.Count;
+							var bp = ins as BasePart;
+							var newReceivers = new List<RemoteClient>();
 
-						if (ins is not BasePart)
-							rq.Mode = Replication.REPM_TOALL;
+							newReceivers.AddRange(ClientsReadyForReplication);
+							newReceivers.Remove(bp.Owner);
 
-						switch (rq.Mode)
-						{
-							case Replication.REPM_TOALL:
-								rc = [.. Clients];
-								break;
-							case Replication.REPM_BUTOWNER:
-								var cl = Clients.Count;
-								var bp = ins as BasePart;
-								rc = new RemoteClient[cl - 1];
+							rc = newReceivers.ToArray();
 
-								for (int i = 0, j = 0; j < cl - 1; i++, j++)
-								{
-									if (Clients[i] == bp.Owner)
-									{
-										i++;
-										continue;
-									}
-									rc[j] = Clients[i];
-								}
-								break;
-							case Replication.REPM_TORECIEVERS:
-								break;
-						}
-
-						if (rc.Length == 0) continue;
-
-						for (int i = 0; i < rc.Length; i++)
-						{
-							var nc = rc[i];
-							nc.SendPacket(NPReplication.Create(rq));
-						}
+							break;
+						case Replication.REPM_TORECIEVERS:
+							break;
 					}
+
+					if (rc == null || rc.Length == 0)
+						return JobResult.NotCompleted;
+
+					for (int i = 0; i < rc.Length; i++)
+					{
+						var nc = rc[i];
+						nc.SendPacket(NPReplication.Create(rq));
+
+						if (LogReplication)
+							LogManager.LogInfo("Replicating object to client (" + nc.UniquePlayerID + "): " + rq.Target.GetFullName());
+					}	
 				}
-			}
+
+				return JobResult.NotCompleted;
+			}, level: 9);
+			ReplicationJob.JobTimingContext.Priority = 30;
 		}
 		public void SendServerboundPacket(NetworkPacket packet)
 		{
@@ -204,7 +213,7 @@ namespace NetBlox
 
 			RemoteConnection.SendRawData("nb3-packet", stream.ToArray());
 		}
-		public unsafe void ConnectToServer(IPAddress ipa)
+		public void ConnectToServer(IPAddress ipa)
 		{
 			if (IsServer)
 				throw new NotSupportedException("Cannot teleport in server");
@@ -249,27 +258,33 @@ namespace NetBlox
 
 			SendServerboundPacket(np);
 
-			while (!GameManager.ShuttingDown)
+			ReplicationJob = TaskScheduler.ScheduleNamedJob("MasterReplicator", JobType.Network, _ =>
 			{
-				while (AppManager.BlockReplication)
-					Thread.Yield();
+				if (GameManager.ShuttingDown)
+					return JobResult.CompletedSuccess;
+
+				if (AppManager.BlockReplication || GameManager.PauseReplication)
+					return JobResult.NotCompleted;
 
 				if (ReplicationQueue.Count != 0)
 				{
-					lock (ReplicationQueue)
-					{
-						var rq = ReplicationQueue.Dequeue();
-						var ins = rq.Target;
+					var rq = ReplicationQueue[0];
 
-						switch (rq.What)
-						{
-							case Replication.REPW_PROPCHG:
-								SendServerboundPacket(NPReplication.Create(rq));
-								break;
-						}
+					ReplicationQueue.RemoveAt(0);
+
+					var ins = rq.Target;
+
+					switch (rq.What)
+					{
+						case Replication.REPW_PROPCHG:
+							SendServerboundPacket(NPReplication.Create(rq));
+							break;
 					}
 				}
-			}
+
+				return JobResult.NotCompleted;
+			}, level: 9);
+			ReplicationJob.JobTimingContext.Priority = 30;
 		}
 		public void StartProfiling()
 		{
@@ -298,6 +313,25 @@ namespace NetBlox
 			if (NetworkProfilerLog)
 				Debug.WriteLine($"!! nmprofiler, OUTGOING #{outgoingPacketsSent++}, id: {id}, data len: {data.Length}, outgoing bytes/sec: {OutgoingTraffic} !!");
 			outgoingTraffic += len;
+		}
+		public int CountPendingNewinstReplicationsFor(RemoteClient client)
+		{
+			int count = 0;
+
+			for (int i = 0; i < ReplicationQueue.Count; i++)
+			{
+				var r = ReplicationQueue[i];
+
+				if (r.What != Replication.REPW_NEWINST)
+					continue;
+
+				if (r.Mode == Replication.REPM_TOALL)
+					count += 1;
+				else if (r.Mode == Replication.REPM_TORECIEVERS && r.Recievers.Contains(client))
+					count += 1;
+			}
+
+			return count;
 		}
 		public void PerformKick(RemoteClient? nc, string msg, bool islocal)
 		{
@@ -378,14 +412,43 @@ namespace NetBlox
 			if (inst is ServerStorage) return null;
 			if (inst is Camera) return null; // worky arounds
 
+			if (!inst.EligibleForReplication)
+				return null;
+			if (ClientsReadyForReplication.Count == 0) 
+				return null;
+
+			if (m == Replication.REPM_TORECIEVERS) 
+			{
+				if (nc == null)
+					return null;
+
+				List<RemoteClient> clients = nc.ToList();
+
+				for (int i = 0; i < nc.Length; i++)
+				{
+					if (!ClientsReadyForReplication.Contains(nc[i]))
+					{
+						clients.Remove(nc[i]);
+					}
+				}
+
+				nc = clients.ToArray();
+			}
+
+			if (m == Replication.REPM_TORECIEVERS && nc.Length == 0)
+				return null;
+
 			var rep = new Replication(m, w, inst)
 			{
 				Recievers = nc ?? []
 			};
-			ReplicationQueue.Enqueue(rep);
+
+			ReplicationQueue.Add(rep);
+
 			if (rc)
 				for (int i = 0; i < inst.Children.Count; i++)
 					AddReplicationImpl(inst.Children[i], m, w, true, nc);
+
 			return rep;
 		}
 		public static string TranslateErrorCode(int ec) => ec switch

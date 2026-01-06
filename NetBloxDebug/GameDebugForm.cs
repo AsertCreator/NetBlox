@@ -32,7 +32,7 @@ namespace NetBloxDebug
 			timer.Tick += (_, _) =>
 			{
 				gameNameLabel.Text = "GameManager's name: " + at.ManagerName;
-				gameUptimeLabel.Text = "GameManager's uptime: " + (DateTime.Now - at.TimeOfCreation);
+				gameUptimeLabel.Text = "GameManager's uptime: " + (DateTime.UtcNow - at.TimeOfCreation);
 
 				gameCharsLabel.Text = string.Concat(new string[]
 				{

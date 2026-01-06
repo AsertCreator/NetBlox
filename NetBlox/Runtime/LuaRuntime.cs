@@ -278,15 +278,15 @@ namespace NetBlox.Runtime
 		}
 		public static void PrintOut(string msg)
 		{
-			LogManager.LogInfo(msg);
+			LogManager.LogInfo('"' + msg + '"');
 		}
 		public static void PrintWarn(string msg)
 		{
-			LogManager.LogWarn(msg);
+			LogManager.LogWarn('"' + msg + '"');
 		}
 		public static void PrintError(string msg)
 		{
-			LogManager.LogError(msg);
+			LogManager.LogError('"' + msg + '"');
 		}
 		public static DynValue PushInstance(Instance? targetInstanceIWantToForget)
 		{
@@ -437,7 +437,6 @@ namespace NetBlox.Runtime
 					if (prop.Name == "Parent")
 					{
 						var newp = val.Table.AssociatedObject as Instance;
-						var oldr = inst.EligibleForReplication;
 
 						inst.Parent = newp;
 

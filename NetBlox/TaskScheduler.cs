@@ -25,10 +25,12 @@ namespace NetBlox
 		public double LastCycleTime;
 		public Task? TaskJoinedTo;
 		public Job? JoinedTo;
+		public int Priority;
 	}
 	public class Job(JobType type, JobDelegate callback, int security)
 	{
 		public JobType Type = type;
+		public string Name = "Unknown job - look in the JIT debugger";
 		public int SecurityLevel = security;
 		public JobDelegate NativeCallback = callback;
 		public ScriptJobContext ScriptJobContext = new();
@@ -39,7 +41,7 @@ namespace NetBlox
 			(ScriptJobContext.GameManager != null ? ScriptJobContext.GameManager.ManagerName : "<none>") + 
 			"-" + Type + ",level=" + SecurityLevel;
 	}
-	public enum JobType { Replication, Renderer, Heartbeat, Miscellaneous, Script }
+	public enum JobType { Network, Renderer, Heartbeat, Miscellaneous, Physics, Script }
 	public enum JobResult { CompletedSuccess, CompletedFailure, NotCompleted }
 	public static class TaskScheduler
 	{
@@ -49,17 +51,17 @@ namespace NetBlox
 		public static int JobCount => RunningJobs.Count;
 		public static double AverageTimeToRun => LastCycleTime.TotalMilliseconds / RunningJobs.Count;
 		internal static List<Job> RunningJobs = [];
+		internal static int DefaultPriority = 1;
 
 		public static void Step()
 		{
 			Stopwatch sw = new();
 			sw.Start();
 
-			var now = DateTime.UtcNow.Ticks;
-
 			for (int i = 0; i < RunningJobs.Count; i++)
 			{
 				var job = RunningJobs[i];
+				var now = DateTime.UtcNow;
 
 				if (job == null)
 				{
@@ -68,7 +70,7 @@ namespace NetBlox
 					continue;
 				}
 
-				if (job.JobTimingContext.JoinedUntil.Ticks > now)
+				if (job.JobTimingContext.JoinedUntil > now)
 					continue;
 				if (job.JobTimingContext.JoinedTo != null && job.JobTimingContext.JoinedTo.Result == JobResult.NotCompleted)
 					continue;
@@ -76,24 +78,34 @@ namespace NetBlox
 					continue;
 
 				CurrentJob = job;
+				job.JobTimingContext.JoinedUntil = default;
+
 				try
 				{
+					JobResult res = JobResult.CompletedSuccess;
 					Stopwatch taswa = new();
+
 					taswa.Start();
 
-					var res = job.NativeCallback(job);
-					job.JobTimingContext.HadRunBefore = true;
-					job.Result = res;
-
-					if (res != JobResult.NotCompleted)
+					for (int j = 0; j < job.JobTimingContext.Priority; j++)
 					{
-						job.ScriptJobContext.AfterDone?.Invoke(job);
-						Terminate(job);
-						i--;
+						res = job.NativeCallback(job);
+						job.JobTimingContext.HadRunBefore = true;
+						job.Result = res;
+
+						if (res != JobResult.NotCompleted)
+						{
+							job.ScriptJobContext.AfterDone?.Invoke(job);
+							Terminate(job);
+							i--;
+							break;
+						}
 					}
 
 					taswa.Stop();
+
 					job.JobTimingContext.LastCycleTime = taswa.ElapsedMilliseconds;
+
 					if (res != JobResult.NotCompleted)
 						break;
 				}
@@ -110,25 +122,22 @@ namespace NetBlox
 			LastCycleTime = sw.Elapsed;
 		}
 		public static void Terminate(Job job) => RunningJobs.Remove(job);
-		public static Job Schedule(Action act)
-		{
-			return ScheduleJob(JobType.Miscellaneous, x =>
-			{
-				try
-				{
-					act();
-					return JobResult.CompletedSuccess;
-				}
-				catch
-				{
-					return JobResult.CompletedFailure;
-				}
-			});
-		}
-		public static Job ScheduleJob(JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
+		public static Job ScheduleNamedJob(string name, JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
 		{
 			Job job = new(type, jd, level);
+			job.Name = name;
 			job.ScriptJobContext.AfterDone = afterDone;
+			job.JobTimingContext.Priority = DefaultPriority;
+			RunningJobs.Add(job);
+			return job;
+		}
+		public static Job ScheduleDelayedNamedJob(string name, TimeSpan delay, JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
+		{
+			Job job = new(type, jd, level);
+			job.Name = name;
+			job.JobTimingContext.JoinedUntil = DateTime.UtcNow + delay;
+			job.ScriptJobContext.AfterDone = afterDone;
+			job.JobTimingContext.Priority = DefaultPriority;
 			RunningJobs.Add(job);
 			return job;
 		}
@@ -168,11 +177,13 @@ namespace NetBlox
 			else throw new InvalidOperationException("Cannot create a thread with not a function or coroutine");
 
 			var job = new Job(JobType.Script, ScriptJob, level);
+			job.Name = "Script-" + func.ToDebugPrintString();
 			job.ScriptJobContext.GameManager = gm;
 			job.ScriptJobContext.AfterDone = afterDone;
 			job.ScriptJobContext.BaseScript = self;
 			job.ScriptJobContext.YieldReturn = args ?? [];
 			job.ScriptJobContext.Coroutine = closure;
+			job.JobTimingContext.Priority = DefaultPriority;
 
 			RunningJobs.Add(job);
 			return job;

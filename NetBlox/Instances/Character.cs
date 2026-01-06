@@ -138,25 +138,21 @@ namespace NetBlox.Instances
 					return;
 				}
 
-				DestroyAt = DateTime.UtcNow.AddSeconds(4);
+				DestroyAt = DateTime.UtcNow.AddSeconds(5);
 
-				Task.Delay(4000).ContinueWith(_ =>
+				TaskScheduler.ScheduleDelayedNamedJob("CharacterDeath", new TimeSpan(0, 0, 4), JobType.Miscellaneous, x =>
 				{
-					// synchronize with the game thread
-					TaskScheduler.ScheduleJob(JobType.Miscellaneous, x =>
-					{
-						if (plr.WasDestroyed)
-							return JobResult.CompletedFailure;
+					if (plr.WasDestroyed)
+						return JobResult.CompletedFailure;
 
-						plr.Character = null;
-						plr.LoadCharacterOld();
+					plr.Character = null;
+					plr.LoadCharacterOld();
 
-						GameManager.NetworkManager.AddReplication(plr.Character!,
-							Replication.REPM_TOALL,
-							Replication.REPW_NEWINST);
+					GameManager.NetworkManager.AddReplication(plr.Character!,
+						Replication.REPM_TOALL,
+						Replication.REPW_NEWINST);
 
-						return JobResult.CompletedSuccess;
-					});
+					return JobResult.CompletedSuccess;
 				});
 			}
 

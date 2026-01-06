@@ -92,6 +92,9 @@ namespace NetBlox.Network
 			if (gm.NetworkManager.Clients.Count < gm.CurrentIdentity.MaxPlayerCount && !stoppls)
 			{
 				Security.Impersonate(8);
+
+				gm.PauseReplication = true;
+
 				var id = isguest ? Random.Shared.Next(-100000, -1) : userid;
 				var plrs = gm.CurrentRoot.GetService<Players>();
 				var allplrs = plrs.GetChildren();
@@ -122,25 +125,13 @@ namespace NetBlox.Network
 					player.SetUserId(id);
 					rc.Player = player;
 
-					Security.EndImpersonate();
-
 					player.Reload();
 					player.LoadCharacter();
-
-					var root = gm.CurrentRoot;
-					var netmgr = gm.NetworkManager;
-					var toReceivers = Replication.REPM_TORECIEVERS;
-					var newInstance = Replication.REPW_NEWINST; // i will not tolerate code that doesn't fit on my 15 inch fhd screen
-
-					netmgr.AddReplication(root.GetService<ReplicatedFirst>(), toReceivers, newInstance, true, [rc]);
-					netmgr.AddReplication(root.GetService<ReplicatedStorage>(), toReceivers, newInstance, true, [rc]);
-					netmgr.AddReplication(root.GetService<Chat>(), toReceivers, newInstance, true, [rc]);
-					netmgr.AddReplication(root.GetService<Lighting>(), toReceivers, newInstance, true, [rc]);
-					netmgr.AddReplication(root.GetService<Players>(), toReceivers, newInstance, true, [rc]);
-					netmgr.AddReplication(root.GetService<StarterGui>(), toReceivers, newInstance, true, [rc]);
-					netmgr.AddReplication(root.GetService<StarterPack>(), toReceivers, newInstance, true, [rc]);
-					netmgr.AddReplication(root.GetService<Workspace>(), toReceivers, newInstance, true, [rc]);
 				}
+
+				gm.PauseReplication = false;
+
+				Security.EndImpersonate();
 			}
 			else if (!stoppls)
 			{

@@ -131,25 +131,20 @@ public partial class MainWindow : System.Windows.Window
 				}
 
 				// gm.NetworkManager.OnlyInternalConnections = true;
-				Task.Run(gm.NetworkManager.StartServer);
+				gm.NetworkManager.StartServerNonBlocking();
 
 				PlatformService.QueuedTeleport = (xo) =>
 				{
 					Debug.Assert(App.ClientGame != null);
-					App.ClientGame.NetworkManager.ClientReplicator = Task.Run(async delegate ()
+
+					try
 					{
-						try
-						{
-							await Task.Delay(0);
-							App.ClientGame.NetworkManager.ConnectToServer(IPAddress.Loopback);
-							return new object();
-						}
-						catch (Exception ex)
-						{
-							App.ClientGame.RenderManager.Status = "Could not connect to the internal server: " + ex.Message;
-							return new();
-						}
-					}).AsCancellable(App.ClientGame.NetworkManager.ClientReplicatorCanceller.Token);
+						App.ClientGame.NetworkManager.ConnectToServer(IPAddress.Loopback);
+					}
+					catch (Exception ex)
+					{
+						App.ClientGame.RenderManager.Status = "Could not connect to the internal server: " + ex.Message;
+					}
 				};
 
 				App.ClientGame = AppManager.CreateGame(new GameConfiguration()

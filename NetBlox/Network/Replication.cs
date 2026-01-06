@@ -42,14 +42,8 @@ namespace NetBlox.Network
 				else if (what == REPW_NEWINST || what == REPW_PROPCHG)
 					ApplyChanges(gm, sender, bytes);
 			}
-			if (gm.NetworkManager.SynchronousReplication)
-			{
-				TaskScheduler.Schedule(ApplyFromBytesImpl);
-			}
-			else
-			{
-				ApplyFromBytesImpl();
-			}
+
+			ApplyFromBytesImpl();
 		}
 		private static void ApplyChanges(GameManager gm, RemoteClient? sender, byte[] data)
 		{
@@ -64,7 +58,11 @@ namespace NetBlox.Network
 
 			if (ins == null)
 			{
+				if (gm.NetworkManager.IsServer)
+					return;
+
 				ins = InstanceCreator.CreateReplicatedInstance(classname, gm);
+				ins.UniqueID = guid;
 
 				if (ins is BaseScript && gm.NetworkManager.IsServer)
 				{
@@ -73,6 +71,12 @@ namespace NetBlox.Network
 				}
 
 				ins.Parent = gm.GetInstance(newp);
+				ins.WasReplicated = true;
+
+				if (ins is BasePart bp)
+				{
+					bp.IsDomestic = false;
+				}
 
 				if (guid == gm.NetworkManager.ExpectedLocalPlayerGuid)
 				{
@@ -81,14 +85,10 @@ namespace NetBlox.Network
 					players.CurrentPlayer = player;
 					player.IsLocalPlayer = true;
 				}
-			}
-
-			ins.UniqueID = guid;
-			ins.WasReplicated = true;
-
-			if (ins is BasePart bp)
-			{
-				bp.IsDomestic = false;
+				if (ins is Workspace workspace)
+				{
+					gm.RenderManager.CurrentCamera.Parent = workspace;
+				}
 			}
 
 			var type = ins.GetType();
@@ -101,8 +101,11 @@ namespace NetBlox.Network
 			{
 				string propname = br.ReadString();
 				var prop = type.GetProperty(propname);
-				if (prop == null) // how did this happen
+
+				if (prop is null) // how did this happen
 					continue;
+				if (prop.GetCustomAttribute<NotReplicatedAttribute>() != null)
+					return;
 
 				var ptyp = prop.PropertyType;
 				var pnam = ptyp.FullName ?? "";
@@ -142,7 +145,11 @@ namespace NetBlox.Network
 			{
 				gm.NetworkManager.IsLoaded = true;
 				gm.CurrentRoot.GetService<CoreGui>().HideTeleportGui();
+				gm.PhysicsManager.SpringUpPhysics();
 			}
+
+			if (gm.NetworkManager.LogReplication)
+				LogManager.LogInfo("Got new instance replication from server for: " + ins.GetFullName());
 
 			gm.NetworkManager.CallAllInstanceAwaiters(guid);
 		}
@@ -153,7 +160,8 @@ namespace NetBlox.Network
 
 			if (gm.NetworkManager.IsServer) // actually fuck off
 			{
-				LogManager.LogWarn("A client (" + sender + ") tried to send a reparent packet to server!");
+				if (gm.NetworkManager.LogReplication)
+					LogManager.LogWarn("A client (" + sender + ") tried to send a reparent packet to server!");
 				return;
 			}
 

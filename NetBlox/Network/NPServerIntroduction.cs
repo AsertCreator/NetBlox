@@ -1,4 +1,5 @@
 using NetBlox.Instances;
+using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 namespace NetBlox.Network
 {
@@ -31,7 +32,7 @@ namespace NetBlox.Network
 			using MemoryStream stream = new();
 			using BinaryWriter writer = new(stream);
 
-			int instancecount = gm.CurrentRoot.CountReplicatableClientObjects();
+			int instancecount = gm.NetworkManager.CountPendingNewinstReplicationsFor(rc);
 
 			writer.Write(gm.CurrentIdentity.PlaceName);
 			writer.Write(gm.CurrentIdentity.UniverseName);
@@ -63,6 +64,9 @@ namespace NetBlox.Network
 			handshake.DataModelInstance = new Guid(reader.ReadBytes(16));
 			handshake.PlayerInstance = new Guid(reader.ReadBytes(16));
 
+			if (handshake.ErrorCode != 0)
+				return;
+
 			gm.CurrentIdentity.PlaceName = handshake.PlaceName;
 			gm.CurrentIdentity.UniverseName = handshake.UniverseName;
 			gm.CurrentIdentity.Author = handshake.Author;
@@ -79,9 +83,10 @@ namespace NetBlox.Network
 			gm.NetworkManager.ExpectedLocalPlayerGuid = handshake.PlayerInstance;
 			gm.CurrentRoot.UniqueID = handshake.DataModelInstance;
 			gm.CurrentRoot.Name = gm.CurrentIdentity.PlaceName;
+			gm.CurrentRoot.Clear();
 
-			if (handshake.ErrorCode != 0)
-				return;
+			var srpacket = NPStartReplication.Create(0);
+			gm.NetworkManager.SendServerboundPacket(srpacket);
 		}
 		public override void HandleServerbound(GameManager gm, NetworkPacket packet, BinaryReader reader) { }
 	}

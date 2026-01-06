@@ -34,6 +34,7 @@ namespace NetBlox.Instances.Services
 				{
 					Camera cam = new Camera(GameManager);
 					cam.Parent = this;
+					GameManager.RenderManager.CurrentCamera = cam;
 					CurrentCamera = cam;
 				}
 				return CachedCamera;
@@ -71,6 +72,8 @@ namespace NetBlox.Instances.Services
 		public Workspace(GameManager ins) : base(ins) 
 		{ 
 			birdAmbient = true;
+			CachedCamera = GameManager.RenderManager.CurrentCamera;
+
 			if (GameManager.NetworkManager.IsClient)
 			{
 				RenderManager.LoadSound("rbxasset://sounds/birdsambient.mp3", x => Ambient = x);

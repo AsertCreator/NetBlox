@@ -37,13 +37,16 @@ namespace NetBlox.Instances
 		public void Clear()
 		{
 			LogManager.LogInfo("Clearing DataModel...");
-			GetService<ReplicatedFirst>().Destroy();
-			GetService<Workspace>().Destroy();
-			GetService<ReplicatedStorage>().Destroy();
-			GetService<Lighting>().Destroy();
-			GetService<Players>().Destroy();
-			GetService<StarterGui>().Destroy();
-			GetService<StarterPack>().Destroy();
+
+			GetService<ReplicatedFirst>(true)?.Destroy();
+			GetService<Workspace>(true)?.Destroy();
+			GetService<ReplicatedStorage>(true)?.Destroy();
+			GetService<Lighting>(true)?.Destroy();
+			GetService<Players>(true)?.Destroy();
+			GetService<StarterGui>(true)?.Destroy();
+			GetService<StarterPack>(true)?.Destroy();
+			GetService<ServerStorage>(true)?.Destroy();
+			GetService<Chat>(true)?.Destroy();
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void BindToClose(DynValue dv)
@@ -96,11 +99,6 @@ namespace NetBlox.Instances
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableWhiteOut(bool huh) =>	GameManager.RenderManager.WhiteOut = huh;
-		[Lua([Security.Capability.CoreSecurity])]
-		public int CountReplicatableClientObjects()
-		{
-			return 5; // TODO: normal instance counting
-		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Load(string url)
 		{

@@ -101,6 +101,10 @@ namespace NetBlox.Network
 			for (int i = 0; i < gm.NetworkManager.Clients.Count; i++)
 			{
 				var client = gm.NetworkManager.Clients[i];
+
+				if (!gm.NetworkManager.ClientsReadyForReplication.Contains(client))
+					continue;
+
 				if (client != packet.Sender)
 				{
 					client.SendPacket(packet);

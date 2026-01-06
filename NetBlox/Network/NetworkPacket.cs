@@ -32,13 +32,18 @@ namespace NetBlox.Network
 		{
 			if (AllPacketHandlers.TryGetValue(packet.Id, out var handler))
 			{
-				using MemoryStream stream = new(packet.Data);
-				using BinaryReader reader = new(stream);
+				TaskScheduler.ScheduleNamedJob(handler.GetType().Name, JobType.Network, _ =>
+				{
+					using MemoryStream stream = new(packet.Data);
+					using BinaryReader reader = new(stream);
 
-				if (packet.Sender != null)
-					handler.HandleServerbound(gm, packet, reader);
-				else
-					handler.HandleClientbound(gm, packet, reader);
+					if (packet.Sender != null)
+						handler.HandleServerbound(gm, packet, reader);
+					else
+						handler.HandleClientbound(gm, packet, reader);
+
+					return JobResult.CompletedSuccess;
+				}, level: 9);
 			}
 			else
 				throw new InvalidOperationException("No packet handler is registered for " + packet.Id + "!");

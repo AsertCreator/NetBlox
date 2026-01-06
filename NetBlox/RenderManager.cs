@@ -50,16 +50,19 @@ namespace NetBlox
 		public bool RenderAtAll = false;
 		public bool DoPostProcessing = true;
 		public bool WhiteOut = false;
+		public bool DoRenderDebugCharts = false;
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
 		public Texture2D StudTexture;
 		public Texture2D BlankTexture;
 		public CrispFont MainFont;
 		public CrispFont MainFont14;
+		public Camera CurrentCamera;
 		public Instances.GUIs.TextBox? FocusedBox;
 		public bool FirstFrame = true;
 		public Thread? FrustumCullingThread;
 		public bool FrustumCullingPaused = true;
+		public bool UnlimitFramerate = false;
 		private readonly bool SkipWindowCreation = false;
 		private Stopwatch renderStopwatch = new();
 		private DataModel Root => GameManager.CurrentRoot;
@@ -86,6 +89,8 @@ namespace NetBlox
 			MainCamera = new(new Vector3(5, 6, 0), Vector3.Zero, Vector3.UnitY, 90, CameraProjection.Perspective);
 			RenderAtAll = render;
 
+			CurrentCamera = new Camera(gm);
+
 			if (!skiprinit)
 				Initialize(render);
 			else if (render)
@@ -94,7 +99,7 @@ namespace NetBlox
 				MainFont14 = GetCrispFont(14, "arialbd.ttf");
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
-				BeginFustumCullingThread();
+				// BeginFustumCullingThread();
 			}
 		}
 		public CrispFont GetCrispFont(int fontsize, string fontfamily)
@@ -114,7 +119,6 @@ namespace NetBlox
 				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint | GameManager.CustomFlags);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, GameManager.ClientStartupInfo == null ? "NetBlox" : GameManager.ClientStartupInfo.WindowName);
 				Raylib.InitAudioDevice();
-				Raylib.SetTargetFPS(AppManager.PreferredFPS);
 				Raylib.SetExitKey(KeyboardKey.Null);
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
 
@@ -123,7 +127,7 @@ namespace NetBlox
 				LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
-				BeginFustumCullingThread();
+				// BeginFustumCullingThread();
 			}
 		}
 		public unsafe void RenderFrame()
@@ -164,7 +168,7 @@ namespace NetBlox
 								Part part = new(GameManager)
 								{
 									Name = "Trash",
-									Parent = Root.GetService<Workspace>(),
+									Parent = Root.GetService<Workspace>(true),
 									Position = MainCamera.Position,
 									Size = new(1, 1, 1),
 									Color3 = Color.DarkPurple
@@ -220,6 +224,9 @@ namespace NetBlox
 								}
 							}
 
+							if (DoRenderDebugCharts)
+								RenderDebugCharts();
+
 							Raylib.DrawTextEx(MainFont.SpriteFont, Status, new Vector2(20, 20), 16, 0, Color.White);
 						}
 
@@ -245,6 +252,14 @@ namespace NetBlox
 					}
 
 					renderStopwatch.Stop();
+
+					if (!UnlimitFramerate)
+					{
+						var leftRenderTime = 1000 / AppManager.PreferredFPS - renderStopwatch.Elapsed.TotalMilliseconds;
+						if (leftRenderTime > 0)
+							TaskScheduler.CurrentJob.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddMilliseconds(leftRenderTime);
+					}
+
 					GameManager.CurrentRunService.RenderStepped.Fire(DynValue.NewNumber(renderStopwatch.Elapsed.TotalSeconds));
 
 					if (Raylib.WindowShouldClose() && !SkipWindowCreation)
@@ -318,6 +333,41 @@ namespace NetBlox
 			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Left, new Vector3(0, 0, -ass) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Front);
 			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Right, new Vector3(0, 0, ass) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Back);
 		}
+		public void RenderDebugCharts()
+		{
+			double overallsum = 0;
+			Dictionary<Job, double> percentages = [];
+
+			for (int i = 0; i < TaskScheduler.RunningJobs.Count; i++)
+			{
+				var job = TaskScheduler.RunningJobs[i];
+				overallsum += job.JobTimingContext.LastCycleTime;
+			}
+			for (int i = 0; i < TaskScheduler.RunningJobs.Count; i++)
+			{
+				var job = TaskScheduler.RunningJobs[i];
+				percentages[job] = job.JobTimingContext.LastCycleTime / overallsum;
+			}
+
+			var center = new Vector2(Raylib.GetScreenWidth() - 200, 200);
+			float percentagePassed = 0;
+
+			for (int i = 0; i < percentages.Count; i++)
+			{
+				var kvp = percentages.ElementAt(i);
+				var color = BrickColor.Registry[kvp.Key.GetHashCode() % BrickColor.Registry.Length];
+				var segments = (int)Math.Ceiling(360 * kvp.Value);
+
+				Raylib.DrawCircleSector(center, 150, 360 * percentagePassed, 360 * (percentagePassed + (float)kvp.Value), 
+					segments, color.Color);
+
+				percentagePassed += (float)kvp.Value;
+
+				Raylib.DrawTextEx(MainFont14.SpriteFont, kvp.Key.Name + " - " + kvp.Key.Type.ToString() + " - " + 
+					(kvp.Value * 100).ToString("F"),
+					new Vector2(Raylib.GetScreenWidth() - 350, 400 + 16 * i), 14, 1.4f, color.Color);
+			}
+		}
 		public void RenderWorld()
 		{
 			// i should probably avoid using ifs in these moments, but who cares if its like 5 nanoseconds?
@@ -341,6 +391,7 @@ namespace NetBlox
 		{
 			var c = instance.GetChildren();
 			(instance as I3DRenderable)?.Render();
+
 			for (int i = 0; i < c.Length; i++)
 				RenderInstance(c[i]!);
 		}

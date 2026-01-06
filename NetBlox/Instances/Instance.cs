@@ -26,7 +26,11 @@ namespace NetBlox.Instances
 			{
 				lock (this)
 				{
-					if (WasDestroyed) return;
+					if (WasDestroyed)
+					{
+						LogManager.LogWarn("Cannot reparent destroyed Instances!");
+						return;
+					}
 
 					if (parent != null)
 					{
@@ -34,13 +38,13 @@ namespace NetBlox.Instances
 						{
 							lock (parent.Children)
 								parent.Children.Remove(this);
-							if (GameManager.MainEnvironment != null)
-							{
-								parent.NativeChildRemoved?.Invoke(parent, this);
-								parent.NativeDescendantRemoved?.Invoke(parent, this);
-							}
+
+							OnDisownedBy?.Invoke(this, parent);
+							parent.NativeChildRemoved?.Invoke(parent, this);
+							parent.NativeDescendantRemoved?.Invoke(parent, this);
 						}
 					}
+
 					if (value != null)
 					{
 						lock (value)
@@ -49,11 +53,10 @@ namespace NetBlox.Instances
 							ParentID = parent.UniqueID;
 							lock (value.Children)
 								value.Children.Add(this);
-							if (GameManager.MainEnvironment != null)
-							{
-								parent.NativeChildAdded?.Invoke(parent, this);
-								parent.NativeDescendantAdded?.Invoke(parent, this);
-							}
+
+							OnAdoptedBy?.Invoke(this, parent);
+							parent.NativeChildAdded?.Invoke(parent, this);
+							parent.NativeDescendantAdded?.Invoke(parent, this);
 						}
 					}
 					else
@@ -92,11 +95,11 @@ namespace NetBlox.Instances
 		{ 
 			get
 			{
+				if (this is Workspace || this is ReplicatedFirst || this is Players || this is ReplicatedStorage || 
+					this is Chat || this is Lighting || this is StarterGui || this is StarterPack)
+					return true;
 				if (Parent == null)
 					return false;
-				if (Parent is Workspace || Parent is ReplicatedFirst || Parent is ReplicatedStorage || Parent is Players ||
-					Parent is Lighting || Parent is StarterGui || Parent is StarterPack)
-					return true;
 				return Parent.EligibleForReplication;
 			} 
 		}
@@ -111,6 +114,8 @@ namespace NetBlox.Instances
 		public static Dictionary<int, Table> MetaTables = [];
 		public Table? Table;
 
+		public event EventHandler<Instance> OnAdoptedBy;
+		public event EventHandler<Instance> OnDisownedBy;
 		public event EventHandler<Instance> NativeChildAdded;
 		public event EventHandler<Instance> NativeChildRemoved;
 		public event EventHandler<Instance> NativeDescendantAdded;
@@ -118,7 +123,7 @@ namespace NetBlox.Instances
 
 		private Instance? parent;
 		private Type? ThisType;
-		private bool containsInstanceReferences;
+		private List<InstanceCrossReference>? crossReferences;
 		protected DataModel Root => GameManager.CurrentRoot;
 
 		public Instance(GameManager gm)
@@ -128,9 +133,6 @@ namespace NetBlox.Instances
 				Name = ClassName;
 				UniqueID = Guid.NewGuid();
 				GameManager = gm;
-
-				if (InstanceCreator.InstancesWithInstanceReferences.Contains(GetType()))
-					containsInstanceReferences = true;
 
 				gm.AllInstances.Add(this);
 			}
@@ -327,24 +329,21 @@ namespace NetBlox.Instances
 			{
 				Destroying.Fire();
 
-				// fck it im gonna delete all references old fashioned way
-				for (int i = 0; i < GameManager.AllInstances.Count; i++)
-				{
-					var inst = GameManager.AllInstances[i];
-					if (inst.containsInstanceReferences)
-					{
-						inst.ClearReferencesTo(this);
-					}
-				}
+				// delete all referenced to this Instance from others
+				crossReferences?.ForEach(x => x.NullOut());
 
 				Parent = null;
-				ClearAllChildren();
-				GameManager.AllInstances.Remove(this);
 
+				// force it a little
+				parent = null;
 				WasDestroyed = true;
 
-				if (GameManager.AllowReplication && GameManager.NetworkManager.IsServer)
+				ClearAllChildren();
+
+				if (GameManager.NetworkManager.IsServer)
 					GameManager.NetworkManager.AddReplication(this, Replication.REPM_TOALL, Replication.REPW_DESTROY, false);
+
+				GameManager.AllInstances.Remove(this);
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -553,24 +552,6 @@ namespace NetBlox.Instances
 				}
 			});
 			return new();
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void ClearReferencesTo(Instance inst)
-		{
-			var props = GetType().GetProperties();
-			for (int i = 0; i < props.Length; i++)
-			{
-				var prop = props[i];
-				if (prop.PropertyType.IsAssignableTo(NetworkManager.InstanceType))
-				{
-					if (prop.Name != "Parent")
-					{
-						var obj = prop.GetValue(this);
-						if (obj == inst)
-							prop.SetValue(this, null);
-					}
-				}
-			}
 		}
 		public Task<Instance> WaitForChildInternal(string name)
 		{

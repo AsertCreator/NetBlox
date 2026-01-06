@@ -1,1 +1,6 @@
-{}
+{
+  "flagMap": {
+    "FFlagShowPartGroundedness": false,
+    "FFlagShowPartOwnerhsip": true
+  }
+}

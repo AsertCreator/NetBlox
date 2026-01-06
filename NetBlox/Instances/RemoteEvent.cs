@@ -50,6 +50,10 @@ namespace NetBlox.Instances
 			for (int i = 0; i < GameManager.NetworkManager.Clients.Count; i++)
 			{
 				var rc = GameManager.NetworkManager.Clients[i];
+
+				if (!GameManager.NetworkManager.ClientsReadyForReplication.Contains(rc))
+					continue;
+
 				rc.SendPacket(packet);
 			}
 		}

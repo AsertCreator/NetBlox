@@ -63,6 +63,12 @@ namespace NetBlox.Instances
 				if (value == enabled)
 					return;
 
+				if (part0 == null || part1 == null)
+				{
+					DestroyWeld();
+					return;
+				}
+
 				if (part0.IsDomestic && part1.IsDomestic)
 				{
 					if (value)
@@ -135,7 +141,7 @@ namespace NetBlox.Instances
 				SpringSettings = new SpringSettings(30, 0.1f)
 			};
 
-			TaskScheduler.ScheduleJob(JobType.Miscellaneous, _ =>
+			TaskScheduler.ScheduleNamedJob("WeldWaiting", JobType.Miscellaneous, _ =>
 			{
 				BasePart? originalPart0 = Part0;
 				BasePart? originalPart1 = Part1;

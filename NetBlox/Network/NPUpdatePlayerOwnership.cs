@@ -36,7 +36,6 @@ namespace NetBlox.Network
 				return;
 
 			inst.IsDomestic = updatePlayerOwnership.Status;
-			inst.Anchored = inst.Anchored;
 			inst.InvokeChangeNetworkOwnership();
 
 			return;

@@ -26,19 +26,23 @@ namespace NetBlox.Instances
 				if (humanoid == null)
 					return;
 
+				if (character != null)
+				{
+					var oldhumanoid = character.FindFirstChild("Humanoid") as Humanoid;
+					if (oldhumanoid != null)
+						oldhumanoid.IsLocalPlayer = false;
+				}
+
 				character = value;
 
 				if (GameManager.NetworkManager.IsServer)
 				{
 					Client.WaitForInstanceArrival(humanoid, () =>
 					{
-						TaskScheduler.Schedule(() =>
-						{
-							// we're "hopefully" guaranteed that character's model had already replicated, so
-							// it technically qualifies as a working humanoid
-							character.GetDescendantsOfType<BasePart>().ForEach(x => x.SetNetworkOwner(this));
-							Client.SendPacket(NPSetPlayableCharacter.Create(character as Model));
-						});
+						// we're "hopefully" guaranteed that character's model had already replicated, so
+						// it technically qualifies as a working humanoid
+						character.GetDescendantsOfType<BasePart>().ForEach(x => x.SetNetworkOwner(this));
+						Client.SendPacket(NPSetPlayableCharacter.Create(character as Model));
 					});
 				}
 				else
@@ -48,7 +52,7 @@ namespace NetBlox.Instances
 
 					humanoid.IsLocalPlayer = true;
 
-					var camera = GameManager.CurrentRoot.GetService<Workspace>().CurrentCamera as Camera;
+					var camera = GameManager.RenderManager.CurrentCamera;
 					camera.CameraSubject = humanoid;
 				}
 			}
@@ -237,8 +241,12 @@ namespace NetBlox.Instances
 		{
 			base.Destroy();
 			Character?.Destroy();
-			if (!WasKicked && (IsLocalPlayer || GameManager.NetworkManager.IsServer))
-				Kick("Player has been removed from this DataModel");
+
+			if (!Client.IsAboutToLeave)
+			{
+				if (!WasKicked && (IsLocalPlayer || GameManager.NetworkManager.IsServer))
+					Kick("Player has been removed from this DataModel");
+			}
 		}
 	}
 }

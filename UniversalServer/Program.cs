@@ -24,7 +24,7 @@ namespace NetBlox.Server
 
 				LuaRuntime.Setup(Root, false);
 
-				NetworkManager.StartServer();
+				NetworkManager.StartServerNonBlocking();
 
 				GameManager.IsRunning = true;
 			});
@@ -62,9 +62,10 @@ namespace NetBlox.Server
 					TaskScheduler.ScheduleScript(x, File.ReadAllText("gamestart.txt"), 8, null);
 
 				x.PhysicsManager.DisablePhysics = false;
-				x.AllowReplication = true;
+				x.PauseReplication = false;
 
-				Task.Run(x.NetworkManager.StartServer);
+				x.NetworkManager.StartServerNonBlocking();
+
 				Task.Run(() =>
 				{
 					Console.WriteLine("NetBlox Server commmand line:");

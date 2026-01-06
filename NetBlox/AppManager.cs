@@ -1,4 +1,5 @@
 ﻿using NetBlox.Instances;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace NetBlox
@@ -29,6 +30,7 @@ namespace NetBlox
 		public static HttpClient HttpClient = new();
 		public static Job? GameRenderer;
 		public static Job? GameProcessor;
+		public static Job? GamePhysics;
 		public static Job? GameGC;
 		public static int PreferredFPS = 60;
 		public static bool ShuttingDown = false;
@@ -83,21 +85,42 @@ namespace NetBlox
 				}
 			}
 
-			GameProcessor = TaskScheduler.ScheduleJob(JobType.Heartbeat, x =>
+			GameProcessor = TaskScheduler.ScheduleNamedJob("Heartbeat", JobType.Heartbeat, x =>
 			{
 				for (int i = 0; i < GameManagers.Count; i++)
 				{
 					var gm = GameManagers[i];
+
 					CurrentGameManager = gm;
+
 					if (gm.IsRunning)
-					{
-						gm.PhysicsManager.Step();
 						gm.ProcessInstance(gm.CurrentRoot);
-					}
 				}
 				return JobResult.NotCompleted;
 			});
-			GameRenderer = TaskScheduler.ScheduleJob(JobType.Renderer, x =>
+			GameProcessor.JobTimingContext.Priority = 60;
+
+			GamePhysics = TaskScheduler.ScheduleNamedJob("Physics", JobType.Physics, x =>
+			{
+				Stopwatch stopwatch = new();
+				stopwatch.Start();
+
+				for (int i = 0; i < GameManagers.Count; i++)
+				{
+					var gm = GameManagers[i];
+
+					gm.PhysicsManager.Step();
+				}
+
+				stopwatch.Stop();
+
+				var leftPhysicsTime = 1000 / PreferredFPS - stopwatch.Elapsed.TotalMilliseconds;
+				if (leftPhysicsTime > 0)
+					x.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddMilliseconds(leftPhysicsTime);
+
+				return JobResult.NotCompleted;
+			});
+			GameRenderer = TaskScheduler.ScheduleNamedJob("Renderer", JobType.Renderer, x =>
 			{
 				if (CurrentRenderManager != null)
 				{
@@ -108,7 +131,7 @@ namespace NetBlox
 				}
 				return JobResult.NotCompleted;
 			});
-			GameGC = TaskScheduler.ScheduleJob(JobType.Miscellaneous, x =>
+			GameGC = TaskScheduler.ScheduleNamedJob("GarbageCollection", JobType.Miscellaneous, x =>
 			{
 				GC.Collect();
 				x.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddSeconds(7);

@@ -29,7 +29,7 @@ namespace NetBlox
 		public ThreadDispatcher? DefaultThreadDispatcher;
 		public List<BasePart> Actors = new();
 		public Dictionary<uint, BasePart> Collidable2BasePartMap = [];
-		public bool DisablePhysics = false; // not now
+		public bool DisablePhysics = true; // not now
 		internal Stopwatch physicsStopwatch = new();
 
 		public PhysicsManager(GameManager gameManager)
@@ -41,6 +41,11 @@ namespace NetBlox
 
 			LocalSimulationBuffer = new BufferPool();
 			LocalSimulation = Simulation.Create(LocalSimulationBuffer, core, core, solver);
+		}
+		public void SpringUpPhysics()
+		{
+			DisablePhysics = false;
+			Actors.ForEach(x => x.ReevaluatePhysicsRepresentation());
 		}
 		public void ClientStep()
 		{
@@ -126,7 +131,14 @@ namespace NetBlox
 						if (box.IsDirty)
 						{
 							for (int j = 0; j < clients.Count; j++)
-								clients[j].SendPacket(packet);
+							{
+								var client = clients[j];
+
+								if (!GameManager.NetworkManager.ClientsReadyForReplication.Contains(client))
+									continue;
+
+								client.SendPacket(packet);
+							}
 						}
 					}
 					else
@@ -144,10 +156,13 @@ namespace NetBlox
 				physicsStopwatch.Reset();
 				physicsStopwatch.Start();
 
-				if (GameManager.NetworkManager.IsServer)
-					ServerStep();
-				else if (GameManager.NetworkManager.IsClient)
-					ClientStep();
+				if (!DisablePhysics)
+				{
+					if (GameManager.NetworkManager.IsServer)
+						ServerStep();
+					else if (GameManager.NetworkManager.IsClient)
+						ClientStep();
+				}
 
 				physicsStopwatch.Stop();
 

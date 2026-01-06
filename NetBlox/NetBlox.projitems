@@ -90,10 +90,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPServerIntroduction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPSetPlayableCharacter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPStartReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPUpdatePlayerBufferZone.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPUpdatePlayerOwnership.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)network\NPWaitForSubjectAndSetCamera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\Replication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\ImpersonateDuringReplicationAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)runtime\InstanceCrossReference.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)runtime\InstanceSiblingHandle.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\PhysicsAssembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />

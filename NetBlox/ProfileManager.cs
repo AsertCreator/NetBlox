@@ -25,6 +25,8 @@ namespace NetBlox
 			{
 				LogManager.LogInfo("Trying to login with " + user + "...");
 				IsOffline = true;
+				LastLogin = null; // also dispose last login because why not
+
 				Dictionary<string, string> str = new();
 				str["name"] = user;
 				str["phash"] = phash;
@@ -38,7 +40,6 @@ namespace NetBlox
 				if (res.StatusCode != HttpStatusCode.OK)
 				{
 					LogManager.LogError("Could not login, possibly wrong credentials, msg: " + result["errorText"]);
-					LastLogin = null; // also dispose last login because why not
 					return null;
 				}
 				else
@@ -51,7 +52,6 @@ namespace NetBlox
 			catch
 			{
 				LogManager.LogError("Could not login, socket could not be opneded or something else happened");
-				LastLogin = null; // also dispose last login because why not
 				return null;
 			}
 		}

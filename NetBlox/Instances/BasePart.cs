@@ -8,7 +8,6 @@ using NetBlox.Network;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
-using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -18,6 +17,11 @@ namespace NetBlox.Instances
 	{
 		public int DirtyCounter;
 		public Dictionary<Vector3, float>? AFSCache;
+
+		public PartRenderCache()
+		{
+			DirtyCounter = 6;
+		}
 	}
 	public class BasePart : PVInstance, I3DRenderable
 	{
@@ -29,50 +33,46 @@ namespace NetBlox.Instances
 
 		private object physicsRepresentationLock = new();
 
-		public bool IsActuallyAnchored => IsDomestic ? _anchored : true;
+		public bool IsActuallyAnchored => 
+			anchoredFactorUserChoice || anchoredFactorNonDomestic || anchoredFactorHumanoidAttachment;
+
 		[Lua([Security.Capability.None])]
 		public bool Anchored
 		{
-			get => _anchored;
+			get => anchoredFactorUserChoice;
+			set => AnchoredFactorUserChoice = value;
+		}
+		[NotReplicated]
+		public bool AnchoredFactorUserChoice
+		{
+			get => anchoredFactorUserChoice;
 			set
 			{
-				lock (physicsRepresentationLock)
-				{
-					var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-					_anchored = value;
-
-					if (IsActuallyAnchored)
-					{
-						if (BodyHandle.HasValue)
-						{
-							if (!localsim.Bodies[BodyHandle.Value].Exists)
-							{
-								BodyHandle = null;
-								return;
-							}
-							localsim.Bodies.Remove(BodyHandle.Value);
-							BodyHandle = null;
-						}
-						CreateStaticHandle();
-					}
-					else
-					{
-						if (StaticHandle.HasValue)
-						{
-							if (!localsim.Statics[StaticHandle.Value].Exists)
-							{
-								StaticHandle = null;
-								return;
-							}
-							localsim.Statics.Remove(StaticHandle.Value);
-							StaticHandle = null;
-						}
-						CreateBodyHandle();
-					}
-
-					OnPhysicsRepresentationChanged?.Invoke(this, new());
-				}
+				anchoredFactorUserChoice = value;
+				if (!GameManager.PhysicsManager.DisablePhysics)
+					ReevaluatePhysicsRepresentation();
+			}
+		}
+		[NotReplicated]
+		public bool AnchoredFactorNonDomestic
+		{
+			get => anchoredFactorNonDomestic;
+			set
+			{
+				anchoredFactorNonDomestic = value;
+				if (!GameManager.PhysicsManager.DisablePhysics)
+					ReevaluatePhysicsRepresentation();
+			}
+		}
+		[NotReplicated]
+		public bool AnchoredFactorHumanoidAttachment
+		{
+			get => anchoredFactorHumanoidAttachment;
+			set
+			{
+				anchoredFactorHumanoidAttachment = value;
+				if (!GameManager.PhysicsManager.DisablePhysics)
+					ReevaluatePhysicsRepresentation();
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -223,6 +223,7 @@ namespace NetBlox.Instances
 				}
 			}
 		}
+		[NotReplicated]
 		internal Quaternion QuaternionRotation
 		{
 			get => _rotation;
@@ -232,6 +233,8 @@ namespace NetBlox.Instances
 				{
 					if (_rotation == value)
 						return;
+					if (value == default)
+						value = Quaternion.Identity;
 					_rotation = value;
 					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
 						return;
@@ -312,6 +315,7 @@ namespace NetBlox.Instances
 				}
 			}
 		}
+		[NotReplicated]
 		[Lua([Security.Capability.None])]
 		public Vector3 size { get => Size; set => Size = value; }
 		[Lua([Security.Capability.None])]
@@ -378,8 +382,6 @@ namespace NetBlox.Instances
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set => PartCFrame = value;
 		}
-		[Lua([Security.Capability.None])]
-		public LuaSignal Touched { get; }
 		public Vector3 _position
 		{
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -402,6 +404,8 @@ namespace NetBlox.Instances
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
+				if (value == default)
+					value = Quaternion.Identity;
 				PartCFrame.Rotation = value;
 				if (this is BasePart bp)
 					bp.RenderCache.DirtyCounter = 6;
@@ -411,6 +415,9 @@ namespace NetBlox.Instances
 		{
 			get
 			{
+				if (isHumanoidLimb)
+					return false;
+
 				var bb = BoundingBox;
 				var size = bb.Max - bb.Min;
 				var center = bb.Min + size / 2;
@@ -443,15 +450,29 @@ namespace NetBlox.Instances
 			}
 		}
 
+		[NotReplicated]
 		public bool IsDomestic 
 		{
 			get => isDomestic;
 			set
 			{
-				OnPhysicsRepresentationChanged?.Invoke(this, new());
+				AnchoredFactorNonDomestic = !value;
 				isDomestic = value;
 			}
 		}
+		[NotReplicated]
+		public bool IsHumanoidLimb
+		{
+			get => isHumanoidLimb;
+			set
+			{
+				AnchoredFactorHumanoidAttachment = value;
+				isHumanoidLimb = value;
+			}
+		}
+
+		[Lua([Security.Capability.None])]
+		public LuaSignal Touched { get; private set; }
 
 		public event EventHandler? OnNetworkOwnershipChanged;
 		public event EventHandler? OnPhysicsRepresentationChanged;
@@ -471,7 +492,7 @@ namespace NetBlox.Instances
 		public Lighting? LocalLighing;
 		public bool IsDirty = false;
 		public CFrame PartCFrame;
-		public Vector3 _size;
+		public Vector3 _size = new Vector3(4, 1, 2);
 		public Vector3 LinearVelocity;
 		public Vector3 RotationalVelocity; // what
 		public bool _anchored = false;
@@ -489,7 +510,13 @@ namespace NetBlox.Instances
 		protected SurfaceType bottomSurface;
 		protected SurfaceType leftSurface;
 		protected SurfaceType rightSurface;
+
 		protected bool isDomestic = true;
+		protected bool isHumanoidLimb = false;
+
+		protected bool anchoredFactorUserChoice = false;
+		protected bool anchoredFactorNonDomestic = false;
+		protected bool anchoredFactorHumanoidAttachment = false;
 
 		// they are internal as a workaround for serializationmanager
 		internal Vector3 _physicsposition
@@ -525,24 +552,41 @@ namespace NetBlox.Instances
 
 		public BasePart(GameManager ins) : base(ins)
 		{
-			_size = new Vector3(4, 1, 2);
-			_position = new Vector3(0, 0, 0);
-			_rotation = default;
-			LinearVelocity = new Vector3(0, 0, 0);
-
-			Anchored = false;
+			Touched = new LuaSignal(ins);
 
 			GameManager.PhysicsManager.Actors.Add(this);
-
-			Touched = new LuaSignal(ins);
 
 			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
 			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
 			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
+
+			if (!GameManager.PhysicsManager.DisablePhysics)
+				ReevaluatePhysicsRepresentation();
 		}
 		public override void PivotTo(CFrame pivot)
 		{
 			CFrame = pivot;
+		}
+		public void ReevaluatePhysicsRepresentation()
+		{
+			if (!GameManager.PhysicsManager.DisablePhysics)
+				return;
+
+			lock (physicsRepresentationLock)
+			{
+				if (IsActuallyAnchored)
+				{
+					DestroyBodyHandle();
+					CreateStaticHandle();
+				}
+				else
+				{
+					DestroyStaticHandle();
+					CreateBodyHandle();
+				}
+
+				OnPhysicsRepresentationChanged?.Invoke(this, new());
+			}
 		}
 		public CollidableReference GetCollidableReference()
 		{
@@ -550,6 +594,36 @@ namespace NetBlox.Instances
 				return new CollidableReference(CollidableMobility.Dynamic, BodyHandle.Value);
 			else
 				return new CollidableReference(StaticHandle.Value);
+		}
+		public void DestroyBodyHandle()
+		{
+			var localsim = GameManager.PhysicsManager.LocalSimulation;
+
+			if (BodyHandle.HasValue)
+			{
+				if (!localsim.Bodies[BodyHandle.Value].Exists)
+				{
+					BodyHandle = null;
+					return;
+				}
+				localsim.Bodies.Remove(BodyHandle.Value);
+				BodyHandle = null;
+			}
+		}
+		public void DestroyStaticHandle()
+		{
+			var localsim = GameManager.PhysicsManager.LocalSimulation;
+
+			if (StaticHandle.HasValue)
+			{
+				if (!localsim.Statics[StaticHandle.Value].Exists)
+				{
+					StaticHandle = null;
+					return;
+				}
+				localsim.Statics.Remove(StaticHandle.Value);
+				StaticHandle = null;
+			}
 		}
 		public void CreateBodyHandle()
 		{
@@ -568,10 +642,6 @@ namespace NetBlox.Instances
 
 			BodyHandle = localsim.Bodies.Add(description);
 			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
-
-			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
-			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
-			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
 		}
 		public void CreateStaticHandle()
 		{
@@ -614,11 +684,11 @@ namespace NetBlox.Instances
 			lock (physicsRepresentationLock)
 			{
 				GameManager.PhysicsManager.Collidable2BasePartMap.Remove(GetCollidableReference().Packed);
+				GameManager.PhysicsManager.Actors.Remove(this);
 				if (BodyHandle.HasValue)
 					GameManager.PhysicsManager.LocalSimulation.Bodies.Remove(BodyHandle.Value);
 				if (StaticHandle.HasValue)
 					GameManager.PhysicsManager.LocalSimulation.Statics.Remove(StaticHandle.Value);
-				GameManager.PhysicsManager.Actors.Remove(this);
 			}
 		}
 		public void InvokeChangeNetworkOwnership() => OnNetworkOwnershipChanged?.Invoke(this, new());

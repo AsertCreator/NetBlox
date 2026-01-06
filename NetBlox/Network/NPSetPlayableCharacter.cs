@@ -29,7 +29,7 @@ namespace NetBlox.Network
 
 			int reentrancy = 0;
 
-			TaskScheduler.ScheduleJob(JobType.Miscellaneous, _ =>
+			TaskScheduler.ScheduleNamedJob("NPSetPlayableCharacterPlayerWaiting", JobType.Miscellaneous, _ =>
 			{
 				Player? localPlayer = gm.CurrentRoot.GetService<Players>().LocalPlayer as Player;
 
@@ -44,6 +44,9 @@ namespace NetBlox.Network
 				}
 
 				localPlayer.Character = model;
+
+				gm.RenderManager.CurrentCamera.CameraSubject = humanoid;
+
 				return JobResult.CompletedSuccess;
 			});
 		}
