@@ -212,7 +212,7 @@ namespace NetBlox.Instances
 			var chmodel = Root.GetService<PlatformService>().SpawnCharacterFor(CharacterAppearanceId, Name);
 
 			if (workspace.SpawnLocation != null)
-				chmodel.MoveTo(workspace.SpawnLocation.Position + new Vector3(0, 3.5f, 0));
+				chmodel.MoveTo(workspace.SpawnLocation.Position + new Vector3(0, 30f, 0));
 			else
 				chmodel.MoveTo(new Vector3(0, 10, 0));
 

@@ -60,6 +60,9 @@ namespace NetBlox
 			{
 				LogManager.LogInfo("Initializing NetBlox...");
 
+				if (args.Length == 0)
+					throw new InvalidOperationException("Cannot initialize NetBlox with no arguments!");
+
 				string? csdata = args[args.ToList().IndexOf("-cs") + 1].Replace("^^", "\"");
 				string? ssdata = args[args.ToList().IndexOf("-ss") + 1].Replace("^^", "\"");
 
@@ -137,6 +140,23 @@ namespace NetBlox
 					var light = CurrentRoot.GetService<Lighting>(true);
 					if (light != null)
 						light.SunLocality = !light.SunLocality;
+				});
+
+				Verbs.Add(KeyboardKey.LeftBracket, () =>
+				{
+					if (AppManager.PreferredFPS == 1)
+						AppManager.PreferredFPS = 0;
+					AppManager.PreferredFPS -= 5;
+					if (AppManager.PreferredFPS == 0)
+						AppManager.PreferredFPS = 1;
+				});
+				Verbs.Add(KeyboardKey.RightBracket, () =>
+				{
+					if (AppManager.PreferredFPS == 1)
+						AppManager.PreferredFPS = 0;
+					AppManager.PreferredFPS += 5;
+					if (AppManager.PreferredFPS == 0)
+						AppManager.PreferredFPS = 1;
 				});
 
 				// we dont want corescripts to run before engine is initialized

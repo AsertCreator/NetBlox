@@ -13,12 +13,12 @@ namespace NetBlox.Runtime
 
 		private Instance referencePoint;
 		private T? cachedInstance;
-		private int siblingNameHash;
+		private string siblingName;
 
 		public InstanceSiblingHandle(Instance relativeTo, string name)
 		{
 			referencePoint = relativeTo;
-			siblingNameHash = name.GetHashCode(); // my pathetic attempts at cutting memory usage
+			siblingName = name;
 
 			relativeTo.OnAdoptedBy += OnAdoptedBy;
 			relativeTo.OnDisownedBy += OnDisownedBy;
@@ -27,12 +27,32 @@ namespace NetBlox.Runtime
 			{
 				referencePoint.Parent.NativeChildAdded += OnSiblingAdded;
 				referencePoint.Parent.NativeChildRemoved += OnSiblingRemoved;
+
+				Rescan();
+			}
+		}
+
+		private void Rescan()
+		{
+			for (int i = 0; i < referencePoint.Parent.Children.Count; i++)
+			{
+				var sibling = referencePoint.Parent.Children[i];
+
+				if (sibling.Name == siblingName && sibling is T typedSibling)
+				{
+					cachedInstance = typedSibling;
+					if (typedSibling != null)
+					{
+						OnSiblingTaken?.Invoke(referencePoint, typedSibling);
+						return;
+					}
+				}
 			}
 		}
 
 		private void OnSiblingAdded(object? _, Instance sibling)
 		{
-			if (sibling.Name.GetHashCode() == siblingNameHash && sibling is T typedSibling)
+			if (sibling.Name == siblingName && sibling is T typedSibling)
 			{
 				cachedInstance = typedSibling;
 				if (typedSibling != null)
@@ -52,11 +72,17 @@ namespace NetBlox.Runtime
 		{
 			newparent.NativeChildAdded += OnSiblingAdded;
 			newparent.NativeChildRemoved += OnSiblingRemoved;
+
+			Rescan();
 		}
 		private void OnDisownedBy(object? _, Instance oldparent)
 		{
 			oldparent.NativeChildAdded -= OnSiblingAdded;
 			oldparent.NativeChildRemoved -= OnSiblingRemoved;
+
+			if (cachedInstance != null)
+				OnSiblingReleased?.Invoke(referencePoint, cachedInstance);
+			cachedInstance = null;
 		}
 		public void Dispose()
 		{

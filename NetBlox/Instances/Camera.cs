@@ -91,7 +91,7 @@ namespace NetBlox.Instances
 
 					// Zoom target distance
 
-					float move = -Raylib.GetMouseWheelMove();
+					float move = -Raylib.GetMouseWheelMove() * (float)AppManager.GameRenderer.JobTimingContext.LastCycleTime;
 					if (move > 0)
 					{
 						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)

@@ -116,7 +116,7 @@ namespace NetBlox
 
 				var leftPhysicsTime = 1000 / PreferredFPS - stopwatch.Elapsed.TotalMilliseconds;
 				if (leftPhysicsTime > 0)
-					x.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddMilliseconds(leftPhysicsTime);
+					TaskScheduler.CurrentJob.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddMilliseconds(leftPhysicsTime);
 
 				return JobResult.NotCompleted;
 			});

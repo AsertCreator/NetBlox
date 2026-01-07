@@ -1,16 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Numerics;
 
 namespace NetBlox.Structs
 {
-	public struct CFrame(Vector3 pos, Quaternion rot = default)
+	public struct CFrame
 	{
-		public Vector3 Position = pos;
-		public Quaternion Rotation = rot;
+		public Vector3 Position;
+		public Quaternion Rotation;
+
+		public CFrame(Vector3 pos)
+		{
+			Position = pos;
+			Rotation = Quaternion.Identity;
+		}
+		public CFrame(Vector3 pos, Quaternion rot)
+		{
+			Position = pos;
+			Rotation = rot;
+		}
 
 		public static CFrame operator *(CFrame a, CFrame b) => new () 
 		{ 

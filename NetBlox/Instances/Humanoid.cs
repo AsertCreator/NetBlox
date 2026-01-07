@@ -3,11 +3,7 @@ using NetBlox.Instances.Services;
 using NetBlox.Network;
 using NetBlox.Runtime;
 using Raylib_cs;
-using System.Drawing;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Xml.Linq;
 
 namespace NetBlox.Instances
 {
@@ -27,6 +23,24 @@ namespace NetBlox.Instances
 		public float WalkSpeed { get; set; } = 12;
 		[Lua([Security.Capability.None])]
 		public float JumpPower { get; set; } = 6;
+		[Lua([Security.Capability.None])]
+		public Vector3 WalkToPoint 
+		{ 
+			get 
+			{
+				return walkToPointValue;
+			} 
+			set 
+			{
+				// asdsafsasffsfsdfdsdfsgsdgadjghfsdjfdfadshfiarhovvioeevnefven im so done with this
+				// todo: do some expected networking bullshit here instead of this
+
+				walkToPointValue = value;
+			} 
+		}
+
+		private Vector3 walkToPointValue;
+
 		public override Instance? Parent 
 		{
 			get => base.Parent;
@@ -57,6 +71,8 @@ namespace NetBlox.Instances
 		public InstanceSiblingHandle<BasePart> Torso;
 		public InstanceSiblingHandle<BasePart> Head;
 
+		public Job HumanoidMovementJob;
+
 		public static HumanoidControl ControlForward = HumanoidControl.GetFor(HumanoidControlType.Forward);
 		public static HumanoidControl ControlBackward = HumanoidControl.GetFor(HumanoidControlType.Backward);
 		public static HumanoidControl ControlLeft = HumanoidControl.GetFor(HumanoidControlType.WalkLeft);
@@ -79,15 +95,10 @@ namespace NetBlox.Instances
 		}
 
 		private HumanoidState currentState = HumanoidState.Idle;
-		private bool isDying = false;
 		private RenderTexture2D debugHudTexture;
-		private Vector3 humanoidCenterPosition;
+		private Vector3 privateMoveToTarget;
 
 		public Humanoid(GameManager ins) : base(ins)
-		{
-			InitiliazeHumanoid();
-		}
-		public void InitiliazeHumanoid()
 		{
 			LeftArm = new InstanceSiblingHandle<BasePart>(this, "Left Arm");
 			RightArm = new InstanceSiblingHandle<BasePart>(this, "Right Leg");
@@ -150,6 +161,22 @@ namespace NetBlox.Instances
 			RightLeg.OnSiblingTaken += OnLimbDeattachedGeneric;
 			Torso.OnSiblingTaken += OnLimbDeattachedLifeCritical;
 			Head.OnSiblingTaken += OnLimbDeattachedLifeCritical;
+
+			HumanoidMovementJob = TaskScheduler.ScheduleNamedJob("HumanoidMovement", JobType.Physics, _ =>
+			{
+				if (WasDestroyed)
+					return JobResult.CompletedSuccess;
+
+				if (!Torso.IsPresent)
+					return JobResult.NotCompleted;
+
+				var delta = Torso.WantedSibling.Position - WalkToPoint;
+				delta *= (float)AppManager.GameRenderer.JobTimingContext.LastCycleTime;
+
+				Torso.WantedSibling.Position += delta;
+
+				return JobResult.NotCompleted;
+			});
 		}
 
 		[Lua([Security.Capability.CoreSecurity])]
@@ -164,19 +191,63 @@ namespace NetBlox.Instances
 			}
 		}
 
+		// ideally localplayer humanoid should be controlled by the corescripts
+		// but im lazy and i hate lua
+
 		public override void Process()
 		{
 			base.Process();
 
 			if (Parent == null)
-			{
+				return;
 
+			if (IsLocalPlayer && Torso.IsPresent)
+			{
+				ProcessInput();
 			}
 		}
 		private void ProcessInput()
 		{
+			var forwardsPressed = ControlForward.IsPressed();
+			var strafeLeftPressed = ControlLeft.IsPressed();
+			var strafeRightPressed = ControlRight.IsPressed();
+			var backwardsPressed = ControlBackward.IsPressed();
 
+			Vector2 generalDirection = default;
+
+			if (forwardsPressed)
+				generalDirection += new Vector2(0, 1);
+			if (strafeLeftPressed)
+				generalDirection += new Vector2(-1, 0);
+			if (strafeRightPressed)
+				generalDirection += new Vector2(1, 0);
+			if (backwardsPressed)
+				generalDirection += new Vector2(0, -1);
+
+			if (generalDirection != default)
+				generalDirection = Vector2.Normalize(generalDirection);
+
+			Vector3 translated = GetWalkingPosition();
+			translated += new Vector3(generalDirection.Y, 0, generalDirection.X);
+
+			MoveTo(translated);
 		}
+		private Vector3 GetWalkingPosition()
+		{
+			return LeftLeg.WantedSibling.Position - new Vector3(0, RightLeg.WantedSibling.Size.Y / 2, 0);
+		}
+
+		[Lua([Security.Capability.None])]
+		public void MoveTo(Vector3 to)
+		{
+			privateMoveToTarget = to;
+		}
+		[Lua([Security.Capability.None])]
+		public void TakeDamage(float am)
+		{
+			Health -= am;
+		}
+
 		public void DoStateTransition(HumanoidState old, HumanoidState newv)
 		{
 
@@ -321,104 +392,6 @@ namespace NetBlox.Instances
 					});
 				}
 			}
-		}
-
-		//
-		// do not call things in here
-		//
-
-		private void DoWalkingOld()
-		{
-			bool ismovingforward = ControlForward.IsPressed();
-			bool ismovingbackward = ControlBackward.IsPressed();
-			bool ismovingsideleft = ControlLeft.IsPressed();
-			bool ismovingsideright = ControlRight.IsPressed();
-
-			var camera = GameManager.RenderManager.MainCamera;
-			float x1 = camera.Position.X;
-			float y1 = camera.Position.Z;
-			float x2 = camera.Target.X;
-			float y2 = camera.Target.Z;
-			float angle = MathF.Atan2(y2 - y1, x2 - x1);
-			float deltatime = (float)TaskScheduler.LastCycleTime.TotalSeconds;
-
-			Vector3 veldelta = default;
-
-			if (ControlJump.IsPressed() && State != HumanoidState.Falling)
-				StandUpOld();
-
-			if (ismovingforward)
-				veldelta += new Vector3(MathF.Cos(angle) * deltatime, 0, MathF.Sin(angle) * deltatime);
-			if (ismovingsideleft)
-				veldelta += new Vector3(MathF.Cos(angle - 1.5708f) * deltatime, 0, MathF.Sin(angle - 1.5708f) * deltatime);
-			if (ismovingbackward)
-				veldelta += new Vector3(-MathF.Cos(angle) * deltatime, 0, -MathF.Sin(angle) * deltatime);
-			if (ismovingsideright)
-				veldelta += new Vector3(-MathF.Cos(angle - 1.5708f) * deltatime, 0, -MathF.Sin(angle - 1.5708f) * deltatime);
-
-			veldelta = Vector3.Normalize(veldelta) * WalkSpeed;
-
-			if (ismovingbackward || ismovingforward || ismovingsideleft || ismovingsideright)
-			{
-				if (State != HumanoidState.Falling)
-				{
-					State = HumanoidState.Walking;
-				}
-				Torso.WantedSibling.Velocity = new Vector3(MathE.Lerp(Torso.WantedSibling.LinearVelocity.X, veldelta.X, 0.7f),
-				 	Torso.WantedSibling.LinearVelocity.Y, MathE.Lerp(Torso.WantedSibling.LinearVelocity.Z, veldelta.Z, 0.7f));
-
-				if (Torso.WantedSibling.BodyHandle.HasValue)
-				{
-					Vector3 characterForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitZ, Torso.WantedSibling.QuaternionRotation);
-					Vector3 cameraForward = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;
-					cameraForward.Y = 0;
-					cameraForward = Vector3.Normalize(cameraForward);
-					characterForward.Y = 0;
-					characterForward = Vector3.Normalize(characterForward);
-
-					float anglediff = MathF.Atan2(
-						cameraForward.X * characterForward.Z - cameraForward.Z * characterForward.X,
-						cameraForward.X * characterForward.X + cameraForward.Z * characterForward.Z);
-					float angular_velocity = MathE.Clamp(-5, anglediff, 5);
-
-					var angular = Torso.WantedSibling.AngularVelocity;
-					angular.Y = angular_velocity * 3;
-					var body = GameManager.PhysicsManager.LocalSimulation.Bodies[Torso.WantedSibling.BodyHandle.Value];
-					body.ApplyAngularImpulse(angular);
-					body.Awake = true;
-				}
-			}
-			else
-			{
-				Torso.WantedSibling.Velocity = new Vector3(Torso.WantedSibling.LinearVelocity.X / 8,
-					Torso.WantedSibling.LinearVelocity.Y, Torso.WantedSibling.LinearVelocity.Z / 8);
-			}
-		}
-		private void StabilizeHumanoidOld()
-		{
-			if (Torso.WantedSibling.BodyHandle.HasValue)
-			{
-				// may chatgpt help me
-				Vector3 up = Raymath.Vector3RotateByQuaternion(Vector3.UnitY, Torso.WantedSibling.QuaternionRotation);
-				Vector3 correctionAxis = Raymath.Vector3CrossProduct(up, Vector3.UnitY);
-				float angleError = MathF.Acos(Raymath.Vector3DotProduct(up, Vector3.UnitY));
-				var torque = Raymath.Vector3Normalize(correctionAxis) * (angleError * 240) - Torso.WantedSibling.AngularVelocity * 1f;
-				if (float.IsNaN(torque.X) || float.IsNaN(torque.Y) || float.IsNaN(torque.Z))
-					return;
-				if (float.IsInfinity(torque.X) || float.IsInfinity(torque.Y) || float.IsInfinity(torque.Z))
-					return;
-				Torso.WantedSibling.AngularVelocity += torque;
-				Torso.WantedSibling.Velocity += new Vector3(0, 0.1f, 0);
-			}
-		}
-		private void StandUpOld()
-		{
-			var part = Torso.WantedSibling;
-			part.Velocity += new Vector3(0, 35, 0);
-			if (part.Velocity.Y >= 38)
-				part.Velocity = new Vector3(part.Velocity.X, 38, part.Velocity.Z);
-
-			State = HumanoidState.Jumping;
 		}
 	}
 }

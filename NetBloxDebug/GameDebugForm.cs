@@ -24,8 +24,18 @@ namespace NetBloxDebug
 			InitializeComponent();
 			Attached = at;
 			Text = "NetBlox Debugger - " + at.ManagerName;
+		}
+
+		protected override void OnHandleCreated(EventArgs e)
+		{
+			base.OnHandleCreated(e);
+
+			if (Attached == null)
+				return;
 
 			LogManager.OnLog += AppendLog;
+
+			var at = Attached;
 
 			var timer = new Timer();
 			timer.Interval = 1000 / 2;
@@ -38,7 +48,7 @@ namespace NetBloxDebug
 				{
 					at.NetworkManager.IsClient ? "Is client, " : "",
 					at.NetworkManager.IsServer ? "Is server, " : "",
-					(at.NetworkManager.RemoteConnection != null && at.NetworkManager.RemoteConnection.IsAlive) ? 
+					(at.NetworkManager.RemoteConnection != null && at.NetworkManager.RemoteConnection.IsAlive) ?
 						"Connected to remote game, " : "",
 					at.NetworkManager.OnlyInternalConnections ? "Connected to internal game, " : "",
 					at.RenderManager.RenderAtAll ? "Rendering, " : "",

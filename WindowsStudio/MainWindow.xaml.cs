@@ -130,7 +130,9 @@ public partial class MainWindow : System.Windows.Window
 					d.Parent = gm.CurrentRoot;
 				}
 
-				// gm.NetworkManager.OnlyInternalConnections = true;
+				gm.PhysicsManager.SpringUpPhysics();
+				gm.PauseReplication = false;
+
 				gm.NetworkManager.StartServerNonBlocking();
 
 				PlatformService.QueuedTeleport = (xo) =>

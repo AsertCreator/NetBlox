@@ -85,10 +85,11 @@ namespace NetBlox
 					JobResult res = JobResult.CompletedSuccess;
 					Stopwatch taswa = new();
 
-					taswa.Start();
-
 					for (int j = 0; j < job.JobTimingContext.Priority; j++)
 					{
+						taswa.Reset();
+						taswa.Start();
+
 						res = job.NativeCallback(job);
 						job.JobTimingContext.HadRunBefore = true;
 						job.Result = res;
@@ -100,11 +101,11 @@ namespace NetBlox
 							i--;
 							break;
 						}
+
+						taswa.Stop();
+
+						job.JobTimingContext.LastCycleTime = taswa.Elapsed.TotalSeconds;
 					}
-
-					taswa.Stop();
-
-					job.JobTimingContext.LastCycleTime = taswa.ElapsedMilliseconds;
 
 					if (res != JobResult.NotCompleted)
 						break;

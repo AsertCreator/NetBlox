@@ -475,7 +475,8 @@ namespace NetBlox.Instances
 		public LuaSignal Touched { get; private set; }
 
 		public event EventHandler? OnNetworkOwnershipChanged;
-		public event EventHandler? OnPhysicsRepresentationChanged;
+		public event EventHandler? BeforePhysicsRepresentationChanged;
+		public event EventHandler? AfterPhysicsRepresentationChanged;
 		/// <summary>
 		/// Use this if the part is anchored OR if its foreign (owned by another player)<br/>
 		/// ========================================<br/>
@@ -554,6 +555,8 @@ namespace NetBlox.Instances
 		{
 			Touched = new LuaSignal(ins);
 
+			PartCFrame = new CFrame(new Vector3());
+
 			GameManager.PhysicsManager.Actors.Add(this);
 
 			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
@@ -569,11 +572,13 @@ namespace NetBlox.Instances
 		}
 		public void ReevaluatePhysicsRepresentation()
 		{
-			if (!GameManager.PhysicsManager.DisablePhysics)
+			if (GameManager.PhysicsManager.DisablePhysics)
 				return;
 
 			lock (physicsRepresentationLock)
 			{
+				BeforePhysicsRepresentationChanged?.Invoke(this, new());
+
 				if (IsActuallyAnchored)
 				{
 					DestroyBodyHandle();
@@ -585,7 +590,7 @@ namespace NetBlox.Instances
 					CreateBodyHandle();
 				}
 
-				OnPhysicsRepresentationChanged?.Invoke(this, new());
+				AfterPhysicsRepresentationChanged?.Invoke(this, new());
 			}
 		}
 		public CollidableReference GetCollidableReference()
@@ -627,8 +632,8 @@ namespace NetBlox.Instances
 		}
 		public void CreateBodyHandle()
 		{
-			if (_anchored)
-				throw new InvalidOperationException("Cannot call CreateBodyHandle on anchored BaseParts");
+			if (IsActuallyAnchored)
+				throw new InvalidOperationException("Cannot call CreateBodyHandle on BaseParts with anchor factors");
 
 			var localsim = GameManager.PhysicsManager.LocalSimulation;
 
@@ -645,9 +650,8 @@ namespace NetBlox.Instances
 		}
 		public void CreateStaticHandle()
 		{
-			// not necessarily, we might be a foreign part
-			// if (_anchored)
-			// 	throw new InvalidOperationException("Cannot call CreateBodyHandle on anchored BaseParts");
+			if (!IsActuallyAnchored)
+				throw new InvalidOperationException("Cannot call CreateStaticHandle on BaseParts without anchor factors");
 
 			var localsim = GameManager.PhysicsManager.LocalSimulation;
 

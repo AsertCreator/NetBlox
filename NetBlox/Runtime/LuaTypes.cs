@@ -1,4 +1,5 @@
 ﻿using MoonSharp.Interpreter;
+using NetBlox.Instances;
 using NetBlox.Structs;
 
 namespace NetBlox.Runtime
@@ -13,6 +14,7 @@ namespace NetBlox.Runtime
 			AddEnum(typeof(Faces));
 			AddEnum(typeof(Shape));
 			AddEnum(typeof(SurfaceType));
+			AddEnum(typeof(HumanoidState));
 		}
 		public static void ImportAll(Table table)
 		{
@@ -30,7 +32,11 @@ namespace NetBlox.Runtime
 					var kvp = enu.ValueMap.ElementAt(j);
 					itable[kvp.Key] = kvp.Value;
 				}
+
+				itable.IsProtected = true;
 			}
+
+			enumtable.IsProtected = true;
 		}
 		public static void AddEnum(Type enu)
 		{

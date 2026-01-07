@@ -21,11 +21,11 @@ namespace NetBlox.Instances
 				Enabled = false;
 
 				if (part0 != null)
-					part0.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
+					part0.BeforePhysicsRepresentationChanged -= PhysicsRepresentationChangedHandler;
 
 				part0 = value;
 				if (part0 != null)
-					part0.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
+					part0.BeforePhysicsRepresentationChanged += PhysicsRepresentationChangedHandler;
 
 				Enabled = enabled;
 			}
@@ -43,11 +43,11 @@ namespace NetBlox.Instances
 				Enabled = false;
 
 				if (part1 != null)
-					part1.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
+					part1.BeforePhysicsRepresentationChanged -= PhysicsRepresentationChangedHandler;
 
 				part1 = value;
 				if (part1 != null)
-					part1.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
+					part1.BeforePhysicsRepresentationChanged += PhysicsRepresentationChangedHandler;
 
 				Enabled = enabled;
 			}
@@ -89,15 +89,9 @@ namespace NetBlox.Instances
 
 		public Weld(GameManager ins) : base(ins) { }
 
-		private void NetworkOwnershipChangedHandler(object sender, EventArgs args)
-		{
-			Enabled = !Enabled;
-			Enabled = !Enabled;
-		}
 		private void PhysicsRepresentationChangedHandler(object sender, EventArgs args)
 		{
-			Enabled = !Enabled;
-			Enabled = !Enabled;
+			Reevaluate();
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
@@ -110,6 +104,14 @@ namespace NetBlox.Instances
 			if (Enabled)
 				DestroyWeld();
 			base.Destroy();
+		}
+		private void Reevaluate()
+		{
+			if (Enabled)
+			{
+				DestroyWeld();
+				CreateWeld();
+			}
 		}
 		private void DestroyWeld()
 		{

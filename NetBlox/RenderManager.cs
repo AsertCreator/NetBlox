@@ -4,6 +4,7 @@ using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Structs;
 using Raylib_cs;
 using System.Diagnostics;
@@ -116,6 +117,7 @@ namespace NetBlox
 			if (render)
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
+				Raylib.SetTargetFPS(2880);
 				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint | GameManager.CustomFlags);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, GameManager.ClientStartupInfo == null ? "NetBlox" : GameManager.ClientStartupInfo.WindowName);
 				Raylib.InitAudioDevice();
@@ -173,6 +175,7 @@ namespace NetBlox
 									Size = new(1, 1, 1),
 									Color3 = Color.DarkPurple
 								};
+								GameManager.NetworkManager.AddReplication(part, Replication.REPM_TOALL, Replication.REPW_NEWINST);
 							}
 						}
 					}
@@ -234,14 +237,22 @@ namespace NetBlox
 
 						if (DebugInformation)
 						{
-							Raylib.DrawTextEx(MainFont.SpriteFont, GameManager.ManagerName + 
-								", fps: " + Raylib.GetFPS() + 
+							var debugstring = GameManager.ManagerName +
+								", fps: " + Raylib.GetFPS() +
 								", instances: " + GameManager.AllInstances.Count +
-								", task scheduler pressure: " + TaskScheduler.JobCount + 
-								", outgoing traffic: " + MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) + 
+								", task scheduler pressure: " + TaskScheduler.JobCount +
+								", outgoing traffic: " + MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) +
 								(GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled") +
-								", actors count: " + GameManager.PhysicsManager.Actors.Count,
-								new Vector2(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
+								", actors count: " + GameManager.PhysicsManager.Actors.Count;
+
+							if (GameManager.NetworkManager.IsClient)
+							{
+								debugstring += 
+									", CSSending count: " + GameManager.NetworkManager.ServerboundPendingSendPackets.Count +
+									", CSProcess count: " + GameManager.NetworkManager.ClientboundPendingProcessPackets.Count;
+							}
+
+							Raylib.DrawTextEx(MainFont.SpriteFont, debugstring, new(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
 						}
 
 						if (WhiteOut)

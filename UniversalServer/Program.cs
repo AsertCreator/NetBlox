@@ -61,7 +61,7 @@ namespace NetBlox.Server
 				if (File.Exists("gamestart.txt"))
 					TaskScheduler.ScheduleScript(x, File.ReadAllText("gamestart.txt"), 8, null);
 
-				x.PhysicsManager.DisablePhysics = false;
+				x.PhysicsManager.SpringUpPhysics();
 				x.PauseReplication = false;
 
 				x.NetworkManager.StartServerNonBlocking();

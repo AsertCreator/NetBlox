@@ -34,6 +34,9 @@ namespace UniversalDuoHost
 				x.CurrentIdentity.MaxPlayerCount = 5;
 				x.CurrentRoot.Name = x.CurrentRoot.Name;
 
+				x.PhysicsManager.SpringUpPhysics();
+				x.PauseReplication = false;
+
 				x.NetworkManager.StartServerNonBlocking();
 			});
 		}

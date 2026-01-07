@@ -1,14 +1,15 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
-using NetBlox.Runtime;
 using NetBlox.Network;
+using NetBlox.Runtime;
 using Network;
+using Network.Packets;
 using System.Diagnostics;
 using System.Net;
-using CloseReason = Network.Enums.CloseReason;
 using System.Numerics;
 using System.Threading.Tasks;
+using CloseReason = Network.Enums.CloseReason;
 
 namespace NetBlox
 {
@@ -40,15 +41,25 @@ namespace NetBlox
 		public Task<object>? ClientReplicator;
 
 		public Job? ReplicationJob;
+		public Job? ClientsidePacketSenderJob;
+		public Job? ClientsidePacketProcessingJob;
 
 		public int LoadedInstanceCount;
 		public int TargetInstanceCount;
 		public bool LogReplication = false;
 
+		public const int ServersideSendingJobPacketBatchSize = 300;
+		public const int ServersideProcessingJobPacketBatchSize = 300;
+		public const int ClientsideSendingJobPacketBatchSize = 300;
+		public const int ClientsideProcessingJobPacketBatchSize = 300;
+
 		internal int outgoingPacketsSent = 0;
 		internal int incomingPacketsRecieved = 0;
 		internal int outgoingTraffic = 0;
 		internal int incomingTraffic = 0;
+
+		internal Queue<NetworkPacket> ServerboundPendingSendPackets = [];
+		internal Queue<NetworkPacket> ClientboundPendingProcessPackets = [];
 
 		internal List<NetworkAwaiter> awaitingForArrival = [];
 		internal List<RemoteNetworkAwaiter> awaitingForRemoteArrival = [];
@@ -70,15 +81,13 @@ namespace NetBlox
 		public NetworkManager(GameManager gm, bool server, bool client)
 		{
 			GameManager = gm;
-			if (!init)
-			{
-				IsServer = server;
-				IsClient = client;
-				if (IsServer)
-					ServerPort = (GameManager.ServerStartupInfo ?? throw new Exception()).ServerPort;
-				StartProfiling();
-				init = true;
-			}
+			IsServer = server;
+			IsClient = client;
+
+			if (IsServer)
+				ServerPort = (GameManager.ServerStartupInfo ?? throw new Exception()).ServerPort;
+
+			StartProfiling();
 		}
 		/// <summary>
 		/// Starts NetBlox server on current <seealso cref="NetworkManager"/>, this function is NOT blocking, start it in THE server thread.
@@ -114,26 +123,34 @@ namespace NetBlox
 					networkpacket.Sender = remoteclient;
 					networkpacket.Id = pid;
 
-					NetworkPacket.DispatchNetworkPacket(GameManager, networkpacket);
+					lock (remoteclient.PendingProcessPackets)
+						remoteclient.PendingProcessPackets.Enqueue(networkpacket);
 				});
 
 				connection.ConnectionClosed += (reason, _) =>
 				{
-					if (!remoteclient.IsAboutToLeave)
-						LogManager.LogInfo(remoteclient + " is leaving without warning!");
-					remoteclient.IsAboutToLeave = true;
-					remoteclient.CleanUpRemains();
+					TaskScheduler.ScheduleNamedJob("FailedHandshakeWatchdog", JobType.Network, _ =>
+					{
+						if (!remoteclient.IsAboutToLeave)
+							LogManager.LogInfo(remoteclient + " is leaving without warning!");
+						remoteclient.IsAboutToLeave = true;
+						remoteclient.CleanUpRemains();
+
+						return JobResult.CompletedSuccess;
+					}, level: 9);
 				};
 
-				Task.Delay(3000).ContinueWith(_ =>
-				{
-					if (!gothandshake)
+				TaskScheduler.ScheduleDelayedNamedJob("FailedHandshakeWatchdog", new TimeSpan(0, 0, 3), 
+					JobType.Network, _ =>
 					{
-						LogManager.LogWarn(connection.IPRemoteEndPoint.Address + " didn't send handshake! disconnecting...");
-						connection.Close(CloseReason.NetworkError);
-						return;
-					}
-				});
+						if (!gothandshake)
+						{
+							LogManager.LogWarn(connection.IPRemoteEndPoint.Address + " didn't send handshake! disconnecting...");
+							connection.Close(CloseReason.NetworkError);
+							return JobResult.CompletedFailure;
+						}
+						return JobResult.CompletedSuccess;
+					}, level: 9);
 			};
 
 			Server.Start();
@@ -201,18 +218,7 @@ namespace NetBlox
 			}, level: 9);
 			ReplicationJob.JobTimingContext.Priority = 30;
 		}
-		public void SendServerboundPacket(NetworkPacket packet)
-		{
-			ProfileOutgoing(packet.Id, packet.Data);
-
-			using MemoryStream stream = new();
-			using BinaryWriter writer = new(stream);
-
-			writer.Write(packet.Id);
-			writer.Write(packet.Data);
-
-			RemoteConnection.SendRawData("nb3-packet", stream.ToArray());
-		}
+		public void SendServerboundPacket(NetworkPacket packet) => ServerboundPendingSendPackets.Enqueue(packet);
 		public void ConnectToServer(IPAddress ipa)
 		{
 			if (IsServer)
@@ -247,7 +253,8 @@ namespace NetBlox
 
 				ProfileIncoming(pid, data);
 
-				NetworkPacket.DispatchNetworkPacket(GameManager, networkpacket);
+				lock (ClientboundPendingProcessPackets)
+					ClientboundPendingProcessPackets.Enqueue(networkpacket);
 			});
 
 			NetworkPacket np = NPClientIntroduction.Create(GameManager.Username, new()
@@ -284,7 +291,65 @@ namespace NetBlox
 
 				return JobResult.NotCompleted;
 			}, level: 9);
+
 			ReplicationJob.JobTimingContext.Priority = 30;
+
+			ClientsidePacketSenderJob = TaskScheduler.ScheduleNamedJob("ClientsidePacketSenderJob", JobType.Network, _ =>
+			{
+				if (!RemoteConnection.IsAlive)
+					return JobResult.CompletedSuccess;
+
+				ClientsidePacketSenderJob.JobTimingContext.Priority = 1;
+
+				for (int i = 0; i < ClientsideSendingJobPacketBatchSize && ServerboundPendingSendPackets.Count > 0; i++)
+				{
+					var packet = ServerboundPendingSendPackets.Dequeue();
+
+					ProfileOutgoing(packet.Id, packet.Data);
+
+					using MemoryStream stream = new();
+					using BinaryWriter writer = new(stream);
+
+					writer.Write(packet.Id);
+					writer.Write(packet.Data);
+
+					RemoteConnection.SendRawData("nb3-packet", stream.ToArray());
+
+					ClientsidePacketSenderJob.JobTimingContext.Priority = 10;
+				}
+
+				return JobResult.NotCompleted;
+			});
+			ClientsidePacketProcessingJob = TaskScheduler.ScheduleNamedJob("ClientsidePacketProcessingJob",
+				JobType.Network, _ =>
+			{
+				if (!RemoteConnection.IsAlive)
+					return JobResult.CompletedSuccess;
+
+				ClientsidePacketProcessingJob.JobTimingContext.Priority = 1;
+
+				for (int i = 0; i < ClientsideProcessingJobPacketBatchSize && ClientboundPendingProcessPackets.Count > 0; i++)
+				{
+					NetworkPacket packet;
+
+					lock (ClientboundPendingProcessPackets)
+						packet = ClientboundPendingProcessPackets.Dequeue();
+
+					try
+					{
+						NetworkPacket.DispatchNetworkPacket(GameManager, packet);
+					}
+					catch (Exception ex)
+					{
+						LogManager.LogWarn("ClientsidePacketProcessingJob: failed to process packet: " + ex.GetType() +
+								", msg: " + ex.Message + ", type: " + packet.Id);
+					}
+
+					ClientsidePacketSenderJob.JobTimingContext.Priority = 10;
+				}
+
+				return JobResult.NotCompleted;
+			});
 		}
 		public void StartProfiling()
 		{
