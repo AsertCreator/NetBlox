@@ -33,6 +33,7 @@ namespace NetBlox
 		public static Job? GamePhysics;
 		public static Job? GameGC;
 		public static int PreferredFPS = 60;
+		public static bool EnablePeriodicGC = false;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
 		public static string ContentFolder = Path.GetFullPath("./content/");
@@ -98,7 +99,7 @@ namespace NetBlox
 				}
 				return JobResult.NotCompleted;
 			});
-			GameProcessor.JobTimingContext.Priority = 60;
+			GameProcessor.JobTimingContext.Priority = 20;
 
 			GamePhysics = TaskScheduler.ScheduleNamedJob("Physics", JobType.Physics, x =>
 			{
@@ -108,6 +109,8 @@ namespace NetBlox
 				for (int i = 0; i < GameManagers.Count; i++)
 				{
 					var gm = GameManagers[i];
+
+					CurrentGameManager = gm;
 
 					gm.PhysicsManager.Step();
 				}
@@ -124,6 +127,7 @@ namespace NetBlox
 			{
 				if (CurrentRenderManager != null)
 				{
+					CurrentGameManager = CurrentRenderManager.GameManager;
 					CurrentRenderManager.RenderFrame();
 					return CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager
 						? JobResult.CompletedSuccess
@@ -131,12 +135,17 @@ namespace NetBlox
 				}
 				return JobResult.NotCompleted;
 			});
-			GameGC = TaskScheduler.ScheduleNamedJob("GarbageCollection", JobType.Miscellaneous, x =>
+
+			if (EnablePeriodicGC)
 			{
-				GC.Collect();
-				x.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddSeconds(7);
-				return JobResult.NotCompleted;
-			});
+				GameGC = TaskScheduler.ScheduleNamedJob("GarbageCollection", JobType.Miscellaneous, x =>
+				{
+					GC.Collect();
+					CurrentGameManager = null;
+					x.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddSeconds(7);
+					return JobResult.NotCompleted;
+				});
+			}
 
 			WhenStartedRunning = DateTime.UtcNow;
 
@@ -152,6 +161,18 @@ namespace NetBlox
 			OnAppShutdown?.Invoke(null, new());
 			throw new RollbackException();
 		}
+		public static float GetRendererDeltaTime()
+		{
+			var span = GameRenderer.JobTimingContext.LastExecutionTime - GameRenderer.JobTimingContext.LastLastExecutionTime;
+			return (float)span.TotalSeconds;
+		}
+		public static float GetProcessorDeltaTime()
+		{
+			var span = GameProcessor.JobTimingContext.LastTotalExecutionTime - 
+				GameProcessor.JobTimingContext.LastLastTotalExecutionTime;
+			return (float)span.TotalSeconds;
+		}
+		public static float DeltaFactor() => GetRendererDeltaTime() / GetProcessorDeltaTime();
 		public static async Task<string> DownloadAssetAsync(long aid) =>
 			await DownloadFileAsync(PublicServiceAPI + "/api/asset/get?aid=" + aid, PublicServiceAPI.GetHashCode() + "_" + aid + ".nas");
 		public static async Task<string> DownloadFileAsync(string from, string to)

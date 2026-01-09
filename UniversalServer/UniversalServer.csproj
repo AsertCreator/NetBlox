@@ -32,6 +32,9 @@
     <None Update="content\places\Crossroads.rbxl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="content\places\EngineTesting.rbxlx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="content\places\Welcoming.rbxlx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

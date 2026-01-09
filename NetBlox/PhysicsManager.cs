@@ -73,6 +73,7 @@ namespace NetBlox
 						box._physicsposition = refer.Pose.Position;
 						box._physicsrotation = refer.Pose.Orientation;
 						box._physicsvelocity = refer.Velocity.Linear;
+						box.RotationalVelocity = refer.Velocity.Angular;
 
 						box.Reset();
 
@@ -119,6 +120,7 @@ namespace NetBlox
 						box._physicsposition = refer.Pose.Position;
 						box._physicsrotation = refer.Pose.Orientation;
 						box._physicsvelocity = refer.Velocity.Linear;
+						box.RotationalVelocity = refer.Velocity.Angular;
 
 						if (box._position.Y <= work.FallenPartsDestroyHeight)
 						{

@@ -170,8 +170,7 @@ namespace NetBlox.Instances
 				if (!Torso.IsPresent)
 					return JobResult.NotCompleted;
 
-				var delta = Torso.WantedSibling.Position - WalkToPoint;
-				delta *= (float)AppManager.GameRenderer.JobTimingContext.LastCycleTime;
+				var delta = (Torso.WantedSibling.Position - WalkToPoint) * AppManager.DeltaFactor();
 
 				Torso.WantedSibling.Position += delta;
 

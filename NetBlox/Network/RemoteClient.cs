@@ -57,8 +57,6 @@ namespace NetBlox.Network
 			// this is so hacky and prone to breaking i can feel it
 			// if it so happens that the client isn't sending anything the job prolly shouldn't get much more cpu time
 
-			SendingJob.JobTimingContext.Priority = 1;
-
 			int batchsize = NetworkManager.ServersideSendingJobPacketBatchSize;
 
 			for (int i = 0; i < batchsize && PendingSendPackets.Count > 0; i++)
@@ -71,8 +69,6 @@ namespace NetBlox.Network
 				writer.Write(packet.Data);
 
 				Connection.SendRawData("nb3-packet", stream.ToArray());
-
-				SendingJob.JobTimingContext.Priority = 10;
 			}
 
 			return JobResult.NotCompleted;
@@ -83,8 +79,6 @@ namespace NetBlox.Network
 				return JobResult.CompletedSuccess;
 
 			// ditto
-
-			ReceivingJob.JobTimingContext.Priority = 1;
 
 			int batchsize = NetworkManager.ServersideProcessingJobPacketBatchSize;
 
@@ -104,8 +98,6 @@ namespace NetBlox.Network
 					LogManager.LogWarn("RemoteClient-" + UniquePlayerID + ": failed to process packet: " + ex.GetType() +
 						", msg: " + ex.Message + ", type: " + packet.Id);
 				}
-
-				ReceivingJob.JobTimingContext.Priority = 6;
 			}
 
 			return JobResult.NotCompleted;

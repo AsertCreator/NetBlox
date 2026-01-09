@@ -26,6 +26,12 @@ namespace NetBlox
 		public Task? TaskJoinedTo;
 		public Job? JoinedTo;
 		public int Priority;
+
+		public DateTime LastExecutionTime;
+		public DateTime LastLastExecutionTime;
+
+		public DateTime LastTotalExecutionTime;
+		public DateTime LastLastTotalExecutionTime;
 	}
 	public class Job(JobType type, JobDelegate callback, int security)
 	{
@@ -78,17 +84,26 @@ namespace NetBlox
 					continue;
 
 				CurrentJob = job;
+
 				job.JobTimingContext.JoinedUntil = default;
+
+				job.JobTimingContext.LastLastTotalExecutionTime = job.JobTimingContext.LastTotalExecutionTime;
+				job.JobTimingContext.LastTotalExecutionTime = now;
 
 				try
 				{
 					JobResult res = JobResult.CompletedSuccess;
 					Stopwatch taswa = new();
 
+					var letnow = DateTime.UtcNow;
+
 					for (int j = 0; j < job.JobTimingContext.Priority; j++)
 					{
 						taswa.Reset();
 						taswa.Start();
+
+						job.JobTimingContext.LastLastExecutionTime = job.JobTimingContext.LastExecutionTime;
+						job.JobTimingContext.LastExecutionTime = letnow;
 
 						res = job.NativeCallback(job);
 						job.JobTimingContext.HadRunBefore = true;

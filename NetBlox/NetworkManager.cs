@@ -48,10 +48,10 @@ namespace NetBlox
 		public int TargetInstanceCount;
 		public bool LogReplication = false;
 
-		public const int ServersideSendingJobPacketBatchSize = 300;
-		public const int ServersideProcessingJobPacketBatchSize = 300;
-		public const int ClientsideSendingJobPacketBatchSize = 300;
-		public const int ClientsideProcessingJobPacketBatchSize = 300;
+		public const int ServersideSendingJobPacketBatchSize = 1000;
+		public const int ServersideProcessingJobPacketBatchSize = 1000;
+		public const int ClientsideSendingJobPacketBatchSize = 1000;
+		public const int ClientsideProcessingJobPacketBatchSize = 1000;
 
 		internal int outgoingPacketsSent = 0;
 		internal int incomingPacketsRecieved = 0;
@@ -292,14 +292,12 @@ namespace NetBlox
 				return JobResult.NotCompleted;
 			}, level: 9);
 
-			ReplicationJob.JobTimingContext.Priority = 30;
+			ReplicationJob.JobTimingContext.Priority = 20;
 
 			ClientsidePacketSenderJob = TaskScheduler.ScheduleNamedJob("ClientsidePacketSenderJob", JobType.Network, _ =>
 			{
 				if (!RemoteConnection.IsAlive)
 					return JobResult.CompletedSuccess;
-
-				ClientsidePacketSenderJob.JobTimingContext.Priority = 1;
 
 				for (int i = 0; i < ClientsideSendingJobPacketBatchSize && ServerboundPendingSendPackets.Count > 0; i++)
 				{
@@ -314,8 +312,6 @@ namespace NetBlox
 					writer.Write(packet.Data);
 
 					RemoteConnection.SendRawData("nb3-packet", stream.ToArray());
-
-					ClientsidePacketSenderJob.JobTimingContext.Priority = 10;
 				}
 
 				return JobResult.NotCompleted;
@@ -325,8 +321,6 @@ namespace NetBlox
 			{
 				if (!RemoteConnection.IsAlive)
 					return JobResult.CompletedSuccess;
-
-				ClientsidePacketProcessingJob.JobTimingContext.Priority = 1;
 
 				for (int i = 0; i < ClientsideProcessingJobPacketBatchSize && ClientboundPendingProcessPackets.Count > 0; i++)
 				{
@@ -344,8 +338,6 @@ namespace NetBlox
 						LogManager.LogWarn("ClientsidePacketProcessingJob: failed to process packet: " + ex.GetType() +
 								", msg: " + ex.Message + ", type: " + packet.Id);
 					}
-
-					ClientsidePacketSenderJob.JobTimingContext.Priority = 10;
 				}
 
 				return JobResult.NotCompleted;

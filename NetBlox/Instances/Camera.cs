@@ -1,4 +1,5 @@
-﻿using NetBlox.Instances.Services;
+﻿using NetBlox.Common;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using Raylib_cs;
 using System.Numerics;
@@ -14,8 +15,12 @@ namespace NetBlox.Instances
 			get => FormalSubject;
 			set
 			{
+				if (FormalSubject == value)
+					return;
+
 				if (value is BasePart bp)
 				{
+					CameraTargetDistance = 10;
 					ActualSubject = bp;
 					FormalSubject = value;
 				}
@@ -24,6 +29,7 @@ namespace NetBlox.Instances
 					var pp = model.GetPivotPart();
 					if (pp == null)
 						return;
+					CameraTargetDistance = 10;
 					ActualSubject = pp;
 					FormalSubject = value;
 				}
@@ -33,12 +39,21 @@ namespace NetBlox.Instances
 					if (head == null)
 						return;
 					var bphead = head as BasePart;
+					CameraTargetDistance = 10;
 					ActualSubject = bphead;
 					FormalSubject = value;
 				}
-				else
+				else if (value is Instance)
 				{
 					LogManager.LogWarn("Cannot set the camera to look at non-BasePart, non-Model or non-Humanoid Instances!");
+					CameraTargetDistance = 10;
+					FormalSubject = null;
+					ActualSubject = null;
+					return;
+				}
+				else if (value is null)
+				{
+					CameraTargetDistance = 10;
 					FormalSubject = null;
 					ActualSubject = null;
 					return;
@@ -48,6 +63,7 @@ namespace NetBlox.Instances
 		public static Vector2 LastMousePosition;
 		private Instance? FormalSubject;
 		private BasePart? ActualSubject;
+		private float CameraTargetDistance = 10;
 
 		public Camera(GameManager ins) : base(ins) { }
 
@@ -65,10 +81,6 @@ namespace NetBlox.Instances
 				Vector3 subjectposition = Vector3.One;
 				if (ActualSubject != null)
 					subjectposition = ActualSubject.Position;
-
-				var player = Root.GetService<Players>().LocalPlayer as Player;
-
-				if (player == null) return; // nah
 
 				if (GameManager.RenderManager.FocusedBox == null)
 				{
@@ -88,43 +100,61 @@ namespace NetBlox.Instances
 
 						Raylib.SetMousePosition((int)LastMousePosition.X, (int)LastMousePosition.Y);
 					}
-
-					// Zoom target distance
-
-					float move = -Raylib.GetMouseWheelMove() * (float)AppManager.GameRenderer.JobTimingContext.LastCycleTime;
-					if (move > 0)
-					{
-						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-							.Length() < (player.CameraMaxZoomDistance - 0.2f))
-							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
-					}
-					else
-					{
-						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-							.Length() > (player.CameraMinZoomDistance + 0.2f))
-							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, move);
-					}
-
-					if (Raylib.IsKeyDown(KeyboardKey.O))
-					{
-						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-							.Length() < player.CameraMaxZoomDistance)
-							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, 0.2f);
-					}
-					if (Raylib.IsKeyDown(KeyboardKey.I))
-					{
-						if ((GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target)
-							.Length() > player.CameraMinZoomDistance)
-							Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, -0.2f);
-					}
 				}
 
 				var diff = GameManager.RenderManager.MainCamera.Target - GameManager.RenderManager.MainCamera.Position;
 
 				GameManager.RenderManager.MainCamera.Position = ActualSubject.Position - diff;
 				GameManager.RenderManager.MainCamera.Target = ActualSubject.Position;
+
 				LastMousePosition = Raylib.GetMousePosition();
 			}
+		}
+		public override void RenderUI()
+		{
+			if (GameManager.RenderManager.FocusedBox == null)
+			{
+				// Zoom target distance
+
+				var players = Root.GetService<Players>(true);
+
+				if (players == null) return;
+
+				var player = players.LocalPlayer as Player;
+
+				if (player == null) return;
+
+				float move = -Raylib.GetMouseWheelMove() * AppManager.GetRendererDeltaTime() * 5;
+				if (move > 0)
+				{
+					if (CameraTargetDistance < (player.CameraMaxZoomDistance - 0.2f))
+						CameraTargetDistance += move;
+				}
+				else
+				{
+					if (CameraTargetDistance > (player.CameraMinZoomDistance + 0.2f))
+						CameraTargetDistance += move;
+				}
+
+				if (Raylib.IsKeyDown(KeyboardKey.O))
+				{
+					if (CameraTargetDistance < player.CameraMaxZoomDistance)
+						CameraTargetDistance += 0.3f;
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.I))
+				{
+					if (CameraTargetDistance > player.CameraMinZoomDistance)
+						CameraTargetDistance += -0.3f;
+				}
+
+				CameraTargetDistance = MathE.Clamp(
+					(float)player.CameraMinZoomDistance, CameraTargetDistance, (float)player.CameraMaxZoomDistance);
+			}
+
+			var currentDistance = (GameManager.RenderManager.MainCamera.Position - GameManager.RenderManager.MainCamera.Target).Length();
+			var currentNeededDistance = (currentDistance + CameraTargetDistance) / 2;
+
+			Raylib.CameraMoveToTarget(ref GameManager.RenderManager.MainCamera, currentNeededDistance - currentDistance);
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
