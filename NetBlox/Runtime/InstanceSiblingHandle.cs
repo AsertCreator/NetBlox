@@ -2,7 +2,9 @@ using NetBlox.Instances;
 
 namespace NetBlox.Runtime
 {
-	public struct InstanceSiblingHandle<T> : IDisposable where T : Instance
+	// having this as a struct was definitely an idea
+	// not a great one though
+	public class InstanceSiblingHandle<T> : IDisposable where T : Instance
 	{
 		public event EventHandler<T> OnSiblingReleased;
 		public event EventHandler<T> OnSiblingTaken;
@@ -10,28 +12,48 @@ namespace NetBlox.Runtime
 		public bool IsPresent => cachedInstance != null;
 		public Instance? ReferencePointParent => referencePoint.Parent;
 		public T? WantedSibling => cachedInstance;
+		public bool Activated => activated;
 
 		private Instance referencePoint;
 		private T? cachedInstance;
 		private string siblingName;
+		private bool activated;
 
 		public InstanceSiblingHandle(Instance relativeTo, string name)
 		{
 			referencePoint = relativeTo;
 			siblingName = name;
+			activated = false;
+		}
+		public void Reactivate()
+		{
+			activated = true;
 
-			relativeTo.OnAdoptedBy += OnAdoptedBy;
-			relativeTo.OnDisownedBy += OnDisownedBy;
+			referencePoint.OnAdoptedBy += OnAdoptedBy;
+			referencePoint.OnDisownedBy += OnDisownedBy;
 
-			if (relativeTo.Parent != null) // if currently parented
+			if (ReferencePointParent != null) // if currently parented
 			{
 				referencePoint.Parent.NativeChildAdded += OnSiblingAdded;
 				referencePoint.Parent.NativeChildRemoved += OnSiblingRemoved;
 
 				Rescan();
 			}
-		}
 
+			LogManager.LogInfo("InstanceSiblingHandle-" + siblingName + ": activated...");
+		}
+		public void Deactivate()
+		{
+			if (referencePoint.Parent != null)
+			{
+				referencePoint.Parent.NativeChildAdded -= OnSiblingAdded;
+				referencePoint.Parent.NativeChildRemoved -= OnSiblingRemoved;
+			}
+			referencePoint.OnAdoptedBy -= OnAdoptedBy;
+			referencePoint.OnDisownedBy -= OnDisownedBy;
+
+			LogManager.LogInfo("InstanceSiblingHandle-" + siblingName + ": deactivated...");
+		}
 		private void Rescan()
 		{
 			LogManager.LogInfo("InstanceSiblingHandle-" + siblingName + ": beginning sibling rescan...");
@@ -54,6 +76,8 @@ namespace NetBlox.Runtime
 
 		private void OnSiblingAdded(object? _, Instance sibling)
 		{
+			if (cachedInstance != null)
+				return;
 			if (sibling.Name == siblingName && sibling is T typedSibling)
 			{
 				cachedInstance = typedSibling;
@@ -71,7 +95,9 @@ namespace NetBlox.Runtime
 				if (cachedInstance != null)
 					OnSiblingReleased?.Invoke(referencePoint, cachedInstance);
 				cachedInstance = null;
-				LogManager.LogInfo("InstanceSiblingHandle-" + siblingName + ": released previously taken sibling...");
+				LogManager.LogInfo("InstanceSiblingHandle-" + siblingName + ": released previously taken sibling; rescan on due...");
+
+				Rescan();
 			}
 		}
 		private void OnAdoptedBy(object? _, Instance newparent)
@@ -96,15 +122,7 @@ namespace NetBlox.Runtime
 		}
 		public void Dispose()
 		{
-			if (referencePoint.Parent != null)
-			{
-				referencePoint.Parent.NativeChildAdded -= OnSiblingAdded;
-				referencePoint.Parent.NativeChildRemoved -= OnSiblingRemoved;
-			}
-			referencePoint.OnAdoptedBy -= OnAdoptedBy;
-			referencePoint.OnDisownedBy -= OnDisownedBy;
-
-			LogManager.LogInfo("InstanceSiblingHandle-" + siblingName + ": disposed...");
+			Deactivate();
 		}
 	}
 }

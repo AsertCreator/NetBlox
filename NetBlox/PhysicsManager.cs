@@ -27,7 +27,10 @@ namespace NetBlox
 		public Simulation LocalSimulation;
 		public BufferPool LocalSimulationBuffer;
 		public ThreadDispatcher? DefaultThreadDispatcher;
+
 		public List<BasePart> Actors = new();
+		public List<Humanoid> Humanoids = new();
+
 		public Dictionary<uint, BasePart> Collidable2BasePartMap = [];
 		public bool DisablePhysics = true; // not now
 		internal Stopwatch physicsStopwatch = new();
@@ -270,8 +273,8 @@ namespace NetBlox
 			if (humanoid != null)
 			{
 				pairMaterial.FrictionCoefficient = 0.4f;
-				pairMaterial.MaximumRecoveryVelocity = 0.02f;
-				pairMaterial.SpringSettings = new SpringSettings(2, 0.3f);
+				pairMaterial.MaximumRecoveryVelocity = 0.07f;
+				pairMaterial.SpringSettings = new SpringSettings(1.5f, 0.3f);
 			}
 
 			if (manifold.Count > 0)

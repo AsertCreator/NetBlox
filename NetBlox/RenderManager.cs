@@ -80,7 +80,7 @@ namespace NetBlox
 
 		public int LoadBatchSize = 5;
 
-		public unsafe RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
+		public RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
 		{
 			GameManager = gm;
 			VersionMargin = vm;
@@ -95,13 +95,7 @@ namespace NetBlox
 			if (!skiprinit)
 				Initialize(render);
 			else if (render)
-			{
-				MainFont = GetCrispFont(16, "arialbd.ttf");
-				MainFont14 = GetCrispFont(14, "arialbd.ttf");
-				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
-				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
-				// BeginFustumCullingThread();
-			}
+				LoadResources();
 		}
 		public CrispFont GetCrispFont(int fontsize, string fontfamily)
 		{
@@ -112,27 +106,30 @@ namespace NetBlox
 			CrispFonts.Add(font);
 			return font;
 		}
-		public unsafe void Initialize(bool render)
+		public void Initialize(bool render)
 		{
 			if (render)
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
-				Raylib.SetTargetFPS(2880);
+				Raylib.SetTargetFPS(5760);
 				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint | GameManager.CustomFlags);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, GameManager.ClientStartupInfo == null ? "NetBlox" : GameManager.ClientStartupInfo.WindowName);
 				Raylib.InitAudioDevice();
 				Raylib.SetExitKey(KeyboardKey.Null);
 				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
-
-				MainFont = GetCrispFont(16, "arialbd.ttf");
-				MainFont14 = GetCrispFont(14, "arialbd.ttf");
-				LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
-				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
-				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
-				// BeginFustumCullingThread();
+				LoadResources();
 			}
 		}
-		public unsafe void RenderFrame()
+		public void LoadResources()
+		{
+			MainFont = GetCrispFont(16, "arialbd.ttf");
+			MainFont14 = GetCrispFont(14, "arialbd.ttf");
+			LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
+			LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
+			CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
+			// BeginFustumCullingThread();
+		}
+		public void RenderFrame()
 		{
 			if (RenderAtAll)
 			{
@@ -214,9 +211,9 @@ namespace NetBlox
 
 								if (CurrentHint != null)
 								{
-									Raylib.DrawRectangle(0, ScreenSizeY - 26, ScreenSizeX, 26, Color.Black);
+									Raylib.DrawRectangle(0, 30 /* hardcoded for Sidebar.lua HUD*/, ScreenSizeX, 26, Color.Black);
 									var v = Raylib.MeasureTextEx(MainFont.SpriteFont, CurrentHint, MainFont.SpriteFont.BaseSize, 0);
-									Raylib.DrawTextEx(MainFont.SpriteFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.SpriteFont.BaseSize, 0, Color.White);
+									Raylib.DrawTextEx(MainFont.SpriteFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), 30 + 15 + 9 - v.Y), MainFont.SpriteFont.BaseSize, 0, Color.White);
 								}
 
 								if (GameManager.NetworkManager.IsClient)

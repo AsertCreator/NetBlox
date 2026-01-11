@@ -21,11 +21,17 @@ namespace NetBlox.Instances
 				Enabled = false;
 
 				if (part0 != null)
+				{
 					part0.BeforePhysicsRepresentationChanged -= PhysicsRepresentationChangedHandler;
+					part0.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
+				}
 
 				part0 = value;
 				if (part0 != null)
+				{
 					part0.BeforePhysicsRepresentationChanged += PhysicsRepresentationChangedHandler;
+					part0.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
+				}
 
 				Enabled = enabled;
 			}
@@ -43,11 +49,17 @@ namespace NetBlox.Instances
 				Enabled = false;
 
 				if (part1 != null)
+				{
 					part1.BeforePhysicsRepresentationChanged -= PhysicsRepresentationChangedHandler;
+					part1.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
+				}
 
 				part1 = value;
 				if (part1 != null)
+				{
 					part1.BeforePhysicsRepresentationChanged += PhysicsRepresentationChangedHandler;
+					part1.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
+				}
 
 				Enabled = enabled;
 			}
@@ -86,10 +98,15 @@ namespace NetBlox.Instances
 		private BasePart? part0;
 		private BasePart? part1;
 		private bool enabled;
+		private Job? waitingJob;
 
 		public Weld(GameManager ins) : base(ins) { }
 
 		private void PhysicsRepresentationChangedHandler(object sender, EventArgs args)
+		{
+			Reevaluate();
+		}
+		private void NetworkOwnershipChangedHandler(object sender, EventArgs args)
 		{
 			Reevaluate();
 		}
@@ -115,6 +132,9 @@ namespace NetBlox.Instances
 		}
 		private void DestroyWeld()
 		{
+			if (waitingJob != null)
+				TaskScheduler.Terminate(waitingJob);
+
 			var sim = GameManager.PhysicsManager.LocalSimulation;
 			if (sim.Solver.ConstraintExists(weldHandle)) 
 			{
@@ -136,6 +156,9 @@ namespace NetBlox.Instances
 
 			PartOffset = part1.PartCFrame.Position - part0.PartCFrame.Position;
 
+			if (!part0.IsDomestic || !part1.IsDomestic)
+				return;
+
 			weld = new BepuPhysics.Constraints.Weld()
 			{
 				LocalOffset = PartOffset,
@@ -143,7 +166,10 @@ namespace NetBlox.Instances
 				SpringSettings = new SpringSettings(30, 0.1f)
 			};
 
-			TaskScheduler.ScheduleNamedJob("WeldWaiting", JobType.Miscellaneous, _ =>
+			if (waitingJob != null)
+				TaskScheduler.Terminate(waitingJob);
+
+			waitingJob = TaskScheduler.ScheduleNamedJob("WeldWaiting", JobType.Miscellaneous, _ =>
 			{
 				BasePart? originalPart0 = Part0;
 				BasePart? originalPart1 = Part1;

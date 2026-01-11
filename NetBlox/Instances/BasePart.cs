@@ -48,8 +48,9 @@ namespace NetBlox.Instances
 			get => anchoredFactorUserChoice;
 			set
 			{
+				var og = IsActuallyAnchored;
 				anchoredFactorUserChoice = value;
-				if (!GameManager.PhysicsManager.DisablePhysics)
+				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
 			}
 		}
@@ -59,8 +60,9 @@ namespace NetBlox.Instances
 			get => anchoredFactorNonDomestic;
 			set
 			{
+				var og = IsActuallyAnchored;
 				anchoredFactorNonDomestic = value;
-				if (!GameManager.PhysicsManager.DisablePhysics)
+				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
 			}
 		}
@@ -70,8 +72,9 @@ namespace NetBlox.Instances
 			get => anchoredFactorHumanoidAttachment;
 			set
 			{
+				var og = IsActuallyAnchored;
 				anchoredFactorHumanoidAttachment = value;
-				if (!GameManager.PhysicsManager.DisablePhysics)
+				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
 			}
 		}

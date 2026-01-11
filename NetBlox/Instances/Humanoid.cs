@@ -18,7 +18,16 @@ namespace NetBlox.Instances
 		[NotReplicated]
 		public bool IsLocalPlayer { get; set; }
 		[Lua([Security.Capability.None])]
-		public float Health { get; set; } = 100;
+		public float Health 
+		{
+			get => health;
+			set
+			{
+				health = value;
+				if (value > 0)
+					EverHadHealthHigherThan0 = true;
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public float WalkSpeed { get; set; } = 12;
 		[Lua([Security.Capability.None])]
@@ -94,6 +103,8 @@ namespace NetBlox.Instances
 			}
 		}
 
+		private float health = 100;
+		private bool EverHadHealthHigherThan0;
 		private HumanoidState currentState = HumanoidState.Idle;
 		private RenderTexture2D debugHudTexture;
 		private Vector3 privateMoveToTarget;
@@ -101,8 +112,8 @@ namespace NetBlox.Instances
 		public Humanoid(GameManager ins) : base(ins)
 		{
 			LeftArm = new InstanceSiblingHandle<BasePart>(this, "Left Arm");
-			RightArm = new InstanceSiblingHandle<BasePart>(this, "Right Leg");
-			LeftLeg = new InstanceSiblingHandle<BasePart>(this, "Left Arm");
+			RightArm = new InstanceSiblingHandle<BasePart>(this, "Right Arm");
+			LeftLeg = new InstanceSiblingHandle<BasePart>(this, "Left Leg");
 			RightLeg = new InstanceSiblingHandle<BasePart>(this, "Right Leg");
 			Torso = new InstanceSiblingHandle<BasePart>(this, "Torso");
 			Head = new InstanceSiblingHandle<BasePart>(this, "Head");
@@ -110,6 +121,8 @@ namespace NetBlox.Instances
 			void OnLimbAttached(object? _, Instance limbPart)
 			{
 				BasePart typedLimbPart = (BasePart)limbPart;
+
+				LogManager.LogInfo("AAAAAAAAA-0000000");
 
 				if (typedLimbPart.IsHumanoidLimb)
 				{
@@ -123,6 +136,8 @@ namespace NetBlox.Instances
 			{
 				BasePart typedLimbPart = (BasePart)limbPart;
 
+				LogManager.LogInfo("AAAAAAAAA-0000001");
+
 				if (!typedLimbPart.IsHumanoidLimb)
 				{
 					LogManager.LogWarn($"Limb of Humanoid \"{GetFullName()}\", \"{typedLimbPart.Name}\" is already deattached; what is going on?");
@@ -134,6 +149,8 @@ namespace NetBlox.Instances
 			void OnLimbDeattachedLifeCritical(object? _, Instance limbPart)
 			{
 				BasePart typedLimbPart = (BasePart)limbPart;
+
+				LogManager.LogInfo("AAAAAAAAA-0000002");
 
 				if (!typedLimbPart.IsHumanoidLimb)
 				{
@@ -155,12 +172,19 @@ namespace NetBlox.Instances
 			Torso.OnSiblingTaken += OnLimbAttached;
 			Head.OnSiblingTaken += OnLimbAttached;
 
-			LeftArm.OnSiblingTaken += OnLimbDeattachedGeneric;
-			RightArm.OnSiblingTaken += OnLimbDeattachedGeneric;
-			LeftLeg.OnSiblingTaken += OnLimbDeattachedGeneric;
-			RightLeg.OnSiblingTaken += OnLimbDeattachedGeneric;
-			Torso.OnSiblingTaken += OnLimbDeattachedLifeCritical;
-			Head.OnSiblingTaken += OnLimbDeattachedLifeCritical;
+			LeftArm.OnSiblingReleased += OnLimbDeattachedGeneric;
+			RightArm.OnSiblingReleased += OnLimbDeattachedGeneric;
+			LeftLeg.OnSiblingReleased += OnLimbDeattachedGeneric;
+			RightLeg.OnSiblingReleased += OnLimbDeattachedGeneric;
+			Torso.OnSiblingReleased += OnLimbDeattachedLifeCritical;
+			Head.OnSiblingReleased += OnLimbDeattachedLifeCritical;
+
+			LeftArm.Reactivate();
+			RightArm.Reactivate();
+			LeftLeg.Reactivate();
+			RightLeg.Reactivate();
+			Torso.Reactivate();
+			Head.Reactivate();
 
 			HumanoidMovementJob = TaskScheduler.ScheduleNamedJob("HumanoidMovement", JobType.Physics, _ =>
 			{
@@ -346,6 +370,10 @@ namespace NetBlox.Instances
 				Raylib.DrawTextEx(font, $"Humanoid state: {currentState}",
 					new Vector2(5, 5 + 14 * 4), 14, 1.4f, Color.White);
 			}
+			else
+			{
+				Raylib.DrawTextEx(font, $"Torso not found: {torso}", new Vector2(5, 5 + 14 * 0), 14, 1.4f, Color.Red);
+			}
 
 			Raylib.EndTextureMode();
 
@@ -371,7 +399,8 @@ namespace NetBlox.Instances
 				if (Head.IsPresent)
 					Head.WantedSibling.IsHumanoidLimb = false;
 
-				character?.BreakJoints();
+				if (EverHadHealthHigherThan0 && Torso.IsPresent && Torso.WantedSibling.IsDomestic)
+					character?.BreakJoints();
 
 				if (player != null)
 				{
