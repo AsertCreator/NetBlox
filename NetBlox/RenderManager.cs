@@ -80,7 +80,9 @@ namespace NetBlox
 
 		public int LoadBatchSize = 5;
 
-		public RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
+		public List<Particle> AllParticles = [];
+
+		public unsafe RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
 		{
 			GameManager = gm;
 			VersionMargin = vm;
@@ -394,6 +396,8 @@ namespace NetBlox
 				RenderInstance(works);
 			if (sand != null)
 				RenderInstance(sand);
+
+			RenderParticles(AppManager.GetRendererDeltaTime());
 		}
 		public void RenderInstance(Instance instance)
 		{
@@ -586,6 +590,24 @@ namespace NetBlox
 				frustum.Planes[i].Distance /= length;
 			}
 			return frustum;
+		}
+
+		public void AddParticle(Particle particle)
+		{
+			AllParticles.Add(particle);
+		}
+		public void RemoveParticle(Particle particle)
+		{
+			AllParticles.Remove(particle);
+		}
+		public void RenderParticles(float time)
+		{
+			for (int i = 0; i < AllParticles.Count; i++)
+			{
+				var particle = AllParticles[i];
+				particle.Step(time);
+				particle.Render();
+			}
 		}
 	}
 	// ty chatgpt

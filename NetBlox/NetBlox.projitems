@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)GameManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HumanoidControl.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Animation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Attachment.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Backpack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Camera.cs" />
@@ -20,6 +21,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Constraint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Decal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\IEffectEmitter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\Smoke.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\BillboardGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\ChatFrame.cs" />
@@ -45,6 +48,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Chat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Debris.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\InsertService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Lighting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\PlatformService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\SandboxService.cs" />
@@ -98,6 +102,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\ImpersonateDuringReplicationAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)runtime\InstanceCrossReference.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)runtime\InstanceSiblingHandle.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\ServiceType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Structs\Particle.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\PhysicsAssembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NetworkManager.cs" />
@@ -142,10 +148,25 @@
     <Content Include="$(MSBuildThisFileDirectory)content\textures\blank.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\cursorError.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\cursorNeutral.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\cursorSuccess.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\hopperDrag.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\menu.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\particleFire.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\particleSmoke.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\smile.png">
@@ -208,10 +229,13 @@
     <None Include="$(MSBuildThisFileDirectory)content\skybox\testcloud_up.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)content\textures\cursorSource.pdn">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="$(MSBuildThisFileDirectory)content\textures\stud.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Compile Include="$(MSBuildThisFileDirectory)instances\CoreGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\CoreGui.cs" />
     <None Include="$(MSBuildThisFileDirectory)content\favicon.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

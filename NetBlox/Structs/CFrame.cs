@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using Raylib_cs;
+using System.Numerics;
 
 namespace NetBlox.Structs
 {
@@ -21,12 +22,12 @@ namespace NetBlox.Structs
 		public static CFrame operator *(CFrame a, CFrame b) => new () 
 		{ 
 			Position = a.Position + b.Position,
-			Rotation = a.Rotation + b.Rotation
+			Rotation = a.Rotation * b.Rotation
 		};
 		public static CFrame operator -(CFrame a, CFrame b) => new()
 		{
 			Position = a.Position - b.Position,
-			Rotation = a.Rotation - b.Rotation
+			Rotation = a.Rotation / b.Rotation
 		};
 	}
 }

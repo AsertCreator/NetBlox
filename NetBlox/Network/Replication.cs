@@ -62,7 +62,7 @@ namespace NetBlox.Network
 					return;
 
 				ins = InstanceCreator.CreateReplicatedInstance(classname, gm);
-				ins.UniqueID = guid;
+				ins.ChangeUniqueID(guid);
 
 				if (ins is BaseScript && gm.NetworkManager.IsServer)
 				{

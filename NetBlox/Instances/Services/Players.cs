@@ -10,7 +10,10 @@ namespace NetBlox.Instances.Services
 		public Instance? LocalPlayer => CurrentPlayer;
 		public Player? CurrentPlayer;
 
-		public Players(GameManager ins) : base(ins) { }
+		public Players(GameManager ins) : base(ins)
+		{
+			GameManager.RegisterService(this, ServiceType.Players);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

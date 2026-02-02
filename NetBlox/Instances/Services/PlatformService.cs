@@ -24,7 +24,10 @@ namespace NetBlox.Instances.Services
 		public bool LoggedIn => GameManager.CurrentProfile.LastLogin != null;
 		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
-		public PlatformService(GameManager ins) : base(ins) { }
+		public PlatformService(GameManager ins) : base(ins)
+		{
+			GameManager.RegisterService(this, ServiceType.PlatformService);
+		}
 
 		[Lua([Security.Capability.CoreSecurity])]
 		public void BeginQueuedTeleport() => QueuedTeleport(GameManager.QueuedTeleportAddress);

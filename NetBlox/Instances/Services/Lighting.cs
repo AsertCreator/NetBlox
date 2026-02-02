@@ -28,7 +28,10 @@ namespace NetBlox.Instances.Services
 		public Vector3 SunPosition = new Vector3(2, 2, 0);
 		public bool SunLocality = false;
 
-		public Lighting(GameManager ins) : base(ins) { }
+		public Lighting(GameManager ins) : base(ins)
+		{
+			GameManager.RegisterService(this, ServiceType.Lighting);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

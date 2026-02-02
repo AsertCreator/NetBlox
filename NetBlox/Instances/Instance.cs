@@ -134,7 +134,10 @@ namespace NetBlox.Instances
 				UniqueID = Guid.NewGuid();
 				GameManager = gm;
 
-				gm.AllInstances.Add(this);
+				lock (gm.AllInstances)
+				{
+					gm.AllInstances[UniqueID] = this;
+				}
 			}
 			ThisType = GetType();
 
@@ -244,6 +247,24 @@ namespace NetBlox.Instances
 				return DoClone(this);
 			}
 		}
+		public void ChangeUniqueID(Guid guid)
+		{
+			if (guid == UniqueID)
+				return;
+
+			lock (this)
+			{
+				lock (GameManager.AllInstances)
+				{
+					GameManager.AllInstances.Remove(UniqueID);
+					GameManager.AllInstances[guid] = this;
+					UniqueID = guid;
+				}
+
+				for (int i = 0; i < Children.Count; i++)
+					Children[i].ParentID = guid;
+			}
+		}
 		public virtual Instance ForceClone()
 		{
 			// i tried
@@ -343,7 +364,7 @@ namespace NetBlox.Instances
 				if (GameManager.NetworkManager.IsServer)
 					GameManager.NetworkManager.AddReplication(this, Replication.REPM_TOALL, Replication.REPW_DESTROY, false);
 
-				GameManager.AllInstances.Remove(this);
+				GameManager.AllInstances.Remove(UniqueID);
 			}
 		}
 		[Lua([Security.Capability.None])]
