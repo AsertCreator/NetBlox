@@ -5,7 +5,10 @@ namespace NetBlox.Instances.Services
 	[Service]
 	public class ServerStorage : Instance
 	{
-		public ServerStorage(GameManager ins) : base(ins) { }
+		public ServerStorage(GameManager ins) : base(ins)
+		{
+			GameManager.RegisterService(this, ServiceType.ServerStorage);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

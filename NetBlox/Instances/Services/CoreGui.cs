@@ -5,7 +5,7 @@ using Raylib_cs;
 using System;
 using System.Security.Cryptography;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances.Services
 {
 	[NotReplicated]
 	[Service]
@@ -24,6 +24,7 @@ namespace NetBlox.Instances
 		{
 			OnTeleportStarts = new LuaSignal(ins);
 			OnTeleportEnds = new LuaSignal(ins);
+			GameManager.RegisterService(this, ServiceType.CoreGui);
 		}
 
 		[Lua([Security.Capability.None])]

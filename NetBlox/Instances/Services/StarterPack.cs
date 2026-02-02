@@ -8,7 +8,10 @@ namespace NetBlox.Instances.Services
 	[Service]
 	public class StarterPack : Instance
 	{
-		public StarterPack(GameManager ins) : base(ins) { }
+		public StarterPack(GameManager ins) : base(ins)
+		{
+			GameManager.RegisterService(this, ServiceType.StarterPack);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

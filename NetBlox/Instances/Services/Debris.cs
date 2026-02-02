@@ -8,7 +8,10 @@ namespace NetBlox.Instances.Services
 	[Service]
 	public class Debris : Instance
 	{
-		public Debris(GameManager ins) : base(ins) { }
+		public Debris(GameManager ins) : base(ins)
+		{
+			GameManager.RegisterService(this, ServiceType.Debris);
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

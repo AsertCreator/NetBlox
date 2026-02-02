@@ -14,8 +14,9 @@ namespace NetBlox.Instances.Services
 		public bool Enabled { get; set; } = false;
 		private bool firsttime = true;
 
-		public SandboxService(GameManager ins) : base(ins) 
+		public SandboxService(GameManager ins) : base(ins)
 		{
+			GameManager.RegisterService(this, ServiceType.SandboxService);
 		}
 
 		[Lua([Security.Capability.None])]

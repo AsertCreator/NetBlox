@@ -21,6 +21,7 @@ namespace NetBlox.Instances.Services
 		public Chat(GameManager ins) : base(ins) 
 		{
 			Chatted = new LuaSignal(ins);
+			GameManager.RegisterService(this, ServiceType.Chat);
 		}
 
 		[Lua([Security.Capability.None])]

@@ -26,6 +26,7 @@ namespace NetBlox.Instances.Services
 			PreRender = new LuaSignal(gm);
 			PreSimulation = new LuaSignal(gm);
 			RenderStepped = new LuaSignal(gm);
+			GameManager.RegisterService(this, ServiceType.RunService);
 		}
 
 		[Lua([Security.Capability.CoreSecurity])]

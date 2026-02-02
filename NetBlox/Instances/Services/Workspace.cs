@@ -78,6 +78,7 @@ namespace NetBlox.Instances.Services
 			{
 				RenderManager.LoadSound("rbxasset://sounds/birdsambient.mp3", x => Ambient = x);
 			}
+			GameManager.RegisterService(this, ServiceType.Workspace);
 		}
 
 		[Lua([Security.Capability.None])]

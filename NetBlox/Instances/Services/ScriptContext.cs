@@ -16,6 +16,7 @@ namespace NetBlox.Instances.Services
 		public ScriptContext(GameManager ins) : base(ins) 
 		{
 			Name = "Script Context";
+			GameManager.RegisterService(this, ServiceType.ScriptContext);
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

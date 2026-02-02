@@ -19,7 +19,7 @@ namespace NetBlox
 	/// </summary>
 	public class GameManager
 	{
-		public List<Instance> AllInstances = [];
+		public Dictionary<Guid, Instance> AllInstances = [];
 		public Dictionary<KeyboardKey, Action> Verbs = [];
 		public NetworkIdentity CurrentIdentity = new();
 		public RenderManager RenderManager;
@@ -253,6 +253,20 @@ namespace NetBlox
 			ss.Source = File.ReadAllText(ssurl);
 			ss.Parent = sg;
 		}
+		public void RegisterService(Instance service, ServiceType type)
+		{
+			byte[] craftedServiceGuidBuffer = BitConverter.GetBytes((int)type);
+			if (craftedServiceGuidBuffer.Length < 16)
+				Array.Resize(ref craftedServiceGuidBuffer, 16);
+			Guid craftedServiceGuid = new Guid(craftedServiceGuidBuffer);
+
+			if (GetInstance(craftedServiceGuid) != null)
+			{
+				throw new Exception("Cannot create a second instance of a singleton Instance (" + type + ")");
+			}
+
+			service.ChangeUniqueID(craftedServiceGuid);
+		}
 		public void Shutdown()
 		{
 			LogManager.LogInfo($"Shutting down GameManager \"{ManagerName}\"...");
@@ -427,17 +441,10 @@ namespace NetBlox
 		}
 		public Instance? GetInstance(Guid id)
 		{
-			try
+			lock (AllInstances)
 			{
-				for (int i = 0; i < AllInstances.Count; i++)
-				{
-					if (AllInstances[i].UniqueID == id)
-						return AllInstances[i];
-				}
-				return null;
-			}
-			catch (NullReferenceException ex) // may devil save me
-			{
+				if (AllInstances.TryGetValue(id, out Instance value))
+					return value;
 				return null;
 			}
 		}

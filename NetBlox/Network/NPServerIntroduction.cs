@@ -1,4 +1,5 @@
 using NetBlox.Instances;
+using NetBlox.Instances.Services;
 using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 namespace NetBlox.Network
@@ -81,7 +82,7 @@ namespace NetBlox.Network
 			gm.NetworkManager.IsLoaded = false;
 
 			gm.NetworkManager.ExpectedLocalPlayerGuid = handshake.PlayerInstance;
-			gm.CurrentRoot.UniqueID = handshake.DataModelInstance;
+			gm.CurrentRoot.ChangeUniqueID(handshake.DataModelInstance);
 			gm.CurrentRoot.Name = gm.CurrentIdentity.PlaceName;
 			gm.CurrentRoot.Clear();
 

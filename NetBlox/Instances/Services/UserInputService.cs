@@ -19,6 +19,7 @@ namespace NetBlox.Instances.Services
 		public UserInputService(GameManager ins) : base(ins)
 		{
 			KeyboardPress = new LuaSignal(ins);
+			GameManager.RegisterService(this, ServiceType.UserInputService);
 		}
 
 		[Lua([Security.Capability.None])]
