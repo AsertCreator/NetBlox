@@ -41,7 +41,7 @@ namespace NetBlox
 		public JobDelegate NativeCallback = callback;
 		public ScriptJobContext ScriptJobContext = new();
 		public JobTimingContext JobTimingContext = new();
-		public JobResult Result;
+		public JobResult Result = JobResult.NotCompleted;
 
 		public override string ToString() =>
 			(ScriptJobContext.GameManager != null ? ScriptJobContext.GameManager.ManagerName : "<none>") + 
@@ -49,6 +49,8 @@ namespace NetBlox
 	}
 	public enum JobType { Network, Renderer, Heartbeat, Miscellaneous, Physics, Script }
 	public enum JobResult { CompletedSuccess, CompletedFailure, NotCompleted }
+
+	// i actually can't write proper task schedulers, can i?
 	public static class TaskScheduler
 	{
 		public static Job CurrentJob;
@@ -64,14 +66,24 @@ namespace NetBlox
 			Stopwatch sw = new();
 			sw.Start();
 
-			for (int i = 0; i < RunningJobs.Count; i++)
+			// we're so thread-safe
+
+			Job[] currentJobPool;
+
+			lock (RunningJobs) 
 			{
-				var job = RunningJobs[i];
+				currentJobPool = new Job[RunningJobs.Count];
+				RunningJobs.CopyTo(currentJobPool, 0);
+			}
+
+			for (int i = 0; i < currentJobPool.Length; i++)
+			{
+				var job = currentJobPool[i];
 				var now = DateTime.UtcNow;
 
 				if (job == null)
 				{
-					RunningJobs.RemoveAt(i--);
+					RunningJobs.RemoveAt(i);
 					// just skip it
 					continue;
 				}
@@ -85,6 +97,7 @@ namespace NetBlox
 
 				CurrentJob = job;
 
+				job.JobTimingContext.JoinedTo = null;
 				job.JobTimingContext.JoinedUntil = default;
 
 				job.JobTimingContext.LastLastTotalExecutionTime = job.JobTimingContext.LastTotalExecutionTime;
@@ -113,7 +126,6 @@ namespace NetBlox
 						{
 							job.ScriptJobContext.AfterDone?.Invoke(job);
 							Terminate(job);
-							i--;
 							break;
 						}
 
@@ -129,7 +141,6 @@ namespace NetBlox
 				{
 					LogManager.LogError("Job execution error:" + ex.Message + "; the job will be terminated");
 					Terminate(job);
-					i--;
 				}
 			}
 
@@ -144,7 +155,8 @@ namespace NetBlox
 			job.Name = name;
 			job.ScriptJobContext.AfterDone = afterDone;
 			job.JobTimingContext.Priority = DefaultPriority;
-			RunningJobs.Add(job);
+			lock (RunningJobs)
+				RunningJobs.Add(job);
 			return job;
 		}
 		public static Job ScheduleDelayedNamedJob(string name, TimeSpan delay, JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
@@ -154,7 +166,8 @@ namespace NetBlox
 			job.JobTimingContext.JoinedUntil = DateTime.UtcNow + delay;
 			job.ScriptJobContext.AfterDone = afterDone;
 			job.JobTimingContext.Priority = DefaultPriority;
-			RunningJobs.Add(job);
+			lock (RunningJobs)
+				RunningJobs.Add(job);
 			return job;
 		}
 		public static Job ScheduleScript(GameManager gm, string code, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null)
@@ -201,7 +214,8 @@ namespace NetBlox
 			job.ScriptJobContext.Coroutine = closure;
 			job.JobTimingContext.Priority = DefaultPriority;
 
-			RunningJobs.Add(job);
+			lock (RunningJobs)
+				RunningJobs.Add(job);
 			return job;
 		}
 		private static JobResult ScriptJob(Job job)

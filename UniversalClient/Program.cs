@@ -17,6 +17,8 @@ namespace NetBlox.Client
 		{
 			LogManager.LogInfo($"NetBlox Client ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
+			Environment.CurrentDirectory = Path.GetDirectoryName(Environment.ProcessPath);
+
 			ConsoleArguments = args;
 
 			AppManager.PlatformOpenBrowser = x =>

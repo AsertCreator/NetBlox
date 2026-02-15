@@ -111,7 +111,7 @@ namespace NetBlox.Instances
 		public DateTime DestroyAt = DateTime.MaxValue;
 		public DateTime DoNotReplicateUntil = DateTime.MinValue;
 		public Dictionary<string, LuaSignal> ChangedSignals = [];
-		public static Dictionary<int, Table> MetaTables = [];
+		public static Dictionary<string, Table> MetaTables = [];
 		public Table? Table;
 
 		public event EventHandler<Instance> OnAdoptedBy;
@@ -535,7 +535,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public virtual bool IsDescendantOf(Instance instance) => GetAncestors().Contains(instance);
 		[Lua([Security.Capability.None])]
-		public virtual bool IsAncestorOf(Instance instance) => GetDescendants().Contains(instance);
+		public virtual bool IsAncestorOf(Instance instance) => instance.IsDescendantOf(this);
 		[Lua([Security.Capability.None])]
 		public virtual string[] GetTags() => [.. Tags];
 		[Lua([Security.Capability.None])]
@@ -590,6 +590,15 @@ namespace NetBlox.Instances
 				}
 				return null;
 			});
+		}
+		public bool IsDescendantOfWorkspace() => IsDescendantOfInstanceOfClass<Workspace>();
+		public bool IsDescendantOfInstanceOfClass<T>() where T : Instance
+		{
+			if (Parent == null)
+				return false;
+			if (Parent is T)
+				return true;
+			return Parent.IsDescendantOfInstanceOfClass<T>();
 		}
 		public void ReplicateProperties(string[] props, bool immediate)
 		{

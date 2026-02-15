@@ -1,15 +1,14 @@
 using MoonSharp.Interpreter;
+using NetBlox.Instances.GUIs;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using Raylib_cs;
-using System;
-using System.Security.Cryptography;
 
 namespace NetBlox.Instances.Services
 {
 	[NotReplicated]
 	[Service]
-	public class CoreGui : Instance
+	public class CoreGui : BasePlayerGui
 	{
 		public Dictionary<string, DynValue> RegisteredSetCallbacks = [];
 		public Dictionary<string, DynValue> RegisteredGetCallbacks = [];

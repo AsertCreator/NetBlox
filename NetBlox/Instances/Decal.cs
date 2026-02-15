@@ -1,4 +1,5 @@
-﻿using NetBlox.Runtime;
+﻿using NetBlox.Instances.Services;
+using NetBlox.Runtime;
 using Raylib_cs;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,16 @@ namespace NetBlox.Instances
 		public Texture2D? ActualTexture;
 		private string texture = "";
 
-		public Decal(GameManager ins) : base(ins) { }
+		public Decal(GameManager ins) : base(ins) 
+		{
+			GameManager.RenderManager.Visibles3DGrade0.Add(this);
+		}
+
+		public override void Destroy()
+		{
+			GameManager.RenderManager.Visibles3DGrade0.Remove(this);
+			base.Destroy();
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
@@ -41,11 +51,17 @@ namespace NetBlox.Instances
 		{
 			if (Parent == null) return;
 			if (Parent is not BasePart) return;
+
 			var bp = (BasePart)Parent;
-			base.RenderUI();
-			if (ActualTexture != null)
+
+			if (!bp.IsDescendantOf(Root.GetService<Workspace>(false)))
+				return;
+
+			if (ActualTexture != null) 
+			{ 
 				RenderUtils.DrawCubeTextureRec((Texture2D)ActualTexture, bp.Position, bp._rotation,
 					bp.Size.X + 0.002f, bp.Size.Y + 0.002f, bp.Size.Z + 0.002f, Color.White, Face); // just so it could render
+			}
 		}
 	}
 }

@@ -1,13 +1,10 @@
 ﻿using MoonSharp.Interpreter;
-using NetBlox.Instances.Services;
 using NetBlox.Network;
 using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances.Callables
 {
+	[Creatable]
 	public class RemoteEvent : Instance
 	{
 		[Lua([Security.Capability.None])]
@@ -31,7 +28,7 @@ namespace NetBlox.Instances
 			GameManager.NetworkManager.SendServerboundPacket(packet);
 		}
 		[Lua([Security.Capability.None])]
-		public void FireClient(Player plr, DynValue table)
+		public void FireClient(Player plr, [TupleArgument] DynValue table)
 		{
 			if (!GameManager.NetworkManager.IsServer)
 				throw new ScriptRuntimeException("Cannot call FireClient on client!");
@@ -40,7 +37,7 @@ namespace NetBlox.Instances
 			plr.Client.SendPacket(packet);
 		}
 		[Lua([Security.Capability.None])]
-		public void FireAllClients(DynValue table)
+		public void FireAllClients([TupleArgument] DynValue table)
 		{
 			if (!GameManager.NetworkManager.IsServer)
 				throw new ScriptRuntimeException("Cannot call FireAllClients on client!");

@@ -8,6 +8,7 @@ using System.Text;
 
 namespace NetBlox.Instances.GUIs
 {
+	[Creatable]
 	public class ChatFrame : Frame
 	{
 		public ChatFrame(GameManager ins) : base(ins) { }

@@ -48,9 +48,10 @@ namespace NetBlox
 		public string? CurrentHint = null;
 		public bool DebugInformation = true;
 		public bool DisableAllGuis = false;
+		public bool DisableParticles = false;
 		public bool RenderAtAll = false;
 		public bool DoPostProcessing = true;
-		public bool WhiteOut = false;
+		public bool WhiteOut = true;
 		public bool DoRenderDebugCharts = false;
 		public Skybox? CurrentSkybox;
 		public Camera3D MainCamera;
@@ -64,15 +65,22 @@ namespace NetBlox
 		public Thread? FrustumCullingThread;
 		public bool FrustumCullingPaused = true;
 		public bool UnlimitFramerate = false;
+
+		public HashSet<I3DRenderable> Visibles3DGrade0 = new();
+		public HashSet<I3DRenderable> Visibles3DGrade1 = new();
+		public HashSet<Instance> Visibles2D = new();
+
 		private readonly bool SkipWindowCreation = false;
 		private Stopwatch renderStopwatch = new();
 		private DataModel Root => GameManager.CurrentRoot;
 
 		public static Queue<(string, Action<Texture2D>)> TextureLoadQueue = [];
+		public static Queue<(string, Action<Mesh>)> MeshLoadQueue = [];
 		public static Queue<(string, Action<Shader>)> ShaderLoadQueue = [];
 		public static Queue<(string, Action<Sound>)> SoundLoadQueue = [];
 
 		public static Dictionary<string, Texture2D> TextureCache = [];
+		public static Dictionary<string, Mesh> MeshCache = [];
 		public static Dictionary<string, Shader> ShaderCache = [];
 		public static Dictionary<string, Sound> SoundCache = [];
 
@@ -188,80 +196,83 @@ namespace NetBlox
 					renderStopwatch.Reset();
 					renderStopwatch.Start();
 
-					// render world
-					Raylib.BeginDrawing();
+					// render world if it exists
+					if (Root != null)
 					{
-						FirstFrame = false;
-
-						Raylib.ClearBackground(Color.SkyBlue);
-						Raylib.BeginMode3D(MainCamera);
-
-						RenderWorld();
-
-						Raylib.EndMode3D();
-
-						if (DoPostProcessing) // sounds too fancy
+						Raylib.BeginDrawing();
 						{
-							TimeOfDay %= 24;
-							if (TimeOfDay != 12)
-								Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255 * 0.8) + (255 * 0.2)))));
-						}
+							FirstFrame = false;
 
-						// render all guis
-						if (!DisableAllGuis)
-						{
-							if (Root != null)
+							Raylib.ClearBackground(Color.SkyBlue);
+							Raylib.BeginMode3D(MainCamera);
+
+							RenderWorld();
+
+							Raylib.EndMode3D();
+
+							if (DoPostProcessing) // sounds too fancy
 							{
-								RenderInstanceUI(Root.GetService<Workspace>(true));
+								TimeOfDay %= 24;
+								if (TimeOfDay != 12)
+									Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255 * 0.8) + (255 * 0.2)))));
+							}
 
-								if (CurrentHint != null)
+							// render all guis
+							if (!DisableAllGuis)
+							{
+								if (Root != null)
 								{
-									Raylib.DrawRectangle(0, ScreenSizeY - 26, ScreenSizeX, 26, Color.Black);
-									var v = Raylib.MeasureTextEx(MainFont.SpriteFont, CurrentHint, MainFont.SpriteFont.BaseSize, 0);
-									Raylib.DrawTextEx(MainFont.SpriteFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.SpriteFont.BaseSize, 0, Color.White);
+									RenderInstanceUI(Root.GetService<Workspace>(true));
+
+									if (CurrentHint != null)
+									{
+										Raylib.DrawRectangle(0, ScreenSizeY - 26, ScreenSizeX, 26, Color.Black);
+										var v = Raylib.MeasureTextEx(MainFont.SpriteFont, CurrentHint, MainFont.SpriteFont.BaseSize, 0);
+										Raylib.DrawTextEx(MainFont.SpriteFont, CurrentHint, new((ScreenSizeX / 2) - (v.X / 2), ScreenSizeY - 26 + 15 + 9 - v.Y), MainFont.SpriteFont.BaseSize, 0, Color.White);
+									}
+
+									if (GameManager.NetworkManager.IsClient)
+									{
+										RenderPlayerGui();
+										RenderInstanceUI(Root.GetService<CoreGui>());
+										RenderInstanceUI(Root.GetService<SandboxService>());
+									}
 								}
+
+								if (DoRenderDebugCharts)
+									RenderDebugCharts();
+
+								Raylib.DrawTextEx(MainFont.SpriteFont, Status, new Vector2(20, 20), 16, 0, Color.White);
+							}
+
+							PostRender?.Invoke();
+
+							if (DebugInformation)
+							{
+								var debugstring = GameManager.ManagerName +
+									", fps: " + Raylib.GetFPS() +
+									", instances: " + GameManager.AllInstances.Count +
+									", task scheduler pressure: " + TaskScheduler.JobCount +
+									", outgoing traffic: " + MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) +
+									(GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled") +
+									", actors count: " + GameManager.PhysicsManager.Actors.Count;
 
 								if (GameManager.NetworkManager.IsClient)
 								{
-									RenderPlayerGui();
-									RenderInstanceUI(Root.GetService<CoreGui>());
-									RenderInstanceUI(Root.GetService<SandboxService>());
+									debugstring +=
+										", CSSending count: " + GameManager.NetworkManager.ServerboundPendingSendPackets.Count +
+										", CSProcess count: " + GameManager.NetworkManager.ClientboundPendingProcessPackets.Count;
 								}
+
+								Raylib.DrawTextEx(MainFont.SpriteFont, debugstring, new(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
 							}
 
-							if (DoRenderDebugCharts)
-								RenderDebugCharts();
+							if (WhiteOut)
+								Raylib.ClearBackground(Color.White);
 
-							Raylib.DrawTextEx(MainFont.SpriteFont, Status, new Vector2(20, 20), 16, 0, Color.White);
+							if (!GameManager.ShuttingDown)
+								Raylib.EndDrawing();
 						}
-
-						PostRender?.Invoke();
-
-						if (DebugInformation)
-						{
-							var debugstring = GameManager.ManagerName +
-								", fps: " + Raylib.GetFPS() +
-								", instances: " + GameManager.AllInstances.Count +
-								", task scheduler pressure: " + TaskScheduler.JobCount +
-								", outgoing traffic: " + MathE.FormatSize(GameManager.NetworkManager.OutgoingTraffic) +
-								(GameManager.PhysicsManager.DisablePhysics ? "" : ", physics enabled") +
-								", actors count: " + GameManager.PhysicsManager.Actors.Count;
-
-							if (GameManager.NetworkManager.IsClient)
-							{
-								debugstring += 
-									", CSSending count: " + GameManager.NetworkManager.ServerboundPendingSendPackets.Count +
-									", CSProcess count: " + GameManager.NetworkManager.ClientboundPendingProcessPackets.Count;
-							}
-
-							Raylib.DrawTextEx(MainFont.SpriteFont, debugstring, new(5, ScreenSizeY - 16 - 5), 16, 0, Color.White);
-						}
-
-						if (WhiteOut)
-							Raylib.ClearBackground(Color.White);
-
-						if (!GameManager.ShuttingDown)
-							Raylib.EndDrawing();
 					}
 
 					renderStopwatch.Stop();
@@ -299,7 +310,7 @@ namespace NetBlox
 			if (!SkipWindowCreation)
 				Raylib.CloseWindow();
 		}
-		public void RenderPlayerGui()
+		private void RenderPlayerGui()
 		{
 			if (GameManager.NetworkManager.IsClient)
 			{
@@ -318,7 +329,7 @@ namespace NetBlox
 					RenderInstanceUI(ch);
 			}
 		}
-		public void RenderInstanceUI(Instance? inst)
+		private void RenderInstanceUI(Instance? inst)
 		{
 			if (inst == null) return;
 			var children = inst.GetChildren();
@@ -331,7 +342,7 @@ namespace NetBlox
 				RenderInstanceUI(child);
 			}
 		}
-		public void RenderSkybox()
+		private void RenderSkybox()
 		{
 			if (CurrentSkybox == null) return;
 
@@ -346,7 +357,7 @@ namespace NetBlox
 			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Left, new Vector3(0, 0, -ass) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Front);
 			RenderUtils.DrawCubeTextureRec(CurrentSkybox.Right, new Vector3(0, 0, ass) + pos, Quaternion.Identity, ss, ss, ss, Color.White, Faces.Back);
 		}
-		public void RenderDebugCharts()
+		private void RenderDebugCharts()
 		{
 			double overallsum = 0;
 			Dictionary<Job, double> percentages = [];
@@ -381,28 +392,65 @@ namespace NetBlox
 					new Vector2(Raylib.GetScreenWidth() - 350, 400 + 16 * i), 14, 1.4f, color.Color);
 			}
 		}
-		public void RenderWorld()
+		private void RenderWorld()
 		{
-			// i should probably avoid using ifs in these moments, but who cares if its like 5 nanoseconds?
 			if (Root == null) return;
 
 			var skypos = MainCamera.Position;
 			var works = Root.GetService<Workspace>(true);
 			var sand = Root.GetService<SandboxService>();
 
-			RenderSkybox();
+			// this is a five step process now.
 
-			if (CurrentSkybox != null && CurrentSkybox.SkyboxWires)
-				Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Color.Blue);
+			//
+			// 1) render skybox
+			//
+			{
+				RenderSkybox();
 
-			if (works != null)
-				RenderInstance(works);
-			if (sand != null)
-				RenderInstance(sand);
+				if (CurrentSkybox != null && CurrentSkybox.SkyboxWires)
+					Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Color.Blue);
+			}
 
-			RenderParticles(AppManager.GetRendererDeltaTime());
+			//
+			// 2) render 3D grade #0 objects - opaque 3d objects
+			//
+			{
+				IEnumerator<I3DRenderable> enumerator = Visibles3DGrade0.GetEnumerator();
+				while (enumerator.MoveNext())
+					enumerator.Current.Render();
+			}
+
+			//
+			// 3) render 3D grade #1 objects - translucent 3d objects
+			//
+			{
+				Raylib.BeginBlendMode(BlendMode.Alpha);
+
+				IEnumerator<I3DRenderable> enumerator = Visibles3DGrade1.GetEnumerator();
+				while (enumerator.MoveNext())
+					enumerator.Current.Render();
+
+				Raylib.EndBlendMode();
+			}
+
+			//
+			// 4) render 2D objects - UI objects mostly
+			//
+			if (!DisableAllGuis)
+			{
+				IEnumerator<I3DRenderable> enumerator = Visibles3DGrade0.GetEnumerator();
+				while (enumerator.MoveNext())
+					enumerator.Current.Render();
+			}
+
+			//
+			// 5) render particles
+			//
+			if (!DisableParticles)
+				RenderParticles(AppManager.GetRendererDeltaTime());
 		}
-		public void RenderInstance(Instance instance)
+		private void RenderInstance(Instance instance)
 		{
 			var c = instance.GetChildren();
 			(instance as I3DRenderable)?.Render();
@@ -417,7 +465,7 @@ namespace NetBlox
 			else
 				Status = msg;
 		}
-		public void PerformResourceLoading() // e F f I c I e N t  resource loader
+		public unsafe void PerformResourceLoading() // e F f I c I e N t  resource loader
 		{
 			for (int i = 0; i < LoadBatchSize; i++)
 			{
@@ -438,6 +486,30 @@ namespace NetBlox
 					catch
 					{
 						LogManager.LogWarn("Could not load texture from " + el.Item1);
+						return;
+					}
+				}
+				if (MeshLoadQueue.Count > 0)
+				{
+					var el = MeshLoadQueue.Dequeue();
+					try
+					{
+						var x = AppManager.ResolveUrlAsync(el.Item1, true);
+						x.Wait();
+						{
+							var mesh = Raylib.LoadModel(x.Result);
+							if (mesh.MeshCount <= 0)
+							{
+								LogManager.LogWarn("Could not load mesh from " + el.Item1 + "; no meshes found at that path");
+								return;
+							}
+							MeshCache[el.Item1] = mesh.Meshes[0];
+							el.Item2(mesh.Meshes[0]);
+						};
+					}
+					catch
+					{
+						LogManager.LogWarn("Could not load mesh from " + el.Item1);
 						return;
 					}
 				}
@@ -487,6 +559,13 @@ namespace NetBlox
 				callback(tex);
 			else
 				TextureLoadQueue.Enqueue((path, callback));
+		}
+		public static void LoadMesh(string path, Action<Mesh> callback)
+		{
+			if (MeshCache.TryGetValue(path, out var tex))
+				callback(tex);
+			else
+				MeshLoadQueue.Enqueue((path, callback));
 		}
 		public static void LoadShader(string path, Action<Shader> callback)
 		{
@@ -603,7 +682,7 @@ namespace NetBlox
 		{
 			AllParticles.Remove(particle);
 		}
-		public void RenderParticles(float time)
+		private void RenderParticles(float time)
 		{
 			for (int i = 0; i < AllParticles.Count; i++)
 			{

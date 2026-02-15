@@ -300,14 +300,14 @@ namespace NetBlox.Runtime
 			if (targetInstanceIWantToForget.Table != null) return DynValue.NewTable(targetInstanceIWantToForget.Table);
 
 			var type = targetInstanceIWantToForget.GetType();
-			var chash = targetInstanceIWantToForget.ClassName.GetHashCode();
 
-			if (Instance.MetaTables.TryGetValue(chash, out Table meta))
+			if (Instance.MetaTables.TryGetValue(targetInstanceIWantToForget.ClassName, out Table meta))
 			{
 				var table = new Table(scr)
 				{
 					MetaTable = meta,
 					AssociatedObject = targetInstanceIWantToForget,
+					ObjectType = AssociatedObjectType.Instance,
 					IsProtected = true
 				};
 				targetInstanceIWantToForget.Table = table;
@@ -355,6 +355,19 @@ namespace NetBlox.Runtime
 								for (int i = 0; i < parms.Length; i++)
 								{
 									var parinfo = parms[i];
+
+									if (parinfo.GetCustomAttribute<TupleArgumentAttribute>() != null)
+									{
+										var tuple = new List<DynValue>();
+										for (int j = i + 1; j < b.Count; j++)
+										{
+											tuple.Add(b[j]);
+										}
+
+										args.Add(DynValue.NewTuple(tuple.ToArray()));
+										break;
+									}
+
 									var partype = parinfo.ParameterType;
 
 									if (partype != DynValueType)
@@ -477,7 +490,7 @@ namespace NetBlox.Runtime
 				meta["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString((y[0].Table.AssociatedObject as Instance)!.Name));
 				meta.IsProtected = true;
 
-				Instance.MetaTables[chash] = meta;
+				Instance.MetaTables[targetInstanceIWantToForget.ClassName] = meta;
 				var table = new Table(scr)
 				{
 					MetaTable = meta,

@@ -324,7 +324,7 @@ namespace NetBlox
 									_ = new Part(this)
 									{
 										Parent = ws,
-										Color3 = Color.White,
+										Color3 = Raylib.Fade(Color.White, j / i * 0.9f + 0.1f),
 										Position = new(k * 1.5f, 20 + j * 1.5f, i * 1.5f),
 										Size = new(1, 1, 1),
 										Anchored = false,
@@ -344,7 +344,7 @@ namespace NetBlox
 							Parent = ws,
 							Color3 = Color.White,
 							Position = new(-10, 40, -10),
-							Size = new(1, 40, 1),
+							Size = new(3, 40, 3),
 							TopSurface = SurfaceType.Studs,
 							BottomSurface = SurfaceType.Studs,
 							LeftSurface = SurfaceType.Studs,

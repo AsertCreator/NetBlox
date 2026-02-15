@@ -1,5 +1,6 @@
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
+using NetBlox.Instances.Callables;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 

@@ -18,7 +18,9 @@ namespace NetBlox.Instances
 		}
 		public override void Process()
 		{
-			base.RenderUI();
+			if (!IsDescendantOfWorkspace())
+				return;
+
 			GameManager.RenderManager.CurrentHint = Text;
 		}
 		public override void Destroy()

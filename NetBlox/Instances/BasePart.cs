@@ -323,7 +323,24 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public bool CanTouch { get; set; } = true;
 		[Lua([Security.Capability.None])]
-		public double Transparency { get; set; } = 0;
+		public float Transparency
+		{
+			get => transparency;
+			set
+			{
+				var newval = MathE.Clamp(0, value, 1);
+				transparency = newval;
+
+				if (transparency > 0)
+				{
+					SetRenderGrade(1);
+				}
+				else
+				{
+					SetRenderGrade(0);
+				}
+			}
+		}
 		[Lua([Security.Capability.None])]
 		public Vector3 Velocity
 		{
@@ -505,6 +522,7 @@ namespace NetBlox.Instances
 		public List<Constraint> ActiveConstraints = [];
 		public HashSet<CollidablePair> currentPairs = [];
 		public HashSet<CollidablePair> previousPairs = [];
+
 		protected SurfaceType frontSurface;
 		protected SurfaceType backSurface;
 		protected SurfaceType topSurface = SurfaceType.Studs;
@@ -512,6 +530,8 @@ namespace NetBlox.Instances
 		protected SurfaceType leftSurface;
 		protected SurfaceType rightSurface;
 
+		protected float transparency = 0;
+		protected int lastRenderGrade = 0;
 		protected bool isDomestic = true;
 		protected bool isHumanoidLimb = false;
 
@@ -559,6 +579,17 @@ namespace NetBlox.Instances
 
 			GameManager.PhysicsManager.Actors.Add(this);
 
+			this.OnAdoptedBy += (_, _) =>
+			{
+				SetRenderGrade(lastRenderGrade, true);
+			};
+			this.OnDisownedBy += (_, _) =>
+			{
+				SetRenderGrade(-1, true);
+			};
+
+			SetRenderGrade(0);
+
 			AppManager.FastFlags.TryGetValue("FFlagShowAFSCacheReload", out FFlagShowAFSCacheReload);
 			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
 			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
@@ -569,6 +600,35 @@ namespace NetBlox.Instances
 		public override void PivotTo(CFrame pivot)
 		{
 			CFrame = pivot;
+		}
+		public void SetRenderGrade(int grade, bool force = false)
+		{
+			lock (this)
+			{
+				if (lastRenderGrade == grade && !force)
+					return;
+
+				if (IsDescendantOf(Root.GetService<Workspace>(true)))
+				{
+					if (grade == 0)
+					{
+						GameManager.RenderManager.Visibles3DGrade1.Remove(this);
+						GameManager.RenderManager.Visibles3DGrade0.Add(this);
+					}
+					else if (grade == 1)
+					{
+						GameManager.RenderManager.Visibles3DGrade0.Remove(this);
+						GameManager.RenderManager.Visibles3DGrade1.Add(this);
+					}
+					else
+					{
+						GameManager.RenderManager.Visibles3DGrade0.Remove(this);
+						GameManager.RenderManager.Visibles3DGrade1.Remove(this);
+					}
+				}
+
+				lastRenderGrade = grade;
+			}
 		}
 		public void ReevaluatePhysicsRepresentation()
 		{
@@ -665,15 +725,6 @@ namespace NetBlox.Instances
 		}
 		public virtual void Render()
 		{
-			if (LocalLighing != null && LocalLighing.WasDestroyed)
-				LocalLighing = null;
-
-			if (LocalLighing == null)
-			{
-				LocalLighing = Root.GetService<Lighting>(true);
-				return;  // now parts REQUIRE Lighting service to be present in order to render (because sun)
-			}
-
 			if (IsGrounded && FFlagShowPartGroundedness)
 				Raylib.DrawCube(PartCFrame.Position, Size.X, Size.Y, Size.Z, Color.Red);
 			if (IsDomestic && FFlagShowPartOwnerhsip)
@@ -694,6 +745,8 @@ namespace NetBlox.Instances
 				if (StaticHandle.HasValue)
 					GameManager.PhysicsManager.LocalSimulation.Statics.Remove(StaticHandle.Value);
 			}
+
+			SetRenderGrade(-1);
 		}
 		public void InvokeChangeNetworkOwnership() => OnNetworkOwnershipChanged?.Invoke(this, new());
 

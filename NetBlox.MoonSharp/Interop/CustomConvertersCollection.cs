@@ -44,7 +44,7 @@ namespace MoonSharp.Interpreter.Interop
 
 		//	for (Type userDataType = v.UserData.Object.GetType();
 		//		userDataType != typeof(object);
-		//		userDataType = userDataType.BaseType)
+		//		userDataType = userDataType.AllTypes)
 		//	{
 		//		if (destTypeMap.TryGetValue(userDataType, out converter))
 		//		{

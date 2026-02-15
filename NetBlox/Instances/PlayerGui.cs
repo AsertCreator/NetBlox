@@ -1,11 +1,12 @@
-﻿using NetBlox.Runtime;
+﻿using NetBlox.Instances.GUIs;
+using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace NetBlox.Instances
 {
-	public class PlayerGui : Instance
+	public class PlayerGui : BasePlayerGui
 	{
 		public PlayerGui(GameManager ins) : base(ins) { }
 

@@ -22,7 +22,6 @@ namespace NetBlox.Instances
 		}
 		public override void Process()
 		{
-			base.RenderUI();
 			GameManager.RenderManager.CurrentMessage = Text;
 		}
 		public override void Destroy()

@@ -147,9 +147,26 @@ namespace NetBlox
 					case DataType.Table:
 						if (dval.Table.MetaTable != null && dval.Table.AssociatedObject != null)
 						{
-							Guid guid = ((Instance)dval.Table.AssociatedObject).UniqueID;
-							bytes.Add(0x85);
-							bytes.AddRange(guid.ToByteArray());
+							switch (dval.Table.ObjectType)
+							{
+								case AssociatedObjectType.Instance:
+									Guid guid = ((Instance)dval.Table.AssociatedObject).UniqueID;
+									bytes.Add(0x86);
+									bytes.AddRange(guid.ToByteArray());
+									break;
+								case AssociatedObjectType.UDim:
+									break;
+								case AssociatedObjectType.UDim2:
+									break;
+								case AssociatedObjectType.Vector2:
+									break;
+								case AssociatedObjectType.Vector3:
+									break;
+								case AssociatedObjectType.Misc:
+									break;
+								default:
+									throw new Exception("which idiot coded this? me ofc");
+							}
 						}
 						else
 						{
@@ -163,6 +180,16 @@ namespace NetBlox
 							}
 						}
 						break;
+					case DataType.Tuple:
+						{
+							bytes.Add(0x85);
+							bytes.AddRange(BitConverter.GetBytes(dval.Tuple.Length));
+							for (int i = 0; i < dval.Tuple.Length; i++)
+							{
+								DoObject(dval.Tuple[i]);
+							}
+							break;
+						}
 				}
 			}
 			DoObject(dv);
@@ -187,18 +214,30 @@ namespace NetBlox
 					case 0x83:
 						return DynValue.NewString(Encoding.UTF8.GetString(br.ReadBytes(br.ReadInt16())));
 					case 0x84:
-						Table table = new(gm.MainEnvironment);
-						DynValue dv = DynValue.NewTable(table);
-						int len = br.ReadInt32();
-
-						for (int i = 0; i < len; i++)
 						{
-							DynValue key = GetObject();
-							DynValue val = GetObject();
-							table[key] = val;
+							Table table = new(gm.MainEnvironment);
+							DynValue dv = DynValue.NewTable(table);
+							int len = br.ReadInt32();
+
+							for (int i = 0; i < len; i++)
+							{
+								DynValue key = GetObject();
+								DynValue val = GetObject();
+								table[key] = val;
+							}
+							return dv;
 						}
-						return dv;
 					case 0x85:
+						{
+							int len = br.ReadInt32();
+							List<DynValue> values = [];
+
+							for (int i = 0; i < len; i++)
+								values.Add(GetObject());
+
+							return DynValue.NewTuple(values.ToArray());
+						}
+					case 0x86:
 						return LuaRuntime.PushInstance(gm.GetInstance(new Guid(br.ReadBytes(16))));
 					default:
 						return DynValue.Nil;

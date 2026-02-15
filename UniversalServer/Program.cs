@@ -29,6 +29,9 @@ namespace NetBlox.Server
 				GameManager.IsRunning = true;
 			});
 			return;*/
+
+			Environment.CurrentDirectory = Path.GetDirectoryName(Environment.ProcessPath);
+
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,

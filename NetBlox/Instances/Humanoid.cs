@@ -176,6 +176,8 @@ namespace NetBlox.Instances
 
 				return JobResult.NotCompleted;
 			});
+
+			GameManager.RenderManager.Visibles2D.Add(this);
 		}
 
 		[Lua([Security.Capability.CoreSecurity])]
@@ -259,7 +261,11 @@ namespace NetBlox.Instances
 			RightLeg.Dispose();
 			Torso.Dispose();
 			Head.Dispose();
-			
+
+			TaskScheduler.Terminate(HumanoidMovementJob);
+
+			GameManager.RenderManager.Visibles2D.Remove(this);
+
 			base.Destroy();
 		}
 		public override void RenderUI()

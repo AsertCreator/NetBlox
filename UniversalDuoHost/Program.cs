@@ -61,6 +61,8 @@ namespace UniversalDuoHost
 		{
 			LogManager.LogInfo($"NetBlox DuoHost ({AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}) is running...");
 
+			Environment.CurrentDirectory = Path.GetDirectoryName(Environment.ProcessPath);
+
 			// Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
 			var v = Rlgl.GetVersion();

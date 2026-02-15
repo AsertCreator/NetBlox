@@ -18,22 +18,25 @@ namespace NetBlox.Runtime
 		}
 
 		[Lua([Security.Capability.None])]
-		public void Connect(DynValue dv)
+		public LuaConnection? Connect(DynValue dv)
 		{
 			if (TaskScheduler.CurrentJob == null)
-				return;
+				return null;
+
 			lock (this) 
 			{
 				if (TaskScheduler.CurrentJob.ScriptJobContext.BaseScript == null)
-					return;
+					return null;
 
-				Attached.Add(new LuaConnection()
+				var connection = new LuaConnection(this, TaskScheduler.CurrentJob.ScriptJobContext.BaseScript)
 				{
 					Function = dv,
-					Level = TaskScheduler.CurrentJob.SecurityLevel,
-					Manager = TaskScheduler.CurrentJob.ScriptJobContext.BaseScript.GameManager,
-					Script = TaskScheduler.CurrentJob.ScriptJobContext.BaseScript
-				});
+					Level = TaskScheduler.CurrentJob.SecurityLevel
+				};
+
+				Attached.Add(connection);
+
+				return connection;
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -60,29 +63,54 @@ namespace NetBlox.Runtime
 		}
 		public void Fire(params DynValue[] dvs)
 		{
+			Action<DynValue[]>[]? nativeconnections = null;
+			LuaConnection[]? luaconnections = null;
+
 			lock (this)
 			{
-				for (int i = 0; i < Attached.Count; i++)
-				{
-					if (Attached[i].Manager == null) continue;
-					if (Attached[i].Function == null) continue;
+				nativeconnections = new Action<DynValue[]>[NativeAttached.Count];
+				NativeAttached.CopyTo(nativeconnections, 0);
 
-#pragma warning disable CS8604 // Possible null reference argument.
-					TaskScheduler.ScheduleScript(Attached[i].Manager, Attached[i].Function, Attached[i].Level, Attached[i].Script)
-						.ScriptJobContext.YieldReturn = dvs;
-#pragma warning restore CS8604 // Possible null reference argument.
-				}
-				for (int i = 0; i < NativeAttached.Count; i++)
-					NativeAttached[i](dvs);
+				luaconnections = new LuaConnection[Attached.Count];
+				Attached.CopyTo(luaconnections, 0);
+
 				FireCount++;
 			}
+
+			for (int i = 0; i < nativeconnections.Length; i++)
+				nativeconnections[i](dvs);
+
+			for (int i = 0; i < luaconnections.Length; i++)
+			{
+				if (Attached[i].Manager == null) continue;
+				if (Attached[i].Function == null) continue;
+
+				TaskScheduler.ScheduleScript(Attached[i].Manager, Attached[i].Function, Attached[i].Level, Attached[i].Script)
+					.ScriptJobContext.YieldReturn = dvs;
+			}
+		}
+		public void Disconnect(LuaConnection luaConnection)
+		{
+			Attached.Remove(luaConnection);
 		}
 	}
 	public class LuaConnection
 	{
-		public GameManager? Manager;
-		public BaseScript? Script;
+		public LuaSignal Origin;
+		public GameManager Manager;
+		public BaseScript Script;
 		public DynValue? Function;
 		public int Level;
+
+		public LuaConnection(LuaSignal signal, BaseScript bs)
+		{
+			Script = bs;
+			Manager = bs.GameManager;
+
+			Script.Destroying.NativeAttached.Add(_ =>
+			{
+				Origin.Disconnect(this);
+			});
+		}
 	}
 }

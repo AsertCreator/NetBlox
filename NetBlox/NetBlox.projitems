@@ -16,6 +16,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Attachment.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Backpack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)instances\BasePlayerGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)instances\callables\BindableEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Callables\RemoteEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Callables\RemoteFunction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Camera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Character.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Constraint.cs" />
@@ -42,7 +46,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\InstanceAdornment.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Message.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Instances\RemoteEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\SelectionBox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\ServiceProvider.cs" />
@@ -76,6 +79,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\ModuleScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\Script.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\Players.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\CoreGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ReplicatedFirst.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\ReplicatedStorage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\RunService.cs" />
@@ -94,15 +98,16 @@
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPServerIntroduction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPSetPlayableCharacter.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)network\NPStartReplication.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NPStartReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPUpdatePlayerBufferZone.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPUpdatePlayerOwnership.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)network\NPWaitForSubjectAndSetCamera.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NPWaitForSubjectAndSetCamera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\Replication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\ImpersonateDuringReplicationAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)runtime\InstanceCrossReference.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)runtime\InstanceSiblingHandle.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCrossReference.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceSiblingHandle.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\ServiceType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Runtime\TupleArgumentAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\Particle.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Structs\PhysicsAssembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TaskScheduler.cs" />
@@ -235,7 +240,6 @@
     <None Include="$(MSBuildThisFileDirectory)content\textures\stud.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Compile Include="$(MSBuildThisFileDirectory)Instances\Services\CoreGui.cs" />
     <None Include="$(MSBuildThisFileDirectory)content\favicon.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -1,4 +1,5 @@
 ﻿using MoonSharp.Interpreter;
+using NetBlox.Instances.GUIs;
 using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Text;
 namespace NetBlox.Instances.Services
 {
 	[Service]
-	public class StarterGui : Instance
+	public class StarterGui : BasePlayerGui
 	{
 		public StarterGui(GameManager ins) : base(ins)
 		{
