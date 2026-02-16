@@ -1,5 +1,11 @@
-﻿-- gui version A (sidebar one)
+﻿--[[
+	NetBlox's CoreScripts
 
+	Sidebar.lua - the main GUI of the game (version A)
+	features a sidebar, a top bar and chat
+]]
+
+local Chat = game:GetService("Chat");
 local PlatformService = game:GetService("PlatformService");
 local UserInputService = game:GetService("UserInputService");
 local CoreGui = game:GetService("CoreGui");
@@ -7,9 +13,11 @@ local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
 local Sidebar = Instance.new("Frame");
 local BlackOut = Instance.new("Frame");
 local TopbarFrame = Instance.new("Frame");
-local ChatContainerFrame = Instance.new("Frame");
-local ChatFrame = Instance.new("ChatFrame");
 local TextField = Instance.new("TextBox");
+
+local chatutility = require(script.Parent.Modules.Chat);
+
+chatutility.showChat();
 
 BlackOut.Name = "NBGBlackOut";
 BlackOut.Parent = RobloxGui;
@@ -19,23 +27,6 @@ BlackOut.BackgroundColor3 = Color3.new(0, 0, 0);
 BlackOut.BackgroundTransparency = 0.6;
 BlackOut.ZIndex = 0;
 BlackOut.Visible = false;
-
-ChatContainerFrame.Name = "NBGChatContainerFrame";
-ChatContainerFrame.Parent = RobloxGui;
-ChatContainerFrame.Position = UDim2.new(0, 0, 0, 30);
-ChatContainerFrame.Size = UDim2.new(0.25, 0, 0.2, 0);
-ChatContainerFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1);
-ChatContainerFrame.BackgroundTransparency = 0.75;
-ChatContainerFrame.ZIndex = 1;
-ChatContainerFrame.Visible = true;
-
-ChatFrame.Name = "NBGChatFrame";
-ChatFrame.Parent = ChatContainerFrame;
-ChatFrame.Position = UDim2.new(0, 5, 0, 5);
-ChatFrame.Size = UDim2.new(1, -10, 1, -40);
-ChatFrame.BackgroundTransparency = 1;
-ChatFrame.ZIndex = 1;
-ChatFrame.Visible = true;
 
 Sidebar.Name = "NBGSidebar";
 Sidebar.Parent = RobloxGui;
@@ -214,6 +205,11 @@ while true do
 			else -- not really lol
 				PlayerType.Text = ">13 account";
 			end
+			
+			local Chat = game:GetService("Chat");
+			
+			Chat:SendSystemMessage("Welcome to NetBlox!");
+			Chat:SendSystemMessage("You are playing " .. game.Name);
 
 			-- backpack.setBackpackInstance(game.Players.LocalPlayer.Backpack)
 			-- backpack.mount(script.Parent)

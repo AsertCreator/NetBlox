@@ -58,6 +58,15 @@ namespace NetBlox.Instances.Services
 			}
 		}
 		[Lua([Security.Capability.None])]
+		public void SendSystemMessage(string msg)
+		{
+			var chatMessage = new ChatMessage();
+			chatMessage.Sender = null;
+			chatMessage.Message = msg;
+
+			Conversation.Add(chatMessage);
+		}
+		[Lua([Security.Capability.None])]
 		public void SendMessage(string msg) // cHaT iS iNvAlId NaMe
 		{
 			var plrs = Root.GetService<Players>(true);

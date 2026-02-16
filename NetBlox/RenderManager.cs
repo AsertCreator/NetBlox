@@ -684,12 +684,32 @@ namespace NetBlox
 		}
 		private void RenderParticles(float time)
 		{
+			Raylib.BeginBlendMode(BlendMode.Alpha);
+
+			AllParticles.Sort((x, y) =>
+			{
+				float comp = (x.Position - MainCamera.Position).Length() - (y.Position - MainCamera.Position).Length();
+
+				if (comp < 0) return 1;
+				if (comp > 0) return -1;
+				return 0;
+			});
+
 			for (int i = 0; i < AllParticles.Count; i++)
 			{
 				var particle = AllParticles[i];
 				particle.Step(time);
-				particle.Render();
+
+				if (particle.LifetimeinSeconds >= particle.DeathLifetimeInSeconds)
+				{
+					RemoveParticle(particle);
+					continue;
+				}
+
+				particle.Render(MainCamera);
 			}
+
+			Raylib.EndBlendMode();
 		}
 	}
 	// ty chatgpt

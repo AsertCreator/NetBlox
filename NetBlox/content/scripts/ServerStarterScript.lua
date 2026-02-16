@@ -1,3 +1,9 @@
+--[[
+	NetBlox's CoreScripts
+
+	ServerStarterScript.lua - bootstraps the server-side of the game
+]]
+
 local PlatformService = game:GetService("PlatformService");
 
 -- initializes server communication with public service

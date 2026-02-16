@@ -189,6 +189,12 @@
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\Backpack.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\Chat.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\Notifications.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\TeleportGui.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

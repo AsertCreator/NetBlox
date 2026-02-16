@@ -1,6 +1,7 @@
 ﻿using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace NetBlox.Instances.Effects
@@ -16,6 +17,7 @@ namespace NetBlox.Instances.Effects
 		public float Size { get; set; }
 		public float TimeScale { get; set; }
 
+		private Stopwatch particleStopwatch;
 		private static Texture2D SmokeTexture;
 		private static Random random = new();
 
@@ -23,7 +25,12 @@ namespace NetBlox.Instances.Effects
 		{
 			RenderManager.LoadTexture("rbxasset://textures/particleSmoke.png", x => SmokeTexture = x);
 		}
-		public Smoke(GameManager ins) : base(ins) { }
+		public Smoke(GameManager ins) : base(ins)
+		{
+			GameManager.RenderManager.Visibles3DGrade0.Add(this);
+			particleStopwatch = new();
+			particleStopwatch.Start();
+		}
 
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
@@ -31,11 +38,24 @@ namespace NetBlox.Instances.Effects
 			if (nameof(Smoke) == classname) return true;
 			return base.IsA(classname);
 		}
+		public override void Destroy()
+		{
+			GameManager.RenderManager.Visibles3DGrade0.Remove(this);
+		}
 
 		public void Render()
 		{
-			var particle = new Particle(this);
-			GameManager.RenderManager.AddParticle(particle);
+			if (IsDescendantOfWorkspace())
+			{
+				if (particleStopwatch.ElapsedMilliseconds > 1000 / 20)
+				{
+					particleStopwatch.Reset();
+					particleStopwatch.Start();
+
+					var particle = new Particle(this);
+					GameManager.RenderManager.AddParticle(particle);
+				}
+			}
 		}
 		public Vector3? GetRootPosition()
 		{
@@ -53,11 +73,11 @@ namespace NetBlox.Instances.Effects
 		public Vector3 GetAcceleration() => new Vector3(0, 0, 0);
 		public float GetLifetimeinSeconds() => 5;
 		public float GetStartOpacity() => 0.5f;
-		public float GetOpacityVelocity() => 0;
+		public float GetOpacityVelocity() => -0.5f / GetLifetimeinSeconds();
 		public Color GetStartColor() => new Color(255, 255, 255, 255);
-		public float GetStartRotation() => 0;
+		public float GetStartRotation() => random.NextSingle() * 360;
 		public float GetStartRotationalVelocity() => 0;
 		public Texture2D GetTexture() => SmokeTexture;
-		public float GetSize() => 1.3f;
+		public float GetSize() => 2f;
 	}
 }

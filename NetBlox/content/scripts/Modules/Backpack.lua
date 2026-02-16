@@ -1,3 +1,9 @@
+--[[
+	NetBlox's CoreScripts
+
+	backpack.lua - implements the backpack GUI (doesn't work currently)
+]]
+
 local module = {}
 local usedbackpack;
 

@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using NetBlox.Common;
+using NetBlox.Instances.Effects;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
@@ -204,6 +205,10 @@ namespace NetBlox.Instances.Services
 				TopSurface = SurfaceType.Studs,
 				Name = "Head",
 				Locked = true
+			};
+			_ = new Smoke(GameManager)
+			{
+				Parent = head
 			};
 			_ = new Decal(GameManager)
 			{
