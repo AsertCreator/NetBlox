@@ -206,7 +206,7 @@ namespace NetBlox.Instances.Services
 				Name = "Head",
 				Locked = true
 			};
-			_ = new Smoke(GameManager)
+			_ = new Fire(GameManager)
 			{
 				Parent = head
 			};

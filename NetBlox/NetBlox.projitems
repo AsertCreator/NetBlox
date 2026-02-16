@@ -26,6 +26,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Decal.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\IEffectEmitter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\Fire.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\Smoke.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Folder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\GUIs\BillboardGui.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPClientIntroduction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPPhysicsReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPRemoteEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NPRemoteFunction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPServerIntroduction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPSetPlayableCharacter.cs" />

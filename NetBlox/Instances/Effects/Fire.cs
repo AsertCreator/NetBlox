@@ -8,28 +8,28 @@ using System.Numerics;
 namespace NetBlox.Instances.Effects
 {
 	[Creatable]
-	public class Smoke : Instance, IEffectEmitter, I3DRenderable
+	public class Fire : Instance, IEffectEmitter, I3DRenderable
 	{
 		[Lua([Security.Capability.None])]
-		public Color Color { get; set; } = Color.White;
+		public Color Color { get; set; } = Color.Orange;
 		[Lua([Security.Capability.None])]
 		public bool Enabled { get; set; } = true;
 		[Lua([Security.Capability.None])]
-		public float RiseVelocity { get; set; } = 3;
+		public float RiseVelocity { get; set; } = 5;
 		[Lua([Security.Capability.None])]
-		public float Size { get; set; } = 2;
+		public float Size { get; set; } = 1.2f;
 		[Lua([Security.Capability.None])]
 		public float TimeScale { get; set; } = 1;
 
 		private Stopwatch particleStopwatch;
-		private static Texture2D SmokeTexture;
+		private static Texture2D FireTexture;
 		private static Random random = new();
 
-		static Smoke()
+		static Fire()
 		{
-			RenderManager.LoadTexture("rbxasset://textures/particleSmoke.png", x => SmokeTexture = x);
+			RenderManager.LoadTexture("rbxasset://textures/particleFire.png", x => FireTexture = x);
 		}
-		public Smoke(GameManager ins) : base(ins)
+		public Fire(GameManager ins) : base(ins)
 		{
 			GameManager.RenderManager.Visibles3DGrade0.Add(this);
 			particleStopwatch = new();
@@ -39,7 +39,7 @@ namespace NetBlox.Instances.Effects
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
-			if (nameof(Smoke) == classname) return true;
+			if (nameof(Fire) == classname) return true;
 			return base.IsA(classname);
 		}
 		public override void Destroy()
@@ -54,7 +54,7 @@ namespace NetBlox.Instances.Effects
 
 			if (IsDescendantOfWorkspace())
 			{
-				if (particleStopwatch.ElapsedMilliseconds > 1000 / MathE.Clamp(10, 20, AppManager.PreferredFPS))
+				if (particleStopwatch.ElapsedMilliseconds > 1000 / MathE.Clamp(10, 60, AppManager.PreferredFPS))
 				{
 					particleStopwatch.Reset();
 					particleStopwatch.Start();
@@ -73,18 +73,18 @@ namespace NetBlox.Instances.Effects
 		public Vector3 GetStartPosition()
 		{
 			// we are not supposed to be called if we are not enabled (either Enabled == false or Parent is not BasePart)
-			return GetRootPosition().Value + 
+			return GetRootPosition().Value +
 				new Vector3(random.NextSingle() - 0.5f, random.NextSingle() - 0.5f, random.NextSingle() - 0.5f);
 		}
 		public Vector3 GetStartLinearVelocity() => new Vector3(random.NextSingle() - 0.5f, RiseVelocity * TimeScale, random.NextSingle() - 0.5f);
 		public Vector3 GetAcceleration() => new Vector3(0, 0, 0);
-		public float GetLifetimeinSeconds() => 5 / TimeScale;
+		public float GetLifetimeinSeconds() => 1 / TimeScale;
 		public float GetStartOpacity() => 0.5f;
 		public float GetOpacityVelocity() => -0.5f / GetLifetimeinSeconds();
 		public Color GetStartColor() => Color;
 		public float GetStartRotation() => random.NextSingle() * 360;
 		public float GetStartRotationalVelocity() => 0;
-		public Texture2D GetTexture() => SmokeTexture;
+		public Texture2D GetTexture() => FireTexture;
 		public float GetSize() => Size;
 	}
 }

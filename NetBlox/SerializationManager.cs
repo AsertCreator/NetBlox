@@ -401,6 +401,7 @@ namespace NetBlox
 				AssociatedObject = (ByteArray)x,
 				IsProtected = true
 			}));
+			LuaSerializers.Add("MoonSharp.Interpreter.DynValue", (x, y) => x as DynValue);
 
 			LuaDeserializers.Add("System.Byte", (x, y) => (Byte)x.Number);
 			LuaDeserializers.Add("System.Int16", (x, y) => (Int16)x.Number);
@@ -438,6 +439,7 @@ namespace NetBlox
 				Convert.ToSingle((double)x.Table["YOff"])));
 			LuaDeserializers.Add("NetBlox.Structs.BrickColor", (x, y) => x.Table.AssociatedObject);
 			LuaDeserializers.Add("NetBlox.Structs.ByteArray", (x, y) => x.Table.AssociatedObject);
+			LuaDeserializers.Add("MoonSharp.Interpreter.DynValue", (x, y) => x);
 
 			LuaDataTypes.Add("System.Byte", DataType.Number);
 			LuaDataTypes.Add("System.Int16", DataType.Number);
