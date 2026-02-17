@@ -16,8 +16,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Attachment.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Backpack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\BasePlayerGui.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)instances\callables\BindableEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePlayerGui.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Callables\BindableEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Callables\RemoteEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Callables\RemoteFunction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Camera.cs" />
