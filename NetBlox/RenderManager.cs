@@ -1,5 +1,4 @@
 ﻿global using Font = Raylib_cs.Font;
-using ConsoleTables;
 using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Instances;
@@ -10,6 +9,7 @@ using Raylib_cs;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Rectangle = Raylib_cs.Rectangle;
 
 namespace NetBlox
 {
@@ -65,6 +65,7 @@ namespace NetBlox
 		public Thread? FrustumCullingThread;
 		public bool FrustumCullingPaused = true;
 		public bool UnlimitFramerate = false;
+		public Texture2D? Cursor;
 
 		public HashSet<I3DRenderable> Visibles3DGrade0 = new();
 		public HashSet<I3DRenderable> Visibles3DGrade1 = new();
@@ -243,6 +244,12 @@ namespace NetBlox
 									RenderDebugCharts();
 
 								Raylib.DrawTextEx(MainFont.SpriteFont, Status, new Vector2(20, 20), 16, 0, Color.White);
+							}
+
+							if (Cursor.HasValue)
+							{
+								Raylib.DrawTexturePro(Cursor.Value, new Rectangle(0, 0, Cursor.Value.Width, Cursor.Value.Height), 
+									new Rectangle(Raylib.GetMousePosition(), new Vector2(24, 24)), new Vector2(), 0, Color.White);
 							}
 
 							PostRender?.Invoke();

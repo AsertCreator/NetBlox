@@ -25,6 +25,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Constraint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\DataModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Decal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\ForceField.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\IEffectEmitter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\Fire.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Effects\Smoke.cs" />
@@ -164,6 +165,12 @@
     <Content Include="$(MSBuildThisFileDirectory)content\textures\cursorSuccess.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\faceConfused.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\faceNeutral.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\hopperDrag.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -173,10 +180,16 @@
     <Content Include="$(MSBuildThisFileDirectory)content\textures\particleFire.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\particleForceField.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\particleSmoke.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\smile.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)content\textures\smoke.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(MSBuildThisFileDirectory)content\textures\spawn.png">

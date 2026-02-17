@@ -62,5 +62,14 @@ namespace NetBlox.Instances.Services
 				return -1;
 			});
 		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void SetCursorTo(string assetId)
+		{
+			RenderManager.LoadTexture(assetId, x =>
+			{
+				Raylib.HideCursor();
+				GameManager.RenderManager.Cursor = x;
+			});
+		}
 	}
 }

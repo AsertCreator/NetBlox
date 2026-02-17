@@ -27,6 +27,7 @@ function initIGG()
 	if guivar == 1 then
 		ScriptContext:AddCoreScriptLocal("CoreScripts/Sidebar", RobloxGui);
 	end
+	CoreGui:SetCursorTo("rbxasset://textures/cursorNeutral.png")
 end
 -- initializes teleport GUI
 function initTUI()

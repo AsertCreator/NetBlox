@@ -206,7 +206,7 @@ namespace NetBlox.Instances.Services
 				Name = "Head",
 				Locked = true
 			};
-			_ = new Fire(GameManager)
+			_ = new ForceField(GameManager)
 			{
 				Parent = head
 			};
