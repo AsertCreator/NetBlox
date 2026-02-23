@@ -1,6 +1,7 @@
 using BepuPhysics;
 using BepuPhysics.Constraints;
 using NetBlox.Runtime;
+using NetBlox.Instances.Parts;
 using System.Numerics;
 
 namespace NetBlox.Instances

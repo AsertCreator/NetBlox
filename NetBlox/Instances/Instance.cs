@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
 using NetBlox.Runtime;
@@ -95,11 +95,11 @@ namespace NetBlox.Instances
 		{ 
 			get
 			{
+				if (Parent == null)
+					return false;
 				if (this is Workspace || this is ReplicatedFirst || this is Players || this is ReplicatedStorage || 
 					this is Chat || this is Lighting || this is StarterGui || this is StarterPack)
 					return true;
-				if (Parent == null)
-					return false;
 				return Parent.EligibleForReplication;
 			} 
 		}
@@ -123,7 +123,7 @@ namespace NetBlox.Instances
 
 		private Instance? parent;
 		private Type? ThisType;
-		private List<InstanceCrossReference>? crossReferences;
+		private List<InstanceCrossReference>? crossReferences = new();
 		protected DataModel Root => GameManager.CurrentRoot;
 
 		public Instance(GameManager gm)

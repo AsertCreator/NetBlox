@@ -1,5 +1,6 @@
 using NetBlox.Common;
 using NetBlox.Instances.Services;
+using NetBlox.Instances.Parts;
 using NetBlox.Network;
 using NetBlox.Runtime;
 using Raylib_cs;

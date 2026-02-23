@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter.Debugging;
@@ -36,7 +36,7 @@ namespace MoonSharp.Interpreter
 		public  CoroutineType Type { get; private set; }
 
 		private CallbackFunction m_ClrCallback;
-		private Processor m_Processor;
+		internal Processor m_Processor;
 
 
 		internal Coroutine(CallbackFunction function)

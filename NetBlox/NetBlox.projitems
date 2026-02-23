@@ -15,7 +15,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Animation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Attachment.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Backpack.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePart.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Parts\BasePart.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\BasePlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Callables\BindableEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Callables\RemoteEvent.cs" />
@@ -47,6 +47,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Instance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\InstanceAdornment.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Message.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Parts\SpherePart.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PlayerGui.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\CoreScript.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\SelectionBox.cs" />
@@ -72,7 +73,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Values\Vector3Value.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Weld.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Model.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Instances\Part.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Instances\Parts\Part.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Player.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\PVInstance.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Instances\Scripts\BaseScript.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPChat.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPClientDisconnect.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPClientIntroduction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Network\NPControlServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPPhysicsReplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPRemoteEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPRemoteFunction.cs" />
@@ -106,6 +108,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPUpdatePlayerOwnership.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\NPWaitForSubjectAndSetCamera.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Network\Replication.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Rendering\RenderShadingManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\ImpersonateDuringReplicationAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceCrossReference.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Runtime\InstanceSiblingHandle.cs" />
@@ -201,13 +204,22 @@
     <None Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\Sidebar.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\Topbar.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\Backpack.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\Chat.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\Modules\Cursor.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\Notifications.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\scripts\Modules\ServerControl.lua">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\modules\TeleportGui.lua">
@@ -217,6 +229,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\scripts\StarterScript.lua">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\shaders\smoothlighting.shad">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\shaders\smoothlighting.vshad">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="$(MSBuildThisFileDirectory)content\skybox\bluecloud_bk.png">
@@ -264,9 +282,5 @@
     <None Include="$(MSBuildThisFileDirectory)content\favicon.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)content\scripts\Modules\" />
-    <Folder Include="$(MSBuildThisFileDirectory)content\scripts\CoreScripts\" />
   </ItemGroup>
 </Project>

@@ -11,7 +11,7 @@ using Raylib_cs;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances.Parts
 {
 	public struct PartRenderCache
 	{

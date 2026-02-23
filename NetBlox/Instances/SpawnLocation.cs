@@ -1,4 +1,5 @@
 using NetBlox.Instances.Services;
+using NetBlox.Instances.Parts;
 using NetBlox.Runtime;
 #if STUDIO
 using NetBlox.Studio;

@@ -1,5 +1,6 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Instances;
+using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
 using NetBlox.Runtime;
@@ -64,7 +65,6 @@ namespace NetBlox
 		internal List<NetworkAwaiter> awaitingForArrival = [];
 		internal List<RemoteNetworkAwaiter> awaitingForRemoteArrival = [];
 		internal uint nextpid = 0;
-		internal bool init;
 
 		internal class NetworkAwaiter
 		{
@@ -129,10 +129,14 @@ namespace NetBlox
 
 				connection.ConnectionClosed += (reason, _) =>
 				{
+					if (remoteclient.IsAboutToLeave)
+						return;
+
 					TaskScheduler.ScheduleNamedJob("FailedHandshakeWatchdog", JobType.Network, _ =>
 					{
 						if (!remoteclient.IsAboutToLeave)
 							LogManager.LogInfo(remoteclient + " is leaving without warning!");
+
 						remoteclient.IsAboutToLeave = true;
 						remoteclient.CleanUpRemains();
 
@@ -232,7 +236,7 @@ namespace NetBlox
 
 			void OnClose(CloseReason cr, Connection c)
 			{
-				GameManager.RenderManager?.ShowKickMessage("The server had closed (" + cr + ")");
+				GameManager.RenderManager?.ShowKickMessage("Disconnected (" + cr + ")");
 				GameManager.ProhibitScripts = true;
 				GameManager.IsRunning = false;
 			}
@@ -390,26 +394,40 @@ namespace NetBlox
 
 			return count;
 		}
+		public void DisconnectFromServer(string msg)
+		{
+			if (!IsClient)
+				return;
+			PerformKick(null, msg, true);
+		}
 		public void PerformKick(RemoteClient? nc, string msg, bool islocal)
 		{
-			if (RemoteConnection == null) return;
-			if (IsClient && !islocal)
-				throw new ScriptRuntimeException("Cannot kick non-local player from client");
-
-			nc.Player.WasKicked = true;
-
-			if (IsClient && islocal)
+			if (IsClient)
 			{
-				RemoteConnection.Close(CloseReason.ClientClosed);
-				GameManager.RenderManager?.ShowKickMessage(msg);
-				return;
+				if (islocal)
+				{
+					if (RemoteConnection == null)
+						throw new ScriptRuntimeException("Too early to disconnect!");
+
+					RemoteConnection.Close(CloseReason.ClientClosed);
+					RemoteConnection = null;
+					GameManager.RenderManager?.ShowKickMessage(msg);
+					return;
+				}
+				else
+				{
+					throw new ScriptRuntimeException("Cannot kick non-local player from client");
+				}
 			}
+			else if (IsServer)
+			{
+				// we are on server
+				if (nc == null)
+					throw new ScriptRuntimeException("RemoteClient object not preserved!");
 
-			// we are on server
-			if (nc == null) 
-				throw new ScriptRuntimeException("RemoteClient object not preserved!");
-
-			nc.KickOut(msg);
+				nc.Player.WasKicked = true;
+				nc.KickOut(msg);
+			}
 		}
 		public void WaitForInstanceArrival(Guid guid, Action act)
 		{

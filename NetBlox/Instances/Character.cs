@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Numerics;
 using NetBlox.Instances.Services;
+using NetBlox.Instances.Parts;
 using NetBlox.Common;
 using NetBlox.Network;
 

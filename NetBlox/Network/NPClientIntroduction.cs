@@ -113,7 +113,7 @@ namespace NetBlox.Network
 				{
 					rc.Username = handshake.Username;
 
-					var player = new Player(rc.Enclosure)
+					var player = new Player(rc.GameManager)
 					{
 						IsLocalPlayer = false,
 						Parent = plrs,

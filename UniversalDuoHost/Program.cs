@@ -71,7 +71,7 @@ namespace UniversalDuoHost
 				Console.WriteLine("NetBlox cannot run on your device, because the OpenGL 3.3 isn't supported. Consider re-checking your system settings.");
 				return 1;
 			}
-			Raylib.SetTraceLogLevel(TraceLogLevel.None);
+			// Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
 #if _WINDOWS
 			AppManager.LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "NetBlox").Replace("\\", "/");

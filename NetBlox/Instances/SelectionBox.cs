@@ -1,4 +1,5 @@
 ﻿using NetBlox.Runtime;
+using NetBlox.Instances.Parts;
 using Raylib_cs;
 
 namespace NetBlox.Instances

@@ -1,5 +1,6 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Instances;
+using NetBlox.Instances.Parts;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
@@ -35,8 +36,8 @@ namespace NetBlox.Server
 			var g = AppManager.CreateGame(new()
 			{
 				AsServer = true,
-				DoNotRenderAtAll = false, // how many times did i flip this switch on and off and on and off and on and off and o
-				SkipWindowCreation = false,
+				DoNotRenderAtAll = true, // how many times did i flip this switch on and off and on and off and on and off and o
+				SkipWindowCreation = true,
 				GameName = "NetBlox Server"
 			}, args, (x) =>
 			{

@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.DataTypes;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
@@ -187,7 +187,7 @@ namespace NetBlox
 					{
 						["__index"] = gm.MainEnvironment.Globals
 					}
-				}, self != null ? self.GetFullName() : ""), level, self, afterDone, args);
+				}, self != null ? self.GetFullName() : "<unknown script>"), level, self, afterDone, args);
 			}
 			catch (SyntaxErrorException ex)
 			{
@@ -249,7 +249,12 @@ namespace NetBlox
 			}
 			catch (Exception ex)
 			{
-				LogManager.LogError("Runtime error during script execution: " + ex.Message);
+				LogManager.LogError("Script error: " + ex.Message);
+				ScriptRuntimeException fakeex = new(ex);
+				int lastip = job.ScriptJobContext.Coroutine.m_Processor.LastInstructionPointer;
+				job.ScriptJobContext.Coroutine.m_Processor.FillDebugData(fakeex, lastip);
+				for (int i = 0; i < fakeex.CallStack.Count; i++)
+					LogManager.LogError($"    at {fakeex.CallStack[i].Name ?? ""}:{((fakeex.CallStack[i].Location != null) ? fakeex.CallStack[i].Location.FromLine.ToString() : "(unknown)")}");
 				return JobResult.CompletedFailure;
 			}
 		}

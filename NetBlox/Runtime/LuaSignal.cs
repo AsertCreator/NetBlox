@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Instances.Scripts;
 using System.Diagnostics;
 using System.Xml.Linq;
@@ -22,6 +22,11 @@ namespace NetBlox.Runtime
 		{
 			if (TaskScheduler.CurrentJob == null)
 				return null;
+
+			if (dv.Type != DataType.Function && dv.Type != DataType.ClrFunction)
+			{
+				throw new Exception("Cannot connect a non-function to a LuaSignal");
+			}
 
 			lock (this) 
 			{

@@ -1,4 +1,4 @@
-﻿using NetBlox.Instances;
+using NetBlox.Instances;
 using Network;
 using System.IO;
 
@@ -18,7 +18,7 @@ namespace NetBlox.Network
 		public uint UniquePlayerID;
 		public Connection Connection;
 		public Player Player;
-		public GameManager Enclosure;
+		public GameManager GameManager;
 		public bool IsAboutToLeave;
 		public int BufferZoneLimits;
 
@@ -28,17 +28,11 @@ namespace NetBlox.Network
 		public Queue<NetworkPacket> PendingSendPackets;
 		public Queue<NetworkPacket> PendingProcessPackets;
 
-		public Dictionary<Instance, InstanceReplicationStatus> ReplicatedStatus = [];
-
-		public event EventHandler<Instance>? OnInstanceNewReplicatedTo;
-		public event EventHandler<Instance>? OnInstancePropchgReplicatedTo;
-		public event EventHandler<Instance>? OnInstancePropchgReplicatedFrom;
-
 		public RemoteClient(GameManager gm, uint uniquePlayerID, Connection connection)
 		{
 			UniquePlayerID = uniquePlayerID;
 			Connection = connection;
-			Enclosure = gm;
+			GameManager = gm;
 
 			PendingSendPackets = [];
 			PendingProcessPackets = [];
@@ -51,9 +45,6 @@ namespace NetBlox.Network
 
 		private JobResult NetworkSendingJobHandler(Job job)
 		{
-			if (IsAboutToLeave)
-				return JobResult.CompletedSuccess;
-
 			// this is so hacky and prone to breaking i can feel it
 			// if it so happens that the client isn't sending anything the job prolly shouldn't get much more cpu time
 
@@ -71,13 +62,18 @@ namespace NetBlox.Network
 				Connection.SendRawData("nb3-packet", stream.ToArray());
 			}
 
+			if (IsAboutToLeave)
+			{
+				Connection.Close(global::Network.Enums.CloseReason.ClientClosed);
+				GameManager.NetworkManager.ClientsReadyForReplication.Remove(this);
+				GameManager.NetworkManager.Clients.Remove(this);
+				return JobResult.CompletedSuccess;
+			}
+
 			return JobResult.NotCompleted;
 		}
 		private JobResult NetworkReceivingJobHandler(Job job)
 		{
-			if (IsAboutToLeave)
-				return JobResult.CompletedSuccess;
-
 			// ditto
 
 			int batchsize = NetworkManager.ServersideProcessingJobPacketBatchSize;
@@ -91,7 +87,7 @@ namespace NetBlox.Network
 
 				try
 				{
-					NetworkPacket.DispatchNetworkPacket(Enclosure, packet);
+					NetworkPacket.DispatchNetworkPacket(GameManager, packet);
 				}
 				catch (Exception ex)
 				{
@@ -99,6 +95,9 @@ namespace NetBlox.Network
 						", msg: " + ex.Message + ", type: " + packet.Id);
 				}
 			}
+
+			if (IsAboutToLeave)
+				return JobResult.CompletedSuccess;
 
 			return JobResult.NotCompleted;
 		}
@@ -112,8 +111,8 @@ namespace NetBlox.Network
 		{
 			if (!IsAboutToLeave) return;
 
-			Enclosure.NetworkManager.Clients.Remove(this);
-			Enclosure.NetworkManager.ClientsReadyForReplication.Remove(this);
+			GameManager.NetworkManager.Clients.Remove(this);
+			GameManager.NetworkManager.ClientsReadyForReplication.Remove(this);
 			Player?.Destroy();
 
 			TaskScheduler.Terminate(SendingJob);
@@ -128,7 +127,7 @@ namespace NetBlox.Network
 		public void SendPacket(NetworkPacket packet) => PendingSendPackets.Enqueue(packet);
 		public void	WaitForInstanceArrival(Instance inst, Action callback)
 		{
-			Enclosure.NetworkManager.awaitingForRemoteArrival.Add(new()
+			GameManager.NetworkManager.awaitingForRemoteArrival.Add(new()
 			{
 				Client = this,
 				Guid = inst.UniqueID,

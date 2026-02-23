@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter.DataStructs;
@@ -12,6 +12,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 		const int YIELD_SPECIAL_TRAP = -99;
 
 		internal long AutoYieldCounter = 0;
+		internal int LastInstructionPointer = -1;
 
 		private DynValue Processing_Loop(int instructionPtr)
 		{
@@ -232,6 +233,8 @@ namespace MoonSharp.Interpreter.Execution.VM
 						default:
 							throw new NotImplementedException(string.Format("Execution for {0} not implented yet!", i.OpCode));
 					}
+
+					LastInstructionPointer = instructionPtr;
 				}
 
 			yield_to_calling_coroutine:
@@ -248,6 +251,8 @@ namespace MoonSharp.Interpreter.Execution.VM
 			}
 			catch (InterpreterException ex)
 			{
+				LastInstructionPointer = instructionPtr;
+
 				FillDebugData(ex, instructionPtr);
 
 				if (!(ex is ScriptRuntimeException))

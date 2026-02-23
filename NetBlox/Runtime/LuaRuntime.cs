@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.DataTypes;
 using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
@@ -125,7 +125,7 @@ namespace NetBlox.Runtime
 				{
 					if (!gm.CurrentRoot.GetService<ScriptContext>().LoadStringEnabled)
 						throw new ScriptRuntimeException("loadstring is not accessible");
-					return tenv.LoadString(y[0].CastToString());
+					return tenv.LoadString(y[0].CastToString(), codeFriendlyName: "loadstring-ed code");
 				});
 				tenv.Globals["printidentity"] = DynValue.NewCallback((x, y) =>
 				{
@@ -185,6 +185,10 @@ namespace NetBlox.Runtime
 					}
 					return PushInstance(inst);
 				}
+				catch (ScriptRuntimeException)
+				{
+					throw;
+				}
 				catch
 				{
 					return DynValue.Void;
@@ -200,6 +204,10 @@ namespace NetBlox.Runtime
 							Convert.ToSingle(y[1].Number), 
 							Convert.ToSingle(y[2].Number), 
 							Convert.ToSingle(y[3].Number)), gm);
+				}
+				catch (ScriptRuntimeException)
+				{
+					throw;
 				}
 				catch
 				{
@@ -217,6 +225,10 @@ namespace NetBlox.Runtime
 							(int)((double)(y[2].Number * 255)),
 							255), gm);
 				}
+				catch (ScriptRuntimeException)
+				{
+					throw;
+				}
 				catch
 				{
 					return DynValue.Void;
@@ -230,6 +242,10 @@ namespace NetBlox.Runtime
 						(new Vector2(
 							(float)((double)y[0].Number),
 							(float)((double)y[1].Number)), gm);
+				}
+				catch (ScriptRuntimeException)
+				{
+					throw;
 				}
 				catch
 				{
@@ -246,6 +262,10 @@ namespace NetBlox.Runtime
 							(float)((double)y[1].Number),
 							(float)((double)y[2].Number)), gm);
 				}
+				catch (ScriptRuntimeException)
+				{
+					throw;
+				}
 				catch
 				{
 					return DynValue.Void;
@@ -256,6 +276,10 @@ namespace NetBlox.Runtime
 				try
 				{
 					return SerializationManager.LuaSerializers["NetBlox.Structs.BrickColor"](BrickColor.ByIndex((int)y[0].Number)!, gm);
+				}
+				catch (ScriptRuntimeException)
+				{
+					throw;
 				}
 				catch
 				{
@@ -287,6 +311,229 @@ namespace NetBlox.Runtime
 		public static void PrintError(string msg)
 		{
 			LogManager.LogError('"' + msg + '"');
+		}
+		private static DynValue MTIndexCallback(ScriptExecutionContext ctx, CallbackArguments args)
+		{
+			var key = args[1].String;
+			var obj = args[0].Table.AssociatedObject;
+			var objtype = obj.GetType();
+			var prop = objtype.GetProperty(key);
+			var meths = objtype.GetMethods();
+
+			var meth = meths.FirstOrDefault(x => x.Name == key && !x.IsGenericMethod && !x.IsConstructor && x.IsPublic);
+
+			GameManager? gatheredgm = null;
+
+			if (obj is Instance inst)
+			{
+				gatheredgm = inst.GameManager;
+			}
+			else if (obj is LuaSignal signal)
+			{
+				gatheredgm = signal.GameManager;
+			}
+
+			if (prop != null)
+			{
+				var sec = prop.GetCustomAttribute<LuaAttribute>()!;
+				var val = prop.GetValue(obj);
+
+				Security.Require(prop.Name, sec.Capabilities);
+
+				if (val != null && SerializationManager.LuaSerializers.TryGetValue(prop.PropertyType.FullName!, out var ls))
+					return ls(val, gatheredgm);
+				else
+					return DynValue.Nil;
+			}
+
+			if (meth != null)
+			{
+				var sec = meth.GetCustomAttribute<LuaAttribute>()!;
+				var parms = meth.GetParameters();
+
+				Security.Require(meth.Name, sec.Capabilities);
+
+				return DynValue.NewCallback((a, b) =>
+				{
+					try
+					{
+						var args = new List<object?>();
+
+						if (b[0].Type != DataType.Table || (b[0].Type == DataType.Table && !b[0].Table.IsProtected))
+							throw new ScriptRuntimeException("Instance functions must be called using semicolon operator");
+
+						for (int i = 0; i < parms.Length; i++)
+						{
+							var parinfo = parms[i];
+
+							if (parinfo.GetCustomAttribute<TupleArgumentAttribute>() != null)
+							{
+								var tuple = new List<DynValue>();
+								for (int j = i + 1; j < b.Count; j++)
+								{
+									tuple.Add(b[j]);
+								}
+
+								args.Add(DynValue.NewTuple(tuple.ToArray()));
+								break;
+							}
+
+							var partype = parinfo.ParameterType;
+
+							if (partype != DynValueType)
+							{
+								if (!SerializationManager.LuaDeserializers.TryGetValue(partype.FullName ?? "", out var ld))
+									return DynValue.Nil;
+
+								if (b[i + 1].IsNil())
+									args.Add(null);
+								else
+									args.Add(ld(b[i + 1], gatheredgm));
+							}
+							else
+								args.Add(b[i + 1]);
+						}
+
+						var ret = meth!.Invoke(obj, [.. args]);
+						var rett = meth.ReturnType;
+
+						if (ret is LuaYield)
+							return DynValue.NewYieldReq([]); // do it immediately
+						if (ret is DynValue value)
+							return value;
+
+						if (!rett.IsArray)
+						{
+							if (ret != null && SerializationManager.LuaSerializers.TryGetValue(rett.FullName ?? "", out var ls))
+								return ls(ret, gatheredgm);
+							else
+								return DynValue.Nil;
+						}
+						else
+						{
+							Table res = new(gatheredgm.MainEnvironment);
+							Array arr = (ret as Array)!;
+							Type? elt = rett.GetElementType();
+
+							if (elt == null) return DynValue.Nil;
+
+							if (SerializationManager.LuaSerializers.TryGetValue(elt.FullName ?? "", out var ls))
+							{
+								for (int i = 0; i < arr.Length; i++)
+								{
+									var val = ls(arr.GetValue(i)!, gatheredgm); // i hate you vs debugger for fuck sake help
+									res[i + 1] = val;
+								}
+							}
+
+							return DynValue.NewTable(res);
+						}
+					}
+					catch (TargetInvocationException ex)
+					{
+						if (ex.InnerException != null)
+							throw ex.InnerException;
+						throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
+					}
+				}, name: meth.Name);
+			}
+			else
+			{
+				if (obj is Instance instance)
+				{
+					Instance? child = instance.FindFirstChild(key);
+					if (child != null)
+						return PushInstance(child);
+				}
+
+				throw new ScriptRuntimeException($"\"{obj.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"");
+			}
+		}
+		private static DynValue MTNewIndexCallback(ScriptExecutionContext ctx, CallbackArguments args)
+		{
+			var obj = args[0].Table.AssociatedObject;
+			var objtype = obj.GetType();
+
+			var key = args[1].String;
+			var val = args[2];
+			var prop = objtype.GetProperty(key);
+			var sec = prop.GetCustomAttribute<LuaAttribute>()!;
+
+			if (!prop.CanWrite)
+				throw new ScriptRuntimeException($"Property \"{key}\" of \"{objtype.Name}\" is read-only");
+
+			if (objtype.IsValueType)
+				throw new ScriptRuntimeException($"Property \"{key}\" of \"{objtype.Name}\" cannot be assigned to");
+
+			if (obj is Instance inst && prop.Name == "Parent")
+			{
+				if (val.Table.AssociatedObject is Instance newp)
+				{
+					inst.Parent = newp;
+
+					if (!inst.GameManager.NetworkManager.IsServer)
+						return DynValue.Void;
+					if (!inst.GameManager.PauseReplication)
+						inst.GameManager.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_REPARNT, false);
+
+					return DynValue.Void;
+				}
+				else
+				{
+					throw new ScriptRuntimeException($"Property \"Parent\" of \"{objtype.Name}\" only accepts Instance");
+				}
+			}
+
+			if (val.IsNil())
+			{
+				if (prop.PropertyType.IsByRef)
+					prop.SetValue(obj, null);
+				else
+					throw new ScriptRuntimeException($"Property \"Parent\" of \"{objtype.Name}\" can't be of value NIL");
+			}
+			else
+			{
+				// for now only instances are only byref things where you can assign things soo
+
+				inst = obj as Instance;
+
+				Security.Require(prop.Name, sec.Capabilities);
+
+				if (SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName ?? "", out var ld))
+				{
+					var ret = ld(val, inst.GameManager);
+					var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName ?? ""];
+
+					if (val.Type != exc)
+						throw new ScriptRuntimeException($"Property \"{key}\" of \"{objtype.Name}\" only accepts {exc}");
+
+					prop.SetValue(inst!, ret);
+
+					inst.Changed.Fire(DynValue.NewString(key));
+
+					if (inst.ChangedSignals.TryGetValue(key, out LuaSignal? value))
+						value.Fire(val);
+
+					if (inst.GameManager.NetworkManager.IsServer && inst.EligibleForReplication && !inst.GameManager.PauseReplication)
+						inst.GameManager.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_PROPCHG, false);
+				}
+			}
+
+			return DynValue.Void;
+		}
+		private static DynValue MTToStringCallback(ScriptExecutionContext ctx, CallbackArguments args)
+		{
+			var obj = args[1].Table.AssociatedObject;
+			var text = args[1].Table.AssociatedObject switch
+			{
+				Instance inst => inst.Name,
+				Vector2 vec2 => $"{vec2.X}, {vec2.Y}",
+				Vector3 vec3 => $"{vec3.X}, {vec3.Y}, {vec3.Z}",
+				UDim2 udim2 => $"{{{udim2.X}, {udim2.XOff}, {udim2.Y}, {udim2.YOff}}}",
+				Enum @enum => @enum.ToString(),
+				_ => obj.GetType().ToString()
+			};
+			return DynValue.NewString(text);
 		}
 		public static DynValue PushInstance(Instance? targetInstanceIWantToForget)
 		{
@@ -320,174 +567,9 @@ namespace NetBlox.Runtime
 				var props = type.GetProperties().Where(x => x.GetCustomAttribute<LuaAttribute>() != null).ToList();
 				var meths = type.GetMethods().Where(x => x.GetCustomAttribute<LuaAttribute>() != null).ToList();
 
-				meta["__index"] = DynValue.NewCallback((x, y) =>
-				{
-					var key = y[1].String;
-					var prop = props.Find(x => x.Name == key);
-					var meth = meths.Find(x => x.Name == key);
-					var inst = (y[0].Table.AssociatedObject as Instance)!;
-
-					if (prop != null)
-					{
-						var val = prop.GetValue(inst);
-
-						if (val != null && SerializationManager.LuaSerializers.TryGetValue(prop.PropertyType.FullName!, out var ls))
-							return ls(val, gm);
-						else
-							return DynValue.Nil;
-					}
-					else if (meth != null)
-					{
-						var sec = meth.GetCustomAttribute<LuaAttribute>()!;
-						var parms = meth.GetParameters();
-
-						Security.Require(meth.Name, sec.Capabilities);
-
-						return DynValue.NewCallback((a, b) =>
-						{
-							try
-							{
-								var args = new List<object?>();
-
-								if (b[0].Type != DataType.Table || (b[0].Type == DataType.Table && !b[0].Table.IsProtected))
-									throw new ScriptRuntimeException("Instance functions must be called using semicolon operator");
-
-								for (int i = 0; i < parms.Length; i++)
-								{
-									var parinfo = parms[i];
-
-									if (parinfo.GetCustomAttribute<TupleArgumentAttribute>() != null)
-									{
-										var tuple = new List<DynValue>();
-										for (int j = i + 1; j < b.Count; j++)
-										{
-											tuple.Add(b[j]);
-										}
-
-										args.Add(DynValue.NewTuple(tuple.ToArray()));
-										break;
-									}
-
-									var partype = parinfo.ParameterType;
-
-									if (partype != DynValueType)
-									{
-										if (!SerializationManager.LuaDeserializers.TryGetValue(partype.FullName ?? "", out var ld))
-											return DynValue.Nil;
-
-										if (b[i + 1].IsNil())
-											args.Add(null);
-										else
-											args.Add(ld(b[i + 1], gm));
-									}
-									else
-										args.Add(b[i + 1]);
-								}
-
-								var ret = meth!.Invoke(inst, [.. args]);
-								var rett = meth.ReturnType;
-
-								if (ret is LuaYield)
-									return DynValue.NewYieldReq([]); // do it immediately
-								if (ret is DynValue value)
-									return value;
-
-								if (!rett.IsArray)
-								{
-									if (ret != null && SerializationManager.LuaSerializers.TryGetValue(rett.FullName ?? "", out var ls))
-										return ls(ret, gm);
-									else
-										return DynValue.Nil;
-								}
-								else
-								{
-									Table res = new(scr);
-									Array arr = (ret as Array)!;
-									Type? elt = rett.GetElementType();
-
-									if (elt == null) return DynValue.Nil;
-
-									if (SerializationManager.LuaSerializers.TryGetValue(elt.FullName ?? "", out var ls))
-									{
-										for (int i = 0; i < arr.Length; i++)
-										{
-											var val = ls(arr.GetValue(i)!, gm); // i hate you vs debugger for fuck sake help
-											res[i + 1] = val;
-										}
-									}
-
-									return DynValue.NewTable(res);
-								}
-							}
-							catch (TargetInvocationException ex)
-							{
-								if (ex.InnerException != null)
-									throw ex.InnerException;
-								throw new ScriptRuntimeException($"\"{meth.Name}\" doesn't accept one or more of parameters provided to it");
-							}
-						});
-					}
-					else
-					{
-						Instance? child = inst.FindFirstChild(key);
-
-						return child == null
-							? throw new ScriptRuntimeException($"\"{inst.GetType().Name}\" doesn't have a property, method or a child named \"{key}\"")
-							: PushInstance(child);
-					}
-				});
-				meta["__newindex"] = DynValue.NewCallback((x, y) =>
-				{
-					var inst = (y[0].Table.AssociatedObject as Instance)!;
-					var key = y[1].String;
-					var val = y[2];
-					var prop = props.Find(x => x.Name == key)
-						?? throw new ScriptRuntimeException($"\"{type.Name}\" doesn't have a property named \"{key}\"");
-
-					if (!prop.CanWrite)
-						throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" is read-only");
-
-					if (prop.Name == "Parent")
-					{
-						var newp = val.Table.AssociatedObject as Instance;
-
-						inst.Parent = newp;
-
-						if (!gm.NetworkManager.IsServer)
-							return DynValue.Void;
-
-						gm.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_REPARNT, false);
-
-						return DynValue.Void;
-					}
-
-					if (val.IsNil())
-						prop.SetValue(inst!, null);
-					else
-					{
-						if (SerializationManager.LuaDeserializers.TryGetValue(prop.PropertyType.FullName ?? "", out var ld))
-						{
-							var ret = ld(val, gm);
-							var exc = SerializationManager.LuaDataTypes[prop.PropertyType.FullName ?? ""];
-
-							if (val.Type != exc)
-								throw new ScriptRuntimeException($"Property \"{key}\" of \"{type.Name}\" only accepts {exc}");
-
-							prop.SetValue(inst!, ret);
-
-							inst.Changed.Fire(DynValue.NewString(key));
-
-							if (inst.ChangedSignals.TryGetValue(key, out LuaSignal? value))
-								value.Fire(val);
-
-							if (gm.NetworkManager.IsServer && inst.EligibleForReplication)
-								gm.NetworkManager.AddReplication(inst, Replication.REPM_TOALL, Replication.REPW_PROPCHG, false);
-						}
-					}
-
-					return DynValue.Void;
-				});
-				meta["__tostring"] = DynValue.NewCallback((x, y) => DynValue.NewString((y[0].Table.AssociatedObject as Instance)!.Name));
+				meta["__index"] = DynValue.NewCallback(MTIndexCallback);
+				meta["__newindex"] = DynValue.NewCallback(MTNewIndexCallback);
+				meta["__tostring"] = DynValue.NewCallback(MTToStringCallback);
 				meta.IsProtected = true;
 
 				Instance.MetaTables[targetInstanceIWantToForget.ClassName] = meta;

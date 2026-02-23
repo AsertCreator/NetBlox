@@ -5,15 +5,18 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using NetBlox.Instances.Services;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances.Parts
 {
+	/// <summary>
+	/// A temporary solution
+	/// </summary>
 	[Creatable]
-	public class Part : BasePart
+	public class SpherePart : BasePart
 	{
 		[Lua([Security.Capability.None])]
-		public Shape Shape { get; set; } = Shape.Block;
+		public Shape Shape { get; set; } = Shape.Ball;
 
-		public Part(GameManager ins) : base(ins) { }
+		public SpherePart(GameManager ins) : base(ins) { }
 
 		private bool IsAbleToRender()
 		{
@@ -167,7 +170,7 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
 		{
-			if (nameof(Part) == classname) return true;
+			if (nameof(SpherePart) == classname) return true;
 			return base.IsA(classname);
 		}
 	}

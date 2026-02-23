@@ -1,4 +1,5 @@
 ﻿using NetBlox.Instances;
+using NetBlox.Instances.Parts;
 using System.Numerics;
 
 namespace NetBlox.Network

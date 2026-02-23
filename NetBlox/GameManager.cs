@@ -1,4 +1,4 @@
-﻿global using Color = Raylib_cs.Color;
+global using Color = Raylib_cs.Color;
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.GUIs;
@@ -9,6 +9,7 @@ using NetBlox.Structs;
 using NetBlox.Network;
 using Raylib_cs;
 using System.Diagnostics;
+using NetBlox.Instances.Parts;
 
 namespace NetBlox
 {
@@ -280,6 +281,21 @@ namespace NetBlox
 			if (RenderManager != null)
 				RenderManager.Unload();
 			RenderManager = null;
+
+			if (NetworkManager != null)
+			{
+				if (NetworkManager.IsClient)
+				{
+					NetworkManager.DisconnectFromServer("The client is closing");
+				}
+				else if (NetworkManager.IsServer)
+				{
+					NetworkManager.Clients.ForEach(x =>
+					{
+						x.KickOut("The server is closing");
+					});
+				}
+			}
 
 			if (MainManager)
 				Environment.Exit(0);

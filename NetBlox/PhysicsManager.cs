@@ -1,4 +1,4 @@
-﻿using BepuPhysics;
+using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
@@ -7,7 +7,7 @@ using BepuUtilities;
 using BepuUtilities.Collections;
 using BepuUtilities.Memory;
 using MoonSharp.Interpreter;
-using NetBlox.Instances;
+using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
 using NetBlox.Runtime;
@@ -177,10 +177,11 @@ namespace NetBlox
 				// GameManager.Shutdown();
 			}
 		}
-		public float QuickRaycast(Vector3 from, Vector3 direction, float max)
+		public float QuickRaycast(Vector3 from, Vector3 direction, float max, BasePart? exclude = null)
 		{
 			var raycast = new RayHitHandler();
 			raycast.Distance = -1;
+			raycast.Ignorable = exclude.GetCollidableReference();
 			LocalSimulation.RayCast(from, direction, max, ref raycast);
 			return raycast.Found ? -1 : raycast.Distance;
 		}

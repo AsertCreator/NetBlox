@@ -4,11 +4,19 @@
 	Notifications.lua - implements the notifications GUI
 ]]
 
+local module = {};
+
 local StarterGui = game:GetService("StarterGui");
 local CoreGui = game:GetService("CoreGui");
 local Debris = game:GetService("Debris");
 
-function sendNotification(title, msg)
+function module.initNotify()
+	StarterGui:RegisterSetCore("SendNotification", function(tabl)
+		module.sendNotification(tabl.Title, tabl.Text);
+	end)
+end
+
+function module.sendNotification(title, msg)
 	local NotifyGui = Instance.new("ScreenGui");
 	local NotifyFrame = Instance.new("Frame");
 	local Title = Instance.new("TextLabel");
@@ -43,10 +51,4 @@ function sendNotification(title, msg)
 	Debris:AddItem(NotifyGui, 4);
 end
 
-return {
-	initNotify = function()
-		StarterGui:RegisterSetCore("SendNotification", function(tabl)
-			sendNotification(tabl.Title, tabl.Text);
-		end)
-	end
-}
+return module;

@@ -1,4 +1,4 @@
-﻿using NetBlox.Runtime;
+using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -31,6 +31,9 @@ namespace NetBlox.Instances.Services
 		public Lighting(GameManager ins) : base(ins)
 		{
 			GameManager.RegisterService(this, ServiceType.Lighting);
+			// i hope instances initialize after internal game objects, like rendershadingmanager
+			GameManager.RenderManager.RenderShadingManager.SetSunLookAt(-SunPosition);
+			GameManager.RenderManager.RenderShadingManager.SetSunColor(Color.White);
 		}
 
 		[Lua([Security.Capability.None])]

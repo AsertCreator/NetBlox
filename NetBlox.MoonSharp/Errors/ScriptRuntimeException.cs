@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MoonSharp.Interpreter.Interop;
 using MoonSharp.Interpreter.Interop.BasicDescriptors;
 
@@ -515,11 +515,11 @@ namespace MoonSharp.Interpreter
 		}
 		public static ScriptRuntimeException ProtectedMetatableAccessedSet()
 		{
-			return new ScriptRuntimeException("cannot set metatable to this object");
+			return new ScriptRuntimeException("cannot set metatable of this object");
 		}
 		public static ScriptRuntimeException ProtectedRawSet()
 		{
-			return new ScriptRuntimeException("cannot user rawset on this object");
+			return new ScriptRuntimeException("cannot use rawset on this object");
 		}
 		public static ScriptRuntimeException ProtectedRawEqual()
 		{

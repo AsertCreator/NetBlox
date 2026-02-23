@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.DataTypes;
 using NetBlox.Instances;
 using NetBlox.Runtime;

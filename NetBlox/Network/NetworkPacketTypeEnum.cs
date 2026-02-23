@@ -5,6 +5,6 @@ namespace NetBlox.Network
 		NPClientDisconnection, NPClientIntroduction, NPServerIntroduction, NPStartReplication, 
 		NPReplication, NPChat, NPRemoteEvent, NPRemoteFunction, NPUpdatePlayerBufferZone, NPUpdatePlayerOwnership, 
 		NPPhysicsReplication, NPCharacterReset, NPCallbackOnInstanceArrival, NPSetPlayableCharacter,
-		NPWaitForSubjectAndSetCamera
+		NPWaitForSubjectAndSetCamera, NPControlServer
 	}
 }

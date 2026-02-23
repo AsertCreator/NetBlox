@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using System.Diagnostics;
@@ -25,14 +25,26 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public bool IsLoaded() => GameManager.NetworkManager.IsLoaded;
 		[Lua([Security.Capability.CoreSecurity])]
-		public DynValue GetFastFlag(string fflag) => 
-			AppManager.FastFlags.TryGetValue(fflag, out var flag) ? DynValue.NewBoolean(flag) : DynValue.Nil;
+		public bool GetFastFlag(string fflag, bool def)
+		{
+			if (AppManager.FastFlags.TryGetValue(fflag, out var flag))
+				return flag;
+			return def;
+		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public DynValue GetFastInt(string fflag) => 
-			AppManager.FastInts.TryGetValue(fflag, out var flag) ? DynValue.NewNumber(flag) : DynValue.Nil;
+		public int GetFastInt(string fflag, int def)
+		{
+			if (AppManager.FastInts.TryGetValue(fflag, out var number))
+				return number;
+			return def;
+		}
 		[Lua([Security.Capability.CoreSecurity])]
-		public DynValue GetFastString(string fflag) => 
-			AppManager.FastStrings.TryGetValue(fflag, out var flag) ? DynValue.NewString(flag) : DynValue.Nil;
+		public string GetFastString(string fflag, string def)
+		{
+			if (AppManager.FastStrings.TryGetValue(fflag, out var text))
+				return text;
+			return def;
+		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Clear()
 		{

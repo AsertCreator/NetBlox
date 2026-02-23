@@ -1,8 +1,9 @@
-﻿global using Font = Raylib_cs.Font;
+global using Font = Raylib_cs.Font;
 using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
+using NetBlox.Instances.Parts;
 using NetBlox.Network;
 using NetBlox.Structs;
 using Raylib_cs;
@@ -10,6 +11,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Rectangle = Raylib_cs.Rectangle;
+using NetBlox.Rendering;
 
 namespace NetBlox
 {
@@ -66,6 +68,7 @@ namespace NetBlox
 		public bool FrustumCullingPaused = true;
 		public bool UnlimitFramerate = false;
 		public Texture2D? Cursor;
+		public RenderShadingManager RenderShadingManager;
 
 		public HashSet<I3DRenderable> Visibles3DGrade0 = new();
 		public HashSet<I3DRenderable> Visibles3DGrade1 = new();
@@ -102,6 +105,8 @@ namespace NetBlox
 			RenderAtAll = render;
 
 			CurrentCamera = new Camera(gm);
+
+			RenderShadingManager = new(this);
 
 			if (!skiprinit)
 				Initialize(render);
@@ -140,6 +145,10 @@ namespace NetBlox
 				LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
 				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
+
+				if (GameManager.ServerStartupInfo == null) // maybe nm is not initialized by now (im lazy to check)
+					RenderShadingManager.SwitchToMode(RenderShadingMode.SmoothShading);
+
 				// BeginFustumCullingThread();
 			}
 		}
@@ -407,6 +416,10 @@ namespace NetBlox
 			var works = Root.GetService<Workspace>(true);
 			var sand = Root.GetService<SandboxService>();
 
+			Shader? shader = RenderShadingManager.SupplyShader();
+
+			RenderShadingManager.SetCameraLookAt(MainCamera.Target - MainCamera.Position);
+
 			// this is a five step process now.
 
 			//
@@ -419,6 +432,9 @@ namespace NetBlox
 					Raylib.DrawCubeWires(skypos, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, CurrentSkybox.SkyboxSize, Color.Blue);
 			}
 
+			if (shader.HasValue)
+				Raylib.BeginShaderMode(shader.Value);
+
 			//
 			// 2) render 3D grade #0 objects - opaque 3d objects
 			//
@@ -429,7 +445,13 @@ namespace NetBlox
 			}
 
 			//
-			// 3) render 3D grade #1 objects - translucent 3d objects
+			// 3) render particles
+			//
+			if (!DisableParticles)
+				RenderParticles(AppManager.GetRendererDeltaTime());
+
+			//
+			// 4) render 3D grade #1 objects - translucent 3d objects
 			//
 			{
 				Raylib.BeginBlendMode(BlendMode.Alpha);
@@ -442,7 +464,7 @@ namespace NetBlox
 			}
 
 			//
-			// 4) render 2D objects - UI objects mostly
+			// 5) render 2D objects - UI objects mostly
 			//
 			if (!DisableAllGuis)
 			{
@@ -451,11 +473,8 @@ namespace NetBlox
 					enumerator.Current.Render();
 			}
 
-			//
-			// 5) render particles
-			//
-			if (!DisableParticles)
-				RenderParticles(AppManager.GetRendererDeltaTime());
+			if (shader.HasValue)
+				Raylib.EndShaderMode();
 		}
 		private void RenderInstance(Instance instance)
 		{
@@ -485,7 +504,7 @@ namespace NetBlox
 						x.Wait();
 						{
 							var tex = Raylib.LoadTexture(x.Result);
-							Raylib.SetTextureFilter(tex, TextureFilter.Anisotropic16X);
+							Raylib.SetTextureFilter(tex, TextureFilter.Bilinear);
 							TextureCache[el.Item1] = tex;
 							el.Item2(tex);
 						};
@@ -528,9 +547,24 @@ namespace NetBlox
 						var x = AppManager.ResolveUrlAsync(el.Item1, true);
 						x.Wait();
 						{
-							var shader = Raylib.LoadShader(x.Result + ".vs", x.Result + ".fs");
-							ShaderCache[el.Item1] = shader;
-							el.Item2(shader);
+							string? vertexShader = null;
+							string? fragmentShader = null;
+
+							if (File.Exists(x.Result.Replace(".shad", "") + ".vshad"))
+								vertexShader = x.Result.Replace(".shad", "") + ".vshad";
+							if (File.Exists(x.Result))
+								fragmentShader = x.Result;
+
+							if (vertexShader == null && fragmentShader == null)
+							{
+								LogManager.LogWarn("The shader (" + el.Item1 + ") doesn't have both vertex and fragment components, not loading!");
+							}
+							else
+							{
+								var shader = Raylib.LoadShader(vertexShader, fragmentShader);
+								ShaderCache[el.Item1] = shader;
+								el.Item2(shader);
+							}
 						};
 					}
 					catch

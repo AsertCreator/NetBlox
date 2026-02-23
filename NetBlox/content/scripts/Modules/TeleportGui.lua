@@ -4,6 +4,8 @@
 	TeleportGui.lua - implements the teleport GUI
 ]]
 
+local module = {};
+
 local PlatformService = game:GetService("PlatformService");
 local CoreGui = game:GetService("CoreGui");
 local TeleportGui = Instance.new("ScreenGui");
@@ -39,9 +41,9 @@ AuthorTitle.Text = "";
 
 local teleportGuiHidingTask = nil;
 
-function beginTeleportGuiShowing(placename, authorname, pid, uid)
+function module.beginTeleportGuiShowing(placename, authorname, pid, uid)
 	if teleportGuiHidingTask ~= nil then
-		task.cancel(uh);
+		task.cancel(teleportGuiHidingTask);
 	end
 
 	game:EnableWhiteOut(false)
@@ -52,7 +54,7 @@ function beginTeleportGuiShowing(placename, authorname, pid, uid)
 	GameTitle.Text = placename;
 	AuthorTitle.Text = "by " .. authorname;
 end
-function beginTeleportGuiHiding()
+function module.beginTeleportGuiHiding()
 	game:EnableWhiteOut(false)
 
 	TeleportFrame:TweenTransparency(1, 0.5);
@@ -63,11 +65,4 @@ function beginTeleportGuiHiding()
 	end)
 end
 
-return {
-	show = function(placename, authorname, pid, uid)
-		beginTeleportGuiShowing(placename, authorname, pid, uid)
-	end,
-	hide = function()
-		beginTeleportGuiHiding();
-	end
-};
+return module;

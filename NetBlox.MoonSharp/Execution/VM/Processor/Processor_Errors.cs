@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter.Debugging;
+using MoonSharp.Interpreter.Debugging;
 
 namespace MoonSharp.Interpreter.Execution.VM
 {
@@ -14,7 +14,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 		}
 
 
-		private void FillDebugData(InterpreterException ex, int ip)
+		public void FillDebugData(InterpreterException ex, int ip)
 		{
 			// adjust IP
 			if (ip == YIELD_SPECIAL_TRAP)

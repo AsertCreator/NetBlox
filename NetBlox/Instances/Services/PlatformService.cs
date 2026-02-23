@@ -1,6 +1,8 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Instances.Effects;
+using NetBlox.Instances.Parts;
+using NetBlox.Network;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
@@ -17,12 +19,15 @@ namespace NetBlox.Instances.Services
 	public class PlatformService : Instance
 	{
 		public static Action<string> QueuedTeleport = (xo) => { throw new Exception("NetBlox died!"); };
-		[Lua([Security.Capability.CoreSecurity])]
+		[Lua([Security.Capability.None])]
 		public bool IsStudio => GameManager.IsStudio;
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool IsOffline => GameManager.CurrentProfile.IsOffline;
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool LoggedIn => GameManager.CurrentProfile.LastLogin != null;
+		[Lua([Security.Capability.CoreSecurity])]
+		public bool IsDebugged => Debugger.IsAttached;
+
 		public override Security.Capability[] RequiredCapabilities => [Security.Capability.CoreSecurity];
 
 		public PlatformService(GameManager ins) : base(ins)
@@ -206,9 +211,10 @@ namespace NetBlox.Instances.Services
 				Name = "Head",
 				Locked = true
 			};
-			_ = new ForceField(GameManager)
+			var forcefield = new ForceField(GameManager)
 			{
-				Parent = head
+				Parent = head,
+				DestroyAt = DateTime.UtcNow.AddSeconds(5)
 			};
 			_ = new Decal(GameManager)
 			{
@@ -230,6 +236,7 @@ namespace NetBlox.Instances.Services
 
 			return chmodel;
 		}
+		[Lua([Security.Capability.None])]
 		public BrickColor GetPlayerColor(long appearanceid)
 		{
 			int idx = (int)(Math.Abs(appearanceid) % 100);
@@ -239,8 +246,34 @@ namespace NetBlox.Instances.Services
 			return bc.Value;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
+		public void SetWindowTitle(string title)
+		{
+			if (!GameManager.NetworkManager.IsClient)
+				throw new Exception("Cannot execute SetWindowTitle on servers!");
+
+			Raylib.SetWindowTitle(title ?? "NetBlox");
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public string GetDefaultWindowTitle()
+		{
+			if (!GameManager.NetworkManager.IsClient)
+				throw new Exception("Cannot execute SetWindowTitle on servers!");
+
+			return GameManager.ClientStartupInfo.WindowName ?? "NetBlox";
+		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void SendServerControlPacket(int type, string p0, string p1)
+		{
+			if (!GameManager.NetworkManager.IsClient)
+				throw new Exception("Cannot execute SendServerControlPacket on servers!");
+
+			NetworkPacket packet = NPControlServer.Create((NPControlServerType)type, p0, p1);
+			GameManager.NetworkManager.SendServerboundPacket(packet);
+		}
+		[Lua([Security.Capability.CoreSecurity])]
 		public ByteArray SignString(string text, ByteArray pk, ByteArray sk)
 		{
+			throw new NotImplementedException();
 			using SHA256 alg = SHA256.Create();
 			using RSA rsa = RSA.Create();
 
@@ -257,6 +290,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public bool VerifySignature(string stext, ByteArray pk)
 		{
+			throw new NotImplementedException();
 			using SHA256 alg = SHA256.Create();
 			using RSA rsa = RSA.Create();
 
@@ -272,6 +306,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public string GetDataFromSignedData(ByteArray stext)
 		{
+			throw new NotImplementedException();
 			byte[] text8 = stext.Data;
 			ushort signsize = BitConverter.ToUInt16(text8[0..2]);
 			return Encoding.Unicode.GetString(text8[(2 + signsize)..]);
@@ -279,6 +314,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public DynValue CreatePublicAndPrivateKey()
 		{
+			throw new NotImplementedException();
 			using SHA256 alg = SHA256.Create();
 			using RSA rsa = RSA.Create();
 

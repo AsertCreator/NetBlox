@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter.Debugging;
@@ -375,7 +375,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 						Address = -1,
 						BasePtr = -1,
 						RetAddress = c.ReturnAddress,
-						Location = startingRef,
+						Location = GetCurrentSourceRef(c.ReturnAddress - 1),
 						Name = c.ClrFunction.Name
 					});
 				}
@@ -387,7 +387,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 						BasePtr = c.BasePointer,
 						RetAddress = c.ReturnAddress,
 						Name = callname,
-						Location = startingRef,
+						Location = GetCurrentSourceRef(c.ReturnAddress - 1),
 					});
 				}
 
@@ -397,7 +397,10 @@ namespace MoonSharp.Interpreter.Execution.VM
 				{
 					wis.Add(new WatchItem()
 					{
-						Name = c.Continuation.Name,
+						Address = c.Debug_EntryPoint,
+						BasePtr = c.BasePointer,
+						RetAddress = c.ReturnAddress,
+						Name = callname,
 						Location = SourceRef.GetClrLocation()
 					});
 				}

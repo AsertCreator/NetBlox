@@ -71,5 +71,13 @@ namespace NetBlox.Instances.Services
 				GameManager.RenderManager.Cursor = x;
 			});
 		}
+		[Lua([Security.Capability.CoreSecurity])]
+		public void SetVisible(bool visible)
+		{
+			if (visible)
+				Raylib.ShowCursor();
+			else
+				Raylib.HideCursor();
+		}
 	}
 }

@@ -1,4 +1,5 @@
 using NetBlox.Instances;
+using NetBlox.Instances.Parts;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;

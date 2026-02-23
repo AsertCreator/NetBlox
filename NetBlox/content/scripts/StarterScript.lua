@@ -1,4 +1,4 @@
-﻿--[[
+--[[
 	NetBlox's CoreScripts
 
 	StarterScript.lua - bootstraps the client-side of the game
@@ -6,43 +6,55 @@
 
 local PlatformService = game:GetService("PlatformService");
 local ScriptContext = game:GetService("ScriptContext");
-local StarterGui = game:GetService("StarterGui");
 local CoreGui = game:GetService("CoreGui");
-local Debris = game:GetService("Debris");
 local RobloxGui = CoreGui:FindFirstChild("RobloxGui");
 
-local guivar = game:GetFastInt("FIntDefaultUIVariant") or 1;
+local Cursor = require(script.Parent.Modules.Cursor);
+local TeleportGui = require(script.Parent.Modules.TeleportGui);
+local Notifications = require(script.Parent.Modules.Notifications);
 
-if game:GetFastFlag("FFlagHideCoreGui") then
+print("Essential CoreScript modules loaded, presumably");
+
+local FIntDefaultUIVariant = game:GetFastInt("FIntDefaultUIVariant", 1);
+
+local FFlagHideCoreGui = game:GetFastFlag("FFlagHideCoreGui", false);
+local FFlagAllowServerControl = game:GetFastFlag("FFlagAllowServerControl", true);
+local FFlagAllowUsingNotifications = game:GetFastFlag("FFlagAllowUsingNotifications", true);
+local FFlagAllowUsingTeleportGui = game:GetFastFlag("FFlagAllowUsingTeleportGui", true);
+
+if FFlagHideCoreGui then
 	return;
 end
 
 -- initializes notifications
-function initNotify()
-	local notifications = require(script.Parent.Modules.Notifications);
-	notifications.initNotify();
+local function initNotifications()
+	if FFlagAllowUsingNotifications then
+		Notifications.initNotify();
+	end
 end
+
 -- initializes in-game GUI
-function initIGG()
-	if guivar == 1 then
+local function initInGameGui()
+	if FIntDefaultUIVariant == 1 then
 		ScriptContext:AddCoreScriptLocal("CoreScripts/Sidebar", RobloxGui);
 	end
-	CoreGui:SetCursorTo("rbxasset://textures/cursorNeutral.png")
+	Cursor.setNeutral();
 end
+
 -- initializes teleport GUI
-function initTUI()
-	local telgui = require(script.Parent.Modules.TeleportGui);
-	print(telgui);
-	CoreGui.OnTeleportStarts:Connect(telgui.show);
-	CoreGui.OnTeleportEnds:Connect(telgui.hide);
+local function initTeleportGui()
+	CoreGui.OnTeleportStarts:Connect(TeleportGui.beginTeleportGuiShowing);
+	CoreGui.OnTeleportEnds:Connect(TeleportGui.beginTeleportGuiHiding);
 end
 
 if not game.IsApplication then
-	initNotify();
-	initIGG();
-	initTUI();
+	initNotifications();
+	initInGameGui();
+	initTeleportGui();
+
+	print("Client platform initialized, performing queued teleport...");
+
+	PlatformService:BeginQueuedTeleport();
+else
+	print("Initializing application...");
 end
-
-print("Platform initialized");
-
-PlatformService:BeginQueuedTeleport();

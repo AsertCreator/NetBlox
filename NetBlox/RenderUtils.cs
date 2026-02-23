@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -42,9 +42,9 @@ namespace NetBlox
 				{
 					// Front Face
 					// Normal Pointing Towards Viewer
-					Rlgl.Normal3f(0.0f, 0.0f, 1.0f);
 
 					// Bottom Left Of The Texture and Quad
+					Rlgl.Normal3f(0.0f, 0.0f, 1.0f);
 					Rlgl.TexCoord2f(0.0f, 0.0f);
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
 
@@ -65,9 +65,9 @@ namespace NetBlox
 				{
 					// Back Face
 					// Normal Pointing Away From Viewer
-					Rlgl.Normal3f(0.0f, 0.0f, -1.0f);
 
 					// Bottom Right Of The Texture and Quad
+					Rlgl.Normal3f(0.0f, 0.0f, -1.0f);
 					Rlgl.TexCoord2f(tile ? width : 1.0f, 0.0f);
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
 
@@ -88,9 +88,9 @@ namespace NetBlox
 				{
 					// Top Face
 					// Normal Pointing Up
-					Rlgl.Normal3f(0.0f, 1.0f, 0.0f);
 
 					// Top Left Of The Texture and Quad
+					Rlgl.Normal3f(0.0f, 1.0f, 0.0f);
 					Rlgl.TexCoord2f(0.0f, tile ? -length : -1.0f);
 					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
 
@@ -111,9 +111,9 @@ namespace NetBlox
 				{
 					// Bottom Face
 					// Normal Pointing Down
-					Rlgl.Normal3f(0.0f, -1.0f, 0.0f);
 
 					// Top Right Of The Texture and Quad
+					Rlgl.Normal3f(0.0f, -1.0f, 0.0f);
 					Rlgl.TexCoord2f(tile ? width : 1.0f, tile ? -length : -1.0f);
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
 
@@ -134,9 +134,9 @@ namespace NetBlox
 				{
 					// Right face
 					// Normal Pointing Right
-					Rlgl.Normal3f(1.0f, 0.0f, 0.0f);
 
 					// Bottom Right Of The Texture and Quad
+					Rlgl.Normal3f(1.0f, 0.0f, 0.0f);
 					Rlgl.TexCoord2f(tile ? length : 1.0f, 0.0f);
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
 
@@ -157,9 +157,9 @@ namespace NetBlox
 				{
 					// Left Face
 					// Normal Pointing Left
-					Rlgl.Normal3f(-1.0f, 0.0f, 0.0f);
 
 					// Bottom Left Of The Texture and Quad
+					Rlgl.Normal3f(-1.0f, 0.0f, 0.0f);
 					Rlgl.TexCoord2f(0.0f, 0.0f);
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
 
@@ -204,7 +204,6 @@ namespace NetBlox
 				if ((f & Faces.Front) != 0)
 				{
 					Rlgl.Normal3f(0.0f, 0.0f, 1.0f);
-
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
 					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
@@ -214,7 +213,6 @@ namespace NetBlox
 				if ((f & Faces.Back) != 0)
 				{
 					Rlgl.Normal3f(0.0f, 0.0f, -1.0f);
-
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
 					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
 					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
@@ -224,7 +222,6 @@ namespace NetBlox
 				if ((f & Faces.Top) != 0)
 				{
 					Rlgl.Normal3f(0.0f, 1.0f, 0.0f);
-
 					Rlgl.Vertex3f(x - width / 2, y + height / 2, z - length / 2);
 					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
 					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
@@ -234,7 +231,6 @@ namespace NetBlox
 				if ((f & Faces.Bottom) != 0)
 				{
 					Rlgl.Normal3f(0.0f, -1.0f, 0.0f);
-
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z + length / 2);
@@ -244,7 +240,6 @@ namespace NetBlox
 				if ((f & Faces.Right) != 0)
 				{
 					Rlgl.Normal3f(1.0f, 0.0f, 0.0f);
-
 					Rlgl.Vertex3f(x + width / 2, y - height / 2, z - length / 2);
 					Rlgl.Vertex3f(x + width / 2, y + height / 2, z - length / 2);
 					Rlgl.Vertex3f(x + width / 2, y + height / 2, z + length / 2);
@@ -254,7 +249,6 @@ namespace NetBlox
 				if ((f & Faces.Left) != 0)
 				{
 					Rlgl.Normal3f(-1.0f, 0.0f, 0.0f);
-
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z - length / 2);
 					Rlgl.Vertex3f(x - width / 2, y - height / 2, z + length / 2);
 					Rlgl.Vertex3f(x - width / 2, y + height / 2, z + length / 2);
