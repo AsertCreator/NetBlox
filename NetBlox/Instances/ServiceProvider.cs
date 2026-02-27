@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,10 @@ namespace NetBlox.Instances
 {
 	public class ServiceProvider : Instance
 	{
+		private static readonly Type ServiceTypeType = typeof(ServiceType);
+		private static readonly ServiceType[] ServiceTypeTypeValues = ServiceTypeType.GetEnumValues() as ServiceType[];
+		private static readonly string[] ServiceTypeTypeNames = ServiceTypeType.GetEnumNames();
+
 		public ServiceProvider(GameManager ins) : base(ins) { }
 
 		[Lua([Security.Capability.None])]
@@ -20,33 +24,49 @@ namespace NetBlox.Instances
 		}
 		public T GetService<T>(bool allownull = false) where T : Instance
 		{
-			for (int i = 0; i < Children.Count; i++)
+			ServiceType[] types = ServiceTypeTypeValues;
+			string[] typestrings = ServiceTypeTypeNames;
+			string needlestring = typeof(T).Name;
+			int index = Array.IndexOf(typestrings, needlestring);
+
+			if (index == -1)
 			{
-				if (Children[i] is T)
-					return (T)Children[i];
+				throw new Exception(typeof(T).Name + " is not a service!");
 			}
-			if (!allownull)
+
+			ServiceType servicetype = types[index];
+			Instance? service = GameManager.TryGetService(servicetype);
+
+			if (service != null)
 			{
-				var serv = (T)Activator.CreateInstance(typeof(T), GameManager);
-				Debug.Assert(serv != null);
-				serv.Parent = this;
-				return serv;
+				service.Parent = this;
+				return service as T;
 			}
-			return null!;
+
+			return GameManager.CreateService(servicetype) as T;
 		}
 		[Lua([Security.Capability.None])]
 		public Instance GetService(string sn)
 		{
-			for (int i = 0; i < Children.Count; i++)
+			ServiceType[] types = ServiceTypeTypeValues;
+			string[] typestrings = ServiceTypeTypeNames;
+			int index = Array.IndexOf(typestrings, sn);
+
+			if (index == -1)
 			{
-				if (Children[i].ClassName == sn)
-					return Children[i];
+				throw new Exception(sn + " is not a service!");
 			}
-			var serv = InstanceCreator.CreateServiceInstanceIfExists(sn, GameManager);
-			if (serv == null)
-				throw new ScriptRuntimeException(sn + " is not a service!");
-			serv.Parent = this;
-			return serv;
+
+			ServiceType servicetype = types[index];
+			Instance? service = GameManager.TryGetService(servicetype);
+
+			if (service != null)
+			{
+				service.Parent = this;
+				return service;
+			}
+
+			return GameManager.CreateService(servicetype);
 		}
 		[Lua([Security.Capability.None])]
 		public Instance getService(string sn) => GetService(sn);

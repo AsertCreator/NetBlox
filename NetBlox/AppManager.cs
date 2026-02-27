@@ -1,4 +1,5 @@
-﻿using NetBlox.Instances;
+using NetBlox.Instances;
+using NetBlox.Runtime;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
@@ -19,6 +20,7 @@ namespace NetBlox
 	/// </summary>
 	public static class AppManager
 	{
+		[ThreadStatic]
 		public static GameManager? CurrentGameManager;
 		public static List<GameManager> GameManagers = [];
 		public static RenderManager? CurrentRenderManager;
@@ -33,32 +35,67 @@ namespace NetBlox
 		public static Job? GamePhysics;
 		public static Job? GameGC;
 		public static int PreferredFPS = 60;
-		public static bool EnablePeriodicGC = false;
+		public static bool EnablePeriodicGC = true;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
 		public static string ContentFolder = Path.GetFullPath("./content/");
 		public static string LibraryFolder = Path.GetFullPath("./tmp/");
 		public static string PublicServiceAPI = "";
 		public static DateTime WhenStartedRunning;
+
 		public static event EventHandler<GameManager>? OnGameCreated;
 		public static event EventHandler<EventArgs>? OnAppStarted;
 		public static event EventHandler<EventArgs>? OnAppShutdown;
+
 		public static int VersionMajor => Common.Version.VersionMajor;
 		public static int VersionMinor => Common.Version.VersionMinor;
 		public static int VersionPatch => Common.Version.VersionPatch;
 
 		static AppManager()
 		{
-			LogManager.LogPrefixer = () => CurrentGameManager == null ? "<nogm>" : CurrentGameManager.ManagerName;
+			LogManager.LogPrefixer = () => CurrentGameManager == null ? "<nogm>" : CurrentGameManager.GameName;
 		}
 
 		public static GameManager CreateGame(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
-			GameManager manager = new(gc, args, loadcallback, dmc);
-			GameManagers.Add(manager);
-			LogManager.LogInfo($"Created new game manager \"{gc.GameName}\"...");
-			OnGameCreated?.Invoke(null, manager);
-			return manager;
+			if (gc == null)
+				throw new ArgumentNullException(nameof(gc));
+
+			try
+			{
+				LogManager.LogInfo($"Creating new game manager \"{gc.GameName}\"...");
+
+				GameManager manager = new(gc, args, loadcallback, dmc);
+				GameManagers.Add(manager);
+				OnGameCreated?.Invoke(null, manager);
+
+				LogManager.LogInfo($"Successfully created new game manager \"{gc.GameName}\" and invoked OnGameCreated, loadcallback and dmc...");
+
+				return manager;
+			}
+			catch (Exception ex)
+			{
+				LogManager.LogInfo("Failed to create a new game manager \"" + gc.GameName + "\", " + ex.GetType() + ", msg: " + ex.Message);
+				throw;
+			}
+		}
+		public static bool GetFastFlag(string fflag, bool def)
+		{
+			if (FastFlags.TryGetValue(fflag, out var flag))
+				return flag;
+			return def;
+		}
+		public static int GetFastInt(string fflag, int def)
+		{
+			if (FastInts.TryGetValue(fflag, out var number))
+				return number;
+			return def;
+		}
+		public static string GetFastString(string fflag, string def)
+		{
+			if (FastStrings.TryGetValue(fflag, out var text))
+				return text;
+			return def;
 		}
 		public static void SetRenderTarget(GameManager gm) => CurrentRenderManager = gm.RenderManager;
 		public static void SetPreference(string key, string val) => Preferences[key] = val;
@@ -68,11 +105,13 @@ namespace NetBlox
 			if (!Directory.Exists(LibraryFolder))
 				Directory.CreateDirectory(LibraryFolder);
 
-			if (File.Exists("./gameVariation.json"))
+			string gameVariationPathForStupid = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath), "gameVariation.json");
+
+			if (File.Exists(gameVariationPathForStupid))
 			{
 				try
 				{
-					var data = SerializationManager.DeserializeJson<GameVariation>(File.ReadAllText("./gameVariation.json"));
+					var data = SerializationManager.DeserializeJson<GameVariation>(File.ReadAllText(gameVariationPathForStupid));
 					if (data.FastFlags != null)
 						FastFlags = data.FastFlags;
 					if (data.FastInts!= null)
@@ -112,7 +151,8 @@ namespace NetBlox
 
 					CurrentGameManager = gm;
 
-					gm.PhysicsManager.Step();
+					if (gm.IsRunning && gm.PhysicsManager != null && !gm.PhysicsManager.DisablePhysics)
+						gm.PhysicsManager.Step();
 				}
 
 				stopwatch.Stop();
@@ -129,9 +169,16 @@ namespace NetBlox
 				{
 					CurrentGameManager = CurrentRenderManager.GameManager;
 					CurrentRenderManager.RenderFrame();
-					return CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager
-						? JobResult.CompletedSuccess
-						: JobResult.NotCompleted;
+					if (CurrentRenderManager != null)
+					{
+						return CurrentRenderManager.GameManager.ShuttingDown && CurrentRenderManager.GameManager.MainManager
+							? JobResult.CompletedSuccess
+							: JobResult.NotCompleted;
+					}
+					else
+					{
+						return JobResult.NotCompleted;
+					}
 				}
 				return JobResult.NotCompleted;
 			});
@@ -141,7 +188,6 @@ namespace NetBlox
 				GameGC = TaskScheduler.ScheduleNamedJob("GarbageCollection", JobType.Miscellaneous, x =>
 				{
 					GC.Collect();
-					CurrentGameManager = null;
 					x.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddSeconds(7);
 					return JobResult.NotCompleted;
 				});
@@ -151,15 +197,36 @@ namespace NetBlox
 
 			OnAppStarted?.Invoke(null, new());
 
-			while (!ShuttingDown) TaskScheduler.Step();
+			TaskScheduler.Enabled = true;
+
+			while (!ShuttingDown) 
+				TaskScheduler.Step();
+
+			TaskScheduler.Terminate(GameProcessor);
+			TaskScheduler.Terminate(GamePhysics);
+			if (GameGC != null)
+				TaskScheduler.Terminate(GameGC);
+			TaskScheduler.Terminate(GameRenderer);
+
+			TaskScheduler.CurrentJob = null;
+			TaskScheduler.RunningJobs = [];
+			TaskScheduler.Enabled = false;
 		}
 		public static void Shutdown()
 		{
+			LogManager.LogInfo("Shutting down the AppManager and all game managers...");
+
 			for (int i = 0; i < GameManagers.Count; i++)
-				GameManagers[i].Shutdown();
+			{
+				var gamemanger = GameManagers[i];
+				if (!gamemanger.ShuttingDown)
+					gamemanger.Shutdown();
+			}
+
 			ShuttingDown = true;
 			OnAppShutdown?.Invoke(null, new());
-			throw new RollbackException();
+
+			LogManager.LogInfo("Goodbye!");
 		}
 		public static float GetRendererDeltaTime()
 		{

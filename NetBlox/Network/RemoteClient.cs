@@ -39,8 +39,10 @@ namespace NetBlox.Network
 
 			SendingJob = TaskScheduler.ScheduleNamedJob("Client-" + uniquePlayerID + "-NetworkSending",
 				JobType.Network, NetworkSendingJobHandler, level: 9);
+			SendingJob.ScriptJobContext.GameManager = GameManager;
 			ReceivingJob = TaskScheduler.ScheduleNamedJob("Client-" + uniquePlayerID + "-NetworkProcessing",
 				JobType.Network, NetworkReceivingJobHandler, level: 9);
+			ReceivingJob.ScriptJobContext.GameManager = GameManager;
 		}
 
 		private JobResult NetworkSendingJobHandler(Job job)

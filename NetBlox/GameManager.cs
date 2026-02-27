@@ -16,43 +16,138 @@ namespace NetBlox
 	public delegate void InstanceEventHandler(Instance inst);
 
 	/// <summary>
-	/// Represents a NetBlox game. Believe it or not, but one NetBlox process can run multiple games at once (in theory)
+	/// Represents a NetBlox game. Believe it or not, but one NetBlox process can run multiple games at once (demonstrated clearly
+	/// in the DuoHost project)
 	/// </summary>
 	public class GameManager
 	{
+		/// <summary>
+		/// Contains all <seealso cref="Instance"/>s belonging to this <seealso cref="GameManager"/> instance
+		/// <br/><br/>
+		/// You can in theory change an Instance's owner GameManager, but it's like really wrong, because they should have 0
+		/// references to any internal structures or other Instances for a correct transfer and it's like painful to do. 
+		/// Better serialize the Instance and deserialize it in the target GameManager.
+		/// </summary>
 		public Dictionary<Guid, Instance> AllInstances = [];
+		/// <summary>
+		/// Upon clicking on these keys these <seealso cref="Action"/>s will be invoked
+		/// </summary>
 		public Dictionary<KeyboardKey, Action> Verbs = [];
+
+		/// <summary>
+		/// Describes the "network" identity of the place this GameManager is in. Includes the place name, id, author etc
+		/// </summary>
 		public NetworkIdentity CurrentIdentity = new();
+
+		/// <summary>
+		/// Contains the <seealso cref="NetBlox.RenderManager"/> object associated with this GameManager instance.
+		/// </summary>
 		public RenderManager RenderManager;
 		public PhysicsManager PhysicsManager;
 		public NetworkManager NetworkManager;
 		public DataModel CurrentRoot = null!;
 		public RunService? CurrentRunService;
 		public ProfileManager CurrentProfile = new();
+
 		public ConfigFlags CustomFlags;
+
+		/// <summary>
+		/// Indicates whether the current environment is a studio environment.
+		/// </summary>
 		public bool IsStudio = false;
-		public bool IsRunning = true;
+		/// <summary>
+		/// Indicates whether the game processor should process this instance.
+		/// </summary>
+		public bool IsRunning
+		{
+			get => isRunning;
+			set
+			{
+				if (isRunning != value)
+					LogManager.LogInfo("Setting IsRunning for game manager \"" + GameName + "\" to " + value);
+				isRunning = value;
+			}
+		}
+		/// <summary>
+		/// Indicates whether this <seealso cref="GameManager"/> instance is in the process of shutting down.
+		/// </summary>
 		public bool ShuttingDown = false;
-		public bool ProhibitProcessing = false;
+		/// <summary>
+		/// Pauses running of scripts belonging to this <seealso cref="GameManager"/> instance.
+		/// </summary>
 		public bool ProhibitScripts = false;
+		/// <summary>
+		/// If this <seealso cref="GameManager"/> instance has this field set to <seealso cref="true"/> then upon
+		/// shutting it down the whole application will be shut down.
+		/// </summary>
 		public bool MainManager = false;
+		/// <summary>
+		/// Indicates whether usage of public service web APIs is allowed in this <seealso cref="GameManager"/> instance.
+		/// </summary>
 		public bool UsePublicService = false;
+		/// <summary>
+		/// Indicates whether this instance of <seealso cref="GameManager"/> should process incoming serverbound network 
+		/// packets that create new instances. Doesn't actually matter if it's false lol im not implementing the else behavior
+		/// </summary>
 		public bool FilteringEnabled = true;
-		public string QueuedTeleportAddress = "";
-		public string ManagerName = "";
-		public int PropertyReplicationRate = 20;
-		public DateTime TimeOfCreation = DateTime.UtcNow;
-		public ClientStartupInfo? ClientStartupInfo;
-		public ServerStartupInfo? ServerStartupInfo;
-		public Dictionary<ModuleScript, DynValue> LoadedModules = new();
-		public MoonSharp.Interpreter.Script MainEnvironment = null!;
-		public string Username => CurrentProfile.Username; // bye bye DevDevDev
-		public event EventHandler? ShutdownEvent;
+		/// <summary>
+		/// Indicates whether the replication loop is paused.
+		/// </summary>
 		public bool PauseReplication = false;
+		/// <summary>
+		/// The address of the server that the client should teleport to upon the call to <seealso cref="PlatformService.BeginQueuedTeleport"/>
+		/// </summary>
+		public string QueuedTeleportAddress = "";
+		/// <summary>
+		/// The name of this <seealso cref="GameManager"/> instance.
+		/// </summary>
+		public string GameName = "";
+
+		/// <summary>
+		/// uhhhh something i forgot
+		/// </summary>
+		public int PropertyReplicationRate = 20;
+
+		/// <summary>
+		/// The UTC date and time when this instance of <seealso cref="GameManager"/> was created.
+		/// </summary>
+		public DateTime TimeOfCreation = DateTime.UtcNow;
+
+		/// <summary>
+		/// Contains the client startup info properly parsed. This should be null on servers. If this is null on a client
+		/// then you're doing something very early and should do it later.
+		/// </summary>
+		public ClientStartupInfo? ClientStartupInfo;
+		/// <summary>
+		/// Contains the server startup info properly parsed. This should be null on clients. If this is null on a server
+		/// then you're doing something very early and should do it later.
+		/// </summary>
+		public ServerStartupInfo? ServerStartupInfo;
+
+		/// <summary>
+		/// Contains all loaded ModuleScripts and their evaluated Lua API table module things i dunno.
+		/// </summary>
+		public Dictionary<ModuleScript, DynValue> LoadedModules = new();
+		/// <summary>
+		/// The main Lua environment that all scripts in this <seealso cref="GameManager"/> instance run in.
+		/// </summary>
+		public MoonSharp.Interpreter.Script MainEnvironment = null!;
+
+		/// <summary>
+		/// Returns the username of the currently logged in player. Supported even on guest sessions.
+		/// </summary>
+		public string Username => CurrentProfile != null ? CurrentProfile.Username : "Guest";
+
+		/// <summary>
+		/// Raised when this instance of <seealso cref="GameManager"/> is shutting down.
+		/// </summary>
+		public event EventHandler? ShutdownEvent;
+
+		private bool isRunning = false;
 
 		public GameManager(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
 		{
-			ManagerName = gc.GameName;
+			GameName = gc.GameName;
 
 			var oldgm = AppManager.CurrentGameManager;
 			AppManager.CurrentGameManager = this;
@@ -75,9 +170,9 @@ namespace NetBlox
 						ServerStartupInfo = ssdata != null ? SerializationManager.DeserializeJson<ServerStartupInfo>(ssdata) : null;
 
 					if (ClientStartupInfo == null && gc.AsClient)
-						throw new Exception("Missing startup info");
+						throw new Exception("Missing client startup info");
 					if (ServerStartupInfo == null && gc.AsServer)
-						throw new Exception("Missing startup info");
+						throw new Exception("Missing server startup info");
 
 					AppManager.PublicServiceAPI =
 						gc.AsServer ?
@@ -86,7 +181,7 @@ namespace NetBlox
 				}
 				catch
 				{
-					LogManager.LogError("Could not parse starting information: " + csdata + ssdata);
+					LogManager.LogError("Could not parse startup information: " + csdata + ssdata);
 					Environment.Exit(1);
 				}
 
@@ -97,15 +192,24 @@ namespace NetBlox
 				if (gc.AsClient)
 				{
 					Debug.Assert(ClientStartupInfo != null);
-					var user = ClientStartupInfo.Username;
-					var hash = ClientStartupInfo.PasswordHash;
-					Guid? token = CurrentProfile.LoginAsync(user, hash).WaitAndGetResult();
-					if (token == null)
+
+					if (AppManager.GetFastFlag("FFlagCompletelySkipLoggingIn", false))
+					{
+						LogManager.LogWarn("Skipping calling home, authorizing as guest...");
 						CurrentProfile.LoginAsGuest();
+					}
+					else
+					{
+						var user = ClientStartupInfo.Username;
+						var hash = ClientStartupInfo.PasswordHash;
+						Guid? token = CurrentProfile.LoginAsync(user, hash).WaitAndGetResult();
+						if (token == null)
+							CurrentProfile.LoginAsGuest();
+					}
+
 					LogManager.LogInfo("Logged in as " + Username);
 				}
 
-				ProhibitProcessing = gc.ProhibitProcessing;
 				ProhibitScripts = gc.ProhibitScripts;
 
 				LogManager.LogInfo("Initializing PhysicsManager...");
@@ -113,7 +217,7 @@ namespace NetBlox
 
 				CustomFlags = gc.CustomFlags;
 				LogManager.LogInfo("Initializing RenderManager...");
-				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
+				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll);
 
 				LogManager.LogInfo("Initializing verbs...");
 				Verbs.Add(KeyboardKey.Comma, () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
@@ -129,6 +233,10 @@ namespace NetBlox
 					RenderManager.DoRenderDebugCharts = !RenderManager.DoRenderDebugCharts;
 				});
 				Verbs.Add(KeyboardKey.F5, () =>
+				{
+					RenderManager.DebugInformation = !RenderManager.DebugInformation;
+				});
+				Verbs.Add(KeyboardKey.F6, () =>
 				{
 					RenderManager.UnlimitFramerate = !RenderManager.UnlimitFramerate;
 				});
@@ -162,25 +270,27 @@ namespace NetBlox
 
 				// we dont want corescripts to run before engine is initialized
 
-				LogManager.LogInfo("Initializing internal scripts...");
-
 				CurrentRoot = new DataModel(this);
 				if (dmc != null)
 					dmc(CurrentRoot);
 
+				var rs = CurrentRoot.GetService<RunService>();
+				CurrentRunService = rs;
+
 				LuaRuntime.Setup(this);
-				LogManager.LogInfo("Initializing user interface...");
-				SetupCoreGui();
 
 				if (NetworkManager.IsClient)
 				{
-					LogManager.LogInfo("Creating main services...");
+					LogManager.LogInfo("Creating main client services...");
 					CurrentRoot.GetService<SandboxService>();
 					CurrentRoot.GetService<Debris>();
+
+					LogManager.LogInfo("Initializing client CoreScripts...");
+					SetupCoreGui();
 				}
 				if (NetworkManager.IsServer)
 				{
-					LogManager.LogInfo("Creating main services...");
+					LogManager.LogInfo("Creating main server services...");
 					CurrentRoot.GetService<Workspace>();
 					CurrentRoot.GetService<Players>();
 					CurrentRoot.GetService<Lighting>();
@@ -193,15 +303,16 @@ namespace NetBlox
 					CurrentRoot.GetService<PlatformService>();
 					CurrentRoot.GetService<UserInputService>();
 					CurrentRoot.GetService<Chat>();
+
+					LogManager.LogInfo("Initializing server CoreScripts...");
+					SetupCoreGui();
 				}
 
-				var rs = CurrentRoot.GetService<RunService>();
 				var cg = CurrentRoot.GetService<CoreGui>();
-				CurrentRunService = rs;
 
 				if (NetworkManager.IsClient)
 				{
-					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
+					cg.ShowTeleportGui("", "", -1, -1);
 					QueuedTeleportAddress = (ClientStartupInfo ?? throw new Exception()).ServerIP;
 				}
 
@@ -222,23 +333,30 @@ namespace NetBlox
 		{
 			CoreGui cg = CurrentRoot.GetService<CoreGui>();
 			ScreenGui sg = new(this);
-			sg.Name = "RobloxGui"; // i love breaking copyright :D
+			sg.Name = "RobloxGui";
 			sg.Parent = cg;
 
 			// apparently roblox does not just load all corescritps on bulk.
 			var scrurl = AppManager.ResolveUrlAsync("rbxasset://scripts/Modules/", false).WaitAndGetResult();
 			string? ssurl;
+
 			if (NetworkManager.IsServer)
+			{
+				LogManager.LogInfo("Resolving bootstrap CoreScript for ServerStarterScript...");
 				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/ServerStarterScript.lua", false).WaitAndGetResult();
+			}
 			else
+			{
+				LogManager.LogInfo("Resolving bootstrap CoreScript for StarterScript...");
 				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/StarterScript.lua", false).WaitAndGetResult();
+			}
 
 			if (!File.Exists(ssurl))
-				throw new Exception("No StarterScript found in content directory!");
+				throw new Exception("No StarterScript/ServerStarterScript found in the content directory!");
 
-			var Modules = new Folder(this);
-			Modules.Name = "Modules";
-			Modules.Parent = sg;
+			var modulesFolder = new Folder(this);
+			modulesFolder.Name = "Modules";
+			modulesFolder.Parent = sg;
 			var files = Directory.GetFiles(scrurl);
 
 			for (int i = 0; i < files.Length; i++)
@@ -246,13 +364,35 @@ namespace NetBlox
 				ModuleScript ms = new(this);
 				ms.Name = Path.GetFileNameWithoutExtension(files[i]);
 				ms.Source = File.ReadAllText(files[i]);
-				ms.Parent = Modules;
+				ms.Parent = modulesFolder;
 			}
+
+			LogManager.LogInfo("Loaded " + files.Length + " CoreScript modules from the content directory");
 
 			CoreScript ss = new(this);
 			ss.Name = "StarterScript";
 			ss.Source = File.ReadAllText(ssurl);
 			ss.Parent = sg;
+		}
+		public Instance? TryGetService(ServiceType type)
+		{
+			byte[] craftedServiceGuidBuffer = BitConverter.GetBytes((int)type);
+			if (craftedServiceGuidBuffer.Length < 16)
+				Array.Resize(ref craftedServiceGuidBuffer, 16);
+			Guid craftedServiceGuid = new Guid(craftedServiceGuidBuffer);
+			return GetInstance(craftedServiceGuid);
+		}
+		public Instance CreateService(ServiceType type)
+		{
+			byte[] craftedServiceGuidBuffer = BitConverter.GetBytes((int)type);
+			if (craftedServiceGuidBuffer.Length < 16)
+				Array.Resize(ref craftedServiceGuidBuffer, 16);
+			Guid craftedServiceGuid = new Guid(craftedServiceGuidBuffer);
+
+			Instance inst = InstanceCreator.CreateServiceInstanceIfExists(type.ToString(), this);
+			inst.Parent = CurrentRoot;
+			inst.ChangeUniqueID(craftedServiceGuid);
+			return inst;
 		}
 		public void RegisterService(Instance service, ServiceType type)
 		{
@@ -266,11 +406,12 @@ namespace NetBlox
 				throw new Exception("Cannot create a second instance of a singleton Instance (" + type + ")");
 			}
 
+			service.Parent = CurrentRoot;
 			service.ChangeUniqueID(craftedServiceGuid);
 		}
 		public void Shutdown()
 		{
-			LogManager.LogInfo($"Shutting down GameManager \"{ManagerName}\"...");
+			LogManager.LogInfo($"Shutting down GameManager \"{GameName}\"...");
 			ShuttingDown = true;
 			ShutdownEvent?.Invoke(new(), new());
 			AppManager.GameManagers.Remove(this);
@@ -297,8 +438,25 @@ namespace NetBlox
 				}
 			}
 
+			TaskScheduler.ScheduleDelayedNamedJob("GameManagerShutdownJob", TimeSpan.FromSeconds(4), JobType.Miscellaneous, _ =>
+			{
+				Job[] belongingjobs = new Job[TaskScheduler.RunningJobs.Count];
+
+				TaskScheduler.RunningJobs.CopyTo(belongingjobs);
+
+				for (int i = 0; i < belongingjobs.Length; i++)
+				{
+					if (belongingjobs[i].ScriptJobContext.GameManager == this)
+						TaskScheduler.Terminate(belongingjobs[i]);
+				}
+
+				return JobResult.NotCompleted;
+			});
+
 			if (MainManager)
-				Environment.Exit(0);
+			{
+				AppManager.Shutdown();
+			}
 		}
 		public void LoadDefault(int idx = 0)
 		{
@@ -469,7 +627,9 @@ namespace NetBlox
 			try
 			{
 				if (inst != null)
-				{ // i was outsmarted
+				{
+					if (inst.WasDestroyed)
+						return;
 					if (inst.DestroyAt < DateTime.UtcNow)
 					{
 						inst.Destroy();
@@ -478,18 +638,24 @@ namespace NetBlox
 
 					inst.Process();
 
-					var ch = inst.GetChildren();
-					for (int i = 0; i < ch.Length; i++)
+					Instance[] children = new Instance[inst.Children.Count];
+					inst.Children.CopyTo(children);
+
+					for (int i = 0; i < children.Length; i++)
 					{
-						ProcessInstance(ch[i]);
+						if (children[i] == null)
+							continue;
+						if (children[i].WasDestroyed)
+							continue;
+						ProcessInstance(children[i]);
 					}
 				}
 			}
-			catch
+			catch (Exception ex)
 			{
-				// no
+				LogManager.LogWarn("An exception occurred during processing " + inst.GetFullName() + ", " + ex.GetType() + ", msg: " + ex.Message);
 			}
 		}
-		public override string ToString() => "GM-" + ManagerName;
+		public override string ToString() => "GM-" + GameName;
 	}
 }

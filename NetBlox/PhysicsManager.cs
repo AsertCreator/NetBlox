@@ -30,6 +30,7 @@ namespace NetBlox
 		public List<BasePart> Actors = new();
 		public Dictionary<uint, BasePart> Collidable2BasePartMap = [];
 		public bool DisablePhysics = true; // not now
+		public bool LogPhysicalRepresentationChanges = false;
 		internal Stopwatch physicsStopwatch = new();
 
 		public PhysicsManager(GameManager gameManager)
@@ -39,11 +40,15 @@ namespace NetBlox
 
 			GameManager = gameManager;
 
+			LogPhysicalRepresentationChanges = AppManager.GetFastFlag("FFlagLogPhysicalRepresentationChanges", false);
+
 			LocalSimulationBuffer = new BufferPool();
 			LocalSimulation = Simulation.Create(LocalSimulationBuffer, core, core, solver);
 		}
 		public void SpringUpPhysics()
 		{
+			LogManager.LogInfo("Springing up physics for " + GameManager.GameName + "...");
+
 			DisablePhysics = false;
 			Actors.ForEach(x => x.ReevaluatePhysicsRepresentation());
 		}
@@ -181,7 +186,8 @@ namespace NetBlox
 		{
 			var raycast = new RayHitHandler();
 			raycast.Distance = -1;
-			raycast.Ignorable = exclude.GetCollidableReference();
+			if (exclude != null)
+				raycast.Ignorable = exclude.GetCollidableReference();
 			LocalSimulation.RayCast(from, direction, max, ref raycast);
 			return raycast.Found ? -1 : raycast.Distance;
 		}

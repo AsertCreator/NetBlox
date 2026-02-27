@@ -43,7 +43,6 @@ namespace NetBlox
 		public static List<CrispFont> CrispFonts = [];
 		public int ScreenSizeX = 1600;
 		public int ScreenSizeY = 900;
-		public int VersionMargin = 0;
 		public double TimeOfDay = 12;
 		public string Status = string.Empty;
 		public string? CurrentMessage = null;
@@ -67,6 +66,7 @@ namespace NetBlox
 		public Thread? FrustumCullingThread;
 		public bool FrustumCullingPaused = true;
 		public bool UnlimitFramerate = false;
+		public bool LogFrameRendering = false;
 		public Texture2D? Cursor;
 		public RenderShadingManager RenderShadingManager;
 
@@ -88,68 +88,139 @@ namespace NetBlox
 		public static Dictionary<string, Shader> ShaderCache = [];
 		public static Dictionary<string, Sound> SoundCache = [];
 
+		public static Job? ResourceLoadingTask;
+
 		public Shader? ActiveShader;
 
 		public int LoadBatchSize = 5;
 
 		public List<Particle> AllParticles = [];
 
-		public unsafe RenderManager(GameManager gm, bool skiprinit, bool render, int vm)
+		public unsafe RenderManager(GameManager gm, bool skipWindowCreation, bool renderAtAll)
 		{
 			GameManager = gm;
-			VersionMargin = vm;
 			GameManager.RenderManager = this;
-			SkipWindowCreation = skiprinit;
+			SkipWindowCreation = skipWindowCreation;
+			RenderAtAll = renderAtAll;
 
+			LogFrameRendering = AppManager.GetFastFlag("FFlagLogFrameRendering", false);
 			MainCamera = new(new Vector3(5, 6, 0), Vector3.Zero, Vector3.UnitY, 90, CameraProjection.Perspective);
-			RenderAtAll = render;
 
 			CurrentCamera = new Camera(gm);
 
-			RenderShadingManager = new(this);
-
-			if (!skiprinit)
-				Initialize(render);
-			else if (render)
+			if (!skipWindowCreation)
 			{
-				MainFont = GetCrispFont(16, "arialbd.ttf");
-				MainFont14 = GetCrispFont(14, "arialbd.ttf");
-				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
-				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
-				// BeginFustumCullingThread();
+				if (!Raylib.IsWindowReady())
+					CreateWindow();
+
+				if (renderAtAll)
+				{
+					RenderShadingManager = new(this);
+					InitializeResources();
+
+					if (ResourceLoadingTask == null)
+					{
+						ResourceLoadingTask = TaskScheduler.ScheduleNamedJob("ResourceLoadingTask", JobType.Renderer, _ =>
+						{
+							if (GameManager.ShuttingDown)
+								return JobResult.CompletedSuccess;
+
+							PerformResourceLoading();
+
+							return JobResult.NotCompleted;
+						});
+						ResourceLoadingTask.JobTimingContext.Priority = 3;
+					}
+				}
 			}
 		}
-		public CrispFont GetCrispFont(int fontsize, string fontfamily)
+		public void CreateWindow()
 		{
-			var font = CrispFonts.Find(x => x.FontSize == fontsize && x.FontFamily == fontfamily);
-			if (font != null)
-				return font;
-			font = new CrispFont(fontsize, fontfamily);
-			CrispFonts.Add(font);
-			return font;
-		}
-		public unsafe void Initialize(bool render)
-		{
-			if (render)
+			try
 			{
 				// Raylib.SetTraceLogLevel(TraceLogLevel.None);
-				Raylib.SetTargetFPS(2880);
+				Raylib.SetTargetFPS(10000);
 				Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.Msaa4xHint | GameManager.CustomFlags);
 				Raylib.InitWindow(ScreenSizeX, ScreenSizeY, GameManager.ClientStartupInfo == null ? "NetBlox" : GameManager.ClientStartupInfo.WindowName);
 				Raylib.InitAudioDevice();
 				Raylib.SetExitKey(KeyboardKey.Null);
-				// Raylib.SetWindowIcon(Raylib.LoadImage("./content/favicon.ico"));
+				Raylib.SetWindowIcon(Raylib.LoadImage(AppManager.ResolveUrlAsync("rbxasset://textures/menu.png", false).WaitAndGetResult()));
+			}
+			catch (Exception ex)
+			{
+				LogManager.LogError("Failed to initialize the window: " + ex.GetType() + ", msg: " + ex.Message);
+				throw;
+			}
+		}
+		public void InitializeResources()
+		{
+			try
+			{
+				LogManager.LogInfo("Initializing graphical resources...");
 
 				MainFont = GetCrispFont(16, "arialbd.ttf");
 				MainFont14 = GetCrispFont(14, "arialbd.ttf");
+
+				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
+
 				LoadTexture("rbxasset://textures/blank.png", x => BlankTexture = x);
 				LoadTexture("rbxasset://textures/stud.png", x => StudTexture = x);
-				CurrentSkybox = Skybox.LoadSkybox(GameManager, "bluecloud");
 
 				if (GameManager.ServerStartupInfo == null) // maybe nm is not initialized by now (im lazy to check)
 					RenderShadingManager.SwitchToMode(RenderShadingMode.SmoothShading);
+			}
+			catch (Exception ex)
+			{
+				LogManager.LogError("Failed to initialize the resources: " + ex.GetType() + ", msg: " + ex.Message);
+				throw;
+			}
+		}
+		public void PollForVerbsAndExecute()
+		{
+			for (int i = 0; i < GameManager.Verbs.Count; i++)
+			{
+				var verb = GameManager.Verbs.ElementAt(i);
 
-				// BeginFustumCullingThread();
+				if (Raylib.IsKeyPressed(verb.Key))
+				{
+					TaskScheduler.ScheduleNamedJob("VerbJob", JobType.Miscellaneous, _ =>
+					{
+						verb.Value();
+						return JobResult.CompletedSuccess;
+					});
+				}
+			}
+		}
+		public void DoServerCameraControl()
+		{
+			for (int i = 0; i < 2; i++) // s p e e d
+			{
+				if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
+				{
+					Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+					if (Raylib.IsKeyDown(KeyboardKey.Space))
+					{
+						MainCamera.Target.Y += 0.1f;
+						MainCamera.Position.Y += 0.1f;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+					{
+						MainCamera.Target.Y -= 0.1f;
+						MainCamera.Position.Y -= 0.1f;
+					}
+					if (Raylib.IsKeyDown(KeyboardKey.G))
+					{
+						Part part = new(GameManager)
+						{
+							Name = "Trash",
+							Parent = Root.GetService<Workspace>(true),
+							Position = MainCamera.Position,
+							Size = new(1, 1, 1),
+							Color3 = Color.DarkPurple
+						};
+						GameManager.NetworkManager.AddReplication(part, Replication.REPM_TOALL, Replication.REPW_NEWINST);
+					}
+				}
 			}
 		}
 		public unsafe void RenderFrame()
@@ -163,52 +234,19 @@ namespace NetBlox
 			{
 				if (RenderAtAll)
 				{
-					for (int i = 0; i < GameManager.Verbs.Count; i++)
-					{
-						var verb = GameManager.Verbs.ElementAt(i);
-						if (Raylib.IsKeyPressed(verb.Key))
-							verb.Value();
-					}
-
-					for (int i = 0; i < 2; i++) // s p e e d
-					{
-						if (GameManager.NetworkManager.IsServer && Raylib.IsMouseButtonDown(MouseButton.Right))
-						{
-							Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
-							if (Raylib.IsKeyDown(KeyboardKey.Space))
-							{
-								MainCamera.Target.Y += 0.1f;
-								MainCamera.Position.Y += 0.1f;
-							}
-							if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
-							{
-								MainCamera.Target.Y -= 0.1f;
-								MainCamera.Position.Y -= 0.1f;
-							}
-							if (Raylib.IsKeyDown(KeyboardKey.G))
-							{
-								Part part = new(GameManager)
-								{
-									Name = "Trash",
-									Parent = Root.GetService<Workspace>(true),
-									Position = MainCamera.Position,
-									Size = new(1, 1, 1),
-									Color3 = Color.DarkPurple
-								};
-								GameManager.NetworkManager.AddReplication(part, Replication.REPM_TOALL, Replication.REPW_NEWINST);
-							}
-						}
-					}
-
-					PerformResourceLoading();
+					PollForVerbsAndExecute();
+					DoServerCameraControl();
 
 					GameManager.CurrentRunService.PreRender.Fire(DynValue.NewNumber(renderStopwatch.Elapsed.TotalSeconds));
 					renderStopwatch.Reset();
 					renderStopwatch.Start();
 
-					// render world if it exists
+					// renderAtAll world if it exists
 					if (Root != null)
 					{
+						if (LogFrameRendering)
+							LogManager.LogInfo("Beginning renderAtAll...");
+
 						Raylib.BeginDrawing();
 						{
 							FirstFrame = false;
@@ -227,7 +265,7 @@ namespace NetBlox
 									Raylib.DrawRectangle(0, 0, ScreenSizeX, ScreenSizeY, new Color(0, 0, 0, Math.Abs(255 - (int)((TimeOfDay / 12 * 255 * 0.8) + (255 * 0.2)))));
 							}
 
-							// render all guis
+							// renderAtAll all guis
 							if (!DisableAllGuis)
 							{
 								if (Root != null)
@@ -265,7 +303,7 @@ namespace NetBlox
 
 							if (DebugInformation)
 							{
-								var debugstring = GameManager.ManagerName +
+								var debugstring = GameManager.GameName +
 									", fps: " + Raylib.GetFPS() +
 									", instances: " + GameManager.AllInstances.Count +
 									", task scheduler pressure: " + TaskScheduler.JobCount +
@@ -289,6 +327,9 @@ namespace NetBlox
 							if (!GameManager.ShuttingDown)
 								Raylib.EndDrawing();
 						}
+
+						if (LogFrameRendering)
+							LogManager.LogInfo("Ending renderAtAll...");
 					}
 
 					renderStopwatch.Stop();
@@ -303,7 +344,13 @@ namespace NetBlox
 					GameManager.CurrentRunService.RenderStepped.Fire(DynValue.NewNumber(renderStopwatch.Elapsed.TotalSeconds));
 
 					if (Raylib.WindowShouldClose() && !SkipWindowCreation)
-						GameManager.Shutdown();
+					{
+						TaskScheduler.ScheduleNamedJob("UserClosedWindowJob", JobType.Miscellaneous, _ =>
+						{
+							GameManager.Shutdown();
+							return JobResult.CompletedSuccess;
+						});
+					}
 				}
 
 				// run coroutines
@@ -315,8 +362,19 @@ namespace NetBlox
 			}
 			catch (Exception ex)
 			{
-				Status = "Render error: " + ex.GetType().Name + ", " + ex.Message;
+				var status = "Render error: " + ex.GetType().Name + ", " + ex.Message;
+				LogManager.LogError(status);
+				Status = status;
 			}
+		}
+		public CrispFont GetCrispFont(int fontsize, string fontfamily)
+		{
+			var font = CrispFonts.Find(x => x.FontSize == fontsize && x.FontFamily == fontfamily);
+			if (font != null)
+				return font;
+			font = new CrispFont(fontsize, fontfamily);
+			CrispFonts.Add(font);
+			return font;
 		}
 		public void PlaySound(Sound sound) => Raylib.PlaySound(sound);
 		public void StopSound(Sound sound) => Raylib.StopSound(sound);
@@ -423,7 +481,7 @@ namespace NetBlox
 			// this is a five step process now.
 
 			//
-			// 1) render skybox
+			// 1) renderAtAll skybox
 			//
 			{
 				RenderSkybox();
@@ -436,7 +494,7 @@ namespace NetBlox
 				Raylib.BeginShaderMode(shader.Value);
 
 			//
-			// 2) render 3D grade #0 objects - opaque 3d objects
+			// 2) renderAtAll 3D grade #0 objects - opaque 3d objects
 			//
 			{
 				IEnumerator<I3DRenderable> enumerator = Visibles3DGrade0.GetEnumerator();
@@ -445,13 +503,13 @@ namespace NetBlox
 			}
 
 			//
-			// 3) render particles
+			// 3) renderAtAll particles
 			//
 			if (!DisableParticles)
 				RenderParticles(AppManager.GetRendererDeltaTime());
 
 			//
-			// 4) render 3D grade #1 objects - translucent 3d objects
+			// 4) renderAtAll 3D grade #1 objects - translucent 3d objects
 			//
 			{
 				Raylib.BeginBlendMode(BlendMode.Alpha);
@@ -464,7 +522,7 @@ namespace NetBlox
 			}
 
 			//
-			// 5) render 2D objects - UI objects mostly
+			// 5) renderAtAll 2D objects - UI objects mostly
 			//
 			if (!DisableAllGuis)
 			{

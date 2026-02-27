@@ -86,10 +86,11 @@ namespace NetBlox.Network
 					players.CurrentPlayer = player;
 					player.IsLocalPlayer = true;
 				}
-				if (ins is Workspace workspace)
-				{
-					gm.RenderManager.CurrentCamera.Parent = workspace;
-				}
+			}
+
+			if (ins is Workspace workspace)
+			{
+				gm.RenderManager.CurrentCamera.Parent = workspace;
 			}
 
 			var type = ins.GetType();

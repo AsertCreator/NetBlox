@@ -47,7 +47,7 @@ namespace NetBlox
 
 		public int LoadedInstanceCount;
 		public int TargetInstanceCount;
-		public bool LogReplication = false;
+		public bool LogReplication = true;
 
 		public const int ServersideSendingJobPacketBatchSize = 1000;
 		public const int ServersideProcessingJobPacketBatchSize = 1000;
@@ -84,6 +84,8 @@ namespace NetBlox
 			IsServer = server;
 			IsClient = client;
 
+			LogReplication = AppManager.GetFastFlag("FFlagLogReplication", false);
+
 			if (IsServer)
 				ServerPort = (GameManager.ServerStartupInfo ?? throw new Exception()).ServerPort;
 
@@ -101,6 +103,8 @@ namespace NetBlox
 			Server.AllowUDPConnections = false;
 			Server.ConnectionEstablished += (connection, y) =>
 			{
+				AppManager.CurrentGameManager = GameManager;
+
 				connection.EnableLogging = false;
 				connection.KeepAlive = !Debugger.IsAttached;
 
@@ -113,6 +117,8 @@ namespace NetBlox
 
 				connection.RegisterRawDataHandler("nb3-packet", (packet, _) =>
 				{
+					AppManager.CurrentGameManager = GameManager;
+
 					var pid = BitConverter.ToInt32(packet.Data[0..4]);
 					var data = packet.Data[4..];
 					var networkpacket = new NetworkPacket();
@@ -129,10 +135,12 @@ namespace NetBlox
 
 				connection.ConnectionClosed += (reason, _) =>
 				{
+					AppManager.CurrentGameManager = GameManager;
+
 					if (remoteclient.IsAboutToLeave)
 						return;
 
-					TaskScheduler.ScheduleNamedJob("FailedHandshakeWatchdog", JobType.Network, _ =>
+					var job = TaskScheduler.ScheduleNamedJob("FailedHandshakeWatchdog", JobType.Network, _ =>
 					{
 						if (!remoteclient.IsAboutToLeave)
 							LogManager.LogInfo(remoteclient + " is leaving without warning!");
@@ -142,9 +150,10 @@ namespace NetBlox
 
 						return JobResult.CompletedSuccess;
 					}, level: 9);
+					job.ScriptJobContext.GameManager = GameManager;
 				};
 
-				TaskScheduler.ScheduleDelayedNamedJob("FailedHandshakeWatchdog", new TimeSpan(0, 0, 3), 
+				var job = TaskScheduler.ScheduleDelayedNamedJob("FailedHandshakeWatchdog", new TimeSpan(0, 0, 3), 
 					JobType.Network, _ =>
 					{
 						if (!gothandshake)
@@ -155,6 +164,7 @@ namespace NetBlox
 						}
 						return JobResult.CompletedSuccess;
 					}, level: 9);
+				job.ScriptJobContext.GameManager = GameManager;
 			};
 
 			Server.Start();
@@ -221,6 +231,7 @@ namespace NetBlox
 				return JobResult.NotCompleted;
 			}, level: 9);
 			ReplicationJob.JobTimingContext.Priority = 30;
+			ReplicationJob.ScriptJobContext.GameManager = GameManager;
 		}
 		public void SendServerboundPacket(NetworkPacket packet) => ServerboundPendingSendPackets.Enqueue(packet);
 		public void ConnectToServer(IPAddress ipa)
@@ -247,6 +258,8 @@ namespace NetBlox
 
 			tcp.RegisterRawDataHandler("nb3-packet", (packet, _) =>
 			{
+				AppManager.CurrentGameManager = GameManager;
+
 				var pid = BitConverter.ToInt32(packet.Data[0..4]);
 				var data = packet.Data[4..];
 				var networkpacket = new NetworkPacket();
@@ -297,6 +310,7 @@ namespace NetBlox
 			}, level: 9);
 
 			ReplicationJob.JobTimingContext.Priority = 20;
+			ReplicationJob.ScriptJobContext.GameManager = GameManager;
 
 			ClientsidePacketSenderJob = TaskScheduler.ScheduleNamedJob("ClientsidePacketSenderJob", JobType.Network, _ =>
 			{
@@ -320,6 +334,8 @@ namespace NetBlox
 
 				return JobResult.NotCompleted;
 			});
+			ClientsidePacketSenderJob.ScriptJobContext.GameManager = GameManager;
+
 			ClientsidePacketProcessingJob = TaskScheduler.ScheduleNamedJob("ClientsidePacketProcessingJob",
 				JobType.Network, _ =>
 			{
@@ -346,6 +362,7 @@ namespace NetBlox
 
 				return JobResult.NotCompleted;
 			});
+			ClientsidePacketProcessingJob.ScriptJobContext.GameManager = GameManager;
 		}
 		public void StartProfiling()
 		{

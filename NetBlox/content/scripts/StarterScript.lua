@@ -4,6 +4,8 @@
 	StarterScript.lua - bootstraps the client-side of the game
 ]]
 
+print("Beginning Lua environment setup...")
+
 local PlatformService = game:GetService("PlatformService");
 local ScriptContext = game:GetService("ScriptContext");
 local CoreGui = game:GetService("CoreGui");
@@ -13,7 +15,7 @@ local Cursor = require(script.Parent.Modules.Cursor);
 local TeleportGui = require(script.Parent.Modules.TeleportGui);
 local Notifications = require(script.Parent.Modules.Notifications);
 
-print("Essential CoreScript modules loaded, presumably");
+print("Essential CoreScript modules constructed, presumably");
 
 local FIntDefaultUIVariant = game:GetFastInt("FIntDefaultUIVariant", 1);
 

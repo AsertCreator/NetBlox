@@ -1,6 +1,7 @@
 {
   "flagMap": {
     "FFlagShowPartGroundedness": false,
-    "FFlagShowPartOwnerhsip": true
+    "FFlagShowPartOwnerhsip": true,
+    "FFlagCompletelySkipLoggingIn": true
   }
 }

@@ -25,26 +25,11 @@ namespace NetBlox.Instances
 		[Lua([Security.Capability.None])]
 		public bool IsLoaded() => GameManager.NetworkManager.IsLoaded;
 		[Lua([Security.Capability.CoreSecurity])]
-		public bool GetFastFlag(string fflag, bool def)
-		{
-			if (AppManager.FastFlags.TryGetValue(fflag, out var flag))
-				return flag;
-			return def;
-		}
+		public bool GetFastFlag(string fflag, bool def) => AppManager.GetFastFlag(fflag, def);
 		[Lua([Security.Capability.CoreSecurity])]
-		public int GetFastInt(string fflag, int def)
-		{
-			if (AppManager.FastInts.TryGetValue(fflag, out var number))
-				return number;
-			return def;
-		}
+		public int GetFastInt(string fflag, int def) => AppManager.GetFastInt(fflag, def);
 		[Lua([Security.Capability.CoreSecurity])]
-		public string GetFastString(string fflag, string def)
-		{
-			if (AppManager.FastStrings.TryGetValue(fflag, out var text))
-				return text;
-			return def;
-		}
+		public string GetFastString(string fflag, string def) => AppManager.GetFastString(fflag, def);
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Clear()
 		{

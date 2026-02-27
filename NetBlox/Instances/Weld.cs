@@ -144,7 +144,7 @@ namespace NetBlox.Instances
 				SpringSettings = new SpringSettings(30, 0.1f)
 			};
 
-			TaskScheduler.ScheduleNamedJob("WeldWaiting", JobType.Miscellaneous, _ =>
+			TaskScheduler.ScheduleNamedJobNoLogging("WeldWaiting", JobType.Miscellaneous, _ =>
 			{
 				BasePart? originalPart0 = Part0;
 				BasePart? originalPart1 = Part1;

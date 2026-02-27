@@ -4,6 +4,7 @@ using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace NetBlox
 {
@@ -42,10 +43,11 @@ namespace NetBlox
 		public ScriptJobContext ScriptJobContext = new();
 		public JobTimingContext JobTimingContext = new();
 		public JobResult Result = JobResult.NotCompleted;
+		public bool NoLogging = false;
 
 		public override string ToString() =>
-			(ScriptJobContext.GameManager != null ? ScriptJobContext.GameManager.ManagerName : "<none>") + 
-			"-" + Type + ",level=" + SecurityLevel;
+			(ScriptJobContext.GameManager != null ? ScriptJobContext.GameManager.GameName : "<none>") + 
+			"-" + Name + "-" + Type + ",level=" + SecurityLevel;
 	}
 	public enum JobType { Network, Renderer, Heartbeat, Miscellaneous, Physics, Script }
 	public enum JobResult { CompletedSuccess, CompletedFailure, NotCompleted }
@@ -53,8 +55,10 @@ namespace NetBlox
 	// i actually can't write proper task schedulers, can i?
 	public static class TaskScheduler
 	{
+		[ThreadStatic]
 		public static Job CurrentJob;
-		public static bool Enabled = true;
+		public static bool Enabled = false;
+		public static bool LogScriptStartingAndEnding = false;
 		public static TimeSpan LastCycleTime = TimeSpan.Zero;
 		public static int JobCount => RunningJobs.Count;
 		public static double AverageTimeToRun => LastCycleTime.TotalMilliseconds / RunningJobs.Count;
@@ -63,6 +67,9 @@ namespace NetBlox
 
 		public static void Step()
 		{
+			if (!Enabled)
+				return;
+
 			Stopwatch sw = new();
 			sw.Start();
 
@@ -96,6 +103,7 @@ namespace NetBlox
 					continue;
 
 				CurrentJob = job;
+				AppManager.CurrentGameManager = CurrentJob.ScriptJobContext.GameManager;
 
 				job.JobTimingContext.JoinedTo = null;
 				job.JobTimingContext.JoinedUntil = default;
@@ -148,15 +156,56 @@ namespace NetBlox
 
 			LastCycleTime = sw.Elapsed;
 		}
-		public static void Terminate(Job job) => RunningJobs.Remove(job);
+		public static void Terminate(Job job) 
+		{ 
+			if (job == null)
+			{
+				LogManager.LogWarn("Potential null reference to a job somewhere, please debug");
+				return;
+			}
+
+			if (RunningJobs.Remove(job) && !job.NoLogging)
+				ReportJobEnd(job.Name, job.Type, job.NativeCallback);
+		}
+		public static void ReportJobStart(string name, JobType type, JobDelegate jd)
+		{
+			LogManager.LogInfo("Scheduling a job \"" + name + "\", type=" + type);
+		}
+		public static void ReportJobEnd(string name, JobType type, JobDelegate jd)
+		{
+			LogManager.LogInfo("Ending a job \"" + name + "\", type=" + type);
+		}
+		public static Job ScheduleNamedJobNoLogging(string name, JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
+		{
+			Job job = new(type, jd, level);
+			job.Name = name;
+			job.ScriptJobContext.AfterDone = afterDone;
+			job.JobTimingContext.Priority = DefaultPriority;
+			job.NoLogging = true;
+
+			if (CurrentJob != null)
+				job.ScriptJobContext.GameManager = CurrentJob.ScriptJobContext.GameManager;
+
+			lock (RunningJobs)
+				RunningJobs.Add(job);
+
+			return job;
+		}
 		public static Job ScheduleNamedJob(string name, JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
 		{
 			Job job = new(type, jd, level);
 			job.Name = name;
 			job.ScriptJobContext.AfterDone = afterDone;
 			job.JobTimingContext.Priority = DefaultPriority;
+
+			if (CurrentJob != null)
+				job.ScriptJobContext.GameManager = CurrentJob.ScriptJobContext.GameManager;
+
+			ReportJobStart(name, type, jd);
+
 			lock (RunningJobs)
 				RunningJobs.Add(job);
+
 			return job;
 		}
 		public static Job ScheduleDelayedNamedJob(string name, TimeSpan delay, JobType type, JobDelegate jd, JobDelegate? afterDone = null, int level = 8)
@@ -164,10 +213,17 @@ namespace NetBlox
 			Job job = new(type, jd, level);
 			job.Name = name;
 			job.JobTimingContext.JoinedUntil = DateTime.UtcNow + delay;
-			job.ScriptJobContext.AfterDone = afterDone;
 			job.JobTimingContext.Priority = DefaultPriority;
+			job.ScriptJobContext.AfterDone = afterDone;
+
+			if (CurrentJob != null)
+				job.ScriptJobContext.GameManager = CurrentJob.ScriptJobContext.GameManager;
+
+			ReportJobStart(name, type, jd);
+
 			lock (RunningJobs)
 				RunningJobs.Add(job);
+
 			return job;
 		}
 		public static Job ScheduleScript(GameManager gm, string code, int level, BaseScript? self, JobDelegate? afterDone = null, DynValue[]? args = null)
@@ -213,6 +269,10 @@ namespace NetBlox
 			job.ScriptJobContext.YieldReturn = args ?? [];
 			job.ScriptJobContext.Coroutine = closure;
 			job.JobTimingContext.Priority = DefaultPriority;
+			job.NoLogging = !LogScriptStartingAndEnding;
+
+			if (LogScriptStartingAndEnding)
+				ReportJobStart(job.Name, job.Type, job.NativeCallback);
 
 			lock (RunningJobs)
 				RunningJobs.Add(job);
@@ -222,6 +282,9 @@ namespace NetBlox
 		{
 			if (job.ScriptJobContext.Coroutine == null)
 				return JobResult.CompletedFailure;
+
+			if (job.ScriptJobContext.GameManager.ProhibitScripts)
+				return JobResult.NotCompleted;
 
 			try
 			{

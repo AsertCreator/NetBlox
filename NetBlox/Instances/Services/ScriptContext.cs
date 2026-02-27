@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Instances.Scripts;
 using NetBlox.Runtime;
 using System;
@@ -29,6 +29,8 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public void AddCoreScriptLocal(string path, Instance parent)
 		{
+			LogManager.LogInfo("Loading CoreScript from " + path + "...");
+
 			CoreScript cs = new(GameManager);
 			cs.Name = path;
 			cs.Source = File.ReadAllText(AppManager.ResolveUrlAsync("rbxasset://scripts/" + cs.Name + ".lua", false).WaitAndGetResult());

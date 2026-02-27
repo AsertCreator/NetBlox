@@ -32,8 +32,11 @@ namespace NetBlox.Instances.Services
 		{
 			GameManager.RegisterService(this, ServiceType.Lighting);
 			// i hope instances initialize after internal game objects, like rendershadingmanager
-			GameManager.RenderManager.RenderShadingManager.SetSunLookAt(-SunPosition);
-			GameManager.RenderManager.RenderShadingManager.SetSunColor(Color.White);
+			if (GameManager.RenderManager.RenderShadingManager != null)
+			{
+				GameManager.RenderManager.RenderShadingManager.SetSunLookAt(-SunPosition);
+				GameManager.RenderManager.RenderShadingManager.SetSunColor(Color.White);
+			}
 		}
 
 		[Lua([Security.Capability.None])]

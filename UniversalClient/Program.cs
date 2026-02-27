@@ -1,4 +1,4 @@
-﻿using NetBlox.Instances;
+using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using Raylib_cs;
 using System.Buffers.Text;
@@ -57,20 +57,25 @@ namespace NetBlox.Client
 				Environment.Exit(1);
 			}
 
-			GameManager game;
-
-			if (args.Length == 0)
+			TaskScheduler.ScheduleNamedJob("ClientBootstrap", JobType.Miscellaneous, _ =>
 			{
-				LogManager.LogInfo("No arguments, starting app...");
-				game = CreateAppGame();
-			}
-			else
-			{
-				LogManager.LogInfo("Starting general game...");
-				game = CreateGeneralGame(args);
-			}
+				GameManager game;
 
-			AppManager.SetRenderTarget(game);
+				if (args.Length == 0)
+				{
+					LogManager.LogInfo("No arguments, starting app...");
+					game = CreateAppGame();
+				}
+				else
+				{
+					LogManager.LogInfo("Starting general game...");
+					game = CreateGeneralGame(args);
+				}
+
+				AppManager.SetRenderTarget(game);
+				return JobResult.CompletedSuccess;
+			});
+
 			AppManager.Start();
 
 			return 0;

@@ -1,4 +1,4 @@
-﻿using BepuPhysics;
+using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using MoonSharp.Interpreter;
@@ -641,11 +641,15 @@ namespace NetBlox.Instances.Parts
 
 				if (IsActuallyAnchored)
 				{
+					if (GameManager.PhysicsManager.LogPhysicalRepresentationChanges)
+						LogManager.LogInfo(GetFullName() + ": switching to static p/r");
 					DestroyBodyHandle();
 					CreateStaticHandle();
 				}
 				else
 				{
+					if (GameManager.PhysicsManager.LogPhysicalRepresentationChanges)
+						LogManager.LogInfo(GetFullName() + ": switching to dynamic p/r");
 					DestroyStaticHandle();
 					CreateBodyHandle();
 				}

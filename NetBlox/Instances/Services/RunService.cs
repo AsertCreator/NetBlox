@@ -1,4 +1,4 @@
-﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 
 namespace NetBlox.Instances.Services
@@ -35,7 +35,7 @@ namespace NetBlox.Instances.Services
 		public void Run() 
 		{
 			LastTimeStartedRunning = DateTime.UtcNow;
-			GameManager.IsRunning = true; 
+			GameManager.IsRunning = true;
 		}
 		[Lua([Security.Capability.CoreSecurity])]
 		public void Stop() => GameManager.Shutdown();

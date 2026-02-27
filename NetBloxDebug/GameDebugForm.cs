@@ -1,4 +1,4 @@
-﻿using NetBlox;
+using NetBlox;
 using Timer = System.Windows.Forms.Timer;
 
 namespace NetBloxDebug
@@ -23,7 +23,7 @@ namespace NetBloxDebug
 		{
 			InitializeComponent();
 			Attached = at;
-			Text = "NetBlox Debugger - " + at.ManagerName;
+			Text = "NetBlox Debugger - " + at.GameName;
 		}
 
 		protected override void OnHandleCreated(EventArgs e)
@@ -41,7 +41,7 @@ namespace NetBloxDebug
 			timer.Interval = 1000 / 2;
 			timer.Tick += (_, _) =>
 			{
-				gameNameLabel.Text = "GameManager's name: " + at.ManagerName;
+				gameNameLabel.Text = "GameManager's name: " + at.GameName;
 				gameUptimeLabel.Text = "GameManager's uptime: " + (DateTime.UtcNow - at.TimeOfCreation);
 
 				gameCharsLabel.Text = string.Concat(new string[]

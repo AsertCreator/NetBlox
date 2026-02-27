@@ -1,10 +1,11 @@
-﻿using NetBlox;
+using NetBlox;
 using NetBlox.Instances.Services;
 using Raylib_cs;
 using System.Buffers.Text;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using TaskScheduler = NetBlox.TaskScheduler;
 
 namespace UniversalDuoHost
 {
@@ -20,7 +21,7 @@ namespace UniversalDuoHost
 				AsServer = true,
 				DoNotRenderAtAll = true,
 				SkipWindowCreation = true,
-				GameName = "NetBlox Server (duohosted)"
+				GameName = "NetBlox Server-DH"
 			}, ["-ss", "{\"f\":" + port + "}"], (x) =>
 			{
 				if (rbxlfile == null)
@@ -36,6 +37,7 @@ namespace UniversalDuoHost
 
 				x.PhysicsManager.SpringUpPhysics();
 				x.PauseReplication = false;
+				x.IsRunning = true;
 
 				x.NetworkManager.StartServerNonBlocking();
 			});
@@ -50,11 +52,15 @@ namespace UniversalDuoHost
 			CurrentClient = AppManager.CreateGame(new()
 			{
 				AsClient = true,
-				GameName = "NetBlox Client (duohosted)"
+				GameName = "NetBlox Client-DH"
 			},
-			["-cs", "{\"a\":\"http://localhost:80/\",\"b\":\"NetBlox Development\",\"e\":true,\"g\":\"127.0.0.1\"}"], (x) => { });
-			CurrentClient.MainManager = true;
-			AppManager.SetRenderTarget(CurrentClient);
+			["-cs", "{\"a\":\"http://localhost:80/\",\"b\":\"NetBlox Development\",\"e\":true,\"g\":\"127.0.0.1\"}"], (x) => 
+			{
+				x.MainManager = true;
+				x.IsRunning = true;
+				AppManager.SetRenderTarget(x);
+			});
+
 			return CurrentClient;
 		}
 		internal static int Main(string[] args)
@@ -63,7 +69,7 @@ namespace UniversalDuoHost
 
 			Environment.CurrentDirectory = Path.GetDirectoryName(Environment.ProcessPath);
 
-			// Raylib.SetTraceLogLevel(TraceLogLevel.None);
+			Raylib.SetTraceLogLevel(TraceLogLevel.None);
 
 			var v = Rlgl.GetVersion();
 			if (v == GlVersion.OpenGl11 || v == GlVersion.OpenGl21)
@@ -103,8 +109,13 @@ namespace UniversalDuoHost
 
 			LogManager.LogInfo("Initializing server...");
 
-			CurrentServer = CreateServer(25570);
-			CurrentClient = CreateClient();
+			TaskScheduler.ScheduleNamedJob("DuoHostBootstrap", JobType.Miscellaneous, _ =>
+			{
+				CurrentServer = CreateServer(25570);
+				CurrentClient = CreateClient();
+				return JobResult.CompletedSuccess;
+			});
+
 			AppManager.Start();
 			return 0;
 		}

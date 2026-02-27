@@ -58,7 +58,7 @@ namespace NetBlox.Instances.Services
 		[Lua([Security.Capability.CoreSecurity])]
 		public void OpenBrowserWindow(string url) => AppManager.PlatformOpenBrowser(url);
 		[Lua([Security.Capability.CoreSecurity])]
-		public string FormatVersion() => $"{GameManager.ManagerName}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";
+		public string FormatVersion() => $"{GameManager.GameName}, v{AppManager.VersionMajor}.{AppManager.VersionMinor}.{AppManager.VersionPatch}";
 		[Lua([Security.Capability.CoreSecurity])]
 		public void EnableRctlPipe()
 		{
