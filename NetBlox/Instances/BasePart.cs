@@ -1,4 +1,4 @@
-﻿using BepuPhysics;
+using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using MoonSharp.Interpreter;
@@ -28,13 +28,14 @@ namespace NetBlox.Instances
 		public static bool FFlagShowAFSCacheReload = false;
 		public static bool FFlagShowPartOwnerhsip = false;
 		public static bool FFlagShowPartGroundedness = false;
+		public static bool FFlagLogAnchorFactorChanges = true;
 
 		public PhysicsAssembly? Assembly;
 
 		private object physicsRepresentationLock = new();
 
 		public bool IsActuallyAnchored => 
-			anchoredFactorUserChoice || anchoredFactorNonDomestic || anchoredFactorHumanoidAttachment;
+			anchoredFactorUserChoice || anchoredFactorNonDomestic || anchoredFactorHumanoidAttachment || anchoredFactorWeldToAnchored;
 
 		[Lua([Security.Capability.None])]
 		public bool Anchored
@@ -50,6 +51,8 @@ namespace NetBlox.Instances
 			{
 				var og = IsActuallyAnchored;
 				anchoredFactorUserChoice = value;
+				if (FFlagLogAnchorFactorChanges)
+					LogManager.LogInfo(GetFullName() + ": AnchoredFactorUserChoice = " + value);
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
 			}
@@ -62,6 +65,8 @@ namespace NetBlox.Instances
 			{
 				var og = IsActuallyAnchored;
 				anchoredFactorNonDomestic = value;
+				if (FFlagLogAnchorFactorChanges)
+					LogManager.LogInfo(GetFullName() + ": AnchoredFactorNonDomestic = " + value);
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
 			}
@@ -74,6 +79,22 @@ namespace NetBlox.Instances
 			{
 				var og = IsActuallyAnchored;
 				anchoredFactorHumanoidAttachment = value;
+				if (FFlagLogAnchorFactorChanges)
+					LogManager.LogInfo(GetFullName() + ": AnchoredFactorHumanoidAttachment = " + value);
+				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
+					ReevaluatePhysicsRepresentation();
+			}
+		}
+		[NotReplicated]
+		public bool AnchoredFactorWeldToAnchored
+		{
+			get => anchoredFactorWeldToAnchored;
+			set
+			{
+				var og = IsActuallyAnchored;
+				anchoredFactorWeldToAnchored = value;
+				if (FFlagLogAnchorFactorChanges)
+					LogManager.LogInfo(GetFullName() + ": AnchoredFactorWeldToAnchored = " + value);
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
 			}
@@ -521,6 +542,7 @@ namespace NetBlox.Instances
 		protected bool anchoredFactorUserChoice = false;
 		protected bool anchoredFactorNonDomestic = false;
 		protected bool anchoredFactorHumanoidAttachment = false;
+		protected bool anchoredFactorWeldToAnchored = false;
 
 		// they are internal as a workaround for serializationmanager
 		internal Vector3 _physicsposition
@@ -606,6 +628,14 @@ namespace NetBlox.Instances
 		public void DestroyBodyHandle()
 		{
 			var localsim = GameManager.PhysicsManager.LocalSimulation;
+			var activeConstraints = new Constraint[ActiveConstraints.Count];
+
+			ActiveConstraints.CopyTo(activeConstraints, 0);
+
+			for (int i = 0; i < activeConstraints.Length; i++)
+			{
+				activeConstraints[i].DestroyConstraint();
+			}
 
 			if (BodyHandle.HasValue)
 			{
@@ -621,6 +651,14 @@ namespace NetBlox.Instances
 		public void DestroyStaticHandle()
 		{
 			var localsim = GameManager.PhysicsManager.LocalSimulation;
+			var activeConstraints = new Constraint[ActiveConstraints.Count];
+
+			ActiveConstraints.CopyTo(activeConstraints, 0);
+
+			for (int i = 0; i < activeConstraints.Length; i++)
+			{
+				activeConstraints[i].DestroyConstraint();
+			}
 
 			if (StaticHandle.HasValue)
 			{
@@ -636,7 +674,7 @@ namespace NetBlox.Instances
 		public void CreateBodyHandle()
 		{
 			if (IsActuallyAnchored)
-				throw new InvalidOperationException("Cannot call CreateBodyHandle on BaseParts with anchor factors");
+				throw new InvalidOperationException("Cannot call CreateBodyHandle on BaseParts with some anchor factors");
 
 			var localsim = GameManager.PhysicsManager.LocalSimulation;
 
@@ -650,11 +688,20 @@ namespace NetBlox.Instances
 
 			BodyHandle = localsim.Bodies.Add(description);
 			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
+
+			var activeConstraints = new Constraint[ActiveConstraints.Count];
+
+			ActiveConstraints.CopyTo(activeConstraints, 0);
+
+			for (int i = 0; i < activeConstraints.Length; i++)
+			{
+				activeConstraints[i].CreateConstraint();
+			}
 		}
 		public void CreateStaticHandle()
 		{
 			if (!IsActuallyAnchored)
-				throw new InvalidOperationException("Cannot call CreateStaticHandle on BaseParts without anchor factors");
+				throw new InvalidOperationException("Cannot call CreateStaticHandle on BaseParts without any anchor factors");
 
 			var localsim = GameManager.PhysicsManager.LocalSimulation;
 
@@ -665,6 +712,15 @@ namespace NetBlox.Instances
 
 			StaticHandle = localsim.Statics.Add(description);
 			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
+
+			var activeConstraints = new Constraint[ActiveConstraints.Count];
+
+			ActiveConstraints.CopyTo(activeConstraints, 0);
+
+			for (int i = 0; i < activeConstraints.Length; i++)
+			{
+				activeConstraints[i].CreateConstraint();
+			}
 		}
 		public virtual void Render()
 		{

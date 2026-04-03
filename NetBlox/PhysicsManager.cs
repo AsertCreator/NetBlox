@@ -1,4 +1,4 @@
-﻿using BepuPhysics;
+using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
@@ -30,6 +30,8 @@ namespace NetBlox
 
 		public List<BasePart> Actors = new();
 		public List<Humanoid> Humanoids = new();
+
+		public Queue<Action> DeferredPhysicsActions = [];
 
 		public Dictionary<uint, BasePart> Collidable2BasePartMap = [];
 		public bool DisablePhysics = true; // not now
@@ -178,6 +180,17 @@ namespace NetBlox
 				LogManager.LogError("Physics solver had failed! " + e.GetType() + ", msg:" + e.Message);
 				LogManager.LogError(e.StackTrace ?? "no stacktrace");
 				// GameManager.Shutdown();
+			}
+
+			try
+			{
+				if (DeferredPhysicsActions.Any())
+					DeferredPhysicsActions.Dequeue()();
+			}
+			catch (Exception e)
+			{
+				LogManager.LogError("DeferredPhysicsActions had failed! " + e.GetType() + ", msg:" + e.Message);
+				LogManager.LogError(e.StackTrace ?? "no stacktrace");
 			}
 		}
 		public float QuickRaycast(Vector3 from, Vector3 direction, float max)

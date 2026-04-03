@@ -130,7 +130,10 @@ namespace NetBlox.Instances
 					return;
 				}
 
-				typedLimbPart.IsHumanoidLimb = true;
+				GameManager.PhysicsManager.DeferredPhysicsActions.Enqueue(() =>
+				{
+					typedLimbPart.IsHumanoidLimb = true;
+				});
 			}
 			void OnLimbDeattachedGeneric(object? _, Instance limbPart)
 			{
@@ -144,7 +147,10 @@ namespace NetBlox.Instances
 					return;
 				}
 
-				typedLimbPart.IsHumanoidLimb = false;
+				GameManager.PhysicsManager.DeferredPhysicsActions.Enqueue(() =>
+				{
+					typedLimbPart.IsHumanoidLimb = false;
+				});
 			}
 			void OnLimbDeattachedLifeCritical(object? _, Instance limbPart)
 			{
@@ -158,7 +164,10 @@ namespace NetBlox.Instances
 					return;
 				}
 
-				typedLimbPart.IsHumanoidLimb = false;
+				GameManager.PhysicsManager.DeferredPhysicsActions.Enqueue(() =>
+				{
+					typedLimbPart.IsHumanoidLimb = false;
+				});
 
 				// actually let's die
 

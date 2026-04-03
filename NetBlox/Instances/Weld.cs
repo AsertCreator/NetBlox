@@ -9,22 +9,21 @@ namespace NetBlox.Instances
 	public class Weld : Constraint
 	{
 		[Lua([Security.Capability.None])]
-		public BasePart? Part0
+		public override BasePart? Part0
 		{
 			get => part0;
 			set
 			{
 				if (part0 == value) return;
 
-				var enabled = Enabled;
-
-				Enabled = false;
-
 				if (part0 != null)
 				{
 					part0.BeforePhysicsRepresentationChanged -= PhysicsRepresentationChangedHandler;
 					part0.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
 				}
+
+				if (Enabled)
+					DestroyConstraint();
 
 				part0 = value;
 				if (part0 != null)
@@ -33,26 +32,26 @@ namespace NetBlox.Instances
 					part0.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
 				}
 
-				Enabled = enabled;
+				if (Enabled && part0 != null)
+					CreateConstraint();
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public BasePart? Part1
+		public override BasePart? Part1
 		{
 			get => part1;
 			set
 			{
 				if (part1 == value) return;
 
-				var enabled = Enabled;
-
-				Enabled = false;
-
 				if (part1 != null)
 				{
 					part1.BeforePhysicsRepresentationChanged -= PhysicsRepresentationChangedHandler;
 					part1.OnNetworkOwnershipChanged -= NetworkOwnershipChangedHandler;
 				}
+
+				if (Enabled)
+					DestroyConstraint();
 
 				part1 = value;
 				if (part1 != null)
@@ -61,13 +60,14 @@ namespace NetBlox.Instances
 					part1.OnNetworkOwnershipChanged += NetworkOwnershipChangedHandler;
 				}
 
-				Enabled = enabled;
+				if (Enabled && part1 != null)
+					CreateConstraint();
 			}
 		}
 		[Lua([Security.Capability.None])]
-		public Vector3 PartOffset { get; set; }
+		public override Vector3 PartOffset { get; set; }
 		[Lua([Security.Capability.None])]
-		public bool Enabled 
+		public override bool Enabled 
 		{
 			get => enabled;
 			set
@@ -77,16 +77,16 @@ namespace NetBlox.Instances
 
 				if (part0 == null || part1 == null)
 				{
-					DestroyWeld();
+					DestroyConstraint();
 					return;
 				}
 
 				if (part0.IsDomestic && part1.IsDomestic)
 				{
 					if (value)
-						CreateWeld();
+						CreateConstraint();
 					else
-						DestroyWeld();
+						DestroyConstraint();
 				}
 
 				enabled = value;
@@ -98,17 +98,16 @@ namespace NetBlox.Instances
 		private BasePart? part0;
 		private BasePart? part1;
 		private bool enabled;
-		private Job? waitingJob;
 
 		public Weld(GameManager ins) : base(ins) { }
 
 		private void PhysicsRepresentationChangedHandler(object sender, EventArgs args)
 		{
-			Reevaluate();
+			ReevaluateConstraint();
 		}
 		private void NetworkOwnershipChangedHandler(object sender, EventArgs args)
 		{
-			Reevaluate();
+			ReevaluateConstraint();
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)
@@ -119,21 +118,23 @@ namespace NetBlox.Instances
 		public override void Destroy()
 		{
 			if (Enabled)
-				DestroyWeld();
+				DestroyConstraint();
 			base.Destroy();
 		}
-		private void Reevaluate()
+		public override void ReevaluateConstraint()
 		{
 			if (Enabled)
 			{
-				DestroyWeld();
-				CreateWeld();
+				DestroyConstraint();
+				CreateConstraint();
 			}
 		}
-		private void DestroyWeld()
+		public override void DestroyConstraint()
 		{
-			if (waitingJob != null)
-				TaskScheduler.Terminate(waitingJob);
+			if (!Enabled)
+				return;
+
+			base.DestroyConstraint();
 
 			var sim = GameManager.PhysicsManager.LocalSimulation;
 			if (sim.Solver.ConstraintExists(weldHandle)) 
@@ -141,8 +142,11 @@ namespace NetBlox.Instances
 				sim.Solver.Remove(weldHandle); 
 			}
 		}
-		private void CreateWeld()
+		public override void CreateConstraint()
 		{
+			if (!Enabled)
+				return;
+
 			var sim = GameManager.PhysicsManager.LocalSimulation;
 
 			if (part0 == null || part1 == null)
@@ -154,10 +158,24 @@ namespace NetBlox.Instances
 				return;
 			}
 
+			part0.AnchoredFactorWeldToAnchored = false;
+			part0.AnchoredFactorWeldToAnchored = false;
+
 			PartOffset = part1.PartCFrame.Position - part0.PartCFrame.Position;
 
 			if (!part0.IsDomestic || !part1.IsDomestic)
 				return;
+
+			if (!part0.BodyHandle.HasValue || !part1.BodyHandle.HasValue)
+			{
+				if (part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
+					part0.AnchoredFactorWeldToAnchored = true;
+				if (!part0.BodyHandle.HasValue && part1.BodyHandle.HasValue)
+					part1.AnchoredFactorWeldToAnchored = true;
+				if (!part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
+					return;
+				return;
+			}
 
 			weld = new BepuPhysics.Constraints.Weld()
 			{
@@ -166,26 +184,8 @@ namespace NetBlox.Instances
 				SpringSettings = new SpringSettings(30, 0.1f)
 			};
 
-			if (waitingJob != null)
-				TaskScheduler.Terminate(waitingJob);
-
-			waitingJob = TaskScheduler.ScheduleNamedJob("WeldWaiting", JobType.Miscellaneous, _ =>
-			{
-				BasePart? originalPart0 = Part0;
-				BasePart? originalPart1 = Part1;
-
-				if (originalPart0 == null || originalPart1 == null)
-					return JobResult.CompletedFailure;
-
-				while (originalPart0 == part0 && originalPart1 == part1 &&
-					(!originalPart0.BodyHandle.HasValue || !originalPart1.BodyHandle.HasValue))
-				{
-					return JobResult.NotCompleted;
-				}
-
-				weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
-				return JobResult.CompletedSuccess;
-			});
+			weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
+			base.CreateConstraint();
 		}
 	}
 }

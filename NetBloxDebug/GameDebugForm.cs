@@ -1,4 +1,4 @@
-﻿using NetBlox;
+using NetBlox;
 using Timer = System.Windows.Forms.Timer;
 
 namespace NetBloxDebug
@@ -13,7 +13,7 @@ namespace NetBloxDebug
 			SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
 		}
 
-		private void AppendLog(object? sender, string message) => Invoke(() => gameLog.Text += message + "\r\n");
+		private void AppendLog(object? sender, LogMessage message) => Invoke(() => gameLog.Text += message.ConstructedMessage + "\r\n");
 
 		~GameDebugForm()
 		{
