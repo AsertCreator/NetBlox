@@ -1,9 +1,10 @@
-﻿using Raylib_cs;
+using Raylib_cs;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using NetBlox.Instances.Services;
+using Jitter2.Collision.Shapes;
+using Shape = NetBlox.Structs.Shape;
 
 namespace NetBlox.Instances
 {
@@ -154,6 +155,13 @@ namespace NetBlox.Instances
 			}
 
 			base.Render();
+		}
+		protected override void OnSizeChanged(Vector3 newsize)
+		{
+			if (CurrentShape != null)
+				CurrentRigidBody.RemoveShape(CurrentShape);
+			CurrentShape = new BoxShape(Size);
+			CurrentRigidBody.AddShape(CurrentShape);
 		}
 		[Lua([Security.Capability.None])]
 		public override bool IsA(string classname)

@@ -1,4 +1,4 @@
-﻿using NetBlox.Instances;
+using NetBlox.Instances;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
@@ -33,6 +33,8 @@ namespace NetBlox
 		public static Job? GamePhysics;
 		public static Job? GameGC;
 		public static int PreferredFPS = 60;
+		public static int PreferredPhysicsRate = 20;
+		public static int PreferredNetworkRate = 20;
 		public static bool EnablePeriodicGC = false;
 		public static bool ShuttingDown = false;
 		public static bool BlockReplication = false; // apparently moonsharp does not like the way im adding instances??
@@ -117,7 +119,7 @@ namespace NetBlox
 
 				stopwatch.Stop();
 
-				var leftPhysicsTime = 1000 / PreferredFPS - stopwatch.Elapsed.TotalMilliseconds;
+				var leftPhysicsTime = 1000 / PreferredPhysicsRate - stopwatch.Elapsed.TotalMilliseconds;
 				if (leftPhysicsTime > 0)
 					TaskScheduler.CurrentJob.JobTimingContext.JoinedUntil = DateTime.UtcNow.AddMilliseconds(leftPhysicsTime);
 

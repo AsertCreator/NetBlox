@@ -1,5 +1,4 @@
-using BepuPhysics;
-using BepuPhysics.Constraints;
+using Jitter2.Dynamics.Constraints;
 using NetBlox.Runtime;
 using System.Numerics;
 
@@ -75,26 +74,19 @@ namespace NetBlox.Instances
 				if (value == enabled)
 					return;
 
-				if (part0 == null || part1 == null)
-				{
-					DestroyConstraint();
-					return;
-				}
-
-				if (part0.IsDomestic && part1.IsDomestic)
+				if (joint != null)
 				{
 					if (value)
-						CreateConstraint();
+						joint.Enable();
 					else
-						DestroyConstraint();
+						joint.Disable();
 				}
 
 				enabled = value;
 			}
 		}
 
-		private BepuPhysics.Constraints.Weld weld;
-		private ConstraintHandle weldHandle;
+		private WeldJoint? joint;
 		private BasePart? part0;
 		private BasePart? part1;
 		private bool enabled;
@@ -134,16 +126,12 @@ namespace NetBlox.Instances
 			if (!Enabled)
 				return;
 
-			GameManager.PhysicsManager.DeferredPhysicsActions.Enqueue(() =>
-			{
-				base.DestroyConstraint();
+			base.DestroyConstraint();
 
-				var sim = GameManager.PhysicsManager.LocalSimulation;
-				if (sim.Solver.ConstraintExists(weldHandle))
-				{
-					sim.Solver.Remove(weldHandle);
-				}
-			});
+			var sim = GameManager.PhysicsManager.LocalSimulation;
+			if (joint != null)
+				joint.Remove();
+			joint = null;
 		}
 		public override void CreateConstraint()
 		{
@@ -163,32 +151,17 @@ namespace NetBlox.Instances
 
 			PartOffset = part1.PartCFrame.Position - part0.PartCFrame.Position;
 
-			GameManager.PhysicsManager.DeferredPhysicsActions.Enqueue(() =>
+			if (!part0.IsDomestic || !part1.IsDomestic)
+				return;
+
+			if (joint != null) 
 			{
-				if (!part0.IsDomestic || !part1.IsDomestic)
-					return;
+				LogManager.LogWarn("Trying to create a weld joint in place of an already existing one!"); 
+			}
 
-				if (!part0.BodyHandle.HasValue || !part1.BodyHandle.HasValue)
-				{
-					if (part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
-						part0.AnchoredFactorWeldToAnchored = true;
-					if (!part0.BodyHandle.HasValue && part1.BodyHandle.HasValue)
-						part1.AnchoredFactorWeldToAnchored = true;
-					if (!part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
-						return;
-					return;
-				}
+			joint = new WeldJoint(GameManager.PhysicsManager.LocalSimulation, part0.CurrentRigidBody, part1.CurrentRigidBody, part0.Position);
 
-				weld = new BepuPhysics.Constraints.Weld()
-				{
-					LocalOffset = PartOffset,
-					LocalOrientation = Quaternion.Identity,
-					SpringSettings = new SpringSettings(30, 0.1f)
-				};
-
-				weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
-				base.CreateConstraint();
-			});
+			base.CreateConstraint();
 		}
 	}
 }

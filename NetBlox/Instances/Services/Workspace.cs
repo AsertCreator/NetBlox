@@ -1,10 +1,6 @@
-﻿using NetBlox.Runtime;
+using NetBlox.Runtime;
 using System.Numerics;
 using Raylib_cs;
-using BepuPhysics;
-using BepuPhysics.Collidables;
-using BepuPhysics.Trees;
-using System.Runtime.CompilerServices;
 
 namespace NetBlox.Instances.Services
 {
@@ -92,72 +88,14 @@ namespace NetBlox.Instances.Services
 			GameManager.RenderManager.MainCamera.Position = new Vector3(50, 40, 0);
 			GameManager.RenderManager.MainCamera.Target = Vector3.Zero;
 		}
-		private class RayHitHandler : IRayHitHandler
-		{
-			public CollidableReference? Ignorable;
-			public CollidableReference Reference;
-			public float Distance;
-			public Vector3 Normal;
-			public Vector3 Where;
-			public bool Found;
-
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public bool AllowTest(CollidableReference collidable) => !Ignorable.HasValue || collidable != Ignorable.Value;
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public bool AllowTest(CollidableReference collidable, int childIndex) => true;
-			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
-			{
-				Reference = collidable;
-				Distance = t;
-				Found = true;
-				Normal = normal;
-				Where = ray.Origin + (ray.Direction * t);
-			}
-		}
 		public RaycastResult Raycast(RaycastRequest req)
 		{
 			var sim = GameManager.PhysicsManager.LocalSimulation;
-			var handler = new RayHitHandler();
-
-			if (req.Ignore != null)
-			{
-				handler.Ignorable = req.Ignore.IsActuallyAnchored ? 
-					new CollidableReference(req.Ignore.StaticHandle!.Value) :
-					new CollidableReference(CollidableMobility.Dynamic, req.Ignore.BodyHandle!.Value);
-			}
-
-			sim.RayCast(req.From, Vector3.Normalize(req.To - req.From), req.MaxDistance, ref handler);
-
-			if (!handler.Found)
-				return new RaycastResult()
-				{
-					Distance = -1,
-					Part = null!
-				};
-
-			var mobility = handler.Reference.Mobility;
-			BasePart? basePart = null;
-
-			if (mobility == CollidableMobility.Dynamic)
-			{
-				var body = handler.Reference.BodyHandle;
-				var actors = GameManager.PhysicsManager.Actors;
-				basePart = actors.Find(x => x.BodyHandle == body);
-			}
-			else
-			{
-				var stati = handler.Reference.StaticHandle;
-				var actors = GameManager.PhysicsManager.Actors;
-				basePart = actors.Find(x => x.StaticHandle == stati);
-			}
 
 			return new RaycastResult()
 			{
-				Distance = handler.Distance,
-				Part = basePart,
-				Where = handler.Where,
-				Normal = handler.Normal
+				Distance = -1,
+				Part = null!
 			};
 		}
 		public override void Process()

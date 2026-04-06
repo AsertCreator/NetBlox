@@ -22,7 +22,7 @@
   <Import Project="..\NetBlox.MoonSharp\NetBlox.MoonSharp.projitems" Label="Shared" />
 
   <ItemGroup>
-    <PackageReference Include="BepuPhysics" Version="2.4.0" />
+    <PackageReference Include="Jitter2" Version="2.8.2" />
     <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="Raylib-cs" Version="6.1.1" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />

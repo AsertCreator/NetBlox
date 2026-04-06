@@ -1,6 +1,5 @@
-using BepuPhysics;
-using BepuPhysics.Collidables;
-using BepuPhysics.CollisionDetection;
+using Jitter2.Collision.Shapes;
+using Jitter2.Dynamics;
 using MoonSharp.Interpreter;
 using NetBlox.Common;
 using NetBlox.Instances.Services;
@@ -33,10 +32,8 @@ namespace NetBlox.Instances
 		public PhysicsAssembly? Assembly;
 
 		private object physicsRepresentationLock = new();
-
-		public bool OldIsActuallyAnchored = false;
 		public bool IsActuallyAnchored => 
-			anchoredFactorUserChoice || anchoredFactorNonDomestic || anchoredFactorHumanoidAttachment || anchoredFactorWeldToAnchored;
+			anchoredFactorUserChoice || anchoredFactorNonDomestic || isHumanoidAttachment || anchoredFactorWeldToAnchored;
 
 		[Lua([Security.Capability.None])]
 		public bool Anchored
@@ -54,11 +51,8 @@ namespace NetBlox.Instances
 				anchoredFactorUserChoice = value;
 				if (FFlagLogAnchorFactorChanges)
 					LogManager.LogInfo(GetFullName() + ": AnchoredFactorUserChoice = " + value);
-
-				/*
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
-				*/
 			}
 		}
 		[NotReplicated]
@@ -71,28 +65,8 @@ namespace NetBlox.Instances
 				anchoredFactorNonDomestic = value;
 				if (FFlagLogAnchorFactorChanges)
 					LogManager.LogInfo(GetFullName() + ": AnchoredFactorNonDomestic = " + value);
-
-				/*
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
-				*/
-			}
-		}
-		[NotReplicated]
-		public bool AnchoredFactorHumanoidAttachment
-		{
-			get => anchoredFactorHumanoidAttachment;
-			set
-			{
-				var og = IsActuallyAnchored;
-				anchoredFactorHumanoidAttachment = value;
-				if (FFlagLogAnchorFactorChanges)
-					LogManager.LogInfo(GetFullName() + ": AnchoredFactorHumanoidAttachment = " + value);
-
-				/*
-				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
-					ReevaluatePhysicsRepresentation();
-				*/
 			}
 		}
 		[NotReplicated]
@@ -105,11 +79,21 @@ namespace NetBlox.Instances
 				anchoredFactorWeldToAnchored = value;
 				if (FFlagLogAnchorFactorChanges)
 					LogManager.LogInfo(GetFullName() + ": AnchoredFactorWeldToAnchored = " + value);
-
-				/*
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
-				*/
+			}
+		}
+		[NotReplicated]
+		public bool IsHumanoidAttachment
+		{
+			get => isHumanoidAttachment;
+			set
+			{
+				isHumanoidAttachment = value;
+				if (FFlagLogAnchorFactorChanges)
+					LogManager.LogInfo(GetFullName() + ": IsHumanoidAttachment = " + value);
+				if (!GameManager.PhysicsManager.DisablePhysics)
+					ReevaluatePhysicsRepresentation();
 			}
 		}
 		[Lua([Security.Capability.None])]
@@ -197,27 +181,15 @@ namespace NetBlox.Instances
 				{
 					if (_position == value)
 						return;
-					_position = value;
-					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X) ||
+						float.IsNaN(value.Y) || !float.IsFinite(value.Y) ||
+						float.IsNaN(value.Z) || !float.IsFinite(value.Z))
 						return;
+					_position = value;
 
 					var localsim = GameManager.PhysicsManager.LocalSimulation;
-					if (BodyHandle.HasValue)
-					{
-						var body = localsim.Bodies[BodyHandle.Value];
-						if (!body.Exists)
-							return;
-						body.Pose.Position = _position;
-						body.UpdateBounds();
-					}
-					if (StaticHandle.HasValue)
-					{
-						var stat = localsim.Statics[StaticHandle.Value];
-						if (!stat.Exists)
-							return;
-						stat.Pose.Position = _position;
-						stat.UpdateBounds();
-					}
+
+					CurrentRigidBody.Position = value;
 
 					OnPositionChanged(value);
 				}
@@ -234,27 +206,13 @@ namespace NetBlox.Instances
 					var rotq = Raymath.QuaternionFromEuler(value.Z / 180f * MathF.PI, value.Y / 180f * MathF.PI, value.X / 180f * MathF.PI);
 					if (_rotation == rotq)
 						return;
-					_rotation = rotq;
-					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X) ||
+						float.IsNaN(value.Y) || !float.IsFinite(value.Y) ||
+						float.IsNaN(value.Z) || !float.IsFinite(value.Z))
 						return;
+					_rotation = rotq;
 
-					var localsim = GameManager.PhysicsManager.LocalSimulation;
-					if (BodyHandle.HasValue)
-					{
-						var body = localsim.Bodies[BodyHandle.Value];
-						if (!body.Exists)
-							return;
-						body.Pose.Orientation = rotq;
-						body.UpdateBounds();
-					}
-					if (StaticHandle.HasValue)
-					{
-						var stat = localsim.Statics[StaticHandle.Value];
-						if (!stat.Exists)
-							return;
-						stat.Pose.Orientation = rotq;
-						stat.UpdateBounds();
-					}
+					CurrentRigidBody.Orientation = Raymath.QuaternionFromEuler(value.Z, value.Y, value.X);
 
 					OnRotationChanged(rotq);
 				}
@@ -272,27 +230,13 @@ namespace NetBlox.Instances
 						return;
 					if (value == default)
 						value = Quaternion.Identity;
-					_rotation = value;
-					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X) ||
+						float.IsNaN(value.Y) || !float.IsFinite(value.Y) ||
+						float.IsNaN(value.Z) || !float.IsFinite(value.Z))
 						return;
+					_rotation = value;
 
-					var localsim = GameManager.PhysicsManager.LocalSimulation;
-					if (BodyHandle.HasValue)
-					{
-						var body = localsim.Bodies[BodyHandle.Value];
-						if (!body.Exists)
-							return;
-						body.Pose.Orientation = value;
-						body.UpdateBounds();
-					}
-					if (StaticHandle.HasValue)
-					{
-						var stat = localsim.Statics[StaticHandle.Value];
-						if (!stat.Exists)
-							return;
-						stat.Pose.Orientation = value;
-						stat.UpdateBounds();
-					}
+					CurrentRigidBody.Orientation = value;
 
 					OnRotationChanged(value);
 				}
@@ -308,45 +252,13 @@ namespace NetBlox.Instances
 				{
 					if (_size == value)
 						return;
-					_size = value;
-					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X) ||
+						float.IsNaN(value.Y) || !float.IsFinite(value.Y) ||
+						float.IsNaN(value.Z) || !float.IsFinite(value.Z))
 						return;
+					_size = value;
 
 					var localsim = GameManager.PhysicsManager.LocalSimulation;
-					if (BodyHandle.HasValue) 
-					{
-						var body = localsim.Bodies[BodyHandle.Value];
-						if (!body.Exists)
-							return;
-						var idx = body.Collidable.Shape;
-						var box = localsim.Shapes.GetShape<Box>(idx.Index);
-
-						localsim.Shapes.Remove(idx);
-
-						box.Width = _size.X;
-						box.Height = _size.Y;
-						box.Length = _size.Z;
-
-						idx = localsim.Shapes.Add(box);
-						body.Collidable.Shape = idx;
-					}
-					if (StaticHandle.HasValue)
-					{
-						var stat = localsim.Statics[StaticHandle.Value];
-						if (!stat.Exists)
-							return;
-						var idx = stat.Shape;
-						var box = localsim.Shapes.GetShape<Box>(idx.Index);
-
-						localsim.Shapes.Remove(idx);
-
-						box.Width = _size.X;
-						box.Height = _size.Y;
-						box.Length = _size.Z;
-
-						idx = localsim.Shapes.Add(box);
-						stat.SetShape(idx);
-					}
 
 					OnSizeChanged(value);
 				}
@@ -371,19 +283,13 @@ namespace NetBlox.Instances
 				{
 					if (LinearVelocity == value)
 						return;
-					LinearVelocity = value;
-					if (float.IsNaN(value.X) || !float.IsFinite(value.X))
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X) ||
+						float.IsNaN(value.Y) || !float.IsFinite(value.Y) ||
+						float.IsNaN(value.Z) || !float.IsFinite(value.Z))
 						return;
+					LinearVelocity = value;
 
-					var localsim = GameManager.PhysicsManager.LocalSimulation;
-					if (BodyHandle.HasValue)
-					{
-						var body = localsim.Bodies[BodyHandle.Value];
-						if (!body.Exists)
-							return;
-						body.ApplyLinearImpulse(LinearVelocity - body.Velocity.Linear);
-						body.Awake = true;
-					}
+					CurrentRigidBody.ApplyImpulse((value - CurrentRigidBody.Velocity) * CurrentRigidBody.Mass, Position);
 				}
 			}
 		}
@@ -397,17 +303,15 @@ namespace NetBlox.Instances
 				{
 					if (RotationalVelocity == value)
 						return;
+					if (float.IsNaN(value.X) || !float.IsFinite(value.X) ||
+						float.IsNaN(value.Y) || !float.IsFinite(value.Y) ||
+						float.IsNaN(value.Z) || !float.IsFinite(value.Z))
+						return;
 					RotationalVelocity = value;
+					
+					// can i jus not implement this please
 
-					var localsim = GameManager.PhysicsManager.LocalSimulation;
-					if (BodyHandle.HasValue)
-					{
-						var body = localsim.Bodies[BodyHandle.Value];
-						if (!body.Exists)
-							return;
-						body.ApplyAngularImpulse(RotationalVelocity - body.Velocity.Angular);
-						body.Awake = true;
-					}
+					CurrentRigidBody.AngularVelocity = value;
 				}
 			}
 		}
@@ -417,7 +321,11 @@ namespace NetBlox.Instances
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			get => PartCFrame;
 			[MethodImpl(MethodImplOptions.AggressiveInlining)]
-			set => PartCFrame = value;
+			set
+			{
+				Position = value.Position;
+				QuaternionRotation = value.Rotation;
+			}
 		}
 		public Vector3 _position
 		{
@@ -503,7 +411,7 @@ namespace NetBlox.Instances
 			get => isHumanoidLimb;
 			set
 			{
-				AnchoredFactorHumanoidAttachment = value;
+				IsHumanoidAttachment = value;
 				isHumanoidLimb = value;
 			}
 		}
@@ -514,18 +422,10 @@ namespace NetBlox.Instances
 		public event EventHandler? OnNetworkOwnershipChanged;
 		public event EventHandler? BeforePhysicsRepresentationChanged;
 		public event EventHandler? AfterPhysicsRepresentationChanged;
-		/// <summary>
-		/// Use this if the part is anchored OR if its foreign (owned by another player)<br/>
-		/// ========================================<br/>
-		/// Use this if the part is server-side and its anchored
-		/// </summary>
-		public StaticHandle? StaticHandle;
-		/// <summary>
-		/// Use this if the part is NOT anchored AND its domestic (owned by us)<br/>
-		/// ========================================<br/>
-		/// Use this if the part is server-side and its NOT anchored
-		/// </summary>
-		public BodyHandle? BodyHandle;
+
+		public RigidBody CurrentRigidBody;
+		public RigidBodyShape CurrentShape;
+
 		public PartRenderCache RenderCache = new();
 		public Lighting? LocalLighing;
 		public bool IsDirty = false;
@@ -540,8 +440,7 @@ namespace NetBlox.Instances
 		public RemoteClient? Owner;
 		public List<BasePart> TouchingWith = [];
 		public List<Constraint> ActiveConstraints = [];
-		public HashSet<CollidablePair> currentPairs = [];
-		public HashSet<CollidablePair> previousPairs = [];
+
 		protected SurfaceType frontSurface;
 		protected SurfaceType backSurface;
 		protected SurfaceType topSurface = SurfaceType.Studs;
@@ -554,7 +453,7 @@ namespace NetBlox.Instances
 
 		protected bool anchoredFactorUserChoice = false;
 		protected bool anchoredFactorNonDomestic = false;
-		protected bool anchoredFactorHumanoidAttachment = false;
+		protected bool isHumanoidAttachment = false;
 		protected bool anchoredFactorWeldToAnchored = false;
 
 		// they are internal as a workaround for serializationmanager
@@ -601,6 +500,12 @@ namespace NetBlox.Instances
 			AppManager.FastFlags.TryGetValue("FFlagShowPartOwnerhsip", out FFlagShowPartOwnerhsip);
 			AppManager.FastFlags.TryGetValue("FFlagShowPartGroundedness", out FFlagShowPartGroundedness);
 
+			CurrentRigidBody = GameManager.PhysicsManager.LocalSimulation.CreateRigidBody();
+
+			Size = new Vector3(4, 1, 2);
+
+			CurrentRigidBody.Position = Position;
+
 			if (!GameManager.PhysicsManager.DisablePhysics)
 				ReevaluatePhysicsRepresentation();
 		}
@@ -617,122 +522,17 @@ namespace NetBlox.Instances
 			{
 				BeforePhysicsRepresentationChanged?.Invoke(this, new());
 
-				if (IsActuallyAnchored)
+				if (!isHumanoidAttachment)
 				{
-					DestroyBodyHandle();
-					CreateStaticHandle();
+					if (IsActuallyAnchored)
+						CurrentRigidBody.MotionType = MotionType.Static;
+					else
+						CurrentRigidBody.MotionType = MotionType.Dynamic;
 				}
 				else
-				{
-					DestroyStaticHandle();
-					CreateBodyHandle();
-				}
+					CurrentRigidBody.MotionType = MotionType.Kinematic;
 
 				AfterPhysicsRepresentationChanged?.Invoke(this, new());
-			}
-		}
-		public CollidableReference GetCollidableReference()
-		{
-			if (BodyHandle.HasValue)
-				return new CollidableReference(CollidableMobility.Dynamic, BodyHandle.Value);
-			else
-				return new CollidableReference(StaticHandle.Value);
-		}
-		public void DestroyBodyHandle()
-		{
-			var localsim = GameManager.PhysicsManager.LocalSimulation;
-			var activeConstraints = new Constraint[ActiveConstraints.Count];
-
-			ActiveConstraints.CopyTo(activeConstraints, 0);
-
-			for (int i = 0; i < activeConstraints.Length; i++)
-			{
-				activeConstraints[i].DestroyConstraint();
-			}
-
-			if (BodyHandle.HasValue)
-			{
-				if (!localsim.Bodies[BodyHandle.Value].Exists)
-				{
-					BodyHandle = null;
-					return;
-				}
-				localsim.Bodies.Remove(BodyHandle.Value);
-				BodyHandle = null;
-			}
-		}
-		public void DestroyStaticHandle()
-		{
-			var localsim = GameManager.PhysicsManager.LocalSimulation;
-			var activeConstraints = new Constraint[ActiveConstraints.Count];
-
-			ActiveConstraints.CopyTo(activeConstraints, 0);
-
-			for (int i = 0; i < activeConstraints.Length; i++)
-			{
-				activeConstraints[i].DestroyConstraint();
-			}
-
-			if (StaticHandle.HasValue)
-			{
-				if (!localsim.Statics[StaticHandle.Value].Exists)
-				{
-					StaticHandle = null;
-					return;
-				}
-				localsim.Statics.Remove(StaticHandle.Value);
-				StaticHandle = null;
-			}
-		}
-		public void CreateBodyHandle()
-		{
-			if (IsActuallyAnchored)
-				throw new InvalidOperationException("Cannot call CreateBodyHandle on BaseParts with some anchor factors");
-
-			var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-			var collidable = new Box(_size.X, _size.Y, _size.Z);
-			var inertia = collidable.ComputeInertia(1);
-			var rotation = Raymath.QuaternionFromEuler(_rotation.X, _rotation.Y, _rotation.Z);
-			var rigidpose = new RigidPose(_position, rotation);
-			var index = localsim.Shapes.Add(collidable);
-			var description = BodyDescription.CreateDynamic(rigidpose, inertia, index, 0.01f);
-			description.Velocity.Linear = LinearVelocity;
-
-			BodyHandle = localsim.Bodies.Add(description);
-			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
-
-			var activeConstraints = new Constraint[ActiveConstraints.Count];
-
-			ActiveConstraints.CopyTo(activeConstraints, 0);
-
-			for (int i = 0; i < activeConstraints.Length; i++)
-			{
-				activeConstraints[i].CreateConstraint();
-			}
-		}
-		public void CreateStaticHandle()
-		{
-			if (!IsActuallyAnchored)
-				throw new InvalidOperationException("Cannot call CreateStaticHandle on BaseParts without any anchor factors");
-
-			var localsim = GameManager.PhysicsManager.LocalSimulation;
-
-			var collidable = new Box(_size.X, _size.Y, _size.Z);
-			var rotation = Raymath.QuaternionFromEuler(_rotation.X, _rotation.Y, _rotation.Z);
-			var index = localsim.Shapes.Add(collidable);
-			var description = new StaticDescription(_position, rotation, index);
-
-			StaticHandle = localsim.Statics.Add(description);
-			GameManager.PhysicsManager.Collidable2BasePartMap[GetCollidableReference().Packed] = this;
-
-			var activeConstraints = new Constraint[ActiveConstraints.Count];
-
-			ActiveConstraints.CopyTo(activeConstraints, 0);
-
-			for (int i = 0; i < activeConstraints.Length; i++)
-			{
-				activeConstraints[i].CreateConstraint();
 			}
 		}
 		public virtual void Render()
@@ -759,12 +559,11 @@ namespace NetBlox.Instances
 
 			lock (physicsRepresentationLock)
 			{
-				GameManager.PhysicsManager.Collidable2BasePartMap.Remove(GetCollidableReference().Packed);
 				GameManager.PhysicsManager.Actors.Remove(this);
-				if (BodyHandle.HasValue)
-					GameManager.PhysicsManager.LocalSimulation.Bodies.Remove(BodyHandle.Value);
-				if (StaticHandle.HasValue)
-					GameManager.PhysicsManager.LocalSimulation.Statics.Remove(StaticHandle.Value);
+				if (Assembly == null)
+					GameManager.PhysicsManager.LocalSimulation.Remove(CurrentRigidBody);
+				else
+					PhysicsAssembly.RemovePartFromAssembly(this);
 			}
 		}
 		public void InvokeChangeNetworkOwnership() => OnNetworkOwnershipChanged?.Invoke(this, new());
@@ -820,45 +619,37 @@ namespace NetBlox.Instances
 				// Touched.Fire(LuaRuntime.PushInstance(basePart));
 			}
 		}
-		public void AddCollidablePair(CollidablePair pair) => currentPairs.Add(pair);
 		public void Reset()
 		{
-			try 
-			{ 
-				foreach (var pair in currentPairs) // is this the only foreach in this whole thing
-				{
-					if (!previousPairs.Contains(pair))
-					{
-						BasePart bpa = GameManager.PhysicsManager.Collidable2BasePartMap[pair.A.Packed];
-						BasePart bpb = GameManager.PhysicsManager.Collidable2BasePartMap[pair.B.Packed];
-						if (bpa == this)
-							AddTouchingPart(bpb);
-						else
-							AddTouchingPart(bpa);
-					}
-				}
-				foreach (var pair in previousPairs)
-				{
-					if (!currentPairs.Contains(pair))
-					{
-						BasePart bpa = GameManager.PhysicsManager.Collidable2BasePartMap[pair.A.Packed];
-						BasePart bpb = GameManager.PhysicsManager.Collidable2BasePartMap[pair.B.Packed];
-						if (bpa == this)
-							RemoveTouchingPart(bpb);
-						else
-							RemoveTouchingPart(bpa);
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				LogManager.LogError("Failed to comprehend collisions: " + ex.GetType() + ", msg: " + ex.Message);
-			}
-
-			var a = previousPairs;
-			previousPairs = currentPairs;
-			currentPairs = a;
-			currentPairs.Clear();
+			/*
+			 *
+						   ≠=      √÷×≈           
+				 ++++ +++++ ++++++++ ++++++++++++ 
+				 ++++++++ ≈++-+---++++ ++++++∞+++ 
+				 √+++÷    +++-+-+++÷+++   ≈+++++  
+				  +π         ++=+-++         ++√  
+				 +       ++≠  ++√+√      ++√  ++  
+				 + ÷           + +       ++    += 
+				 + +           + + +           +  
+				 +  ∞         +  +  +       + ++  
+				  ++  √+× ∞ ++  + +×  + ++√  ++   
+					++++++++   ∞+   +++   +++ -   
+				   ≠        ++ √+++×       ≈++    
+				   +++++++++++ √++++++++++++++    
+				   ++++++-++ ÷ ≈+  +++++  ≈÷=+    
+					++ ≈+++-++ ++++ ++≈- + ++     
+				  +-++π≠++  ++ ++++ ≠+=+=√++++    
+				  +√≈+++++√+++ ++ ≠+= +∞ π∞  +    
+						 ≈==≈÷ ++π++++++++++      
+							   ++                 
+									   π          
+				   ++                     π++     
+				   ∞ ∞   ++           +     +     
+						   +              × √     
+						 +++         ++           
+						 √+          +            
+                                  
+			 */
 		}
 
 		protected virtual void OnSizeChanged(Vector3 newsize) { }
