@@ -4,18 +4,14 @@ using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
 using BepuPhysics.Trees;
 using BepuUtilities;
-using BepuUtilities.Collections;
 using BepuUtilities.Memory;
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
-using NetBlox.Runtime;
-using Raylib_cs;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace NetBlox
 {
@@ -65,7 +61,11 @@ namespace NetBlox
 			{
 				var box = Actors[i];
 
-				if (!box.Anchored && box.IsDomestic) // if part is dynamic AND its domestic
+				if (box.OldIsActuallyAnchored != box.IsActuallyAnchored)
+					box.ReevaluatePhysicsRepresentation();
+				box.OldIsActuallyAnchored = box.IsActuallyAnchored;
+
+				if (!box.IsActuallyAnchored && box.IsDomestic) // if part is dynamic AND its domestic
 				{
 					if (!box.BodyHandle.HasValue)
 						continue;
@@ -112,7 +112,11 @@ namespace NetBlox
 			{
 				var box = Actors[i];
 
-				if (!box.Anchored && box.IsDomestic) // if part is dynamic AND its server-side
+				if (box.OldIsActuallyAnchored != box.IsActuallyAnchored)
+					box.ReevaluatePhysicsRepresentation();
+				box.OldIsActuallyAnchored = box.IsActuallyAnchored;
+
+				if (!box.IsActuallyAnchored && box.IsDomestic) // if part is dynamic AND its server-side
 				{
 					// reflect this in rendering
 					if (!box.BodyHandle.HasValue)

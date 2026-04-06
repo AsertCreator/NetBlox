@@ -134,13 +134,16 @@ namespace NetBlox.Instances
 			if (!Enabled)
 				return;
 
-			base.DestroyConstraint();
-
-			var sim = GameManager.PhysicsManager.LocalSimulation;
-			if (sim.Solver.ConstraintExists(weldHandle)) 
+			GameManager.PhysicsManager.DeferredPhysicsActions.Enqueue(() =>
 			{
-				sim.Solver.Remove(weldHandle); 
-			}
+				base.DestroyConstraint();
+
+				var sim = GameManager.PhysicsManager.LocalSimulation;
+				if (sim.Solver.ConstraintExists(weldHandle))
+				{
+					sim.Solver.Remove(weldHandle);
+				}
+			});
 		}
 		public override void CreateConstraint()
 		{
@@ -158,34 +161,34 @@ namespace NetBlox.Instances
 				return;
 			}
 
-			part0.AnchoredFactorWeldToAnchored = false;
-			part0.AnchoredFactorWeldToAnchored = false;
-
 			PartOffset = part1.PartCFrame.Position - part0.PartCFrame.Position;
 
-			if (!part0.IsDomestic || !part1.IsDomestic)
-				return;
-
-			if (!part0.BodyHandle.HasValue || !part1.BodyHandle.HasValue)
+			GameManager.PhysicsManager.DeferredPhysicsActions.Enqueue(() =>
 			{
-				if (part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
-					part0.AnchoredFactorWeldToAnchored = true;
-				if (!part0.BodyHandle.HasValue && part1.BodyHandle.HasValue)
-					part1.AnchoredFactorWeldToAnchored = true;
-				if (!part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
+				if (!part0.IsDomestic || !part1.IsDomestic)
 					return;
-				return;
-			}
 
-			weld = new BepuPhysics.Constraints.Weld()
-			{
-				LocalOffset = PartOffset,
-				LocalOrientation = Quaternion.Identity,
-				SpringSettings = new SpringSettings(30, 0.1f)
-			};
+				if (!part0.BodyHandle.HasValue || !part1.BodyHandle.HasValue)
+				{
+					if (part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
+						part0.AnchoredFactorWeldToAnchored = true;
+					if (!part0.BodyHandle.HasValue && part1.BodyHandle.HasValue)
+						part1.AnchoredFactorWeldToAnchored = true;
+					if (!part0.BodyHandle.HasValue && !part1.BodyHandle.HasValue)
+						return;
+					return;
+				}
 
-			weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
-			base.CreateConstraint();
+				weld = new BepuPhysics.Constraints.Weld()
+				{
+					LocalOffset = PartOffset,
+					LocalOrientation = Quaternion.Identity,
+					SpringSettings = new SpringSettings(30, 0.1f)
+				};
+
+				weldHandle = sim.Solver.Add(part0.BodyHandle.Value, part1.BodyHandle.Value, weld);
+				base.CreateConstraint();
+			});
 		}
 	}
 }

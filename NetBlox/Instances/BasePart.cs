@@ -34,6 +34,7 @@ namespace NetBlox.Instances
 
 		private object physicsRepresentationLock = new();
 
+		public bool OldIsActuallyAnchored = false;
 		public bool IsActuallyAnchored => 
 			anchoredFactorUserChoice || anchoredFactorNonDomestic || anchoredFactorHumanoidAttachment || anchoredFactorWeldToAnchored;
 
@@ -53,8 +54,11 @@ namespace NetBlox.Instances
 				anchoredFactorUserChoice = value;
 				if (FFlagLogAnchorFactorChanges)
 					LogManager.LogInfo(GetFullName() + ": AnchoredFactorUserChoice = " + value);
+
+				/*
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
+				*/
 			}
 		}
 		[NotReplicated]
@@ -67,8 +71,11 @@ namespace NetBlox.Instances
 				anchoredFactorNonDomestic = value;
 				if (FFlagLogAnchorFactorChanges)
 					LogManager.LogInfo(GetFullName() + ": AnchoredFactorNonDomestic = " + value);
+
+				/*
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
+				*/
 			}
 		}
 		[NotReplicated]
@@ -81,8 +88,11 @@ namespace NetBlox.Instances
 				anchoredFactorHumanoidAttachment = value;
 				if (FFlagLogAnchorFactorChanges)
 					LogManager.LogInfo(GetFullName() + ": AnchoredFactorHumanoidAttachment = " + value);
+
+				/*
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
+				*/
 			}
 		}
 		[NotReplicated]
@@ -95,8 +105,11 @@ namespace NetBlox.Instances
 				anchoredFactorWeldToAnchored = value;
 				if (FFlagLogAnchorFactorChanges)
 					LogManager.LogInfo(GetFullName() + ": AnchoredFactorWeldToAnchored = " + value);
+
+				/*
 				if (!GameManager.PhysicsManager.DisablePhysics && IsActuallyAnchored != og)
 					ReevaluatePhysicsRepresentation();
+				*/
 			}
 		}
 		[Lua([Security.Capability.None])]
