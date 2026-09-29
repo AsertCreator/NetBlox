@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="NetBlox.API/NetBlox.API.csproj" />
+  <Project Path="NetBlox.Public.Web/NetBlox.Public.Web.csproj" />
+  <Project Path="NetBlox/NetBlox.csproj" />
+  <Project Path="NetBloxClient/NetBloxClient.csproj" />
+  <Project Path="NetBloxServer/NetBloxServer.csproj" />
+  <Project Path="moonsharp/src/MoonSharp.Interpreter/MoonSharp.Interpreter.csproj" />
+</Solution>

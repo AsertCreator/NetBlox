@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+namespace NetBlox.Runtime;
 
-namespace NetBlox.Runtime
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Class)]
+public class NotReplicatedAttribute : Attribute
 {
-	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property)]
-	public class NotReplicatedAttribute : Attribute
-	{
-	}
 }

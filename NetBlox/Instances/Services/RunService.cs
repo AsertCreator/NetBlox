@@ -1,57 +1,79 @@
-﻿using MoonSharp.Interpreter;
 using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Services
+namespace NetBlox.Instances.Services;
+
+[Service]
+[NotReplicated]
+public class RunService : Instance
 {
-	[Service]
-	public class RunService : Instance
-	{
-		[Lua([Security.Capability.None])]
-		public LuaSignal Heartbeat { get; init; }
-		[Lua([Security.Capability.None])]
-		public LuaSignal PostSimulation { get; init; }
-		[Lua([Security.Capability.None])]
-		public LuaSignal PreRender { get; init; }
-		[Lua([Security.Capability.None])]
-		public LuaSignal PreSimulation { get; init; }
-		[Lua([Security.Capability.None])]
-		public LuaSignal RenderStepped { get; init; }
-		public DateTime LastTimeStartedRunning = DateTime.MinValue;
+    public override string ClassName => nameof(RunService);
 
-		public RunService(GameManager gm) : base(gm) 
-		{
-			Name = "Run Service";
-			Heartbeat = new LuaSignal(gm);
-			PostSimulation = new LuaSignal(gm);
-			PreRender = new LuaSignal(gm);
-			PreSimulation = new LuaSignal(gm);
-			RenderStepped = new LuaSignal(gm);
-		}
+    public const ulong NETWORK_CONSTANT_ID = 18;
 
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Pause() => GameManager.IsRunning = false;
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Run() 
-		{
-			LastTimeStartedRunning = DateTime.UtcNow;
-			GameManager.IsRunning = true; 
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Stop() => GameManager.Shutdown();
-		[Lua([Security.Capability.None])]
-		public bool IsClient() => GameManager.NetworkManager.IsClient;
-		[Lua([Security.Capability.None])]
-		public bool IsServer() => GameManager.NetworkManager.IsServer;
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(RunService) == classname) return true;
-			return base.IsA(classname);
-		}
-		public override void Process()
-		{
-			base.Process();
-			Heartbeat.Fire(DynValue.NewNumber(TaskScheduler.LastCycleTime.TotalSeconds));
-		}
-	}
+    public RunService(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+        Name = "Run Service";
+    }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsRunMode()
+    {
+        return GameManager.EditorMode.IsInRunMode;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsEdit()
+    {
+        return GameManager.EditorMode.IsInEditMode;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsStudio()
+    {
+        return GameManager.EditorMode.IsStudio;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsClient()
+    {
+        return GameManager.NetworkMode == Network.NetworkMode.Client;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsServer()
+    {
+        return GameManager.NetworkMode == Network.NetworkMode.Server;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsRunning()
+    {
+        return GameManager.ScriptsRunning;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public void Pause()
+    {
+        Stop();
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public void Stop()
+    {
+        GameManager.PhysicsSolver?.CanRun = false;
+        GameManager.ScriptsRunning = false;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public void Run()
+    {
+        GameManager.PhysicsSolver?.CanRun = true;
+        GameManager.ScriptsRunning = true;
+    }
+
+    public override void Destroy()
+    {
+        if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+            return;
+        base.Destroy();
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(RunService))
+            return base.IsA(className);
+        return true;
+    }
 }

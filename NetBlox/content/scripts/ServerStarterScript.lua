@@ -1,12 +1,21 @@
-local PlatformService = game:GetService("PlatformService");
+local Timeout = 3000;
 
--- initializes server communication with public service
-function initStatus()
-	if PlatformService:IsServer() then
-		PlatformService:EnableRctlPipe();
-	end
+function main()
+    local NetworkServer = game:GetService("NetworkServer");
+    local ConsoleArguments = game:ReadAllConsoleArguments();
+
+    local CA_Verbose = ConsoleArguments.unpaired["Verbose"] == true;
+    local CA_Port = ConsoleArguments.paired["Port"];
+
+    if CA_Port == nil then
+        warn("No port specified, ending...")
+        game:Shutdown();
+        return;
+    end
+
+    NetworkServer.FirstMessageTimeout = Timeout;
+
+    NetworkServer:StartServer("0.0.0.0:" .. CA_Port);
 end
 
-initStatus();
-
-print("Server platform initialized");
+main()

@@ -1,447 +1,351 @@
-﻿global using Color = Raylib_cs.Color;
-using MoonSharp.Interpreter;
+global using GlobalTimestamp = ulong;
+global using InstanceID = ulong;
+
+using System.Diagnostics;
+using System.Numerics;
 using NetBlox.Instances;
-using NetBlox.Instances.GUIs;
+using NetBlox.Instances.Parts;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
+using NetBlox.Instances.Services.Internal;
+using NetBlox.Network;
+using NetBlox.Physics;
 using NetBlox.Runtime;
 using NetBlox.Structs;
-using NetBlox.Network;
-using Raylib_cs;
-using System.Diagnostics;
 
-namespace NetBlox
+namespace NetBlox;
+
+public sealed class GameManager
 {
-	public delegate void InstanceEventHandler(Instance inst);
+    public GameRegistry GameRegistry { get; private set; }
+    public GameScheduler GameScheduler { get; private set; }
+    public GameRenderer? GameRenderer { get; private set; }
+    public PhysicsSolver? PhysicsSolver { get; private set; }
+    public GameAssetManager GameAssetManager { get; private set; }
+    public CloudConfiguration CloudConfiguration { get; private set; }
+    public GameSchedulerTask? HeartbeatTask { get; private set; }
+    public DataModel RootModel { get; private set; }
+    public InitializationStage CurrentPhase { get; private set; } = InitializationStage.Newborn;
+    public int HeartbeatRate = 30;
+    public bool SchedulerRunning;
+    public bool ScriptsRunning;
+    public bool ShuttingDown;
+    public readonly NetworkMode NetworkMode;
+    public Stopwatch GlobalTime;
+    public EditorMode EditorMode;
+    public bool WindowReady;
 
-	/// <summary>
-	/// Represents a NetBlox game. Believe it or not, but one NetBlox process can run multiple games at once (in theory)
-	/// </summary>
-	public class GameManager
-	{
-		public List<Instance> AllInstances = [];
-		public Dictionary<KeyboardKey, Action> Verbs = [];
-		public NetworkIdentity CurrentIdentity = new();
-		public RenderManager RenderManager;
-		public PhysicsManager PhysicsManager;
-		public NetworkManager NetworkManager;
-		public DataModel CurrentRoot = null!;
-		public RunService? CurrentRunService;
-		public ProfileManager CurrentProfile = new();
-		public ConfigFlags CustomFlags;
-		public bool IsStudio = false;
-		public bool IsRunning = true;
-		public bool ShuttingDown = false;
-		public bool ProhibitProcessing = false;
-		public bool ProhibitScripts = false;
-		public bool MainManager = false;
-		public bool UsePublicService = false;
-		public bool FilteringEnabled = true;
-		public string QueuedTeleportAddress = "";
-		public string ManagerName = "";
-		public int PropertyReplicationRate = 20;
-		public DateTime TimeOfCreation = DateTime.Now;
-		public Dictionary<RemoteClient, Instance> Owners = [];
-		public List<Instance> SelfOwnerships = [];
-		public ClientStartupInfo? ClientStartupInfo;
-		public ServerStartupInfo? ServerStartupInfo;
-		public Dictionary<ModuleScript, DynValue> LoadedModules = new();
-		public MoonSharp.Interpreter.Script MainEnvironment = null!;
-		public string Username => CurrentProfile.Username; // bye bye DevDevDev
-		public event EventHandler? ShutdownEvent;
-		public bool AllowReplication = false;
+    public Dictionary<string, string> PairedConsoleArguments = [];
+    public List<string> UnpairedConsoleArguments = [];
 
-		public GameManager(GameConfiguration gc, string[] args, Action<GameManager> loadcallback, Action<DataModel>? dmc = null)
-		{
-			ManagerName = gc.GameName;
+    public PriorityQueue<InstanceID, GlobalTimestamp> DestructionTimetable;
 
-			var oldgm = AppManager.CurrentGameManager;
-			AppManager.CurrentGameManager = this;
+    private Dictionary<string, GameEvent> allGameEvents = [];
+    private Dictionary<string, Action> allVerbs = [];
+    private Stopwatch heartbeatStopwatch = new();
 
-			try
-			{
-				LogManager.LogInfo("Initializing NetBlox...");
+    public GameManager(NetworkMode networkMode)
+    {
+        GameRegistry = new GameRegistry(this);
+        GameScheduler = new GameScheduler(this);
+        PhysicsSolver = new PhysicsSolver(this);
+        GameAssetManager = new GameAssetManager(this, false);
+        NetworkMode = networkMode;
 
-				string? csdata = args[args.ToList().IndexOf("-cs") + 1].Replace("^^", "\"");
-				string? ssdata = args[args.ToList().IndexOf("-ss") + 1].Replace("^^", "\"");
+        DestructionTimetable = new PriorityQueue<InstanceID, GlobalTimestamp>();
+        GlobalTime = new Stopwatch();
+        GlobalTime.Start();
 
-				try
-				{
-					if (gc.AsClient)
-						ClientStartupInfo = csdata != null ? SerializationManager.DeserializeJson<ClientStartupInfo>(csdata) : null;
-					if (gc.AsServer)
-						ServerStartupInfo = ssdata != null ? SerializationManager.DeserializeJson<ServerStartupInfo>(ssdata) : null;
+        CreateGameEventNamed(GameEvent.EVENT_PLAYERADDED, "Player Added");
+        CreateGameEventNamed(GameEvent.EVENT_PLAYERREMOVED, "Player Removed");
+        CreateGameEventNamed(GameEvent.EVENT_LOCALPLAYERCHANGED, "Local Player Changed");
 
-					if (ClientStartupInfo == null && gc.AsClient)
-						throw new Exception("Missing startup info");
-					if (ServerStartupInfo == null && gc.AsServer)
-						throw new Exception("Missing startup info");
+        CreateGameEventNamed(GameEvent.EVENT_HEARTBEAT, "Heartbeat - Process");
+        CreateGameEventNamed(GameEvent.EVENT_RENDER3D, "Render 3D - Process");
+        CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL0, "Render GUI - Level 0");
+        CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL1, "Render GUI - Level 1");
+        CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL2, "Render GUI - Level 2");
+        CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL3, "Render GUI - Level 3");
+        CreateGameEventNamed(GameEvent.EVENT_PHYSICS, "Physics - Process");
 
-					AppManager.PublicServiceAPI =
-						gc.AsServer ?
-						(ServerStartupInfo ?? throw new Exception()).PublicServiceAPI :
-						(ClientStartupInfo ?? throw new Exception()).PublicServiceAPI;
-				}
-				catch
-				{
-					LogManager.LogError("Could not parse starting information: " + csdata + ssdata);
-					Environment.Exit(1);
-				}
+        CreateGameEventNamed(GameEvent.EVENT_LOG_INFO, "Lua Output - Info");
+        CreateGameEventNamed(GameEvent.EVENT_LOG_WARN, "Lua Output - Warning");
 
-				NetworkManager = new(this, gc.AsServer, gc.AsClient);
-				CurrentIdentity.Reset();
-				IsStudio = gc.AsStudio;
+        CreateGameEventNamed(GameEvent.EVENT_KICKED, "Got Kicked");
+        CreateGameEventNamed(GameEvent.EVENT_NETWORKSERVER_STARTED, "Network Server - Started");
+        CreateGameEventNamed(GameEvent.EVENT_NETWORKSERVER_STOPPED, "Network Server - Stopped");
+        CreateGameEventNamed(GameEvent.EVENT_NETWORKCLIENT_STARTED, "Network Client - Started");
+        CreateGameEventNamed(GameEvent.EVENT_NETWORKCLIENT_STOPPED, "Network Client - Stopped");
 
-				if (gc.AsClient)
-				{
-					Debug.Assert(ClientStartupInfo != null);
-					var user = ClientStartupInfo.Username;
-					var hash = ClientStartupInfo.PasswordHash;
-					Guid? token = CurrentProfile.LoginAsync(user, hash).WaitAndGetResult();
-					if (token == null)
-						CurrentProfile.LoginAsGuest();
-					LogManager.LogInfo("Logged in as " + Username);
-				}
+        RegisterVerb("shutdown", Shutdown);
 
-				ProhibitProcessing = gc.ProhibitProcessing;
-				ProhibitScripts = gc.ProhibitScripts;
+        DataModel? dataModel = GameRegistry.TryCreateNewDomesticInstanceOfClass("DataModel") as DataModel;
+        if (dataModel == null)
+            throw new InvalidOperationException("GameRegistry.TryCreateNewDomesticInstanceOfClass doesn't return DataModel for DataModel");
 
-				LogManager.LogInfo("Initializing PhysicsManager...");
-				PhysicsManager = new(this);
+        RootModel = dataModel;
+        SchedulerRunning = false;
+        ScriptsRunning = true;
+        ShuttingDown = false;
 
-				CustomFlags = gc.CustomFlags;
-				LogManager.LogInfo("Initializing RenderManager...");
-				RenderManager = new(this, gc.SkipWindowCreation, !gc.DoNotRenderAtAll, gc.VersionMargin);
+        CloudConfiguration = new CloudConfiguration();
 
-				LogManager.LogInfo("Initializing verbs...");
-				Verbs.Add(KeyboardKey.Comma, () => RenderManager.DisableAllGuis = !RenderManager.DisableAllGuis);
-				Verbs.Add(KeyboardKey.Apostrophe, () => RenderManager.DebugInformation = !RenderManager.DebugInformation);
-				Verbs.Add(KeyboardKey.F3, () =>
-				{
-					var coregui = CurrentRoot.GetService<CoreGui>(true);
-					if (coregui != null)
-						coregui.TakeScreenshot();
-				});
-				Verbs.Add(KeyboardKey.K, () =>
-				{
-					RenderManager.FrustumCullingPaused = !RenderManager.FrustumCullingPaused;
-				});
-				Verbs.Add(KeyboardKey.L, () =>
-				{
-					var light = CurrentRoot.GetService<Lighting>(true);
-					if (light != null)
-						light.SunLocality = !light.SunLocality;
-				});
+        RootModel.GetService<PlatformService>();
+        RootModel.GetService<CoreGui>();
+    }
 
-				// we dont want corescripts to run before engine is initialized
+    public void AddConsoleArguments(string[] strings)
+    {
+        try
+        {
+            for (int i = 0; i < strings.Length; i++)
+            {
+                string argument = strings[i];
 
-				LogManager.LogInfo("Initializing internal scripts...");
+                if (argument.StartsWith("-"))
+                {
+                    string nextargument = "";
+                    int ogi = i;
 
-				CurrentRoot = new DataModel(this);
-				if (dmc != null)
-					dmc(CurrentRoot);
+                    if (strings.Length - 1 != i)
+                        nextargument = strings[++i];
 
-				LuaRuntime.Setup(this);
-				LogManager.LogInfo("Initializing user interface...");
-				SetupCoreGui();
+                    if (nextargument.StartsWith("-") || string.IsNullOrWhiteSpace(nextargument))
+                    {
+                        i = ogi;
+                        UnpairedConsoleArguments.Add(argument.Substring(1));
+                    }
+                    else
+                    {
+                        PairedConsoleArguments[argument.Substring(1)] = nextargument;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            Trace.TraceWarning("Failed to parse console arguments; skipping the rest of them...");
+        }
+    }
+    public void RegisterVerb(string id, Action action)
+    {
+        allVerbs[id] = action;
+    }
+    public bool TryInvokeVerb(string id)
+    {
+        if (allVerbs.TryGetValue(id, out Action? action))
+        {
+            action();
+            return true;
+        }
+        return false;
+    }
 
-				if (NetworkManager.IsClient)
-				{
-					LogManager.LogInfo("Creating main services...");
-					CurrentRoot.GetService<SandboxService>();
-					CurrentRoot.GetService<Debris>();
-				}
-				if (NetworkManager.IsServer)
-				{
-					LogManager.LogInfo("Creating main services...");
-					CurrentRoot.GetService<Workspace>();
-					CurrentRoot.GetService<Players>();
-					CurrentRoot.GetService<Lighting>();
-					CurrentRoot.GetService<ReplicatedStorage>();
-					CurrentRoot.GetService<ReplicatedFirst>();
-					CurrentRoot.GetService<StarterGui>();
-					CurrentRoot.GetService<StarterPack>();
-					CurrentRoot.GetService<ServerStorage>();
-					CurrentRoot.GetService<ScriptContext>();
-					CurrentRoot.GetService<PlatformService>();
-					CurrentRoot.GetService<UserInputService>();
-					CurrentRoot.GetService<Chat>();
-				}
+    public GlobalTimestamp CurrentGlobalTimestamp()
+    {
+        return (ulong)GlobalTime.Elapsed.TotalMicroseconds;
+    }
+    public GlobalTimestamp TimestampInTheFuture(TimeSpan timeSpan)
+    {
+        return (ulong)((GlobalTime.Elapsed + timeSpan).TotalMicroseconds);
+    }
 
-				var rs = CurrentRoot.GetService<RunService>();
-				var cg = CurrentRoot.GetService<CoreGui>();
-				CurrentRunService = rs;
+    public void InitializeRendering()
+    {
+        GameRenderer = new GameRenderer(this);
+    }
+    private SchedulerTaskResult DoHeartbeat(GameSchedulerTask heartbeatTask)
+    {
+        if (DestructionTimetable.Count > 0)
+        {
+            bool hadRemovedAnything = false;
+            do
+            {
+                hadRemovedAnything = false;
 
-				if (NetworkManager.IsClient)
-				{
-					CurrentRoot.GetService<CoreGui>().ShowTeleportGui("", "", -1, -1);
-					QueuedTeleportAddress = (ClientStartupInfo ?? throw new Exception()).ServerIP;
-				}
+                if (DestructionTimetable.Count <= 0)
+                    break;
 
-				loadcallback(this);
-			}
-			catch (Exception ex)
-			{
-				LogManager.LogError("A fatal error had occurred during NetBlox initialization! " + ex.GetType() + ", msg: " + ex.Message + ", stacktrace: " + ex.StackTrace);
-				Environment.Exit(ex.GetHashCode());
-				for (;;); // perhaps platform we're running on does not support exiting.
-			}
-			finally
-			{
-				AppManager.CurrentGameManager = oldgm;
-			}
-		}
-		public void SetupCoreGui()
-		{
-			CoreGui cg = CurrentRoot.GetService<CoreGui>();
-			ScreenGui sg = new(this);
-			sg.Name = "RobloxGui"; // i love breaking copyright :D
-			sg.Parent = cg;
+                GlobalTimestamp current = CurrentGlobalTimestamp();
+                Instance? instance = GameRegistry.GetLocalInstanceById(DestructionTimetable.Peek());
 
-			// apparently roblox does not just load all corescritps on bulk.
-			var scrurl = AppManager.ResolveUrlAsync("rbxasset://scripts/Modules/", false).WaitAndGetResult();
-			string? ssurl;
-			if (NetworkManager.IsServer)
-				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/ServerStarterScript.lua", false).WaitAndGetResult();
-			else
-				ssurl = AppManager.ResolveUrlAsync("rbxasset://scripts/StarterScript.lua", false).WaitAndGetResult();
+                if (instance == null)
+                    continue;
 
-			if (!File.Exists(ssurl))
-				throw new Exception("No StarterScript found in content directory!");
+                if (instance.ShouldBeDestroyedBy <= current)
+                {
+                    DestructionTimetable.Dequeue();
+                    instance.Destroy();
+                    hadRemovedAnything = true;
+                }
+            }
+            while (hadRemovedAnything && DestructionTimetable.Count > 0);
+        }
 
-			var Modules = new Folder(this);
-			Modules.Name = "Modules";
-			Modules.Parent = sg;
-			var files = Directory.GetFiles(scrurl);
+        heartbeatStopwatch.Restart();
+        LateInitializationAndActivation();
+        PhysicsSolver?.Step();
+        TryGetEventForId(GameEvent.EVENT_HEARTBEAT)?.Fire();
+        heartbeatStopwatch.Stop();
 
-			for (int i = 0; i < files.Length; i++)
-			{
-				ModuleScript ms = new(this);
-				ms.Name = Path.GetFileNameWithoutExtension(files[i]);
-				ms.Source = File.ReadAllText(files[i]);
-				ms.Parent = Modules;
-			}
+        if (!GameScheduler.PreferUncapped)
+            heartbeatTask.WaitingTimeTarget = TimestampInTheFuture(TimeSpan.FromSeconds(1 / 60f) - heartbeatStopwatch.Elapsed);
 
-			CoreScript ss = new(this);
-			ss.Name = "StarterScript";
-			ss.Source = File.ReadAllText(ssurl);
-			ss.Parent = sg;
-		}
-		public void Shutdown()
-		{
-			LogManager.LogInfo($"Shutting down GameManager \"{ManagerName}\"...");
-			ShuttingDown = true;
-			ShutdownEvent?.Invoke(new(), new());
-			AppManager.GameManagers.Remove(this);
+        if (ShuttingDown)
+            return SchedulerTaskResult.CompletedSuccess;
+        else
+            return SchedulerTaskResult.NotCompleted;
+    }
+    public GameEvent CreateGameEventNamed(string eventId, string eventDebugName)
+    {
+        GameEvent gameEvent = new GameEvent()
+        {
+            GameManager = this,
+            DebugName = eventDebugName,
+            Id = eventId
+        };
+        allGameEvents[eventId] = gameEvent;
+        return gameEvent;
+    }
+    public GameEvent? TryGetEventForId(string eventId)
+    {
+        allGameEvents.TryGetValue(eventId, out GameEvent? gameEvent);
+        return gameEvent;
+    }
+    public void Shutdown()
+    {
+        Trace.TraceInformation("Stopping GameManager (" + NetworkMode + ")...");
 
-			if (AppManager.CurrentRenderManager == RenderManager)
-				AppManager.CurrentRenderManager = null;
+        RootModel.Close();
 
-			if (RenderManager != null)
-				RenderManager.Unload();
-			RenderManager = null;
+        SchedulerRunning = false;
+        ScriptsRunning = false;
+        ShuttingDown = true;
 
-			if (MainManager)
-				Environment.Exit(0);
-		}
-		public void LoadDefault(int idx = 0)
-		{
-			LogManager.LogInfo("Loading default place...");
-			Workspace ws = CurrentRoot.GetService<Workspace>();
-			ReplicatedStorage rs = CurrentRoot.GetService<ReplicatedStorage>();
-			ReplicatedFirst ri = CurrentRoot.GetService<ReplicatedFirst>();
-			Players pl = CurrentRoot.GetService<Players>();
+        CurrentPhase = InitializationStage.Destroying;
+    }
+    public void LoadPlaceFromDefaults(int id)
+    {
+        switch (id)
+        {
+            case 0:
+            {
+                Workspace workspace = RootModel.GetService<Workspace>();
 
-			switch (idx)
-			{
-				case 1:
-					{
-						Part part = new(this)
-						{
-							Parent = ws,
-							Color3 = Color.DarkGreen,
-							Position = new(0, 5f, 0),
-							Size = new(512, 2, 512),
-							TopSurface = SurfaceType.Studs,
-							Anchored = true
-						};
-						SpawnLocation sloc = new(this)
-						{
-							Parent = ws,
-							Color3 = Color.Gray,
-							Position = new(0, 6f, 0),
-							Size = new(6, 1, 6),
-							TopSurface = SurfaceType.Studs,
-							Anchored = true
-						};
+                Part baseplate = GameRegistry.Construct<Part>();
+                baseplate.Parent = workspace;
+                baseplate.Anchored = true;
+                baseplate.Name = "Baseplate";
+                baseplate.Size = new Vector3(2048, 1, 2048);
+                baseplate.Position = new Vector3(0, -30, 0);
 
-						for (int k = 0; k < 7; k++)
-						{
-							for (int i = 0; i < 7; i++)
-							{
-								for (int j = 0; j < i; j++)
-								{
-									_ = new Part(this)
-									{
-										Parent = ws,
-										Color3 = Color.White,
-										Position = new(k * 1.5f, 20 + j * 1.5f, i * 1.5f),
-										Size = new(1, 1, 1),
-										Anchored = false,
-										TopSurface = SurfaceType.Studs,
-										BottomSurface = SurfaceType.Studs,
-										LeftSurface = SurfaceType.Studs,
-										RightSurface = SurfaceType.Studs,
-										FrontSurface = SurfaceType.Studs,
-										BackSurface = SurfaceType.Studs,
-									};
-								}
-							}
-						}
+                Part part = GameRegistry.Construct<Part>();
+                part.Parent = workspace;
+                part.Anchored = false;
+                part.Position = new Vector3(10, 6, 0);
 
-						_ = new Part(this)
-						{
-							Parent = ws,
-							Color3 = Color.White,
-							Position = new(-10, 40, -10),
-							Size = new(1, 40, 1),
-							TopSurface = SurfaceType.Studs,
-							BottomSurface = SurfaceType.Studs,
-							LeftSurface = SurfaceType.Studs,
-							RightSurface = SurfaceType.Studs,
-							FrontSurface = SurfaceType.Studs,
-							BackSurface = SurfaceType.Studs,
-						};
+                Script script = GameRegistry.Construct<Script>();
+                script.Parent = workspace;
+                script.Source = "print(42); printidentity(); print(math.sin(math.pi / 2)); local x = Vector3.new(6, 7, 0) + Vector3.new(1, 1, 1); x.Z = 483; print(x * 4);";
 
-						break;
-					}
-				default:
-					{
-						LocalScript ls = new(this);
+                break;
+            }
+        }
+    }
+    public void LoadPlaceFromFile(string path)
+    {
+        
+    }
+    public void LoadLoadingPlace()
+    {
+        
+    }
 
-						ws.ZoomToExtents();
-						ws.Parent = CurrentRoot;
+    public void LateInitializationAndActivation()
+    {
+        if (ShuttingDown)
+            return;
 
-						Part part = new(this)
-						{
-							Parent = ws,
-							Color3 = Color.DarkGreen,
-							Position = new(0, -45f, 0),
-							Size = new(32, 2, 32),
-							TopSurface = SurfaceType.Studs,
-							Anchored = true
-						};
-						_ = new SpawnLocation(this)
-						{
-							Parent = ws,
-							Position = new(0, -45f + 2, 0),
-							TopSurface = SurfaceType.Studs
-						};
+        try
+        {
+            Instance[]? allInstances = GameRegistry.FlushNewborns();
 
-						_ = new Part(this)
-						{
-							Parent = ws,
-							Anchored = false,
-							Color3 = Color.DarkBlue,
-							Position = new(0, -3f, 0),
-							Size = new(1, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
-						_ = new Part(this)
-						{
-							Parent = ws,
-							Anchored = false,
-							Color3 = Color.DarkBlue,
-							Position = new(-1, -3f, 0),
-							Size = new(1, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
-						_ = new Part(this)
-						{
-							Parent = ws,
-							Anchored = false,
-							Color3 = Color.Red,
-							Position = new(-0.5f, -1f, 0),
-							Size = new(2, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
-						_ = new Part(this)
-						{
-							Parent = ws,
-							Anchored = false,
-							Color3 = Color.Yellow,
-							Position = new(-2f, -1f, 0),
-							Size = new(1, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
-						_ = new Part(this)
-						{
-							Parent = ws,
-							Anchored = false,
-							Color3 = Color.Yellow,
-							Position = new(1f, -1f, 0),
-							Size = new(1, 2, 1),
-							TopSurface = SurfaceType.Studs
-						};
+            if (allInstances == null)
+                return;
 
-						ls.Parent = ri;
-						ls.Source = "print(\"HIIIIII\"); printidentity();";
-						break;
-					}
-			}
+            for (int i = 0; i < allInstances.Length; i++)
+            {
+                Instance instance = allInstances[i];
+                if (instance.InitializationStage == InitializationStage.Newborn)
+                    instance.CommitStageInitialize();
+            }
+            for (int i = 0; i < allInstances.Length; i++)
+            {
+                Instance instance = allInstances[i];
+                if (instance.InitializationStage == InitializationStage.Newborn)
+                    instance.CommitStageAlive();
+            }
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError("LateInitializationAndActivation failure: " + ex.GetType() + ", msg: " + ex.Message + "\n" + ex.StackTrace);
+            Shutdown();
+        }
+    }
 
-			CurrentIdentity.MaxPlayerCount = 8;
-			CurrentIdentity.PlaceName = "";
-			CurrentIdentity.UniverseName = "";
-			CurrentIdentity.Author = "";
-			CurrentIdentity.PlaceID = 0;
-			CurrentIdentity.UniverseID = 0;
+    public void BeginInitializationPhase()
+    {
+        // here we load stuff like coregui and rendering engine
 
-			CurrentRoot.Name = CurrentIdentity.PlaceName;
-			CurrentRoot.GetService<Workspace>().SetNetworkOwner(null);
-		}
-		public Instance? GetInstance(Guid id)
-		{
-			try
-			{
-				for (int i = 0; i < AllInstances.Count; i++)
-				{
-					if (AllInstances[i].UniqueID == id)
-						return AllInstances[i];
-				}
-				return null;
-			}
-			catch (NullReferenceException ex) // may devil save me
-			{
-				return null;
-			}
-		}
-		public void ProcessInstance(Instance inst)
-		{
-			try
-			{
-				if (inst != null)
-				{ // i was outsmarted
-					if (inst.DestroyAt < DateTime.UtcNow)
-					{
-						inst.Destroy();
-						return;
-					}
+        if (ShuttingDown)
+            return;
 
-					inst.Process();
+        try
+        {
+            CurrentPhase = InitializationStage.Initializing;
 
-					var ch = inst.GetChildren();
-					for (int i = 0; i < ch.Length; i++)
-					{
-						ProcessInstance(ch[i]);
-					}
-				}
-			}
-			catch
-			{
-				// no
-			}
-		}
-		public override string ToString() => "GM-" + ManagerName;
-	}
+            Instance[] allInstances = GameRegistry.SelectInstances(null);
+            for (int i = 0; i < allInstances.Length; i++)
+            {
+                Instance instance = allInstances[i];
+                instance.CommitStageInitialize();
+            }
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError("BeginInitializationPhase failure: " + ex.GetType() + ", msg: " + ex.Message + "\n" + ex.StackTrace);
+            Shutdown();
+        }
+    }
+    public void BeginAlivePhase()
+    {
+        if (ShuttingDown)
+            return;
+
+        try
+        {
+            SchedulerRunning = true;
+            ScriptsRunning = true;
+
+            CurrentPhase = InitializationStage.Alive;
+
+            GameScheduler.BeginTracedSecurityOverride(SecurityIdentity.SI_EngineHeartbeat, "Creating Heartbeat task");
+            HeartbeatTask = GameScheduler.Schedule("Heartbeat", GameScheduler.SchedulerPhase.Physics, DoHeartbeat);
+            GameScheduler.EndTracedSecurityOverride();
+
+            Instance[] allInstances = GameRegistry.SelectInstances(null);
+            for (int i = 0; i < allInstances.Length; i++)
+            {
+                Instance instance = allInstances[i];
+                instance.CommitStageAlive();
+            }
+
+            GameRegistry.ClearNewborns();
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError("BeginAlivePhase failure: " + ex.GetType() + ", msg: " + ex.Message + "\n" + ex.StackTrace);
+            Shutdown();
+        }
+    }
 }

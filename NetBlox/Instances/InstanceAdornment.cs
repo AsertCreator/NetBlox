@@ -1,28 +1,23 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NetBlox.Instances.Parts;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances;
+
+public class InstanceAdornment : Instance
 {
-	public class InstanceAdornment : Instance, I3DRenderable
-	{
-		[Lua([Security.Capability.None])]
-		public BasePart? Adornee { get; set; }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public BasePart? Adornee { get; set; }
 
-		public InstanceAdornment(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(InstanceAdornment);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(InstanceAdornment) == classname) return true;
-			return base.IsA(classname);
-		}
-		public virtual void Decorate(BasePart part) { }
-		public void Render()
-		{
-			if (Adornee != null)
-				Decorate(Adornee);
-		}
-	}
+    public InstanceAdornment(ulong id, GameManager gameManager) : base(id, gameManager)
+    {
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(InstanceAdornment))
+            return base.IsA(className);
+        return true;
+    }
 }

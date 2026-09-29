@@ -1,23 +1,24 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NetBlox.Runtime;
+using NetBlox.Structs;
 
-namespace NetBlox.Instances.Values
+namespace NetBlox.Instances.Values;
+
+[Creatable]
+public class Color3Value : Instance
 {
-	[Creatable]
-	public class Color3Value : Instance
-	{
-		[Lua([Security.Capability.None])]
-		public Color Value { get; set; }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Color3 Value { get; set; }
 
-		public Color3Value(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(Color3Value);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(Color3Value) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public Color3Value(ulong id, GameManager gameManager) : base(id, gameManager)
+    {
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(Color3Value))
+            return base.IsA(className);
+        return true;
+    }
 }

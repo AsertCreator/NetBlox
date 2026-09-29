@@ -1,27 +1,33 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Scripts
+namespace NetBlox.Instances.Scripts;
+
+[Creatable]
+public class CoreScript : BaseScript
 {
-	public class CoreScript : BaseScript
-	{
-		public CoreScript(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(CoreScript);
 
-		public override void Process()
-		{
-			if (!HadExecuted && Enabled && !GameManager.ProhibitScripts) // we can only execute 
-			{
-				TaskScheduler.ScheduleScript(GameManager, Source, 3, this);
-				HadExecuted = true;
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(CoreScript) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public CoreScript(ulong id, GameManager gameManager) : base(id, gameManager)
+    {
+        GameManager.TryGetEventForId(GameEvent.EVENT_HEARTBEAT)?.RegisterInstance(this);
+    }
+
+    public override void OnRegisteredEvent(EngineEventArgs args)
+    {
+        base.OnRegisteredEvent(args);
+        if (args.GameEvent.Id == GameEvent.EVENT_HEARTBEAT)
+        {
+            if (GameManager.CurrentPhase < InitializationStage.Alive)
+                return;
+            ExecutionOpportunity(SecurityIdentity.SI_ElevatedGameScript);
+            GameManager.TryGetEventForId(GameEvent.EVENT_HEARTBEAT)?.UnregisterInstance(this);
+        }
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(CoreScript))
+            return base.IsA(className);
+        return true;
+    }
 }

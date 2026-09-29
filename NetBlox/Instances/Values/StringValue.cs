@@ -1,23 +1,23 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Values
+namespace NetBlox.Instances.Values;
+
+[Creatable]
+public class StringValue : Instance
 {
-	[Creatable]
-	public class StringValue : Instance
-	{
-		[Lua([Security.Capability.None])]
-		public string Value { get; set; }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public string Value { get; set; } = "";
 
-		public StringValue(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(StringValue);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(StringValue) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public StringValue(ulong id, GameManager gameManager) : base(id, gameManager)
+    {
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(StringValue))
+            return base.IsA(className);
+        return true;
+    }
 }

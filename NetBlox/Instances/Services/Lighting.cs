@@ -1,40 +1,37 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Services
+namespace NetBlox.Instances.Services;
+
+[Service]
+[ReplicateChildren]
+public class Lighting : Instance
 {
-	[Service]
-	public class Lighting : Instance
-	{
-		[Lua([Security.Capability.None])]
-		public double ClockTime { get => GameManager.RenderManager.TimeOfDay; set => GameManager.RenderManager.TimeOfDay = value % 24; }
-		[Lua([Security.Capability.None])]
-		public string TimeOfDay 
-		{ 
-			get 
-			{
-				return ""; // no
-			} 
-			set 
-			{ 
-				// no
-			} 
-		}
-		[Lua([Security.Capability.None])]
-		public string CurrentTime => "no";
-		public Vector3 SunPosition = new Vector3(2, 2, 0);
-		public bool SunLocality = false;
 
-		public Lighting(GameManager ins) : base(ins) { }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public Vector3 SunPosition { get; set; } = new Vector3(0, 70, -40);
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public bool RealTimeShadows { get; set; } = true;
+    
+    public override string ClassName => nameof(Lighting);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(Lighting) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public const ulong NETWORK_CONSTANT_ID = 3;
+
+    public Lighting(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+    }
+
+    public override void Destroy()
+    {
+        if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+            return;
+        base.Destroy();
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(Lighting))
+            return base.IsA(className);
+        return true;
+    }
 }

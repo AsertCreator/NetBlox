@@ -1,25 +1,53 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MoonSharp.Interpreter;
+using NetBlox.Instances.Services;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Scripts
+namespace NetBlox.Instances.Scripts;
+
+public class BaseScript : Instance
 {
-	public class BaseScript : LuaSourceContainer
-	{
-		[Lua([Security.Capability.None])]
-		public bool Enabled { get; set; } = true;
-		public bool HadExecuted = false;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.Plugin)]
+    public string Source { get; set; } = "";
 
-		public BaseScript(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(BaseScript);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(BaseScript) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public Table? LocalEnvironment;
+
+    protected bool hadAlreadyExecuted;
+
+    public BaseScript(ulong id, GameManager gameManager) : base(id, gameManager)
+    {
+    }
+
+    public void ClearExecutedFlag()
+    {
+        hadAlreadyExecuted = false;
+    }
+
+    public override void OnRegisteredEvent(EngineEventArgs args)
+    {
+        base.OnRegisteredEvent(args);
+    }
+    protected virtual void ExecutionOpportunity(SecurityIdentity? identity)
+    {
+        if (!hadAlreadyExecuted)
+        {
+            hadAlreadyExecuted = true;
+
+            if (identity != null)
+                GameManager.GameScheduler.BeginTracedSecurityOverride(identity, "Starting a script");
+            if (LocalEnvironment != null)
+                LocalEnvironment = Root.GetService<ScriptContext>().CreateNewLocalEnvironment(this);
+            Root.GetService<ScriptContext>().StartScriptWithCurrentIdentity(this, true);
+            if (identity != null)
+                GameManager.GameScheduler.EndTracedSecurityOverride();
+        }
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(BaseScript))
+            return base.IsA(className);
+        return true;
+    }
 }

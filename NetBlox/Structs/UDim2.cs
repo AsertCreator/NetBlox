@@ -1,25 +1,36 @@
-﻿using Raylib_cs;
 using System.Numerics;
 
-namespace NetBlox.Structs
-{
-	public struct UDim2
-	{
-		public float X;
-		public float Y;
-		public float XOff;
-		public float YOff;
-		public UDim2(float x, float y) { X = x; Y = y; XOff = 0; YOff = 0; }
-		public UDim2(float x, float x2, float y, float y2) { X = x; Y = y; XOff = x2; YOff = y2; }
-		public Vector2 Calculate(Vector2 delta, Vector2 cs)
-		{
-			return new Vector2()
-			{
-				X = X * cs.X + XOff + delta.X,
-				Y = Y * cs.Y + YOff + delta.Y
-			};
-		}
+namespace NetBlox.Structs;
 
-		public override string ToString() => $"{{{X}, {XOff}}}, {{{Y}, {YOff}}}";
-	}
+public record struct UDim2
+{
+    public UDim X;
+    public UDim Y;
+
+    public UDim2(UDim x, UDim y)
+    {
+        X = x;
+        Y = y;
+    }
+    public UDim2(float xscale, float xoffset, float yscale, float yoffset)
+    {
+        X.Scale = xscale;
+        X.Offset = xoffset;
+        Y.Scale = yscale;
+        Y.Offset = yoffset;
+    }
+
+    public Vector2 Resolve(Vector2 container)
+    {
+        return new Vector2(X.Resolve(container.X), Y.Resolve(container.Y));
+    }
+
+    public static UDim2 operator +(UDim2 a, UDim2 b)
+    {
+        return new UDim2(a.X + b.X, a.Y + b.Y);
+    }
+    public static UDim2 operator -(UDim2 a, UDim2 b)
+    {
+        return new UDim2(a.X - b.X, a.Y - b.Y);
+    }
 }

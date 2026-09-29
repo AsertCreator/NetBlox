@@ -1,20 +1,30 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Services
+namespace NetBlox.Instances.Services;
+
+[Service]
+[ReplicateChildren]
+public class StarterPack : Instance
 {
-	[Service]
-	public class StarterPack : Instance
-	{
-		public StarterPack(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(StarterPack);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(StarterPack) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public const ulong NETWORK_CONSTANT_ID = 13;
+
+    public StarterPack(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+    }
+
+    public override void Destroy()
+    {
+        if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+            return;
+        base.Destroy();
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(StarterPack))
+            return base.IsA(className);
+        return true;
+    }
 }

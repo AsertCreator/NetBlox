@@ -1,0 +1,36 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C#: NetBloxClient Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/NetBloxClient/NetBloxClient.csproj"
+        }, 
+        {
+            "name": "C#: NetBloxClient Application",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/NetBloxClient/bin/Debug/net10.0/NetBloxClient.dll",
+            "cwd": "${workspaceFolder}/NetBloxClient/bin/Debug/net10.0",
+            "launchSettingsFilePath": "${workspaceFolder}/NetBloxClient/Properties/launchSettings.json",
+            "launchSettingsProfile": "NetBloxClient (in-app)",
+            "preLaunchTask": "dotnet: build"
+        },
+        {
+            "name": "C#: NetBloxServer Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/NetBloxServer/NetBloxServer.csproj",
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Both Server and Client",
+            "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxServer Debug"]
+        }
+    ]
+}

@@ -1,49 +1,45 @@
-﻿using MoonSharp.Interpreter;
+using NetBlox.Instances.UI;
 using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace NetBlox.Instances.Services
+namespace NetBlox.Instances.Services;
+
+[Service]
+[ReplicateChildren]
+public class StarterGui : BasePlayerGui
 {
-	[Service]
-	public class StarterGui : Instance
-	{
-		public StarterGui(GameManager ins) : base(ins) { }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool ShowDevelopmentGui { get; set; } = true;
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(StarterGui) == classname) return true;
-			return base.IsA(classname);
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void RegisterSetCore(string name, DynValue func)
-		{
-			CoreGui cg = Root.GetService<CoreGui>();
-			if (func.Type != DataType.Function) throw new ScriptRuntimeException($"RegisterSetCore only accepts functions");
-			cg.RegisteredSetCallbacks[name] = func;
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void RegisterGetCore(string name, DynValue func)
-		{
-			CoreGui cg = Root.GetService<CoreGui>();
-			if (func.Type != DataType.Function) throw new ScriptRuntimeException($"RegisterGetCore only accepts functions");
-			cg.RegisteredGetCallbacks[name] = func;
-		}
-		[Lua([Security.Capability.None])]
-		public void SetCore(string name, DynValue dv)
-		{
-			CoreGui cg = Root.GetService<CoreGui>();
-			if (cg.RegisteredSetCallbacks.ContainsKey(name))
-				TaskScheduler.ScheduleScript(GameManager, cg.RegisteredSetCallbacks[name], 3, null, null, [dv]);
-			else throw new ScriptRuntimeException($"\"{name}\" has not been registered by CoreScripts");
-		}
-		[Lua([Security.Capability.None])]
-		public DynValue GetCore(string name)
-		{
-			throw new ScriptRuntimeException($"im not sure yielding works here");
-		}
-	}
+    public override string ClassName => nameof(StarterGui);
+
+    public const ulong NETWORK_CONSTANT_ID = 17;
+
+    public StarterGui(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+        RegisterForEventId(GameEvent.EVENT_RENDERGUI_LEVEL1);
+    }
+
+    public override void OnRegisteredEvent(EngineEventArgs args)
+    {
+        base.OnRegisteredEvent(args);
+        
+        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL1 && ShowDevelopmentGui)
+        {
+            Render();
+        }
+    }
+
+    public override void Destroy()
+    {
+        if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+            return;
+        base.Destroy();
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(StarterGui))
+            return base.IsA(className);
+        return true;
+    }
 }

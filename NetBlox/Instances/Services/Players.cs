@@ -1,61 +1,59 @@
-﻿using NetBlox.Runtime;
+using NetBlox.Network;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Services
+namespace NetBlox.Instances.Services;
+
+[Service]
+[ReplicateChildren]
+public class Players : Instance
 {
-	[Service]
-	public class Players : Instance
-	{
-		[Lua([Security.Capability.None])]
-		public Instance? LocalPlayer => CurrentPlayer;
-		public Player? CurrentPlayer;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Player? LocalPlayer
+    {
+        get
+        {
+            if (GameManager.NetworkMode == NetworkMode.Server)
+                return null;
+            return field;
+        }
+        private set;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent PlayerAdded { get; } = new LuaEvent();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent PlayerRemoving { get; } = new LuaEvent();
 
-		public Players(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(Players);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(Players) == classname) return true;
-			return base.IsA(classname);
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public Player CreateNewPlayer(string name, bool local)
-		{
-			Security.Impersonate(8);
-			Player player = new(GameManager)
-			{
-				Name = name,
-				Parent = this,
-				IsLocalPlayer = local
-			};
-			Security.EndImpersonate();
+    public const ulong NETWORK_CONSTANT_ID = 4;
 
-			return player;
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public Player CreateApplicationPlayer()
-		{
-			Security.Impersonate(8);
-			Player player = new(GameManager)
-			{
-				Name = GameManager.Username,
-				Parent = this,
-				IsLocalPlayer = true
-			};
-			player.SetUserId(GameManager.CurrentProfile.UserId);
-			CurrentPlayer = player;
-			Security.EndImpersonate();
+    public Players(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+    }
 
-			return player;
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void KickAll(string msg)
-		{
-			for (int i = 0; i < Children.Count; i++)
-			{
-				var ch = Children[i];
-				if (ch is Player)
-					(ch as Player)!.Kick(msg);
-			}
-		}
-	}
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public void SetLocalPlayer(Player player)
+    {
+        LocalPlayer = player;
+    }
+
+    public override void Destroy()
+    {
+        if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+            return;
+        base.Destroy();
+    }
+    public override bool AskToBeParent(Instance child)
+    {
+        if (child is not Player)
+            return false;
+        return true;
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(Players))
+            return base.IsA(className);
+        return true;
+    }
 }

@@ -1,22 +1,38 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Services
+namespace NetBlox.Instances.Services;
+
+[Service]
+[NotReplicated]
+public class Debris : Instance
 {
-	[Service]
-	public class Debris : Instance
-	{
-		public Debris(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(Debris);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(Debris) == classname) return true;
-			return base.IsA(classname);
-		}
-		[Lua([Security.Capability.None])]
-		public void AddItem(Instance ins, double when) => ins.DestroyAt = DateTime.UtcNow.AddSeconds(when);
-	}
+    public const ulong NETWORK_CONSTANT_ID = 12;
+
+    public Debris(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+    }
+
+    public override void Destroy()
+    {
+        if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+            return;
+        base.Destroy();
+    }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public void AddItem(Instance instance, double secondsLeft)
+    {
+        GlobalTimestamp deadline = GameManager.TimestampInTheFuture(TimeSpan.FromSeconds(secondsLeft));
+        instance.ShouldBeDestroyedBy = deadline;
+        GameManager.DestructionTimetable.Enqueue(instance.InstanceID, deadline);
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(Debris))
+            return base.IsA(className);
+        return true;
+    }
 }

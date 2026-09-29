@@ -1,17 +1,30 @@
-﻿using NetBlox.Runtime;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Services
+namespace NetBlox.Instances.Services;
+
+[Service]
+[ReplicateChildren]
+public class ReplicatedStorage : Instance
 {
-	[Service]
-	public class ReplicatedStorage : Instance
-	{
-		public ReplicatedStorage(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(ReplicatedStorage);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(ReplicatedStorage) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public const ulong NETWORK_CONSTANT_ID = 6;
+
+    public ReplicatedStorage(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+    }
+
+    public override void Destroy()
+    {
+        if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+            return;
+        base.Destroy();
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(ReplicatedStorage))
+            return base.IsA(className);
+        return true;
+    }
 }

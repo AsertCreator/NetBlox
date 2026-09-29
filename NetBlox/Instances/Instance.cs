@@ -1,641 +1,547 @@
-﻿using MoonSharp.Interpreter;
-using NetBlox.Network;
+using MoonSharp.Interpreter;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
-using System.Diagnostics;
-using System.Net;
+using NetBlox.Runtime.Bridges;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances;
+
+/// <summary>
+/// Root class for all Instance's in NetBlox. Here's some rules for writing them properly:<br/>
+/// <list type="bullet">
+/// <item>You must override ClassName and IsA to reflect your class</item>
+/// <item>Do NOT contain raw Instance references in fields/autoproperties. Store the reference as ulong of the instance's ID. Having properties
+///       that automatically convert these ID's into Instance objects is OK, though.</item>
+/// </list>
+/// If you don't follow them then you will be hereby cursed with endless sleepless bugfixing nights
+/// </summary>
+public class Instance
 {
-	public partial class Instance
-	{
-		[Lua([Security.Capability.None])]
-		public virtual bool Archivable { get; set; } = true;
-		[Lua([Security.Capability.None])]
-		public virtual string ClassName => GetType().Name;
-		[Lua([Security.Capability.None])]
-		public virtual string Name { get; set; }
-		[Lua([Security.Capability.None])]
-		[NotReplicated]
-		public virtual Instance? Parent
-		{
-			get => parent;
-			set
-			{
-				lock (this)
-				{
-					if (WasDestroyed) return;
+    public struct InstanceInitializationSettings
+    {
+        public bool IsForeign;
+    }
 
-					if (parent != null)
-					{
-						lock (parent)
-						{
-							lock (parent.Children)
-								parent.Children.Remove(this);
-							if (GameManager.MainEnvironment != null)
-							{
-								parent.ChildRemoved.Fire(LuaRuntime.PushInstance(this));
-								RaiseDescendantRemoved(this);
-							}
-						}
-					}
-					if (value != null)
-					{
-						lock (value)
-						{
-							parent = value;
-							ParentID = parent.UniqueID;
-							lock (value.Children)
-								value.Children.Add(this);
-							if (GameManager.MainEnvironment != null)
-							{
-								value.ChildAdded.Fire(LuaRuntime.PushInstance(this));
-								RaiseDescendantAdded(this);
-							}
-						}
-					}
-					else
-					{
-						parent = null;
-						ParentID = Guid.Empty;
-					}
-				}
-			}
-		}
-		[NotReplicated]
-		public List<string> Tags { get; set; } = [];
-		[NotReplicated]
-		public Guid ParentID { get; set; }
-		[NotReplicated]
-		public Guid UniqueID { get; set; }
-		[Lua([Security.Capability.None])]
-		[NotReplicated]
-		public LuaSignal DescendantAdded { get; init; }
-		[Lua([Security.Capability.None])]
-		[NotReplicated]
-		public LuaSignal DescendantRemoved { get; init; }
-		[Lua([Security.Capability.None])]
-		[NotReplicated]
-		public LuaSignal ChildAdded { get; init; }
-		[Lua([Security.Capability.None])]
-		[NotReplicated]
-		public LuaSignal ChildRemoved { get; init; }
-		[Lua([Security.Capability.None])]
-		[NotReplicated]
-		public LuaSignal Changed { get; init; }
-		[Lua([Security.Capability.None])]
-		[NotReplicated]
-		public LuaSignal Destroying { get; init; }
-		public virtual Security.Capability[] RequiredCapabilities => [];
-		public bool WasDestroyed = false;
-		public bool WasReplicated = false;
-		public bool IsDomestic = false;
-		public RemoteClient? Owner;
-		public GameManager GameManager;
-		public List<Instance> Children = [];
-		public DateTime DestroyAt = DateTime.MaxValue;
-		public DateTime DoNotReplicateUntil = DateTime.MinValue;
-		public Dictionary<string, LuaSignal> ChangedSignals = [];
-		public static Dictionary<int, Table> MetaTables = [];
-		public Table? Table;
-		private Instance? parent;
-		private Type? ThisType;
-		private bool containsInstanceReferences;
-		protected DataModel Root => GameManager.CurrentRoot;
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual Instance? Parent
+    {
+        get => GameManager.GameRegistry.GetLocalInstanceById(parentid);
+        set
+        {
+            if (ParentLocked && !GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
+                throw new Exception("Parent property of this Instance is locked");
 
-		public Instance(GameManager gm)
-		{
-			lock (this)
-			{
-				Name = ClassName;
-				UniqueID = Guid.NewGuid();
-				GameManager = gm;
+            Instance? myParent = GameManager.GameRegistry.GetLocalInstanceById(parentid);
 
-				if (InstanceCreator.InstancesWithInstanceReferences.Contains(GetType()))
-					containsInstanceReferences = true;
+            if (value != null && (value.IsDescendantOf(this) || value == this))
+                throw new InvalidOperationException("New parent of an Instance cannot be said Instance's descendant or itself");
 
-				gm.AllInstances.Add(this);
-			}
-			ThisType = GetType();
+            if (value != null && !value.AskToBeParent(this))
+                return;
+            
+            if (value != null && value.Root != Root)
+                throw new InvalidOperationException("New parent of an Instance cannot be said an Instance belonging to another game");
 
-			DescendantAdded = new LuaSignal(gm);
-			DescendantRemoved = new LuaSignal(gm);
-			ChildAdded = new LuaSignal(gm);
-			ChildRemoved = new LuaSignal(gm);
-			Changed = new LuaSignal(gm);
-			Destroying = new LuaSignal(gm);
-		}
-		public void RaiseDescendantAdded(Instance descendantInQuestion) // not anymore
-		{
-			if (Parent != null)
-			{
-				Parent.DescendantAdded.Fire(LuaRuntime.PushInstance(descendantInQuestion));
-				Parent.RaiseDescendantAdded(descendantInQuestion);
-			}
-		}
-		public void RaiseDescendantRemoved(Instance descendantInQuestion) // not anymore
-		{
-			if (Parent != null)
-			{
-				Parent.DescendantRemoved.Fire(LuaRuntime.PushInstance(descendantInQuestion));
-				Parent.RaiseDescendantRemoved(descendantInQuestion);
-			}
-		}
-		public virtual void Process()
-		{
-			// process nothing
-		}
-		public virtual void RenderUI()
-		{
-			// render nothing
-		}
-		[Lua([Security.Capability.None])]
-		public virtual void AddTag(string tag)
-		{
-			lock (Tags)
-				if (!Tags.Contains(tag))
-					Tags.Add(tag);
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? Clone()
-		{
-			lock (this)
-			{
-				if (!Archivable)
-					return null;
-				// i tried
-				// maybe i did it
-				Dictionary<Instance, Instance> clonemapping = [];
-				List<Instance> dolater = [];
+            if (value != myParent)
+            {
+                myParent?.children.Remove(InstanceID);
+                myParent?.OnChildRemoved(this);
+                value?.children.Add(InstanceID);
+                value?.OnChildAdded(this);
+                if (value is not null)
+                {
+                    ViewportIndex = value.ViewportIndex;
+                    parentid = value.InstanceID;
+                }
+                else
+                {
+                    ViewportIndex = -1;
+                    parentid = 0;
+                }
 
-				Instance? DoClone(Instance? inst)
-				{
-					if (inst == null) return null;
-					var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
-					var props = SerializationManager.GetAccessibleProperties(clone);
-					for (int i = 0; i < props.Length; i++)
-					{
-						try
-						{
-							var prop = SerializationManager.GetProperty(inst, props[i]);
-							var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
-							if (SerializationManager.IsReadonly(clone, props[i]))
-								continue;
-							if (ptyp.IsAssignableTo(typeof(Script))) continue;
-							if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
-							{
-								var ogval = (Instance)prop;
-								if (clonemapping.TryGetValue(ogval, out Instance? value))
-									SerializationManager.SetProperty(clone, props[i], value);
-								else
-									dolater.Add(clone);
-							}
-							else
-								SerializationManager.SetProperty(clone, props[i], prop);
-						}
-						catch
-						{
-							// we dont care
-						}
-					}
+                InvokeAncestryChanged(this, value);
+            }
+        }
+    }
 
-					clonemapping[inst] = clone;
+    public bool IsPartOfDataModel
+    {
+        get
+        {
+            if (Parent == null && ClassName == "DataModel")
+                return true;
+            if (Parent == null)
+                return false;
+            return Parent.IsPartOfDataModel;
+        }
+    }
 
-					for (int i = 0; i < inst.Children.Count; i++)
-						if (inst.Children[i].Archivable)
-						{
-							var cl = DoClone(inst.Children[i]);
-							if (cl == null) continue;
-							cl.Parent = clone;
-						}
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool Archivable { get; set; } = true;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public string Name { get; set; }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual string ClassName => nameof(Instance);
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent ChildAdded { get; set; } = new();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent ChildRemoved { get; set; } = new();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent DescendantAdded { get; set; } = new();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent DescendantRemoved { get; set; } = new();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent AncestryChanged { get; set; } = new();
 
-					return clone;
-				}
+    public bool ParentLocked;
+    public int ViewportIndex;
+    public InstanceInitializationSettings InitializationSettings;
+    public InitializationStage InitializationStage = InitializationStage.Newborn;
+    public readonly InstanceID InstanceID;
+    public readonly GameManager GameManager;
 
-				for (int i = 0; i < dolater.Count; i++)
-				{
-					var inst = dolater[i];
-					var props = SerializationManager.GetAccessibleProperties(inst);
-					for (int j = 0; j < props.Length; j++)
-					{
-						var prop = SerializationManager.GetProperty(inst, props[j]);
-						var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
-						if (SerializationManager.IsReadonly(inst, props[j]))
-							continue;
-						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
-						{
-							var ogval = (Instance)prop;
-							SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
-						}
-					}
-				}
+    public DataModel Root => GameManager.RootModel;
 
-				return DoClone(this);
-			}
-		}
-		public virtual Instance ForceClone()
-		{
-			// i tried
-			// maybe i did it
-			lock (this)
-			{
-				Dictionary<Instance, Instance> clonemapping = [];
-				List<Instance> dolater = [];
+    public Instance[] EvalutedChildren => GetChildren();
 
-				Instance DoClone(Instance inst)
-				{
-					var clone = (Instance)Activator.CreateInstance(inst.GetType(), GameManager)!;
-					var props = SerializationManager.GetAccessibleProperties(clone);
-					for (int i = 0; i < props.Length; i++)
-					{
-						try
-						{
-							var prop = SerializationManager.GetProperty(inst, props[i]);
-							var ptyp = SerializationManager.GetPropertyType(clone, props[i]);
-							if (SerializationManager.IsReadonly(clone, props[i]))
-								continue;
-							if (ptyp.IsAssignableTo(typeof(LuaSignal)))
-								continue;
-							if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null)
-							{
-								var ogval = (Instance)prop;
-								if (clonemapping.TryGetValue(ogval, out Instance? value))
-									SerializationManager.SetProperty(clone, props[i], value);
-								else
-									dolater.Add(clone);
-							}
-							else
-								SerializationManager.SetProperty(clone, props[i], prop);
-						}
-						catch
-						{
-							// we dont care
-						}
-					}
+    public GlobalTimestamp ShouldBeDestroyedBy = GlobalTimestamp.MaxValue;
 
-					clonemapping[inst] = clone;
+    public ulong parentid = 0;
+    public readonly List<ulong> children = [];
+    public readonly List<GameEvent> registeredEvents = [];
 
-					for (int i = 0; i < inst.Children.Count; i++)
-						DoClone(inst.Children[i]).Parent = clone;
+    public Instance(ulong id, GameManager gameManager)
+    {
+        InstanceID = id;
+        GameManager = gameManager;
+        Name = ClassName;
 
-					return clone;
-				}
+        CommitStageNewborn();
+    }
 
-				for (int i = 0; i < dolater.Count; i++)
-				{
-					var inst = dolater[i];
-					var props = SerializationManager.GetAccessibleProperties(inst);
-					for (int j = 0; j < props.Length; j++)
-					{
-						var prop = SerializationManager.GetProperty(inst, props[j]);
-						var ptyp = SerializationManager.GetPropertyType(inst, props[j]);
-						if (SerializationManager.IsReadonly(inst, props[j]))
-							continue;
-						if (ptyp.IsAssignableTo(typeof(Instance)) && prop != null && ptyp.Name != "Parent")
-						{
-							var ogval = (Instance)prop;
-							SerializationManager.SetProperty(inst, props[j], clonemapping[ogval]); // i HOPE that every inst reference will be resolved this way
-						}
-					}
-				}
+    protected void RegisterForEventId(string eventId)
+    {
+        GameEvent? gameEvent = GameManager.TryGetEventForId(eventId);
+        if (gameEvent == null)
+            throw new NotSupportedException("No such event found " + eventId + "!");
+        gameEvent.RegisterInstance(InstanceID);
+        registeredEvents.Add(gameEvent);
+    }
 
-				return DoClone(this);
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual void ClearAllChildren()
-		{
-			lock (Children)
-			{
-				for (int i = 0; i < Children.Count; i++) Children[i].Destroy();
-				Children.Clear();
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual void Destroy()
-		{
-			if (!WasDestroyed)
-			{
-				Destroying.Fire();
+    public RentedSpan<Instance?> GetChildren_Fast()
+    {
+        RentedSpan<Instance?> span = new RentedSpan<Instance?>(children.Count);
+        for (int i = 0; i < children.Count; i++)
+            span.Values[i] = GameManager.GameRegistry.GetLocalInstanceById(children[i]);
+        return span;
+    }
 
-				// fck it im gonna delete all references old fashioned way
-				for (int i = 0; i < GameManager.AllInstances.Count; i++)
-				{
-					var inst = GameManager.AllInstances[i];
-					if (inst.containsInstanceReferences)
-					{
-						inst.ClearReferencesTo(this);
-					}
-				}
+    //
+    //  Below are Lua API functions
+    //
 
-				Parent = null;
-				ClearAllChildren();
-				GameManager.AllInstances.Remove(this);
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance? Clone()
+    {
+        Dictionary<ulong, ulong> oldAndNewMap = [];
+        List<(Instance Target, InstanceBridge.InstanceClassCacheProperty Property, ulong Value)> pendingFixups = [];
 
-				WasDestroyed = true;
+        Instance? DoClone(Instance instance)
+        {
+            if (!Archivable)
+                return null;
+            if (Parent == Root)
+                return null;
+            if (this == Root)
+                return null;
+                
+            Instance? newInstance = GameManager.GameRegistry.TryCreateNewDomesticInstanceOfClass(ClassName);
+            if (newInstance == null)
+                return null;
+            
+            oldAndNewMap[instance.InstanceID] = newInstance.InstanceID;
+            
+            InstanceBridge.InstanceClassCache icc = Root.GetService<ScriptContext>().ResolveInstanceClassCacheForType(GetType());
+            foreach (InstanceBridge.InstanceClassCacheProperty property in icc.Properties.Values)
+            {
+                if (property.Name == "Parent")
+                    continue;
+                if (property.IsReadOnly)
+                    continue;
+                object? value = property.Property.GetValue(this);
+                if (property.PropertyType == typeof(ulong))
+                {
+                    ulong castValue = (ulong)value!;
+                    if (castValue == 0)
+                        continue;
+                    pendingFixups.Add((newInstance, property, (ulong)value!));
+                }
+                else if (property.PropertyType.IsAssignableTo(typeof(Instance)))
+                {
+                    Instance castValue = (Instance)value!;
+                    if (castValue == null)
+                        continue;
+                    pendingFixups.Add((newInstance, property, castValue.InstanceID));
+                }
+                else
+                    property.Property.SetValue(newInstance, value);
+            }
 
-				if (GameManager.AllowReplication)
-					GameManager.NetworkManager.AddReplication(this, Replication.REPM_TOALL, Replication.REPW_DESTROY, false);
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? FindFirstAncestor(string name)
-		{
-			if (Parent == null) return null;
-			lock (Parent)
-			{
-				return Parent.Name == name ? Parent : Parent.FindFirstAncestor(name);
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? FindFirstAncestorOfClass(string cl)
-		{
-			if (Parent == null) return null;
-			lock (Parent)
-			{
-				return Parent.ClassName == cl ? Parent : Parent.FindFirstAncestorOfClass(cl);
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? FindFirstAncestorWhichIsA(string cl)
-		{
-			if (Parent == null) return null;
-			lock (Parent)
-			{
-				return Parent.IsA(cl) ? Parent : Parent.FindFirstAncestorWhichIsA(cl);
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? FindFirstChild(string name)
-		{
-			lock (Children)
-			{
-				for (int i = 0; i < Children.Count; i++)
-					if (Children[i].Name == name)
-						return Children[i];
-				return null;
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? FindFirstChildOfClass(string cl)
-		{
-			lock (Children)
-			{
-				for (int i = 0; i < Children.Count; i++)
-					if (Children[i].ClassName == cl)
-						return Children[i];
+            Instance[] children = instance.GetChildren();
 
-				return null;
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? FindFirstChildWhichIsA(string cl)
-		{
-			lock (Children)
-			{
-				for (int i = 0; i < Children.Count; i++)
-					if (Children[i].IsA(cl))
-						return Children[i];
+            for (int i = 0; i < children.Length; i++)
+            {
+                Instance child = children[i];
+                Instance? childClone = DoClone(child);
+                if (childClone == null)
+                    continue;
+                childClone.Parent = newInstance;
+            }
 
-				return null;
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance? FindFirstDescendant(string name)
-		{
-			lock (Children)
-			{
-				for (int i = 0; i < Children.Count; i++)
-					if (Children[i].Name == name)
-						return Children[i];
+            return newInstance;
+        }
 
-				for (int i = 0; i < Children.Count; i++)
-				{
-					var child = Children[i];
-					var descendant = child.FindFirstDescendant(name);
-					if (descendant != null) return descendant;
-				}
+        Instance? rootClone = DoClone(this);
+        if (rootClone == null)
+            return null;
+        
+        for (int i = 0; i < pendingFixups.Count; i++)
+        {
+            var pendingFixup = pendingFixups[i];
+            Instance? resolvedReferent = null;
 
-				return null;
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual LuaSignal GetPropertyChangedSignal(string prop)
-		{
-			lock (ChangedSignals)
-			{
-				if (!ChangedSignals.ContainsKey(prop))
-					ChangedSignals[prop] = new(GameManager);
-				return ChangedSignals[prop];
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance[] GetChildren()
-		{
-			lock (Children) // that sounds interesting
-				return [.. Children];
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance[] GetDescendants()
-		{
-			lock (Children)
-			{
-				var list = new List<Instance>(Children);
+            if (oldAndNewMap.TryGetValue(pendingFixup.Value, out ulong clonedInstance))
+                GameManager.GameRegistry.GetLocalInstanceById(clonedInstance);
+            else
+                GameManager.GameRegistry.GetLocalInstanceById(pendingFixup.Value);
 
-				for (int i = 0; i < Children.Count; i++)
-					list.AddRange(Children[i].GetDescendants());
+            if (pendingFixup.Property.PropertyType == typeof(ulong))
+                pendingFixup.Property.Property.SetValue(pendingFixup.Target, resolvedReferent!.InstanceID);
+            else
+                pendingFixup.Property.Property.SetValue(pendingFixup.Target, resolvedReferent);
+        }
 
-				return [.. list];
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual Instance[] GetAncestors()
-		{
-			if (Parent == null) return [];
+        return rootClone;
+    }
 
-			lock (Parent)
-			{
-				var list = new List<Instance>();
-				var inst = Parent;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance? FindFirstChild(string name)
+    {
+        for (int i = 0; i < children.Count; i++)
+        {
+            Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(children[i]);
+            if (instance == null)
+                continue;
+            if (instance.Name == name)
+                return instance;
+        }
+        return null;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance? FindFirstChildOfClass(string className)
+    {
+        for (int i = 0; i < children.Count; i++)
+        {
+            Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(children[i]);
+            if (instance == null)
+                continue;
+            if (instance.ClassName == className)
+                return instance;
+        }
+        return null;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance? FindFirstChildWhichIsA(string className)
+    {
+        for (int i = 0; i < children.Count; i++)
+        {
+            Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(children[i]);
+            if (instance == null)
+                continue;
+            if (instance.IsA(className))
+                return instance;
+        }
+        return null;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance? FindFirstAncestor(string name)
+    {
+        if (Parent == null)
+            return null;
+        if (Parent.Name == name)
+            return Parent;
+        return Parent.FindFirstAncestor(name);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance? FindFirstAncestorOfClass(string className)
+    {
+        if (Parent == null)
+            return null;
+        if (Parent.ClassName == className)
+            return Parent;
+        return Parent.FindFirstAncestorOfClass(className);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance? FindFirstAncestorWhichIsA(string className)
+    {
+        if (Parent == null)
+            return null;
+        if (Parent.IsA(className))
+            return Parent;
+        return Parent.FindFirstAncestorWhichIsA(className);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsDescendantOf(Instance instance)
+    {
+        if (Parent == null)
+            return false;
+        if (Parent == instance)
+            return true;
+        return Parent.IsDescendantOf(instance);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public bool IsAncestorOf(Instance instance)
+    {
+        return instance.IsDescendantOf(this);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Instance[] GetChildren()
+    {
+        List<Instance> instances = [];
+        List<ulong> deadChildren = [];
+        for (int i = 0; i < children.Count; i++)
+        {
+            ulong childId = children[i];
+            Instance? childRef = GameManager.GameRegistry.GetLocalInstanceById(childId);
+            if (childRef == null)
+                deadChildren.Add(childId);
+            else
+                instances.Add(childRef);
+        }
+        for (int i = 0; i < deadChildren.Count; i++)
+            children.Remove(deadChildren[i]);
+        return instances.ToArray();
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public string GetFullName()
+    {
+        if (Parent == null || Parent.ClassName == "DataModel")
+            return Name;
+        return Parent.GetFullName() + "." + Name;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual bool IsA(string className)
+    {
+        if (className == "Instance" || className == "Object" || className == "<<<ROOT>>>")
+            return true;
+        return false;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual Instance[] GetDescendants()
+    {
+        List<Instance> instances = new List<Instance>();
 
-				while (inst != null)
-				{
-					list.Add(inst);
-					inst = inst.Parent!;
-				}
+        void Process(Instance instance)
+        {
+            Instance[] childrenPool = instance.GetChildren();
 
-				return [.. list];
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual string GetFullName()
-		{
-			if (parent == null) return Name;
+            instances.AddRange(childrenPool);
 
-			var strings = new List<string>();
-			var inst = Parent!;
+            for (int i = 0; i < childrenPool.Length; i++)
+                Process(childrenPool[i]);
+        }
 
-			strings.Add(Name);
+        return instances.ToArray();
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual void Destroy()
+    {
+        InitializationStage = InitializationStage.Destroying;
 
-			while (inst != null && !inst.IsA("DataModel"))
-			{
-				strings.Add(inst.Name);
-				inst = inst.Parent!;
-			}
+        CommitStageDestroying();
 
-			strings.Reverse();
-			return string.Join('.', strings);
-		}
-		[Lua([Security.Capability.None])]
-		public virtual void SetNetworkOwner(Player player)
-		{
-			lock (this)
-			{
-				if (!GameManager.NetworkManager.IsServer)
-					throw new ScriptRuntimeException("Cannot call Network Ownership API from client!");
-				if (player != null)
-					Debug.Assert(player.Client != null);
+        for (int i = 0; i < registeredEvents.Count; i++)
+        {
+            GameEvent gameEvent = registeredEvents[i];
+            gameEvent.UnregisterInstance(this);
+        }
 
-				var prevowner = Owner != null ? Owner.Player : null;
-				var newowner = player;
+        Parent = null;
+        ParentLocked = true;
 
-				if (prevowner != null)
-					prevowner.Client.SendPacket(NPUpdatePlayerOwnership.Create(this, false));
-				else
-					IsDomestic = false;
-				if (newowner != null)
-					newowner.Client.SendPacket(NPUpdatePlayerOwnership.Create(this, true));
-				else
-					IsDomestic = true;
+        ulong[] immutable = new ulong[children.Count];
+        children.CopyTo(immutable);
+        for (int i = 0; i < immutable.Length; i++)
+        {
+            Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(immutable[i]);
+            if (instance == null)
+                continue;
+            instance.Destroy();
+        }
 
-				if (newowner != null)
-					Owner = newowner.Client;
-				else
-					Owner = null;
+        GameManager.GameRegistry.Remove(InstanceID);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual void ClearAllChildren()
+    {
+        ulong[] immutable = new ulong[children.Count];
+        children.CopyTo(immutable);
+        for (int i = 0; i < immutable.Length; i++)
+        {
+            Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(immutable[i]);
+            if (instance == null)
+                continue;
+            instance.ClearAllChildren();
+            instance.Parent = null;
+        }
+    }
+    /// <summary>
+    /// NetBlox API extension, not in Roblox.
+    /// </summary>
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual void DestroyAllChildren()
+    {
+        ulong[] immutable = new ulong[children.Count];
+        children.CopyTo(immutable);
+        for (int i = 0; i < immutable.Length; i++)
+        {
+            Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(immutable[i]);
+            if (instance == null)
+                continue;
+            instance.DestroyAllChildren();
+            instance.Destroy();
+        }
+    }
 
-				OnNetworkOwnershipChanged();
+    //
+    //  Below are methods and properties marked by Roblox as deprecated
+    //
 
-				for (int i = 0; i < Children.Count; i++)
-				{
-					Children[i].SetNetworkOwner(player);
-				}
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public virtual bool IsDescendantOf(Instance instance) => GetAncestors().Contains(instance);
-		[Lua([Security.Capability.None])]
-		public virtual bool IsAncestorOf(Instance instance) => GetDescendants().Contains(instance);
-		[Lua([Security.Capability.None])]
-		public virtual string[] GetTags() => [.. Tags];
-		[Lua([Security.Capability.None])]
-		public virtual bool HasTag(string tag) => Tags.Contains(tag);
-		[Lua([Security.Capability.None])]
-		public virtual void RemoveTag(string tag) => Tags.Remove(tag);
-		[Lua([Security.Capability.None])]
-		public virtual bool IsA(string classname) => nameof(Instance) == classname;
-		private void ChangeOwnershipImpl(GameManager gm)
-		{
-			GameManager.AllInstances.Remove(this);
-			Owner = null;
-			IsDomestic = false;
-			GameManager = gm;
-			WasReplicated = false;
-			WasDestroyed = false;
-			GameManager.AllInstances.Add(this);
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public string className => ClassName;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public LuaEvent childAdded => ChildAdded;
 
-			for (int i = 0; i < Children.Count; i++)
-			{
-				Children[i].ChangeOwnershipImpl(gm);
-			}
-		}
-		public void ChangeOwnership(GameManager gm)
-		{
-			Parent = null;
-			ChangeOwnershipImpl(gm);
-		}
-		public virtual void OnNetworkOwnershipChanged() { }
-		public int CountDescendants()
-		{
-			lock (Children)
-			{
-				int sum = Children.Count;
-				for (int i = 0; i < Children.Count; i++)
-					sum += Children[i].CountDescendants();
-				return sum;
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public LuaYield WaitForChild(string name)
-		{
-			var job = TaskScheduler.CurrentJob;
-			job.JobTimingContext.TaskJoinedTo = Task.Run(async () =>
-			{
-				while (!GameManager.ShuttingDown)
-				{
-					var ch = FindFirstChild(name);
-					if (ch == null)
-						await Task.Yield();
-					else
-					{
-						job.ScriptJobContext.YieldReturn = [ LuaRuntime.PushInstance(ch) ];
-						return;
-					}
-				}
-			});
-			return new();
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void ClearReferencesTo(Instance inst)
-		{
-			var props = GetType().GetProperties();
-			for (int i = 0; i < props.Length; i++)
-			{
-				var prop = props[i];
-				if (prop.PropertyType.IsAssignableTo(NetworkManager.InstanceType))
-				{
-					if (prop.Name != "Parent")
-					{
-						var obj = prop.GetValue(this);
-						if (obj == inst)
-							prop.SetValue(this, null);
-					}
-				}
-			}
-		}
-		public Task<Instance> WaitForChildInternal(string name)
-		{
-			return Task.Run(() =>
-			{
-				while (!GameManager.ShuttingDown)
-				{
-					var ch = FindFirstChild(name);
-					if (ch == null)
-						Thread.Yield();
-					else
-					{
-						return ch;
-					}
-				}
-				return null;
-			});
-		}
-		public void ReplicateProperties(string[] props, bool immediate)
-		{
-			lock (this)
-			{
-				if (GameManager.NetworkManager.RemoteConnection != null || GameManager.NetworkManager.IsServer)
-				{
-					if (DateTime.UtcNow > DoNotReplicateUntil || immediate)
-					{
-						var rep = GameManager.NetworkManager.AddReplication(this, Replication.REPM_BUTOWNER, Replication.REPW_PROPCHG, false);
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public void Remove()
+    {
+        Parent = null;
+        ClearAllChildren();
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public Instance? findFirstChild(string name) => FindFirstChild(name);
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public void destroy() => Destroy();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public void remove() => Remove();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public Instance[] getChildren() => GetChildren();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public bool isDescendantOf(Instance instance) => IsDescendantOf(instance);
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    [Obsolete]
+    public bool isA(string className) => IsA(className);
 
-						if (rep != null)
-						{
-							rep.Properties = (from x in props select ThisType.GetProperty(x)).ToArray();
-							DoNotReplicateUntil = DateTime.UtcNow.AddMilliseconds(1000 / GameManager.PropertyReplicationRate);
-						}
-					}
-				}
-			}
-		}
-	}
+    //
+    //  Below are Event methods
+    //
+
+    public void InvokeChildAdded(Instance value)
+    {
+        ChildAdded.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+    }
+    public void InvokeChildRemoved(Instance value)
+    {
+        ChildRemoved.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+    }
+    public void InvokeDescendantAdded(Instance value)
+    {
+        DescendantAdded.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+        if (Parent == null)
+            return;
+        Parent.InvokeDescendantAdded(value);
+    }
+    public void InvokeDescendantRemoved(Instance value)
+    {
+        DescendantRemoved.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+        if (Parent == null)
+            return;
+        Parent.InvokeDescendantRemoved(value);
+    }
+    public void InvokeAncestryChanged(Instance child, Instance? value)
+    {
+        AncestryChanged.Fire([
+            DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, child)),
+            value != null ? DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value)) : DynValue.Nil
+        ]);
+        Instance[] children = GetChildren();
+        for (int i = 0; i < children.Length; i++)
+            children[i].InvokeAncestryChanged(child, value);
+    }
+
+    /// <summary>
+    /// This method is called when the engine creates this object. Do not hook into engine functions and events just yet!
+    /// </summary>
+    protected virtual void CommitStageNewborn()
+    {
+        InitializationStage = InitializationStage.Newborn;
+    }
+    /// <summary>
+    /// This method is called when the engine begins to initialize objects. Hook into engine functions and event here.
+    /// </summary>
+    public virtual void CommitStageInitialize()
+    {   
+        InitializationStage = InitializationStage.Initializing;
+    }
+    public virtual void CommitStageAlive()
+    {   
+        InitializationStage = InitializationStage.Alive;
+    }
+    public virtual void CommitStageDestroying()
+    {
+        InitializationStage = InitializationStage.Destroying;
+    }
+
+    public virtual bool AskToBeParent(Instance child)
+    {
+        return true;
+    }
+
+    public virtual void OnBeforePhysics()
+    {
+    }
+    public virtual void OnAfterPhysics()
+    {
+    }
+    public virtual void OnBeforeRendering()
+    {
+    }
+    public virtual void OnAfterRendering()
+    {
+    }
+    public virtual void OnChildRemoved(Instance who)
+    {
+        InvokeChildRemoved(who);
+        InvokeDescendantRemoved(who);
+    }
+    public virtual void OnChildAdded(Instance who)
+    {
+        InvokeChildAdded(who);
+        InvokeDescendantAdded(who);
+    }
+    public virtual void OnRegisteredEvent(EngineEventArgs args)
+    {
+        if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_RENDER)
+            OnBeforeRendering();
+        if (args.GameEvent.Id == GameEvent.EVENT_AFTER_RENDER)
+            OnAfterRendering();
+    }
 }

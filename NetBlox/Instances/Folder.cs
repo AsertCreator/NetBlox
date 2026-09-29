@@ -1,20 +1,20 @@
-﻿using NetBlox.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances;
+
+[Creatable]
+public class Folder : Instance
 {
-	[Creatable]
-	public class Folder : Instance
-	{
-		public Folder(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(Folder);
 
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(Folder) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public Folder(ulong id, GameManager gameManager) : base(id, gameManager)
+    {
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(Folder))
+            return base.IsA(className);
+        return true;
+    }
 }

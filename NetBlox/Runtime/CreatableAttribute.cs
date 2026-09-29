@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+namespace NetBlox.Runtime;
 
-namespace NetBlox.Runtime
+[AttributeUsage(AttributeTargets.Class)]
+public class CreatableAttribute : Attribute
 {
-	[AttributeUsage(AttributeTargets.Class)]
-	public class CreatableAttribute : Attribute
-	{
-	}
 }

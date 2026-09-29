@@ -1,25 +1,34 @@
-﻿using NetBlox.Runtime;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances.Scripts
+namespace NetBlox.Instances.Scripts;
+
+[Creatable]
+public class LocalScript : BaseScript
 {
-	[Creatable]
-	public class LocalScript : BaseScript
-	{
-		public LocalScript(GameManager ins) : base(ins) { }
+    public override string ClassName => nameof(LocalScript);
 
-		public override void Process()
-		{
-			if (!HadExecuted && GameManager.NetworkManager.IsClient && Enabled && !GameManager.ProhibitScripts) // we can only execute 
-			{
-				TaskScheduler.ScheduleScript(GameManager, Source, 2, this);
-				HadExecuted = true;
-			}
-		}
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(LocalScript) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public LocalScript(ulong id, GameManager gameManager) : base(id, gameManager)
+    {
+        if (gameManager.NetworkMode == Network.NetworkMode.Client)
+            GameManager.TryGetEventForId(GameEvent.EVENT_HEARTBEAT)?.RegisterInstance(this);
+    }
+
+    public override void OnRegisteredEvent(EngineEventArgs args)
+    {
+        base.OnRegisteredEvent(args);
+        if (args.GameEvent.Id == GameEvent.EVENT_HEARTBEAT)
+        {
+            if (GameManager.CurrentPhase < InitializationStage.Alive)
+                return;
+            ExecutionOpportunity(SecurityIdentity.SI_GameScript);
+            GameManager.TryGetEventForId(GameEvent.EVENT_HEARTBEAT)?.UnregisterInstance(this);
+        }
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(LocalScript))
+            return base.IsA(className);
+        return true;
+    }
 }

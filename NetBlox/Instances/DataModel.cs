@@ -1,124 +1,244 @@
-﻿using MoonSharp.Interpreter;
-using NetBlox.Instances.Services;
-using NetBlox.Runtime;
 using System.Diagnostics;
-using System.Net.Http;
-using System.Runtime;
+using MoonSharp.Interpreter;
+using NetBlox.Instances.Services;
+using NetBlox.Instances.Services.Internal;
+using NetBlox.Runtime;
 
-namespace NetBlox.Instances
+namespace NetBlox.Instances;
+
+public class DataModel : ServiceProvider
 {
-	public class DataModel(GameManager gm) : ServiceProvider(gm)
-	{
-		[Lua([Security.Capability.None])]
-		public long CreatorId => GameManager.CurrentIdentity.Author.GetHashCode(); // worky around
-		[Lua([Security.Capability.None])]
-		public string AuthorName => GameManager.CurrentIdentity.Author;
-		[Lua([Security.Capability.None])]
-		public long GameId => (long)GameManager.CurrentIdentity.UniverseID;
-		[Lua([Security.Capability.None])]
-		public long PlaceId => (long)GameManager.CurrentIdentity.PlaceID;
-		[Lua([Security.Capability.None])]
-		public int PlaceVersion => 0;
-		[Lua([Security.Capability.CoreSecurity])]
-		public bool IsApplication { get; set; }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public Workspace? Workspace => FindService<Workspace>();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public RunService? RunService => FindService<RunService>();
+    
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser, SetValueLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public long CreatorId { get; set; } = 1;
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser, SetValueLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public long GameId { get; set; } = 1;
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser, SetValueLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public long PlaceId { get; set; } = 1;
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser, SetValueLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public long PlaceVersion { get; set; } = 1;
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser, SetValueLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public long AuthorId { get; set; } = 1;
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser, SetValueLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public string JobId { get; set; } = "";
+    [NotReplicated]
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser, SetValueLevel = SimpleSecurityCapabilityLevel.RobloxEngine)]
+    public string UniverseName { get; set; } = "";
 
-		[Lua([Security.Capability.None])]
-		public bool IsLoaded() => GameManager.NetworkManager.IsLoaded;
-		[Lua([Security.Capability.CoreSecurity])]
-		public DynValue GetFastFlag(string fflag) => 
-			AppManager.FastFlags.TryGetValue(fflag, out var flag) ? DynValue.NewBoolean(flag) : DynValue.Nil;
-		[Lua([Security.Capability.CoreSecurity])]
-		public DynValue GetFastInt(string fflag) => 
-			AppManager.FastInts.TryGetValue(fflag, out var flag) ? DynValue.NewNumber(flag) : DynValue.Nil;
-		[Lua([Security.Capability.CoreSecurity])]
-		public DynValue GetFastString(string fflag) => 
-			AppManager.FastStrings.TryGetValue(fflag, out var flag) ? DynValue.NewString(flag) : DynValue.Nil;
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Clear()
-		{
-			LogManager.LogInfo("Clearing DataModel...");
-			GetService<ReplicatedFirst>().Destroy();
-			GetService<Workspace>().Destroy();
-			GetService<ReplicatedStorage>().Destroy();
-			GetService<Lighting>().Destroy();
-			GetService<Players>().Destroy();
-			GetService<StarterGui>().Destroy();
-			GetService<StarterPack>().Destroy();
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void BindToClose(DynValue dv)
-		{
-			if (dv.Type != DataType.Function)
-				throw new ScriptRuntimeException("expected function to be passed to BindToClose");
-			GameManager.ShutdownEvent += (x, y) =>
-			{
-				CancellationTokenSource cts = new();
-				var task = Task.Run(() =>
-				{
-					dv.Function.Call(dv.Type);
-				});
-				if (!task.Wait(30000))
-				{
-					LogManager.LogWarn("One of BindToClose's function is taking too long, shutting down anyway...");
-				}
-			};
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Shutdown()
-		{
-			GameManager.Shutdown();
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void OpenScreenshotFolder() => GetService<PlatformService>().OpenBrowserWindow(AppManager.LibraryFolder);
-		[Lua([Security.Capability.CoreSecurity])]
-		public string HttpGet(string url) => File.ReadAllText(AppManager.ResolveUrlAsync(url, true).WaitAndGetResult());
-		[Lua([Security.Capability.CoreSecurity])]
-		public LuaYield HttpGetAsync(string url) 
-		{
-			var job = TaskScheduler.CurrentJob;
-			job.JobTimingContext.TaskJoinedTo = Task.Run(async () =>
-			{
-				var path = await AppManager.ResolveUrlAsync(url, true);
-				var data = File.ReadAllText(path);
-				job.ScriptJobContext.YieldReturn = [ DynValue.NewString(data) ];
-			});
-			return new();
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public Instance[] GetObjects(string url)
-		{
-			Instance ins = new(GameManager); // temporary holder
-			RbxlParser.Load(url, ins);
-			Instance[] chlidren = ins.GetChildren();
-			ins.ClearAllChildren();
-			ins.Destroy();
-			return chlidren;
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void EnableWhiteOut(bool huh) =>	GameManager.RenderManager.WhiteOut = huh;
-		[Lua([Security.Capability.CoreSecurity])]
-		public int CountReplicatableClientObjects()
-		{
-			return 5; // TODO: normal instance counting
-		}
-		[Lua([Security.Capability.CoreSecurity])]
-		public void Load(string url)
-		{
-			LogManager.LogInfo("Loading DataModel from URL " + url + "...");
-			Clear();
-			RbxlParser.Load(url, this);
-		}
-		public void InternalLoad(string url)
-		{
-			LogManager.LogInfo("Loading DataModel from URL " + url + " (unsecure) ...");
-			Clear();
-			RbxlParser.Load(url, this, true);
-		}
-		[Lua([Security.Capability.None])]
-		public override bool IsA(string classname)
-		{
-			if (nameof(DataModel) == classname) return true;
-			return base.IsA(classname);
-		}
-	}
+    public override Instance? Parent
+    {
+        get => null;
+        set
+        {
+            if (value != null)
+                throw new InvalidOperationException("DataModel cannot be parented");
+        }
+    }
+
+    public override string ClassName => nameof(DataModel);
+
+    public List<DynValue> boundOnClose = [];
+
+    public const ulong NETWORK_CONSTANT_ID = 1;
+
+    public DataModel(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
+    {
+    }
+
+    private int tempNumber;
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public int ReturnTwo()
+    {
+        return 2;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public int GetTempNumber()
+    {
+        return tempNumber;
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public void SetTempNumber(int number)
+    {
+        tempNumber = number;
+    }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public void Clear()
+    {
+        Root.RunService?.Stop();
+        Root.FindService<Workspace>()?.Destroy();
+        Root.FindService<Lighting>()?.Destroy();
+        Root.FindService<Players>()?.Destroy();
+        Root.FindService<RunService>()?.DestroyAllChildren();
+        Root.FindService<ScriptContext>()?.DestroyAllChildren();
+        Root.FindService<ReplicatedStorage>()?.Destroy();
+        Root.FindService<ReplicatedFirst>()?.Destroy();
+        Root.FindService<ServerScriptService>()?.Destroy();
+        Root.FindService<ServerStorage>()?.Destroy();
+        Root.FindService<StarterGui>()?.Destroy();
+        Root.FindService<StarterPack>()?.Destroy();
+        Root.FindService<StarterPlayer>()?.Destroy();
+        Root.FindService<Teams>()?.Destroy();
+        Root.FindService<Chat>()?.Destroy();
+        Root.FindService<CoreGui>()?.Destroy();
+        Root.FindService<PlatformService>()?.DestroyAllChildren();
+
+        for (int i = 0; i < GameManager.GameScheduler.SchedulerTasks.Count; i++)
+        {
+            GameSchedulerTask task = GameManager.GameScheduler.SchedulerTasks[i];
+            if (task is ScriptSchedulerTask)
+            {
+                GameManager.GameScheduler.SchedulerTasks.RemoveAt(i);
+                i--;
+            }
+        }
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public void Load(string path)
+    {
+        SchedulerTaskResult DoLoad(GameSchedulerTask task)
+        {
+            string? localFilePath = task.UserData as string;
+            if (localFilePath == null)
+                throw new Exception("How is task.UserData not a string");
+            
+            Clear();
+
+            PlaceParser placeParser = new PlaceParser(GameManager);
+            placeParser.LoadPlaceMultiplexed(localFilePath);
+
+            return SchedulerTaskResult.CompletedSuccess;
+        }
+
+        GameManager.GameAssetManager.QuickLoad(path)?
+            .AddCallbackForFailure(x =>
+            {
+                Trace.TraceError("Failed to load place: couldn't fetch place");
+            })
+            .AddCallbackForSuccess(x =>
+            {
+                string? path = x.LocalDownloadPath;
+                GameManager.GameScheduler.BeginTracedSecurityOverride(SecurityIdentity.SI_RemoteServerControl, "Loading a place");
+                GameManager.GameScheduler.Schedule("DataModel.Load", GameScheduler.SchedulerPhase.Any, DoLoad).UserData = path;
+                GameManager.GameScheduler.EndTracedSecurityOverride();
+            });
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public void BindToClose(DynValue function)
+    {
+        DynValue dynValue = function.CheckType("DataModel:BindToClose", DataType.Function, flags: TypeValidationFlags.None);
+        if (!boundOnClose.Contains(dynValue))
+            boundOnClose.Add(dynValue);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public bool DefineFastFlag(string name, bool defaultValue)
+    {
+        if (!GameManager.CloudConfiguration.HasDefined(name))
+            GameManager.CloudConfiguration.AddOverride(name, defaultValue);
+        return GameManager.CloudConfiguration.GetFeatureFlagStatusBy(name, defaultValue);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public long DefineFastInt(string name, long defaultValue)
+    {   
+        if (!GameManager.CloudConfiguration.HasDefined(name))
+            GameManager.CloudConfiguration.AddOverride(name, defaultValue);
+        return GameManager.CloudConfiguration.GetFeatureFlagIntegerStatusBy(name, defaultValue);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string DefineFastString(string name, string defaultValue)
+    {
+        if (!GameManager.CloudConfiguration.HasDefined(name))
+            GameManager.CloudConfiguration.AddOverride(name, defaultValue);
+        return GameManager.CloudConfiguration.GetFeatureFlagStringStatusBy(name, defaultValue);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public bool GetFastFlag(string name)
+    {
+        return GameManager.CloudConfiguration.GetFeatureFlagStatusBy(name, false);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public long GetFastInt(string name)
+    {
+        return GameManager.CloudConfiguration.GetFeatureFlagIntegerStatusBy(name, 0);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string GetFastString(string name)
+    {
+        return GameManager.CloudConfiguration.GetFeatureFlagStringStatusBy(name, "");
+    }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public DynValue ReadAllConsoleArguments()
+    {
+        SecurityIdentity? securityIdentity = GameManager.GameScheduler.GetCurrentSecurityIdentity();
+        if (securityIdentity == null)
+            return DynValue.Nil;
+
+        ScriptContext scriptContext = GetService<ScriptContext>();
+        Script script = scriptContext.GetLuaStateFor(securityIdentity);
+        Table pairedtable = new Table(script);
+        Table unpairedtable = new Table(script);
+        Table completetable = new Table(script);
+
+        foreach (KeyValuePair<string, string> pair in GameManager.PairedConsoleArguments)
+            pairedtable[pair.Key] = pair.Value;
+        
+        foreach (string argument in GameManager.UnpairedConsoleArguments)
+            unpairedtable[argument] = true;
+        
+        completetable["paired"] = pairedtable;
+        completetable["unpaired"] = unpairedtable;
+
+        return DynValue.NewTable(completetable);
+    }
+
+    public void Close()
+    {
+        try
+        {
+            for (int i = 0; i < boundOnClose.Count; i++)
+            {
+                Closure closure = boundOnClose[i].Function;
+                closure.OwnerScript.CallWithTimeout(boundOnClose[i], 30000);
+            }
+        }
+        catch (TimeoutException)
+        {
+            Trace.TraceError("Ignoring BindToClose callbacks due to them taking longer than 30 second to finish...");
+        }
+
+        GameManager.GameScheduler.BeginTracedSecurityOverride(SecurityIdentity.SI_ElevatedStudioPlugin, "Closing the DataModel");
+
+        ClearAllChildren();
+
+        GameManager.GameScheduler.EndTracedSecurityOverride();
+    }
+
+    public override void Destroy()
+    {
+        Trace.TraceWarning("Attempted to destroy DataModel!");
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public void Shutdown()
+    {
+        GameManager.Shutdown();
+    }
+
+    public override bool IsA(string className)
+    {
+        if (className != nameof(DataModel))
+            return base.IsA(className);
+        return true;
+    }
 }
