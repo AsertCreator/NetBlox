@@ -3,7 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Values;
 
 [Creatable]
-public class BoolValue : Instance
+public class BoolValue : ValueBase
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public bool Value { get; set; }

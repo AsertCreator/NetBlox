@@ -86,6 +86,8 @@ public class NetworkClient : Instance
         if (CurrentServerConnection == null)
             return;
 
+        Trace.TraceInformation("InitiateUnilateralDisconnect: " + message);
+
         CurrentServerConnection.Disconnect();
         CurrentServerConnection = null;
 

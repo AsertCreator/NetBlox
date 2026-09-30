@@ -5,7 +5,7 @@ using NetBlox.Structs;
 namespace NetBlox.Instances.Values;
 
 [Creatable]
-public class UDim2Value : Instance
+public class UDim2Value : ValueBase
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public UDim2 Value { get; set; }

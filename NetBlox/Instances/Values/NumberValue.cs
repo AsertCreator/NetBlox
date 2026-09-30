@@ -3,7 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Values;
 
 [Creatable]
-public class NumberValue : Instance
+public class NumberValue : ValueBase
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public double Value { get; set; }

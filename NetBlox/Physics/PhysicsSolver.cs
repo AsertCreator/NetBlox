@@ -12,7 +12,7 @@ public class PhysicsSolver
     public GameManager GameManager;
     public bool CanRun = false;
     public bool EnableNetworkPrediction = true;
-    public int SendPhysicsEveryNFrames = 4;
+    public int SendPhysicsEveryNFrames = 1;
 
     private int spcounter;
 

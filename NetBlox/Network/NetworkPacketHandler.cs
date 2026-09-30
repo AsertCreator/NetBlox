@@ -10,7 +10,8 @@ public abstract class NetworkPacketHandler
         [(int)NetworkPacketType.NPRequestInitialReplication] = new NPRequestInitialReplication(),
         [(int)NetworkPacketType.NPRespondInitialReplication] = new NPRespondInitialReplication(),
         [(int)NetworkPacketType.NPPhysicsUpdate] = new NPPhysicsUpdate(),
-        [(int)NetworkPacketType.NPUnreliableConnectionInfo] = new NPUnreliableConnectionInfo()
+        [(int)NetworkPacketType.NPUnreliableConnectionInfo] = new NPUnreliableConnectionInfo(),
+        [(int)NetworkPacketType.NPRespondDeltaReplication] = new NPRespondDeltaReplication(),
     };
 
     public const int PROTOCOL_VERSION = 1;

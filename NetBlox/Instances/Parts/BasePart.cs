@@ -151,13 +151,15 @@ public class BasePart : PVInstance
         {
             if (PhysicsActor!.RigidBody != null)
             {
-                if ((int)statePosition.Length() != (int)PhysicsActor!.RigidBody.Position.Length())
+                float physicsError = 0.001f;
+
+                if (statePosition.Length().WithinError(PhysicsActor!.RigidBody.Position.Length(), physicsError))
                     muchChanges = true;
-                if ((int)stateRotation.Length() != (int)PhysicsActor!.RigidBody.Orientation.Length())
+                if (stateRotation.Length().WithinError(PhysicsActor!.RigidBody.Orientation.Length(), physicsError))
                     muchChanges = true;
-                if ((int)stateLinearVelocity.Length() != (int)PhysicsActor!.RigidBody.Velocity.Length())
+                if (stateLinearVelocity.Length().WithinError(PhysicsActor!.RigidBody.Velocity.Length(), physicsError))
                     muchChanges = true;
-                if ((int)stateAngularVelocity.Length() != (int)PhysicsActor!.RigidBody.AngularVelocity.Length())
+                if (stateAngularVelocity.Length().WithinError(PhysicsActor!.RigidBody.AngularVelocity.Length(), physicsError))
                     muchChanges = true;
 
                 statePosition = PhysicsActor!.RigidBody.Position;

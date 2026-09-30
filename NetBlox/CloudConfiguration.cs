@@ -17,7 +17,9 @@ public class CloudConfiguration
 
     public void AuthenticateAsGuest()
     {
-        
+        Username = "A NetBlox player";
+        UserId = -Random.Shared.Next(10000, 99999);
+        currentLoginToken = null;
     }
     public void AuthenticateAsUser(string username, string password)
     {
@@ -36,6 +38,12 @@ public class CloudConfiguration
             }
             currentLoginToken = loginToken;
         }
+    }
+    public void LogOut()
+    {
+        currentLoginToken = null;
+        Username = null;
+        UserId = 0;
     }
     public void SyncWithPublicService()
     {
@@ -63,6 +71,11 @@ public class CloudConfiguration
     public bool HasDefined(string name)
     {
         return config.ContainsKey(name);
+    }
+
+    public string? ReadAccessToken()
+    {
+        return currentLoginToken;
     }
 
     public void AddOverride(string name, object value)

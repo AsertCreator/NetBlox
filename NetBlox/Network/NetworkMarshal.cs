@@ -73,8 +73,10 @@ public static class NetworkMarshal
             writer.Write(Color3.ToBGRA((Color3)value));
         else if (clrType == cachedBrickColorType)
             writer.Write(((BrickColor)value).Index);
-        else if (clrType == cachedSurfaceTypeType)
-            writer.Write((int)(SurfaceType)value);
+        else if (clrType.IsEnum)
+        {
+            writer.Write((int)value);
+        }
         else
             throw new Exception("Unsupported network type");
     }
@@ -184,9 +186,9 @@ public static class NetworkMarshal
         {
             return BrickColor.GetBrickColorByIndex(reader.ReadInt32());
         }
-        else if (clrType == cachedSurfaceTypeType)
+        else if (clrType.IsEnum)
         {
-            return (SurfaceType)reader.ReadInt32();
+            return Enum.ToObject(clrType, reader.ReadInt32());
         }
         else
             throw new Exception("Unsupported network type");
@@ -211,5 +213,4 @@ public static class NetworkMarshal
     private static readonly Type cachedUDim2Type = typeof(UDim2);
     private static readonly Type cachedColor3Type = typeof(Color3);
     private static readonly Type cachedBrickColorType = typeof(BrickColor);
-    private static readonly Type cachedSurfaceTypeType = typeof(SurfaceType);
 }

@@ -20,6 +20,9 @@ public class GuiButton : GuiObject
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public LuaEvent MouseButton2Click { get; init; } = new LuaEvent();
 
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string? Verb { get => verbId; set => verbId = value; }
+
     public override string ClassName => nameof(GuiButton);
 
     protected string? verbId;

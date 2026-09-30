@@ -3,6 +3,7 @@ using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Interop;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 
 namespace NetBlox.Runtime.Bridges;
 
@@ -17,6 +18,11 @@ public static class InstanceBridge
         public required MethodInfo Method;
         public required DynValue Callback;
         public required ScriptCallableAttribute ScriptCallable;
+
+        public override string ToString()
+        {
+            return "Method - " + Name;
+        }
     }
     public class InstanceClassCacheProperty
     {
@@ -26,6 +32,12 @@ public static class InstanceBridge
         public required ScriptCallableAttribute ScriptCallable;
         public required bool CanBeReplicated;
         public required bool IsReadOnly;
+        public required int? NetworkOrdinal;
+
+        public override string ToString()
+        {
+            return "Property - " + Name + " - " + PropertyType;
+        }
     }
     public class InstanceClassCache
     {
@@ -141,7 +153,10 @@ public static class InstanceBridge
                     readOnly = true;
                 
                 if (propertyInfo.PropertyType == typeof(LuaEvent))
+                {
+                    canBeReplicated = false;
                     readOnly = true;
+                }
 
                 if (propertyInfo.GetCustomAttribute<NotReplicatedAttribute>() != null)
                     canBeReplicated = false;                
@@ -153,7 +168,8 @@ public static class InstanceBridge
                     PropertyType = propertyInfo.PropertyType,
                     IsReadOnly = readOnly,
                     CanBeReplicated = canBeReplicated,
-                    ScriptCallable = scriptCallable  
+                    ScriptCallable = scriptCallable,
+                    NetworkOrdinal = null
                 };
 
                 classCache.Properties[cacheProperty.Name] = cacheProperty;
@@ -164,6 +180,9 @@ public static class InstanceBridge
             replicatableProperties.Sort((a, b) => a.Name.CompareTo(b.Name));
 
             classCache.ReplicationOrderedProperties = replicatableProperties.ToArray();
+
+            for (int i = 0; i < classCache.ReplicationOrderedProperties.Length; i++)
+                classCache.ReplicationOrderedProperties[i].NetworkOrdinal = i;
 
             return classCache;
         }
@@ -191,6 +210,11 @@ public static class InstanceBridge
                 return null;
             ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
             return scriptContext.ResolveInstanceClassCacheForType(ParentType);
+        }
+
+        public override string ToString()
+        {
+            return "InstanceClassCache - " + Name;
         }
     }
 
@@ -278,6 +302,11 @@ public static class InstanceBridge
                 object? data = LuaMarshal.MarshalLuaToClr(property.Name + " newindex", GameManager.RootModel.GetService<ScriptContext>(),
                     value, property.PropertyType);
                 property.Property.SetValue(thisInstance, data);
+
+                ReplicationAgent? agent = thisInstance.ReplicationAgentIfServer;
+                if (agent != null)
+                    agent.DeltaAddReplicatablePropertyChange(thisInstance, name, data);
+
                 return true;
             }
 

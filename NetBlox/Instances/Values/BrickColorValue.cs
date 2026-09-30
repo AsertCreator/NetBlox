@@ -5,7 +5,7 @@ using NetBlox.Structs;
 namespace NetBlox.Instances.Values;
 
 [Creatable]
-public class BrickColorValue : Instance
+public class BrickColorValue : ValueBase
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public BrickColor Value { get; set; }

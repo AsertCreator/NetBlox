@@ -71,7 +71,7 @@ public class GuiObject : GuiBase2d
 
     private Vector2 absolutePosition;
     private Vector2 absoluteSize;
-    protected int mouseOnMe = -1;
+    protected int mouseOnMe = -1; // mouse on me
 
     public override string ClassName => nameof(GuiObject);
 

@@ -4,7 +4,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Values;
 
 [Creatable]
-public class Vector3Value : Instance
+public class Vector3Value : ValueBase
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public Vector3 Value { get; set; }

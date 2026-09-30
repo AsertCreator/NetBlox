@@ -108,6 +108,7 @@ public class NetworkServer : Instance
         
         GameSchedulerTask gameSchedulerTask = GameManager.GameScheduler.Schedule("Connection Destroyer", GameScheduler.SchedulerPhase.Network, _ =>
         {
+            Trace.TraceInformation("Kicking player " + player.Name + ": " + message);
             player.Connection.Disconnect();
             player.Connection = null;
             return SchedulerTaskResult.CompletedSuccess;
@@ -168,6 +169,65 @@ public class NetworkServer : Instance
         Trace.TraceInformation("Started NetworkServer, listening at port " + at.Port);
 
         GameManager.TryGetEventForId(GameEvent.EVENT_NETWORKSERVER_STARTED)?.Fire();
+
+        GameSchedulerTask task = GameManager.GameScheduler.Schedule("Server Loop", GameScheduler.SchedulerPhase.Network, DoServerLoop);
+        task.Identity = SecurityIdentity.SI_EngineNetworker;
+    }
+
+    private SchedulerTaskResult DoServerLoop(GameSchedulerTask task)
+    {
+        try
+        {
+            if (GameManager.ShuttingDown)
+                return SchedulerTaskResult.CompletedSuccess;
+
+            Players players = Root.GetService<Players>();
+            using RentedSpan<Instance?> rented = players.GetChildren_Fast();
+
+            bool hasAnyPlayers = false;
+
+            for (int i = 0, j = 0; i < rented.Values.Length; i++)
+            {
+                Player? player = rented.Values[i] as Player;
+                if (player == null)
+                    continue;
+
+                hasAnyPlayers = true;
+            }
+
+            if (!hasAnyPlayers)
+            {
+                ReplicationAgent.ForceFlushDeltaBuffer();
+                return SchedulerTaskResult.NotCompleted;
+            }
+
+            byte[] frame = ReplicationAgent.CommitDeltaReplication();
+            NPRespondDeltaReplication.Entity entity = default;
+
+            entity.Flags = 0;
+            entity.Payload = frame;
+
+            NetworkPacket deltaPacket = NPRespondDeltaReplication.Create(entity);
+
+            for (int i = 0, j = 0; i < rented.Values.Length; i++)
+            {
+                Player? player = rented.Values[i] as Player;
+                if (player == null)
+                    continue;
+
+                if (player.hadInitialReplication)
+                    player.Connection?.SendPacketReliable(deltaPacket);
+            }        
+            
+            return SchedulerTaskResult.NotCompleted;
+        }
+        finally
+        {
+            int networkFps = 60;
+            if (GameManager.GameRenderer != null)
+                networkFps = GameManager.GameRenderer.PreferredFPS;
+            task.WaitingTimeTarget = GameManager.TimestampInTheFuture(TimeSpan.FromMilliseconds(1000f / networkFps));
+        }
     }
 
     private void HandleNewTcpClient_Early(IAsyncResult asyncResult)
@@ -181,11 +241,10 @@ public class NetworkServer : Instance
         TcpClient tcpClient = TcpListener.EndAcceptTcpClient(asyncResult);
         TcpListener.BeginAcceptTcpClient(HandleNewTcpClient_Early, null);
 
-        GameManager.GameScheduler.BeginTracedSecurityOverride(SecurityIdentity.SI_EngineNetworker, "Creating a new client handler task");
         GameSchedulerTask task = GameManager.GameScheduler.ScheduleForImmediateExecution(
             "Handle New Client", GameScheduler.SchedulerPhase.Network, HandleNewTcpClient_Late);
         task.UserData = tcpClient;
-        GameManager.GameScheduler.EndTracedSecurityOverride();
+        task.Identity = SecurityIdentity.SI_EngineNetworker;
     }
     private SchedulerTaskResult HandleNewTcpClient_Late(GameSchedulerTask gameSchedulerTask)
     {
@@ -206,6 +265,7 @@ public class NetworkServer : Instance
         {
             var task = GameManager.GameScheduler.ScheduleForImmediateExecution("Destroying a Disconnected Player Instance", GameScheduler.SchedulerPhase.Network, _ =>
             {
+                Trace.TraceInformation("Disconnecting player " + player.Name + ": broken connection");
                 player.Destroy();
                 return SchedulerTaskResult.CompletedSuccess; 
             }); 
@@ -215,6 +275,7 @@ public class NetworkServer : Instance
         {
             var task = GameManager.GameScheduler.ScheduleForImmediateExecution("Destroying a Timeouted Player Instance", GameScheduler.SchedulerPhase.Network, _ =>
             {
+                Trace.TraceInformation("Disconnecting player " + player.Name + ": timeout");
                 player.Connection.Dispose();
                 player.Destroy();
                 return SchedulerTaskResult.CompletedSuccess; 

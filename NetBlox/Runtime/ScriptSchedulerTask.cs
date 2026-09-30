@@ -16,6 +16,9 @@ public class ScriptSchedulerTask : GameSchedulerTask
     public Action? CallbackAfterSuccessfulExecution;
     public Action? CallbackAfterFailedExecution;
 
+    public bool ErrorOnReexecution = false;
+    public string? ErrorOnReexecutionDetails = null;
+
     private string? associatedCode;
 
     public ScriptSchedulerTask(BaseScript? self, string code)
@@ -52,7 +55,12 @@ public class ScriptSchedulerTask : GameSchedulerTask
                 RootCoroutine = script.CreateCoroutine(RootFunction);
             
             RootCoroutine.Coroutine.AutoYieldCounter = -1;
-            AsyncFunctionArguments = RootCoroutine.Coroutine.Resume(AsyncFunctionArguments);
+            lock (this)
+            {
+                if (ErrorOnReexecution && ErrorOnReexecutionDetails != null)
+                    throw new Exception(ErrorOnReexecutionDetails);
+                AsyncFunctionArguments = RootCoroutine.Coroutine.Resume(AsyncFunctionArguments);
+            }
             if (RootCoroutine.Coroutine.State == CoroutineState.Dead)
             {
                 CallbackAfterSuccessfulExecution?.Invoke();

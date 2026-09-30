@@ -25,6 +25,8 @@ public sealed class GameScheduler
 
     private SecurityIdentity? securityOverride;
     private string? securityOverrideExplanation;
+    private object currentSchedulerTaskLock = new object();
+    private Thread schedulerThread = Thread.CurrentThread;
 
     private List<GameSchedulerTask> immediateExecutionBuffer = new List<GameSchedulerTask>();
 
@@ -87,12 +89,17 @@ public sealed class GameScheduler
     }
     public void BeginTracedSecurityOverride(SecurityIdentity choice, string explanation)
     {
+        if (Thread.CurrentThread != schedulerThread)
+            throw new InvalidOperationException("Cannot call BeginTracedSecurityOverride not on the main thread");
+
         Trace.TraceInformation("BTSO: \"" + explanation + "\" for " + choice.Name + " (" + choice.SecurityIdentityNumber + ")");
         securityOverride = choice;
         securityOverrideExplanation = explanation;
     }
     public void EndTracedSecurityOverride()
     {
+        if (Thread.CurrentThread != schedulerThread)
+            throw new InvalidOperationException("Cannot call EndTracedSecurityOverride not on the main thread");
         if (securityOverride == null)
             throw new InvalidOperationException("Cannot EndTracedSecurityOverride when not overriding");
 
@@ -100,18 +107,22 @@ public sealed class GameScheduler
         Trace.TraceInformation("ETSO: \"" + securityOverrideExplanation + "\" for " + choice.Name + " (" + choice.SecurityIdentityNumber + ")");
         securityOverride = null;
     }
-    public SecurityIdentity? GetCurrentSecurityIdentity()
+    public SecurityIdentity GetCurrentSecurityIdentity()
     {
         if (securityOverride != null)
             return securityOverride;
-        if (CurrentSchedulerTask == null)
-            return null;
-
-        SecurityIdentity? identity = CurrentSchedulerTask.Identity;
-        if (!SecurityIdentity.AllowedSecurityIdentites.Contains(identity))
-            CurrentSchedulerTask.Identity = SecurityIdentity.SI_Anonymous;
         
-        return identity;
+        lock (currentSchedulerTaskLock)
+        {
+            if (CurrentSchedulerTask == null)
+                return SecurityIdentity.SI_Anonymous;
+
+            SecurityIdentity? identity = CurrentSchedulerTask.Identity;
+            if (!SecurityIdentity.AllowedSecurityIdentites.Contains(identity))
+                CurrentSchedulerTask.Identity = SecurityIdentity.SI_Anonymous;
+
+            return identity ?? SecurityIdentity.SI_Anonymous;
+        }
     }
     public void EnterRunLoop()
     {
@@ -136,7 +147,8 @@ public sealed class GameScheduler
             {
                 GameSchedulerTask schedulerTask = immutable[i];
 
-                CurrentSchedulerTask = schedulerTask;
+                lock (currentSchedulerTaskLock)
+                    CurrentSchedulerTask = schedulerTask;
 
                 stopwatch.Reset();
                 stopwatch.Start();
@@ -144,8 +156,9 @@ public sealed class GameScheduler
                 if (schedulerTask.Result != SchedulerTaskResult.NotCompleted)
                     continue;
 
-                if (schedulerTask.IsWaiting)
-                    continue;
+                lock (schedulerTask)
+                    if (schedulerTask.IsWaiting)
+                        continue;
 
                 if (schedulerTask.WaitingTask is not null)
                 {
@@ -199,7 +212,8 @@ public sealed class GameScheduler
                     break;
             }
 
-            CurrentSchedulerTask = null!;
+            lock (currentSchedulerTaskLock)
+                CurrentSchedulerTask = null!;
 
             if (ranNoTasks)
             {

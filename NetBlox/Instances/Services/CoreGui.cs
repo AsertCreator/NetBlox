@@ -74,6 +74,29 @@ public class CoreGui : BasePlayerGui
         GameManager.GameScheduler.EndTracedSecurityOverride();
     }
 
+    public override Instance[] GetChildren()
+    {
+        ScriptSchedulerTask? scriptSchedulerTask = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
+        if (scriptSchedulerTask == null)
+            return base.GetChildren();
+        if (scriptSchedulerTask.Identity == null)
+            return [];
+        if (!scriptSchedulerTask.Identity.RequireSimpleCapability(SimpleSecurityCapabilityLevel.RobloxScript))
+            return [];
+        return base.GetChildren();
+    }
+    public override bool AskToBeParent(Instance child)
+    {
+        ScriptSchedulerTask? scriptSchedulerTask = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
+        if (scriptSchedulerTask == null)
+            return true;
+        if (scriptSchedulerTask.Identity == null)
+            return false;
+        if (!scriptSchedulerTask.Identity.RequireSimpleCapability(SimpleSecurityCapabilityLevel.RobloxScript))
+            return false;
+        return base.AskToBeParent(child);
+    }
+
     public override void OnRegisteredEvent(EngineEventArgs args)
     {
         base.OnRegisteredEvent(args);

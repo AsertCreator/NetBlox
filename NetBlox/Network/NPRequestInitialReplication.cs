@@ -35,6 +35,8 @@ public sealed class NPRequestInitialReplication : NetworkPacketHandler
 
             if (player.Connection == null)
                 return SchedulerTaskResult.CompletedFailed;
+            
+            player.hadInitialReplication = true;
 
             byte[] payload = agent.ConstructInitialReplicationFrame();
 
@@ -44,6 +46,7 @@ public sealed class NPRequestInitialReplication : NetworkPacketHandler
             entity.Payload = payload;
 
             player.Connection.SendPacketReliable(NPRespondInitialReplication.Create(entity));
+            player.hadInitialReplication = true;
 
             return SchedulerTaskResult.CompletedSuccess;
         });

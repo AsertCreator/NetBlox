@@ -13,6 +13,7 @@ public class Player : Instance
     public override string ClassName => nameof(Player);
 
     public long userId;
+    public bool hadInitialReplication;
     public CompoundConnection? Connection;
 
     public Player(ulong id, GameManager gameManager) : base(id, gameManager)

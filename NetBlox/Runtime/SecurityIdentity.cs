@@ -39,6 +39,7 @@ public class SecurityIdentity
         Name = "ElevatedGameScript",
         AllCapabilities = [
             new SimpleSecurityCapability() { MyLevel = SimpleSecurityCapabilityLevel.LocalUser },
+            new SimpleSecurityCapability() { MyLevel = SimpleSecurityCapabilityLevel.RobloxScript },
         ]  
     };
     public static readonly SecurityIdentity SI_CommandBar = new SecurityIdentity()

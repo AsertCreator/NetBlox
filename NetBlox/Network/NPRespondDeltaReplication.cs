@@ -21,7 +21,7 @@ public sealed class NPRespondDeltaReplication : NetworkPacketHandler
 
         return new NetworkPacket()
         {
-            Type = (int)NetworkPacketType.NPRespondInitialReplication,
+            Type = (int)NetworkPacketType.NPRespondDeltaReplication,
             Payload = ms.ToArray()
         };
     }
@@ -37,19 +37,13 @@ public sealed class NPRespondDeltaReplication : NetworkPacketHandler
         using BinaryReader br = new BinaryReader(ms);
 
         int replicationFlags = br.ReadInt32();
-        ulong ourLocalPlayer = br.ReadUInt64();
         int payloadLength = br.ReadInt32();
         byte[] payload = br.ReadBytes(payloadLength);
 
-        var task = gm.GameScheduler.Schedule("Apply Delta Replication", GameScheduler.SchedulerPhase.Network, _ =>
-        {
-            NetworkClient networkClient = gm.RootModel.GetService<NetworkClient>();
-            ReplicationAgent replicationAgent = networkClient.ReplicationAgent;
+        NetworkClient networkClient = gm.RootModel.GetService<NetworkClient>();
+        ReplicationAgent replicationAgent = networkClient.ReplicationAgent;
 
-            replicationAgent.ApplyDeltaReplicationFrame(payload);
-
-            return SchedulerTaskResult.CompletedSuccess; 
-        });
-        task.Identity = Runtime.SecurityIdentity.SI_EngineNetworker;
+        lock (replicationAgent.PendingDeltaReplicationFrames)
+            replicationAgent.PendingDeltaReplicationFrames.Enqueue(payload);
     }
 }

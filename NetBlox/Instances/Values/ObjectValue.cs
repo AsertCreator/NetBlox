@@ -3,7 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Values;
 
 [Creatable]
-public class ObjectValue : Instance
+public class ObjectValue : ValueBase
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public ulong Value { get; set; }

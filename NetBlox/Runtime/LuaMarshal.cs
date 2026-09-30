@@ -74,6 +74,10 @@ public static class LuaMarshal
         {
             return DynValue.NewUserData(RBXScriptSignalBridge.PushUserData(ctx.GameManager, (LuaEvent)value));
         }
+        else if (clrType == cachedLuaYieldType)
+        {
+            return DynValue.NewYieldReq([]);
+        }
         else if (clrType == cachedLuaEventConnectionType)
         {
             return DynValue.NewUserData(RBXScriptConnectionBridge.PushUserData(ctx.GameManager, (LuaEventConnection)value));
@@ -120,11 +124,14 @@ public static class LuaMarshal
     }
     public static object? MarshalLuaToClr(string funcName, ScriptContext ctx, DynValue value, Type clrType)
     {
-        if (value.Type == DataType.Table)
+        if (value.Type == DataType.Table && clrType.IsArray)
         {
             DynValue[] array = value.Table.Values.ToArray();
             return MarshalLuaToClrArraySimple(funcName, ctx, array, clrType.GetElementType()!);
         }
+
+        if (value.IsNil())
+            return null;
 
         if (clrType == cachedDynValueType)
             return value;
@@ -179,13 +186,6 @@ public static class LuaMarshal
         {
             double number = value.CheckType(funcName, DataType.Number, flags: TypeValidationFlags.None).Number;
             return number;
-        }
-        else if (clrType == cachedStringType)
-        {
-            value.CheckType(funcName, DataType.String, flags: TypeValidationFlags.AllowNil);
-            if (value.Type == DataType.Nil || value.Type == DataType.Void)
-                return null;
-            return value.String;
         }
         else if (clrType == cachedBooleanType)
         {
@@ -262,6 +262,10 @@ public static class LuaMarshal
                 throw new ArgumentException(funcName + "'s argument takes EnumValue, but not EnumValue was given");
             return Enum.ToObject(clrType, descriptor.Value.Value);
         }
+        else if (clrType == cachedStringType)
+        {
+            return value.ToPrintString();
+        }
         else
             throw new Exception("Unsupported type");
     }
@@ -286,6 +290,7 @@ public static class LuaMarshal
     private static readonly Type cachedColor3Type = typeof(Color3);
     private static readonly Type cachedBrickColorType = typeof(BrickColor);
     private static readonly Type cachedLuaEventType = typeof(LuaEvent);
+    private static readonly Type cachedLuaYieldType = typeof(LuaYield);
     private static readonly Type cachedLuaEventConnectionType = typeof(LuaEventConnection);
     private static readonly Type cachedDynValueType = typeof(DynValue);
 }

@@ -4,7 +4,7 @@ using NetBlox.Structs;
 namespace NetBlox.Instances.Values;
 
 [Creatable]
-public class Color3Value : Instance
+public class Color3Value : ValueBase
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public Color3 Value { get; set; }

@@ -1,5 +1,6 @@
 using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
+using NetBlox.Network;
 using NetBlox.Runtime;
 using NetBlox.Runtime.Bridges;
 
@@ -19,6 +20,7 @@ public class Instance
     public struct InstanceInitializationSettings
     {
         public bool IsForeign;
+        public bool HasEverBeenAPartOfReplicatableDataModel;
     }
 
     [NotReplicated]
@@ -48,6 +50,7 @@ public class Instance
                 myParent?.OnChildRemoved(this);
                 value?.children.Add(InstanceID);
                 value?.OnChildAdded(this);
+
                 if (value is not null)
                 {
                     ViewportIndex = value.ViewportIndex;
@@ -57,6 +60,18 @@ public class Instance
                 {
                     ViewportIndex = -1;
                     parentid = 0;
+                }
+
+                if (InitializationSettings.HasEverBeenAPartOfReplicatableDataModel && Replicatable)
+                {
+                    ReplicationAgent? agent = ReplicationAgentIfServer;
+                    if (agent != null)
+                        agent.DeltaReparentInstance(this);
+                }
+                if (IsPartOfDataModel && !InitializationSettings.HasEverBeenAPartOfReplicatableDataModel && Replicatable)
+                {
+                    InitializationSettings.HasEverBeenAPartOfReplicatableDataModel = true;
+                    ReplicationAgentIfServer?.DeltaAddNewInstance(this);
                 }
 
                 InvokeAncestryChanged(this, value);
@@ -101,6 +116,62 @@ public class Instance
     public readonly GameManager GameManager;
 
     public DataModel Root => GameManager.RootModel;
+    public Instance? ParentService
+    {
+        get
+        {
+            if (Parent == null)
+                return null;
+            if (Parent == Root)
+                return this;
+            return Parent.ParentService;
+        }
+    }
+
+    public ReplicationAgent? ReplicationAgent => ReplicationAgentIfClient ?? ReplicationAgentIfServer;
+    public ReplicationAgent? ReplicationAgentIfClient
+    {
+        get
+        {
+            if (GameManager.NetworkMode == NetworkMode.Client)
+            {
+                NetworkClient? networkClient = Root.FindService<NetworkClient>();
+                if (networkClient == null)
+                    return null;
+                return networkClient.ReplicationAgent;
+            }
+            return null;
+        }
+    }
+    public ReplicationAgent? ReplicationAgentIfServer
+    {
+        get
+        {
+            if (GameManager.NetworkMode == NetworkMode.Server)
+            {
+                NetworkServer? networkServer = Root.FindService<NetworkServer>();
+                if (networkServer == null)
+                    return null;
+                return networkServer.ReplicationAgent;
+            }
+            return null;
+        }
+    }
+    public bool Replicatable
+    {
+        get
+        {
+            ScriptContext scriptContext = Root.GetService<ScriptContext>();
+            InstanceBridge.InstanceClassCache cache = scriptContext.ResolveInstanceClassCacheForType(GetType());
+
+            if (!cache.CanBeReplicated)
+                return false;
+            if (Parent == Root && cache.CanBeReplicated && cache.CanChildrenBeReplicated)
+                return true;
+            
+            return Parent != null ? Parent.Replicatable : false;
+        }
+    }
 
     public Instance[] EvalutedChildren => GetChildren();
 
@@ -305,7 +376,7 @@ public class Instance
         return instance.IsDescendantOf(this);
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public Instance[] GetChildren()
+    public virtual Instance[] GetChildren()
     {
         List<Instance> instances = [];
         List<ulong> deadChildren = [];
@@ -357,6 +428,13 @@ public class Instance
     public virtual void Destroy()
     {
         InitializationStage = InitializationStage.Destroying;
+
+        if (InitializationSettings.HasEverBeenAPartOfReplicatableDataModel)
+        {
+            ReplicationAgent? agent = ReplicationAgentIfServer;
+            if (agent != null)
+                agent.DeltaRemoveInstance(this);
+        }
 
         CommitStageDestroying();
 

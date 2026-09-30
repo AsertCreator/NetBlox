@@ -214,7 +214,6 @@ public class WorkspaceRendererViewport : RendererViewport
             Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
             part.Size = new Vector3(2, 2, Random.Shared.Next(2, 10));
             part.BrickColor = BrickColor.Random();
-            part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
             part.Anchored = false;
             part.Position = MainCamera.Position;
 
@@ -228,6 +227,7 @@ public class WorkspaceRendererViewport : RendererViewport
             else if (surfaceLottery == 3)
                 part.TopSurface = SurfaceType.Glue;
 
+            part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
             GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 30);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.M))

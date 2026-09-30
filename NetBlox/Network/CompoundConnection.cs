@@ -15,7 +15,9 @@ public class CompoundConnection : IDisposable
     public TcpClient TcpClient;
     public UdpClient? UdpClient;
     public IPEndPoint? UdpClientEndpoint;
+
     private bool connected;
+    private bool disposed;
     private bool everReceivedMessages;
 
     public event EventHandler? OnDisconnectedByOtherMeans;
@@ -247,16 +249,30 @@ public class CompoundConnection : IDisposable
     }
     public void Disconnect()
     {
-        Trace.TraceInformation("CompoundConnection.Disconnect()");
-        TcpClient.Close();
-        UdpClient?.Close();
+        lock (this)
+        {
+            if (connected)
+            {
+                connected = false;
+                Trace.TraceInformation("CompoundConnection.Disconnect()");
+                TcpClient.Close();
+                UdpClient?.Close();
+            }
+        }
     }
 
     public void Dispose()
     {
-        Trace.TraceInformation("CompoundConnection.Dispose()");
-        TcpClient.Dispose();
-        UdpClient?.Dispose();
-        firstMessageTimoutTimer.Dispose();
+        lock (this)
+        {
+            if (!disposed)
+            {
+                disposed = true;
+                Trace.TraceInformation("CompoundConnection.Dispose()");
+                TcpClient.Dispose();
+                UdpClient?.Dispose();
+                firstMessageTimoutTimer.Dispose();
+            }
+        }
     }
 }
