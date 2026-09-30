@@ -1,6 +1,8 @@
+using System.Numerics;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
+using NetBlox.Structs;
 
 namespace NetBlox.Network;
 
@@ -11,6 +13,9 @@ public class Player : Instance
     public long UserId => userId;
 
     public override string ClassName => nameof(Player);
+
+    public Vector3 CurrentCameraPosition;
+    public Vector3 CurrentCameraLookAt = new Vector3(0, 0, 1);
 
     public long userId;
     public bool hadInitialReplication;
@@ -56,6 +61,12 @@ public class Player : Instance
         {
             Root.GetService<NetworkServer>().ForceDisconnectPlayerWithMessage(this, message);
         }
+    }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public BrickColor GetPlayerColor()
+    {
+        return BrickColor.AllBrickColors[Math.Abs(UserId) % BrickColor.AllBrickColors.Length];
     }
 
     public override void Destroy()

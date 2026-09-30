@@ -5,6 +5,7 @@ using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
 using NetBlox.Instances.UI;
 using NetBlox.Network;
+using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 
@@ -211,8 +212,21 @@ public class WorkspaceRendererViewport : RendererViewport
 
         if (Raylib.IsMouseButtonDown(MouseButton.Right))
         {
+            Vector3 position = MainCamera.Position;
+            Vector3 target = MainCamera.Target;
+
             Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
             Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+
+            if (MainCamera.Position != position || MainCamera.Target != target)
+            {
+                NetworkClient? networkClient = GameRenderer.Root.FindService<NetworkClient>();
+                if (networkClient != null && networkClient.IsConnected)
+                {
+                    NetworkPacket packet = NPClientCameraUpdate.Create(MainCamera.Position, MainCamera.Target);
+                    networkClient.CurrentServerConnection?.SendPacketUnreliable(packet);
+                }
+            }
         }
 
         if (Raylib.IsKeyPressed(KeyboardKey.L))
@@ -310,7 +324,13 @@ public class WorkspaceRendererViewport : RendererViewport
         RenderingEventArgs.RenderingForShadowMap = false;
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDER3D)?.Fire(RenderingEventArgs);
 
+        if (GameRenderer.DebugFlag)
+            DrawGizmos(true);
+
         Raylib.EndMode3D();
+
+        if (GameRenderer.DebugFlag)
+            DrawGizmos(false);
 
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL0)?.Fire();
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL1)?.Fire();
@@ -321,6 +341,50 @@ public class WorkspaceRendererViewport : RendererViewport
             RenderDebugInfo();
 
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
+    }
+    public virtual void DrawGizmos(bool in3d)
+    {
+        NetworkServer? networkServer = GameRenderer.Root.FindService<NetworkServer>();
+
+        if (networkServer != null)
+        {
+            Font font = GameRenderer.FontRegistry.LoadFontFromSpecification(GameRenderer.DefaultFontSpecification);
+            Players players = GameRenderer.Root.GetService<Players>();
+            using RentedSpan<Instance?> rented = players.GetChildren_Fast();
+
+            if (in3d)
+                Raylib.BeginShaderMode(SpecularLightingShader);
+
+            for (int i = 0; i < rented.Values.Length; i++)
+            {
+                Player? player = rented.Values[i] as Player;
+                if (player == null)
+                    continue;
+
+                if (in3d)
+                {
+                    Color color = player.GetPlayerColor().Color3;
+                    color.A = 128;
+                    
+                    Raylib.DrawSphere(player.CurrentCameraPosition, 1, color);
+                }
+                else
+                {
+                    Vector3 textpos = player.CurrentCameraPosition + new Vector3(0, 1.75f, 0);
+                    Vector2 vector2 = Raylib.GetWorldToScreen(textpos, MainCamera);
+                    Vector2 size = Raylib.MeasureTextEx(font, player.Name,  GameRenderer.DefaultFontSpecification.Size, 0);
+
+                    Vector3 direction = MainCamera.Target - MainCamera.Position;
+                    Vector3 textdirection = textpos - MainCamera.Position;
+
+                    if (Vector3.Dot(direction, textdirection) > 0)
+                        Raylib.DrawTextEx(font, player.Name, vector2 - size / 2, GameRenderer.DefaultFontSpecification.Size, 0, Color.White);
+                }
+            }
+
+            if (in3d)
+                Raylib.EndShaderMode();
+        }
     }
     private unsafe RenderTexture2D CreateShadowmap(int width, int height) 
     {

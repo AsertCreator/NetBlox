@@ -19,6 +19,7 @@ public class CompoundConnection : IDisposable
     private bool connected;
     private bool disposed;
     private bool everReceivedMessages;
+    private bool clientMode = false;
 
     public event EventHandler? OnDisconnectedByOtherMeans;
     public event EventHandler? OnFirstMessageTimeout;
@@ -57,6 +58,7 @@ public class CompoundConnection : IDisposable
         UdpClient = new UdpClient(AddressFamily.InterNetwork);
         UdpClient.Connect(new IPEndPoint(iPEndPoint.Address.MapToIPv4(), iPEndPoint.Port));
         UdpClient.BeginReceive(HandleUnreliablePacketStart, null);
+        clientMode = true;
     }
 
     public void ResetFirstMessageTimeoutTimer(int timeout)
@@ -231,8 +233,13 @@ public class CompoundConnection : IDisposable
         bw.Write(networkPacket.Type);
         bw.Write(networkPacket.Payload);
 
+        IPEndPoint? dotnetGoDiePlease = UdpClientEndpoint;
+
+        if (clientMode) // monstrous hack
+            dotnetGoDiePlease = null;
+
         byte[] bytes = ms.ToArray();
-        UdpClient.BeginSend(bytes, bytes.Length, UdpClientEndpoint, delegate(IAsyncResult asyncResult)
+        UdpClient.BeginSend(bytes, bytes.Length, dotnetGoDiePlease, delegate(IAsyncResult asyncResult)
         {
             try
             {

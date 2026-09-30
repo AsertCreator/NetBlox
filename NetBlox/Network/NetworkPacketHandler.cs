@@ -13,6 +13,7 @@ public abstract class NetworkPacketHandler
         [(int)NetworkPacketType.NPUnreliableConnectionInfo] = new NPUnreliableConnectionInfo(),
         [(int)NetworkPacketType.NPRespondDeltaReplication] = new NPRespondDeltaReplication(),
         [(int)NetworkPacketType.NPPing] = new NPPing(),
+        [(int)NetworkPacketType.NPClientCameraUpdate] = new NPClientCameraUpdate()
     };
 
     public const int PROTOCOL_VERSION = 1;
