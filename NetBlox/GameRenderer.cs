@@ -20,6 +20,8 @@ public sealed class GameRenderer
     public bool IsDesktop = true;
     public bool DebugFlag = true;
 
+    public string StatusText = "";
+
     public int PreferredFPS = 60;
     public int DpiAwareCellSize = 1;
     private Stopwatch RenderStopwatch = new();

@@ -19,6 +19,11 @@ public class NetworkClient : Instance
 
     public new ReplicationAgent ReplicationAgent;
 
+    public TimeSpan LastServerPingValue;
+
+    private bool waitingForPing;
+    private GlobalTimestamp waitingForPingLastTime;
+
     public const ulong NETWORK_CONSTANT_ID = 20;
 
     public NetworkClient(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
@@ -42,7 +47,7 @@ public class NetworkClient : Instance
             {
                 GameManager.GameScheduler.ScheduleForImmediateExecution("Disconnecting From Server", GameScheduler.SchedulerPhase.Network, _ =>
                 {
-                    InitiateUnilateralDisconnect("Disconnected for some reason");
+                    InitiateUnilateralDisconnect("Server connection failure; probably server has crashed");
                     return SchedulerTaskResult.CompletedSuccess; 
                 }); 
             };
@@ -73,6 +78,32 @@ public class NetworkClient : Instance
             if (!CurrentServerConnection.IsConnected)
                 throw new NetworkException("Failed to connect; no further details");
 
+            GameManager.GameScheduler.Schedule("Ping Measurement", GameScheduler.SchedulerPhase.Network, _ =>
+            {
+                if (CurrentServerConnection != null && CurrentServerConnection.IsConnected)
+                {
+                    if (!waitingForPing)
+                    {
+                        NetworkPacket networkPacket = NPPing.Create(Random.Shared.Next());
+                        waitingForPingLastTime = GameManager.CurrentGlobalTimestamp();
+                        CurrentServerConnection.SendPacketReliable(networkPacket);
+                    }
+                    else
+                    {
+                        TimeSpan timeSpan = TimeSpan.FromMicroseconds(GameManager.CurrentGlobalTimestamp() - waitingForPingLastTime);
+                        if (timeSpan.TotalSeconds > 20)
+                        {
+                            InitiateUnilateralDisconnect("Connection timeout");
+                            waitingForPing = false;
+                        }
+                    }
+
+                    _.WaitingTimeTarget = GameManager.TimestampInTheFuture(TimeSpan.FromSeconds(1));
+                    return SchedulerTaskResult.NotCompleted;
+                }
+                return SchedulerTaskResult.CompletedSuccess;
+            });
+
             GameManager.TryGetEventForId(GameEvent.EVENT_NETWORKCLIENT_STARTED)?.Fire();
         }
         catch (Exception ex)
@@ -91,6 +122,11 @@ public class NetworkClient : Instance
         CurrentServerConnection.Disconnect();
         CurrentServerConnection = null;
 
+        if (GameManager.GameRenderer != null)
+        {
+            GameManager.GameRenderer.StatusText = "Disconnected from server: " + message;
+        }
+
         GameManager.TryGetEventForId(GameEvent.EVENT_NETWORKCLIENT_STOPPED)?.Fire();
         GameManager.TryGetEventForId(GameEvent.EVENT_KICKED)?.Fire(message);
 
@@ -102,6 +138,12 @@ public class NetworkClient : Instance
         Trace.TraceError(errorMessage);
 
         InitiateUnilateralDisconnect(errorMessage);
+    }
+    public void ReportPing()
+    {
+        ulong microseconds = GameManager.CurrentGlobalTimestamp() - waitingForPingLastTime;
+        LastServerPingValue = TimeSpan.FromMicroseconds(microseconds);
+        waitingForPing = false;
     }
 
     public override void Destroy()

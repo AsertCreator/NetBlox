@@ -4,6 +4,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
 using NetBlox.Instances.UI;
+using NetBlox.Network;
 using NetBlox.Structs;
 using Raylib_cs;
 
@@ -103,15 +104,24 @@ public class WorkspaceRendererViewport : RendererViewport
     }
     public virtual string ConstructDebugString()
     {
-        return "NetBlox" + 
+        string value = "NetBlox" + 
             ", fps: " + Raylib.GetFPS() + 
             ", actor count: " + (GameRenderer.GameManager.PhysicsSolver != null ? GameRenderer.GameManager.PhysicsSolver.GetActorCount() : 0) + 
             ", instance count: " + GameRenderer.GameManager.GameRegistry.GetInstanceCount();
+        
+        NetworkClient? client = GameRenderer.Root.FindService<NetworkClient>();
+
+        if (client != null)
+            value += ", ping: " + client.LastServerPingValue.TotalMilliseconds + " ms";
+
+        return value;
     }
     public virtual void RenderDebugString()
     {
         Font font = GameRenderer.FontRegistry.LoadFontFromSpecification(GameRenderer.DefaultFontSpecification);
         Raylib.DrawTextEx(font, ConstructDebugString(), new Vector2(0, 0), GameRenderer.DefaultFontSpecification.Size, 0, Color.White);
+
+        Raylib.DrawTextEx(font, GameRenderer.StatusText, new Vector2(50, 50), GameRenderer.DefaultFontSpecification.Size, 0, Color.White);
     }
     public virtual void RenderDebugInfo()
     {

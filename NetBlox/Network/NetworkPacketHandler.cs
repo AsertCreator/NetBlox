@@ -12,6 +12,7 @@ public abstract class NetworkPacketHandler
         [(int)NetworkPacketType.NPPhysicsUpdate] = new NPPhysicsUpdate(),
         [(int)NetworkPacketType.NPUnreliableConnectionInfo] = new NPUnreliableConnectionInfo(),
         [(int)NetworkPacketType.NPRespondDeltaReplication] = new NPRespondDeltaReplication(),
+        [(int)NetworkPacketType.NPPing] = new NPPing(),
     };
 
     public const int PROTOCOL_VERSION = 1;
