@@ -17,7 +17,7 @@ public class NetworkClient : Instance
 
     public override string ClassName => nameof(NetworkClient);
 
-    public ReplicationAgent ReplicationAgent;
+    public new ReplicationAgent ReplicationAgent;
 
     public const ulong NETWORK_CONSTANT_ID = 20;
 

@@ -21,7 +21,7 @@ public class NetworkServer : Instance
 
     public const ulong NETWORK_CONSTANT_ID = 21;
 
-    public ReplicationAgent ReplicationAgent;
+    public new ReplicationAgent ReplicationAgent;
 
     private TcpListener? TcpListener;
     private bool hadStarted = false;
@@ -186,7 +186,7 @@ public class NetworkServer : Instance
 
             bool hasAnyPlayers = false;
 
-            for (int i = 0, j = 0; i < rented.Values.Length; i++)
+            for (int i = 0; i < rented.Values.Length; i++)
             {
                 Player? player = rented.Values[i] as Player;
                 if (player == null)
@@ -209,7 +209,7 @@ public class NetworkServer : Instance
 
             NetworkPacket deltaPacket = NPRespondDeltaReplication.Create(entity);
 
-            for (int i = 0, j = 0; i < rented.Values.Length; i++)
+            for (int i = 0; i < rented.Values.Length; i++)
             {
                 Player? player = rented.Values[i] as Player;
                 if (player == null)
