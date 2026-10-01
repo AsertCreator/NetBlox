@@ -65,19 +65,23 @@ public class CompoundConnection : IDisposable
     {
         firstMessageTimoutTimer.Change(timeout, timeout);
     }
-    private void SeeIfConnectionIsStillUp()
+    private bool SeeIfConnectionIsStillUp()
     {
         if (!TcpClient.Connected)
         {
             connected = false;
             OnDisconnectedByOtherMeans?.Invoke(this, new());
-            return;
+            return true;
         }
+        return false;
     }
     private void HandleReliablePacketStart(IAsyncResult result)
     {
         try
         {
+            if (SeeIfConnectionIsStillUp())
+                return;
+
             NetworkStream stream = TcpClient.GetStream();
 
             if (stream.EndRead(result) != 4)
@@ -132,16 +136,24 @@ public class CompoundConnection : IDisposable
 
         try
         {
+            if (SeeIfConnectionIsStillUp())
+                return;
+            
+            Debug.Assert(UdpClient != null);
+
             IPEndPoint? sender = null;
             byte[] datagram = UdpClient.EndReceive(result, ref sender);
 
-            sender!.Address = sender.Address.MapToIPv4();
-
-            if (!sender.Equals(UdpClientEndpoint))
+            if (sender != null)
             {
-                Trace.TraceWarning("Unknown UDP packet coming from " + sender + " who's that?");
-                UdpClient.BeginReceive(HandleUnreliablePacketStart, null);
-                return;
+                sender!.Address = sender.Address.MapToIPv4();
+
+                if (!sender.Equals(UdpClientEndpoint))
+                {
+                    Trace.TraceWarning("Unknown UDP packet coming from " + sender + " who's that?");
+                    UdpClient.BeginReceive(HandleUnreliablePacketStart, null);
+                    return;
+                }
             }
 
             using MemoryStream ms = new MemoryStream(datagram);
@@ -202,6 +214,9 @@ public class CompoundConnection : IDisposable
     {
         try
         {
+            if (SeeIfConnectionIsStillUp())
+                return;
+
             NetworkStream networkStream = TcpClient.GetStream();
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter bw = new BinaryWriter(ms);
@@ -226,6 +241,9 @@ public class CompoundConnection : IDisposable
             Trace.TraceError("Unreliable connection hasn't been established yet, not sending...");
             return;   
         }
+
+        if (SeeIfConnectionIsStillUp())
+            return;
         
         using MemoryStream ms = new MemoryStream();
         using BinaryWriter bw = new BinaryWriter(ms);

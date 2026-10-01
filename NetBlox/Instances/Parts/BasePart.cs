@@ -147,6 +147,9 @@ public class BasePart : PVInstance
     {
         bool muchChanges = false;
 
+        if (PhysicsActor == null)
+            return false;
+
         if (InitializationStage >= InitializationStage.Initializing)
         {
             if (PhysicsActor!.RigidBody != null)

@@ -11,6 +11,24 @@
             "projectPath": "${workspaceFolder}/NetBloxClient/NetBloxClient.csproj"
         }, 
         {
+            "name": "C#: NetBloxClient (2) Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/NetBloxClient/NetBloxClient.csproj"
+        }, 
+        {
+            "name": "C#: NetBloxClient (3) Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/NetBloxClient/NetBloxClient.csproj"
+        }, 
+        {
+            "name": "C#: NetBloxClient (4) Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/NetBloxClient/NetBloxClient.csproj"
+        }, 
+        {
             "name": "C#: NetBloxClient Application",
             "type": "coreclr",
             "request": "launch",
@@ -31,6 +49,18 @@
         {
             "name": "Both Server and Client",
             "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxServer Debug"]
-        }
+        },
+        {
+            "name": "Server and Two Clients",
+            "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxClient (2) Debug", "C#: NetBloxServer Debug"]
+        },
+        {
+            "name": "Server and Three Clients",
+            "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxClient (2) Debug", "C#: NetBloxClient (3) Debug", "C#: NetBloxServer Debug"]
+        },
+        {
+            "name": "Server and Four Clients",
+            "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxClient (2) Debug", "C#: NetBloxClient (3) Debug", "C#: NetBloxClient (4) Debug", "C#: NetBloxServer Debug"]
+        },
     ]
 }
