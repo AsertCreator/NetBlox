@@ -1,5 +1,6 @@
 using System.Numerics;
 using Jitter2;
+using Jitter2.Collision.Shapes;
 using Jitter2.Dynamics;
 using NetBlox.Instances.Parts;
 using NetBlox.Network;
@@ -33,6 +34,8 @@ public class PhysicsSolver
         int fps = 60;
         if (GameManager.GameRenderer != null)
             fps = GameManager.GameRenderer.PreferredFPS;
+
+        GameManager.TryGetEventForId(GameEvent.EVENT_BEFORE_PHYSICS)?.Fire();
 
         lock (this)
             LocalWorld.Step(1 / (float)fps, false);
@@ -74,6 +77,8 @@ public class PhysicsSolver
 
         if (sendPhysics)
             networkServer?.CommitBroadcastPhysicsUpdates();
+
+        GameManager.TryGetEventForId(GameEvent.EVENT_AFTER_PHYSICS)?.Fire();
     }
 
     public void FinalizeSetAnchoredForBasePart(BasePart part, bool anchored)
@@ -99,9 +104,22 @@ public class PhysicsSolver
         PhysicsActor? actor = GetPhysicsActor(part);
         if (actor != null)
         {
-            if (actor.BoxShape == null)
+            if (actor.Shape == null)
                 return;
-            actor.BoxShape.Size = value;
+            
+            if (actor.Shape is BoxShape boxShape)
+                boxShape.Size = value;
+            else if (actor.Shape is SphereShape sphereShape)
+            {
+                float radius = value.X;
+                if (radius > value.Y)
+                    radius = value.Y;
+                if (radius > value.Z)
+                    radius = value.Z;
+                radius /= 2;
+
+                sphereShape.Radius = radius;
+            }
         }
     }
     public void FinalizeSetPositionForBasePart(BasePart part, Vector3 value)

@@ -102,6 +102,7 @@ public static class EnumValueBridge
 
             AddEnum<SurfaceType>();
             AddEnum<Faces>();
+            AddEnum<PartType>();
             AddEnum<TextXAlignment>();
             AddEnum<TextYAlignment>();
 

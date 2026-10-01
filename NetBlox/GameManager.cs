@@ -61,12 +61,15 @@ public sealed class GameManager
         CreateGameEventNamed(GameEvent.EVENT_LOCALPLAYERCHANGED, "Local Player Changed");
 
         CreateGameEventNamed(GameEvent.EVENT_HEARTBEAT, "Heartbeat - Process");
+        CreateGameEventNamed(GameEvent.EVENT_BEFORE_RENDER, "Render - Before");
+        CreateGameEventNamed(GameEvent.EVENT_AFTER_RENDER, "Render - After");
         CreateGameEventNamed(GameEvent.EVENT_RENDER3D, "Render 3D - Process");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL0, "Render GUI - Level 0");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL1, "Render GUI - Level 1");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL2, "Render GUI - Level 2");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL3, "Render GUI - Level 3");
-        CreateGameEventNamed(GameEvent.EVENT_PHYSICS, "Physics - Process");
+        CreateGameEventNamed(GameEvent.EVENT_BEFORE_PHYSICS, "Physics - Before");
+        CreateGameEventNamed(GameEvent.EVENT_AFTER_PHYSICS, "Physics - After");
 
         CreateGameEventNamed(GameEvent.EVENT_LOG_INFO, "Lua Output - Info");
         CreateGameEventNamed(GameEvent.EVENT_LOG_WARN, "Lua Output - Warning");

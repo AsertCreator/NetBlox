@@ -254,6 +254,17 @@ public class WorkspaceRendererViewport : RendererViewport
             part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
             GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 30);
         }
+        if (Raylib.IsKeyPressed(KeyboardKey.I))
+        {
+            Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            part.Size = new Vector3(2, 2, Random.Shared.Next(2, 10));
+            part.Shape = PartType.Ball;
+            part.BrickColor = BrickColor.Random();
+            part.Anchored = false;
+            part.Position = MainCamera.Position;
+            part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+            GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 30);
+        }
         if (Raylib.IsKeyPressed(KeyboardKey.M))
         {
             Hint hint = GameRenderer.GameManager.GameRegistry.Construct<Hint>();

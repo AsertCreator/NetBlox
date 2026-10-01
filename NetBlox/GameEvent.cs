@@ -20,7 +20,8 @@ public sealed class GameEvent
     public static readonly string EVENT_RENDERGUI_LEVEL2 = nameof(EVENT_RENDERGUI_LEVEL2);
     public static readonly string EVENT_RENDERGUI_LEVEL3 = nameof(EVENT_RENDERGUI_LEVEL3);
     public static readonly string EVENT_AFTER_RENDER = nameof(EVENT_AFTER_RENDER);
-    public static readonly string EVENT_PHYSICS = nameof(EVENT_PHYSICS);
+    public static readonly string EVENT_BEFORE_PHYSICS = nameof(EVENT_BEFORE_PHYSICS);
+    public static readonly string EVENT_AFTER_PHYSICS = nameof(EVENT_AFTER_PHYSICS);
     public static readonly string EVENT_LOG_INFO = nameof(EVENT_LOG_INFO);
     public static readonly string EVENT_LOG_WARN = nameof(EVENT_LOG_WARN);
     public static readonly string EVENT_KICKED = nameof(EVENT_KICKED);

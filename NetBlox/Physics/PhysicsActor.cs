@@ -13,15 +13,13 @@ public class PhysicsActor
     public PhysicsSolver Owner;
     public PhysicsActorType Type;
     public RigidBody? RigidBody;
-    public BoxShape? BoxShape;
+    public Shape? Shape;
 
     public PhysicsActor(PhysicsSolver solver, PhysicsActorType type, BasePart reference)
     {
         Owner = solver;
         Type = type;
-        BoxShape = new BoxShape(reference.Size);
         RigidBody = solver.LocalWorld.CreateRigidBody();
-        RigidBody.AddShape(BoxShape);
         RigidBody.Position = reference.Position;
         RigidBody.Orientation = reference.QuaternionRotation;
         
