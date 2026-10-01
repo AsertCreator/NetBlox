@@ -11,6 +11,7 @@ public class AssetDownloadTask
     public string? LocalDownloadPath => localDownloadPath;
     public CancellationTokenSource CancellationTokenSource = new();
     public GameAssetManager GameAssetManager;
+    public string Error = "";
 
     private ContentId contentId;
     private bool hadFinished;
@@ -74,6 +75,7 @@ public class AssetDownloadTask
                         Trace.TraceError("AssetDownloadTask: local path is null; cannot resolve");
                         hadFinished = true;
                         hadErrored = true;
+                        Error = "Local path is null; cannot resolve";
                         CallAllFailureCallbacks();
                         return;
                     }
@@ -102,6 +104,7 @@ public class AssetDownloadTask
                             Trace.TraceError("AssetDownloadTask: local path is null; cannot resolve");
                             hadFinished = true;
                             hadErrored = true;
+                            Error = "Local path is null; cannot resolve";
                             CallAllFailureCallbacks();
                             return;
                         }
@@ -119,6 +122,7 @@ public class AssetDownloadTask
         Trace.TraceError("AssetDownloadTask: unknown ContentId protocol: " + (int)contentId.Protocol);
         hadFinished = true;
         hadErrored = true;
+        Error = "Unknown ContentId protocol; cannot resolve";
         CallAllFailureCallbacks();
     }
     private string GetMasterCacheDirectory()
