@@ -34,7 +34,7 @@ public sealed class GameRenderer
 
         Raylib.SetExitKey(KeyboardKey.Null);
         Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.HighDpiWindow | ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow);
-        Raylib.InitWindow(800, 900, "NetBlox");
+        Raylib.InitWindow(1600, 900, "NetBlox");
 
         GameManager.WindowReady = true;
 

@@ -252,7 +252,6 @@ public class WorkspaceRendererViewport : RendererViewport
                 part.TopSurface = SurfaceType.Glue;
 
             part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
-            GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 30);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.I))
         {
@@ -263,7 +262,6 @@ public class WorkspaceRendererViewport : RendererViewport
             part.Anchored = false;
             part.Position = MainCamera.Position;
             part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
-            GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 30);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.M))
         {
