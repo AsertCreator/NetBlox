@@ -6,7 +6,8 @@
         {
             GameManager gameManager = new GameManager(Network.NetworkMode.Server);
             gameManager.AddConsoleArguments(args);
-            gameManager.InitializeRendering();
+            if (args.Contains("-Graphics"))
+                gameManager.InitializeRendering();
             gameManager.LoadPlaceFromDefaults(0);
             gameManager.BeginInitializationPhase();
             gameManager.BeginAlivePhase();
