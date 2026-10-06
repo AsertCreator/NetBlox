@@ -2,7 +2,7 @@
   "profiles": {
     "NetBloxServer": {
       "commandName": "Project",
-      "commandLineArgs": "-Verbose -Port 44500"
+      "commandLineArgs": "-Verbose -Port 44500 -Graphics"
     }
   }
 }

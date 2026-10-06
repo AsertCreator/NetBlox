@@ -141,46 +141,7 @@ public class Part : BasePart
         {
             RenderingEventArgs renderingEventArgs = (RenderingEventArgs)args.EventData!;
 
-            if (!renderingEventArgs.RenderingForShadowMap)
-                Raylib.BeginShaderMode(SpecularLightingShader);
-
-            if (GameManager.GameRenderer!.CurrentViewport is WorkspaceRendererViewport viewport)
-            {
-                Vector3 axis;
-                float angle;
-                Raymath.QuaternionToAxisAngle(QuaternionRotation, &axis, &angle);
-
-                Rlgl.PushMatrix();
-                Rlgl.MatrixMode(MatrixMode.Texture);
-                Rlgl.Translatef(statePosition.X, statePosition.Y, statePosition.Z);
-                Rlgl.Rotatef(angle * 180 / MathF.PI, axis.X, axis.Y, axis.Z);
-
-                if (Shape == PartType.Block)
-                {
-                    DrawFace(Faces.Top, viewport);
-                    DrawFace(Faces.Left, viewport);
-                    DrawFace(Faces.Right, viewport);
-                    DrawFace(Faces.Front, viewport);
-                    DrawFace(Faces.Back, viewport);
-                    DrawFace(Faces.Bottom, viewport);
-                }
-                else if (Shape == PartType.Ball)
-                {
-                    float radius = Size.X;
-                    if (radius > Size.Y)
-                        radius = Size.Y;
-                    if (radius > Size.Z)
-                        radius = Size.Z;
-                    radius /= 2;
-
-                    Raylib.DrawSphere(default, radius, Color3);
-                }
-
-                Rlgl.PopMatrix();
-            }
-
-            if (!renderingEventArgs.RenderingForShadowMap)
-                Raylib.EndShaderMode();
+            renderingEventArgs.WritePart(this);
         }
         else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS)
         {

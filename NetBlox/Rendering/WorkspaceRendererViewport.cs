@@ -23,6 +23,7 @@ public class WorkspaceRendererViewport : RendererViewport
     public Texture2D? SkyboxFront;
     public Texture2D? SkyboxBack;
 
+    public Shader SpecularLightingInstancedShader;
     public Shader SpecularLightingShader;
     public Shader ShadowMapShader;
     public RenderTexture2D ShadowMap;
@@ -33,7 +34,16 @@ public class WorkspaceRendererViewport : RendererViewport
     private int uniform_shadowmap;
     private int uniform_lightVP;
 
+    private int uniform_instanced_viewPosition;
+    private int uniform_instanced_lightPosition;
+    private int uniform_instanced_shadowmap;
+    private int uniform_instanced_lightVP;
+
+    private LRUCache<PartSpecification, GCMesh> partRenderBufferMeshCache;
+    private Dictionary<PartSpecification, List<(Vector3 Position, Quaternion Rotation)>> partRenderBuffer = [];
+    private int maxPartRenderBufferDepth = 0;
     private GameSchedulerPerfEntry[] lastperfEntry;
+    private Mesh sphereMesh;
 
     public WorkspaceRendererViewport(GameRenderer gameRenderer) : base(gameRenderer)
     {
@@ -45,9 +55,11 @@ public class WorkspaceRendererViewport : RendererViewport
             FovY = 90
         };
 
-        RenderingEventArgs = new RenderingEventArgs();
+        RenderingEventArgs = new RenderingEventArgs(this);
 
         lastperfEntry = new GameSchedulerPerfEntry[1];
+
+        partRenderBufferMeshCache = new LRUCache<PartSpecification, GCMesh>(4096); // idk if this is a good value
 
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_up.png")
             ?.AddCallbackForSuccess(x => SkyboxTop = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
@@ -69,6 +81,14 @@ public class WorkspaceRendererViewport : RendererViewport
             uniform_lightPosition = Raylib.GetShaderLocation(SpecularLightingShader, "lightPosition");
             uniform_shadowmap = Raylib.GetShaderLocation(SpecularLightingShader, "shadowmap");
             uniform_lightVP = Raylib.GetShaderLocation(SpecularLightingShader, "lightVP");
+        });
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://shaders/specular_instanced")?.AddCallbackForSuccess(x => 
+        {
+            SpecularLightingInstancedShader = gameRenderer.GameManager.GameAssetManager.LoadShaderFromPath(x.LocalDownloadPath!);
+            uniform_instanced_viewPosition = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "viewPosition");
+            uniform_instanced_lightPosition = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "lightPosition");
+            uniform_instanced_shadowmap = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "shadowmap");
+            uniform_instanced_lightVP = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "lightVP");
         });
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://shaders/shadowmap")?.AddCallbackForSuccess(x => 
         {
@@ -189,14 +209,18 @@ public class WorkspaceRendererViewport : RendererViewport
             Raylib.EndTextureMode();
 
             Raylib.SetShaderValueTexture(SpecularLightingShader, uniform_shadowmap, ShadowMap.Depth);
+            Raylib.SetShaderValueTexture(SpecularLightingInstancedShader, uniform_instanced_shadowmap, ShadowMap.Depth);
 
             Raylib.SetShaderValueMatrix(SpecularLightingShader, uniform_lightVP, matlightVP);
+            Raylib.SetShaderValueMatrix(SpecularLightingInstancedShader, uniform_instanced_lightVP, matlightVP);
         }
 
         Raylib.SetShaderValue(SpecularLightingShader, uniform_viewPosition, MainCamera.Position, ShaderUniformDataType.Vec3);
         Raylib.SetShaderValue(SpecularLightingShader, uniform_lightPosition, 
             GameRenderer.GameManager.RootModel.GetService<Lighting>().SunPosition, ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(SpecularLightingShader, uniform_lightPosition, 
+
+        Raylib.SetShaderValue(SpecularLightingInstancedShader, uniform_instanced_viewPosition, MainCamera.Position, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(SpecularLightingInstancedShader, uniform_instanced_lightPosition, 
             GameRenderer.GameManager.RootModel.GetService<Lighting>().SunPosition, ShaderUniformDataType.Vec3);
 
         Raylib.BeginMode3D(MainCamera);
@@ -252,6 +276,21 @@ public class WorkspaceRendererViewport : RendererViewport
                 part.TopSurface = SurfaceType.Glue;
 
             part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+        }
+        if (Raylib.IsKeyPressed(KeyboardKey.O))
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+                part.Size = new Vector3(2, 2, 4);
+                part.BrickColor = BrickColor.Blue;
+                part.Anchored = false;
+                part.Position = MainCamera.Position + new Vector3(0, 2.5f * i, 0);
+                if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+                    part.Shape = PartType.Ball;
+
+                part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+            }
         }
         if (Raylib.IsKeyPressed(KeyboardKey.I))
         {
@@ -333,6 +372,8 @@ public class WorkspaceRendererViewport : RendererViewport
         RenderingEventArgs.RenderingForShadowMap = false;
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDER3D)?.Fire(RenderingEventArgs);
 
+        DrawPartRenderBuffer();
+
         if (GameRenderer.DebugFlag)
             DrawGizmos(true);
 
@@ -350,6 +391,76 @@ public class WorkspaceRendererViewport : RendererViewport
             RenderDebugInfo();
 
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
+    }
+    public virtual unsafe void DrawPartRenderBuffer()
+    {
+        if (sphereMesh.VaoId == 0)
+            sphereMesh = Raylib.GenMeshSphere(0.5f, 9, 15);
+
+        Matrix4x4* matrixies = stackalloc Matrix4x4[maxPartRenderBufferDepth];
+
+        Material material = Raylib.LoadMaterialDefault();
+        material.Shader = SpecularLightingInstancedShader;
+
+        foreach (KeyValuePair<PartSpecification, List<(Vector3 Position, Quaternion rotation)>> kvp in partRenderBuffer)
+        {
+            PartSpecification partSpecification = kvp.Key;
+            partSpecification.LeftSurface = default;
+            partSpecification.RightSurface = default;
+            partSpecification.TopSurface = default;
+            partSpecification.BottomSurface = default;
+            partSpecification.FrontSurface = default;
+            partSpecification.BackSurface = default;
+            partSpecification.Color = default;
+
+            material.Maps[(int)MaterialMapIndex.Diffuse].Color = kvp.Key.Color;
+
+            if (partSpecification.Shape == PartType.Block)
+            {
+                GCMesh? mesh = partRenderBufferMeshCache.Get(partSpecification);
+                if (mesh == null)
+                {
+                    mesh = new GCMesh(Raylib.GenMeshCube(partSpecification.Size.X, partSpecification.Size.Y, partSpecification.Size.Z));
+                    partRenderBufferMeshCache.Set(partSpecification, mesh);
+                }
+
+                for (int i = 0; i < kvp.Value.Count; i++)
+                {
+                    (Vector3 Position, Quaternion Rotation) = kvp.Value[i];
+                    matrixies[i] = Matrix4x4.CreateScale(1, 1, 1);
+                    matrixies[i] *= Matrix4x4.CreateFromQuaternion(Rotation);
+                    matrixies[i] *= Matrix4x4.CreateTranslation(Position.X, Position.Y, Position.Z);
+                    matrixies[i] = Matrix4x4.Transpose(matrixies[i]);
+                }
+
+                Raylib.DrawMeshInstanced(mesh.Mesh, material, matrixies, kvp.Value.Count);
+            }
+            else if (partSpecification.Shape == PartType.Ball)
+            {
+                Vector3 size = kvp.Key.Size;
+                float maxsize = size.X;
+                if (size.Y > maxsize)
+                    maxsize = size.Y;
+                if (size.Z > maxsize)
+                    maxsize = size.Z;
+
+                maxsize /= 2;
+
+                for (int i = 0; i < kvp.Value.Count; i++)
+                {
+                    (Vector3 Position, Quaternion Rotation) = kvp.Value[i];
+                    matrixies[i] = Matrix4x4.CreateScale(maxsize, maxsize, maxsize);
+                    matrixies[i] *= Matrix4x4.CreateFromQuaternion(Rotation);
+                    matrixies[i] *= Matrix4x4.CreateTranslation(Position.X, Position.Y, Position.Z);
+                    matrixies[i] = Matrix4x4.Transpose(matrixies[i]);
+                }
+
+                Raylib.DrawMeshInstanced(sphereMesh, material, matrixies, kvp.Value.Count);
+            }
+        }
+
+        partRenderBuffer.Clear();
+        maxPartRenderBufferDepth = 0;
     }
     public virtual void DrawGizmos(bool in3d)
     {
@@ -395,6 +506,34 @@ public class WorkspaceRendererViewport : RendererViewport
                 Raylib.EndShaderMode();
         }
     }
+    public void WritePart(BasePart part)
+    {
+        PartSpecification partSpecification = default;
+
+        if (part is Part concretePart)
+        {
+            partSpecification.Size = concretePart.Size;
+            partSpecification.Shape = concretePart.Shape;
+            partSpecification.Color = concretePart.Color3;
+            partSpecification.TopSurface = concretePart.TopSurface;
+            partSpecification.LeftSurface = concretePart.LeftSurface;
+            partSpecification.RightSurface = concretePart.RightSurface;
+            partSpecification.BottomSurface = concretePart.BottomSurface;
+            partSpecification.FrontSurface = concretePart.FrontSurface;
+            partSpecification.BackSurface = concretePart.BackSurface;
+        }
+        else
+        {
+            throw new NotImplementedException("Unsupported part type");
+        }
+
+        if (!partRenderBuffer.TryGetValue(partSpecification, out _))
+            partRenderBuffer[partSpecification] = new();
+        
+        partRenderBuffer[partSpecification].Add((part.Position, part.QuaternionRotation));
+        if (partRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
+            maxPartRenderBufferDepth = partRenderBuffer[partSpecification].Count;
+    }
     private unsafe RenderTexture2D CreateShadowmap(int width, int height) 
     {
         // standard fbo
@@ -432,5 +571,5 @@ public class WorkspaceRendererViewport : RendererViewport
         }
 
         return target;
-    }                       
+    }
 }

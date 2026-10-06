@@ -45,6 +45,7 @@ root.
 - Raylib-cs. Copyright (c) 2018-2026, ChrisDill (check [license](https://github.com/ChrisDill/Raylib-cs/blob/master/LICENSE))
 - MoonSharp. Copyright (c) 2014-2016, Marco Mastropaolo (check [license](https://github.com/moonsharp-devs/moonsharp/blob/master/LICENSE))
 - JitterPhysics2. Copyright (c) 2023-2026, Thorben Linneweber and contributors (check [license](https://github.com/notgiven688/jitterphysics2/blob/master/LICENSE))
+- LRU Cache. Copyright (c) 2023, Atul Mishra (https://medium.com/@atulmishra.bhumca09/basic-lru-cache-implementation-in-c-17d4a5f0d4ba)
 
 For open-source licenses of software that Generation 1 depends on, check branches that start with "gen1/"
 
