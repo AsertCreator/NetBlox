@@ -51,61 +51,64 @@ public class LayerCollector : GuiBase2d
         }
         return null;
     }
-    public void TestMouse()
+    public bool TestMouse_2()
     {
         Vector2 mousePosition = Raylib.GetMousePosition();
+        bool flag = false;
         
         if (Raylib.IsMouseButtonPressed(MouseButton.Left))
-            HandleMouseButton1Down(mousePosition);
+            flag |= HandleMouseButton1Down(mousePosition);
         if (Raylib.IsMouseButtonUp(MouseButton.Left))
-            HandleMouseButton1Up(mousePosition);
+            flag |= HandleMouseButton1Up(mousePosition);
         if (Raylib.IsMouseButtonPressed(MouseButton.Right))
-            HandleMouseButton2Down(mousePosition);
+            flag |= HandleMouseButton2Down(mousePosition);
         if (Raylib.IsMouseButtonUp(MouseButton.Right))
-            HandleMouseButton2Up(mousePosition);
+            flag |= HandleMouseButton2Up(mousePosition);
         
         Vector2 vector2 = Raylib.GetMouseWheelMoveV();
         if (vector2.Y > 0)
-            HandleMouseWheelForward(mousePosition, new Vector2(vector2.X, vector2.Y));
+            flag |= HandleMouseWheelForward(mousePosition, new Vector2(vector2.X, vector2.Y));
         else if (vector2.Y < 0)
-            HandleMouseWheelBackward(mousePosition, new Vector2(vector2.X, vector2.Y));
+            flag |= HandleMouseWheelBackward(mousePosition, new Vector2(vector2.X, vector2.Y));
+        
+        return flag;
     }
-    public void HandleMouseButton1Down(Vector2 vector2)
+    public bool HandleMouseButton1Down(Vector2 vector2)
     {
         GuiObject? candidate = GetCandidateAt(vector2);
-        if (candidate != null)
-            candidate.InvokeMouseButton1Down();
+        candidate?.InvokeMouseButton1Down();
+        return candidate != null;
     }
-    public void HandleMouseButton1Up(Vector2 vector2)
+    public bool HandleMouseButton1Up(Vector2 vector2)
     {
         GuiObject? candidate = GetCandidateAt(vector2);
-        if (candidate != null)
-            candidate.InvokeMouseButton1Up();
+        candidate?.InvokeMouseButton1Up();
+        return candidate != null;
     }
-    public void HandleMouseButton2Down(Vector2 vector2)
+    public bool HandleMouseButton2Down(Vector2 vector2)
     {
         GuiObject? candidate = GetCandidateAt(vector2);
-        if (candidate != null)
-            candidate.InvokeMouseButton2Down();
+        candidate?.InvokeMouseButton2Down();
+        return candidate != null;
     }
-    public void HandleMouseButton2Up(Vector2 vector2)
+    public bool HandleMouseButton2Up(Vector2 vector2)
     {
         GuiObject? candidate = GetCandidateAt(vector2);
-        if (candidate != null)
-            candidate.InvokeMouseButton2Up();
+        candidate?.InvokeMouseButton2Up();
+        return candidate != null;
     }
-    public void HandleMouseWheelBackward(Vector2 position, Vector2 vector2)
+    public bool HandleMouseWheelBackward(Vector2 position, Vector2 vector2)
     {
         GuiObject? candidate = GetScrollableCandidateAt(position);
         // but roblox is stupid and passes the mouse position to the event for some reason
-        if (candidate != null)
-            candidate.InvokeMouseWheelBackward(position.X, position.Y);
+        candidate?.InvokeMouseWheelBackward(position.X, position.Y);
+        return candidate != null;
     }
-    public void HandleMouseWheelForward(Vector2 position, Vector2 vector2)
+    public bool HandleMouseWheelForward(Vector2 position, Vector2 vector2)
     {
         GuiObject? candidate = GetScrollableCandidateAt(position);
-        if (candidate != null)
-            candidate.InvokeMouseWheelForward(position.X, position.Y);
+        candidate?.InvokeMouseWheelForward(position.X, position.Y);
+        return candidate != null;
     }
 
     public override bool IsA(string className)

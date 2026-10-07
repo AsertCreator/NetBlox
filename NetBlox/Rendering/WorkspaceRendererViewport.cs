@@ -580,16 +580,14 @@ public class WorkspaceRendererViewport : RendererViewport
                 {
                     BasePart basePart = kvp.Value[i];
                     Vector3 size = basePart.Size;
-                    float maxsize = size.X;
+                    float minsize = size.X;
 
-                    if (size.Y > maxsize)
-                        maxsize = size.Y;
-                    if (size.Z > maxsize)
-                        maxsize = size.Z;
+                    if (size.Y < minsize)
+                        minsize = size.Y;
+                    if (size.Z < minsize)
+                        minsize = size.Z;
 
-                    maxsize /= 2;
-
-                    Matrix4x4 matrix = Matrix4x4.CreateScale(maxsize, maxsize, maxsize);
+                    Matrix4x4 matrix = Matrix4x4.CreateScale(minsize, minsize, minsize);
                     matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
                     matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
                     matrix = Matrix4x4.Transpose(matrix);

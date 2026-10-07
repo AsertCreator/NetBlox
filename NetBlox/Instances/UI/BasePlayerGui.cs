@@ -17,6 +17,7 @@ public class BasePlayerGui : Instance
     {
         Instance[] instances = GetChildren();
         Stack<Rectangle> cdclipStack = [];
+        bool finishedInteraction = false;
 
         for (int i = 0; i < instances.Length; i++)
         {
@@ -27,7 +28,8 @@ public class BasePlayerGui : Instance
             if (!screenGui.Enabled)
                 continue;
 
-            screenGui.TestMouse();
+            if (!finishedInteraction)
+                finishedInteraction = screenGui.TestMouse_2();
 
             using RentedSpan<Instance?> allInstances = screenGui.GetChildren_Fast();
             Rectangle rectangle = new Rectangle();
