@@ -8,6 +8,9 @@ namespace NetBlox.Instances.Services;
 [ReplicateChildren]
 public class Workspace : Model
 {
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public float FallenPartsDestroyHeight { get; set; } = -50;
+
     public override string ClassName => nameof(Workspace);
 
     public const ulong NETWORK_CONSTANT_ID = 2;

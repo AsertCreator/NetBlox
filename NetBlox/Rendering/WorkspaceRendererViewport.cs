@@ -29,6 +29,8 @@ public class WorkspaceRendererViewport : RendererViewport
     public RenderTexture2D ShadowMap;
     public RenderingEventArgs RenderingEventArgs;
 
+    public int SpeedMultiplier = 1;
+
     private int uniform_viewPosition;
     private int uniform_lightPosition;
     private int uniform_shadowmap;
@@ -244,8 +246,12 @@ public class WorkspaceRendererViewport : RendererViewport
             Vector3 position = MainCamera.Position;
             Vector3 target = MainCamera.Target;
 
-            Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
-            Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+            // an already slow update loop, slowified even more.
+            for (int i = 0; i < SpeedMultiplier; i++)
+            {
+                Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+                Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+            }
 
             if (MainCamera.Position != position || MainCamera.Target != target)
             {
@@ -291,7 +297,37 @@ public class WorkspaceRendererViewport : RendererViewport
                 part.BrickColor = BrickColor.Blue;
                 part.Anchored = false;
                 part.Position = MainCamera.Position + new Vector3(0, 2.5f * i, 0);
-                if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+                if (Raylib.IsKeyDown(KeyboardKey.LeftAlt))
+                    part.Shape = PartType.Ball;
+
+                part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+            }
+        }
+        if (Raylib.IsKeyPressed(KeyboardKey.C))
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+                part.Size = new Vector3(2, 2, 4);
+                part.BrickColor = BrickColor.Random();
+                part.Anchored = false;
+                part.Position = MainCamera.Position + new Vector3(0, 2.5f * i, 0);
+                if (Raylib.IsKeyDown(KeyboardKey.LeftAlt))
+                    part.Shape = PartType.Ball;
+
+                part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+            }
+        }
+        if (Raylib.IsKeyPressed(KeyboardKey.V))
+        {
+            for (int i = 0; i < 300; i++)
+            {
+                Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+                part.Size = new Vector3(2, 2, 4);
+                part.BrickColor = BrickColor.Random();
+                part.Anchored = false;
+                part.Position = MainCamera.Position + new Vector3(Random.Shared.Next(-70, 70), Random.Shared.Next(0, 150), Random.Shared.Next(-70, 70));
+                if (Raylib.IsKeyDown(KeyboardKey.LeftAlt))
                     part.Shape = PartType.Ball;
 
                 part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
@@ -360,15 +396,36 @@ public class WorkspaceRendererViewport : RendererViewport
             GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(screenGui, 5);
         }
 
-        if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+        if (Raylib.IsKeyPressed(KeyboardKey.One))
         {
-            MainCamera.Position.Y -= 0.2f;
-            MainCamera.Target.Y -= 0.2f;
+            SpeedMultiplier = 1;
         }
-        if (Raylib.IsKeyDown(KeyboardKey.Space))
+        else if (Raylib.IsKeyPressed(KeyboardKey.Two))
         {
-            MainCamera.Position.Y += 0.2f;
-            MainCamera.Target.Y += 0.2f;
+            SpeedMultiplier = 2;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.Three))
+        {
+            SpeedMultiplier = 3;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.Four))
+        {
+            SpeedMultiplier = 4;
+        }
+        
+
+        for (int i = 0; i < SpeedMultiplier; i++)
+        {
+            if (Raylib.IsKeyDown(KeyboardKey.LeftShift))
+            {
+                MainCamera.Position.Y -= 0.2f;
+                MainCamera.Target.Y -= 0.2f;
+            }
+            if (Raylib.IsKeyDown(KeyboardKey.Space))
+            {
+                MainCamera.Position.Y += 0.2f;
+                MainCamera.Target.Y += 0.2f;
+            }
         }
 
         if (Raylib.IsMouseButtonReleased(MouseButton.Right))

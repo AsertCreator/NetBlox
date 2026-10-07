@@ -3,6 +3,7 @@ using Jitter2;
 using Jitter2.Collision.Shapes;
 using Jitter2.Dynamics;
 using NetBlox.Instances.Parts;
+using NetBlox.Instances.Services;
 using NetBlox.Network;
 
 namespace NetBlox.Physics;
@@ -40,6 +41,7 @@ public class PhysicsSolver
         lock (this)
             LocalWorld.Step(1 / (float)fps, false);
 
+        Workspace workspace = GameManager.RootModel.GetService<Workspace>();
         NetworkServer? networkServer = null;
         if (GameManager.NetworkMode == NetworkMode.Server)
             networkServer = GameManager.RootModel.GetService<NetworkServer>();
@@ -73,6 +75,9 @@ public class PhysicsSolver
                     basePart.statePosition += basePart.Velocity / fps;
                 }
             }
+
+            if (!basePart.Anchored && basePart.statePosition.Y < workspace.FallenPartsDestroyHeight)
+                basePart.Destroy();
         }
 
         if (sendPhysics)
