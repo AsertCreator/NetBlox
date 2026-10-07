@@ -40,12 +40,13 @@ public class WorkspaceRendererViewport : RendererViewport
     private int uniform_instanced_lightVP;
 
     private LRUCache<PartSpecification, GCMesh> partRenderBufferMeshCache;
-    private Dictionary<PartSpecification, List<(Vector3 Position, Quaternion Rotation)>> partRenderBuffer = [];
+    private Dictionary<PartSpecification, List<BasePart>> partRenderBuffer = [];
     private int maxPartRenderBufferDepth = 0;
     private GameSchedulerPerfEntry[] lastperfEntry;
+    private Mesh cubeMesh;
     private Mesh sphereMesh;
 
-    public WorkspaceRendererViewport(GameRenderer gameRenderer) : base(gameRenderer)
+    public unsafe WorkspaceRendererViewport(GameRenderer gameRenderer) : base(gameRenderer)
     {
         MainCamera = new Camera3D()
         {
@@ -81,6 +82,8 @@ public class WorkspaceRendererViewport : RendererViewport
             uniform_lightPosition = Raylib.GetShaderLocation(SpecularLightingShader, "lightPosition");
             uniform_shadowmap = Raylib.GetShaderLocation(SpecularLightingShader, "shadowmap");
             uniform_lightVP = Raylib.GetShaderLocation(SpecularLightingShader, "lightVP");
+            SpecularLightingShader.Locs[(int)ShaderLocationIndex.MatrixMvp] = Raylib.GetShaderLocation(SpecularLightingShader, "mvp");
+            SpecularLightingShader.Locs[(int)ShaderLocationIndex.ColorDiffuse] = Raylib.GetShaderLocation(SpecularLightingShader, "colDiffuse");
         });
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://shaders/specular_instanced")?.AddCallbackForSuccess(x => 
         {
@@ -89,6 +92,8 @@ public class WorkspaceRendererViewport : RendererViewport
             uniform_instanced_lightPosition = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "lightPosition");
             uniform_instanced_shadowmap = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "shadowmap");
             uniform_instanced_lightVP = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "lightVP");
+            SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixMvp] = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "mvp");
+            SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.VertexColor] = Raylib.GetShaderLocationAttrib(SpecularLightingInstancedShader, "vertexColor");
         });
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://shaders/shadowmap")?.AddCallbackForSuccess(x => 
         {
@@ -392,70 +397,64 @@ public class WorkspaceRendererViewport : RendererViewport
 
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
     }
-    public virtual unsafe void DrawPartRenderBuffer()
+    public virtual void DrawPartRenderBuffer()
     {
         if (sphereMesh.VaoId == 0)
             sphereMesh = Raylib.GenMeshSphere(0.5f, 9, 15);
+        if (cubeMesh.VaoId == 0)
+            cubeMesh = Raylib.GenMeshCube(1, 1, 1);
 
-        Matrix4x4* matrixies = stackalloc Matrix4x4[maxPartRenderBufferDepth];
+        Span<PartRenderInstanceInfo> matrixies = stackalloc PartRenderInstanceInfo[maxPartRenderBufferDepth];
 
-        Material material = Raylib.LoadMaterialDefault();
-        material.Shader = SpecularLightingInstancedShader;
-
-        foreach (KeyValuePair<PartSpecification, List<(Vector3 Position, Quaternion rotation)>> kvp in partRenderBuffer)
+        foreach (KeyValuePair<PartSpecification, List<BasePart>> kvp in partRenderBuffer)
         {
             PartSpecification partSpecification = kvp.Key;
-            partSpecification.LeftSurface = default;
-            partSpecification.RightSurface = default;
-            partSpecification.TopSurface = default;
-            partSpecification.BottomSurface = default;
-            partSpecification.FrontSurface = default;
-            partSpecification.BackSurface = default;
-            partSpecification.Color = default;
-
-            material.Maps[(int)MaterialMapIndex.Diffuse].Color = kvp.Key.Color;
 
             if (partSpecification.Shape == PartType.Block)
             {
-                GCMesh? mesh = partRenderBufferMeshCache.Get(partSpecification);
-                if (mesh == null)
-                {
-                    mesh = new GCMesh(Raylib.GenMeshCube(partSpecification.Size.X, partSpecification.Size.Y, partSpecification.Size.Z));
-                    partRenderBufferMeshCache.Set(partSpecification, mesh);
-                }
-
                 for (int i = 0; i < kvp.Value.Count; i++)
                 {
-                    (Vector3 Position, Quaternion Rotation) = kvp.Value[i];
-                    matrixies[i] = Matrix4x4.CreateScale(1, 1, 1);
-                    matrixies[i] *= Matrix4x4.CreateFromQuaternion(Rotation);
-                    matrixies[i] *= Matrix4x4.CreateTranslation(Position.X, Position.Y, Position.Z);
-                    matrixies[i] = Matrix4x4.Transpose(matrixies[i]);
+                    BasePart basePart = kvp.Value[i];
+                    Matrix4x4 matrix = Matrix4x4.CreateScale(basePart.Size.X, basePart.Size.Y, basePart.Size.Z);
+                    matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
+                    matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
+                    matrix = Matrix4x4.Transpose(matrix);
+                    matrixies[i].Transform = Raymath.MatrixToFloatV(matrix);
+                    matrixies[i].Color.X = basePart.Color3.R / 255f;
+                    matrixies[i].Color.Y = basePart.Color3.G / 255f;
+                    matrixies[i].Color.Z = basePart.Color3.B / 255f;
+                    matrixies[i].Color.W = 1;
                 }
 
-                Raylib.DrawMeshInstanced(mesh.Mesh, material, matrixies, kvp.Value.Count);
+                RenderUtils.CustomDrawMeshInstanced(cubeMesh, matrixies[..kvp.Value.Count], this);
             }
             else if (partSpecification.Shape == PartType.Ball)
             {
-                Vector3 size = kvp.Key.Size;
-                float maxsize = size.X;
-                if (size.Y > maxsize)
-                    maxsize = size.Y;
-                if (size.Z > maxsize)
-                    maxsize = size.Z;
-
-                maxsize /= 2;
-
                 for (int i = 0; i < kvp.Value.Count; i++)
                 {
-                    (Vector3 Position, Quaternion Rotation) = kvp.Value[i];
-                    matrixies[i] = Matrix4x4.CreateScale(maxsize, maxsize, maxsize);
-                    matrixies[i] *= Matrix4x4.CreateFromQuaternion(Rotation);
-                    matrixies[i] *= Matrix4x4.CreateTranslation(Position.X, Position.Y, Position.Z);
-                    matrixies[i] = Matrix4x4.Transpose(matrixies[i]);
+                    BasePart basePart = kvp.Value[i];
+                    Vector3 size = basePart.Size;
+                    float maxsize = size.X;
+
+                    if (size.Y > maxsize)
+                        maxsize = size.Y;
+                    if (size.Z > maxsize)
+                        maxsize = size.Z;
+
+                    maxsize /= 2;
+
+                    Matrix4x4 matrix = Matrix4x4.CreateScale(maxsize, maxsize, maxsize);
+                    matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
+                    matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
+                    matrix = Matrix4x4.Transpose(matrix);
+                    matrixies[i].Transform = Raymath.MatrixToFloatV(matrix);
+                    matrixies[i].Color.X = basePart.Color3.R / 255f;
+                    matrixies[i].Color.Y = basePart.Color3.G / 255f;
+                    matrixies[i].Color.Z = basePart.Color3.B / 255f;
+                    matrixies[i].Color.W = 1;
                 }
 
-                Raylib.DrawMeshInstanced(sphereMesh, material, matrixies, kvp.Value.Count);
+                RenderUtils.CustomDrawMeshInstanced(sphereMesh, matrixies[..kvp.Value.Count], this);
             }
         }
 
@@ -512,9 +511,7 @@ public class WorkspaceRendererViewport : RendererViewport
 
         if (part is Part concretePart)
         {
-            partSpecification.Size = concretePart.Size;
             partSpecification.Shape = concretePart.Shape;
-            partSpecification.Color = concretePart.Color3;
             partSpecification.TopSurface = concretePart.TopSurface;
             partSpecification.LeftSurface = concretePart.LeftSurface;
             partSpecification.RightSurface = concretePart.RightSurface;
@@ -530,7 +527,7 @@ public class WorkspaceRendererViewport : RendererViewport
         if (!partRenderBuffer.TryGetValue(partSpecification, out _))
             partRenderBuffer[partSpecification] = new();
         
-        partRenderBuffer[partSpecification].Add((part.Position, part.QuaternionRotation));
+        partRenderBuffer[partSpecification].Add(part);
         if (partRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
             maxPartRenderBufferDepth = partRenderBuffer[partSpecification].Count;
     }

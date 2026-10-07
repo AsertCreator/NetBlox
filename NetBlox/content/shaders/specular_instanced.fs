@@ -9,20 +9,14 @@ in vec3 fragPosition;
 in vec2 fragShadowTexCoord;
 in float fragShadowDepth;
 
-uniform sampler2D texture0;
 uniform sampler2D shadowmap;
 uniform vec3 viewPosition;
 uniform vec3 lightPosition;
-uniform vec4 colDiffuse;
 
 out vec4 finalColor;
 
 vec3 lightColor = vec3(1, 1, 0.85);
 
-vec3 regularColor() {
-    vec3 texelColor = texture(texture0, fragTexCoord).xyz;
-    return texelColor;
-}
 vec3 specularColor() {
     float shininess = 12;
 
@@ -39,8 +33,8 @@ vec3 specularColor() {
 vec4 diffuseColor() {
     vec3 norm = normalize(fragNormal);
     vec3 lightDir = normalize(lightPosition);
-    vec3 texelColor = regularColor();
-    return vec4(texelColor * min(1, max(dot(norm, lightDir), 0.3)), 1) * colDiffuse * fragColor;
+    vec3 texelColor = vec3(1, 1, 1);
+    return vec4(texelColor * min(1, max(dot(norm, lightDir), 0.3)), 1) * fragColor;
 }
 vec4 shadowColor() {
     return diffuseColor() + vec4(specularColor(), 0);

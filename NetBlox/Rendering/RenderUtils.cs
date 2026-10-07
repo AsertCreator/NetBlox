@@ -1,12 +1,14 @@
 using NetBlox.Structs;
 using Raylib_cs;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace NetBlox.Rendering
 {
     // straight from gen 1
     public unsafe static class RenderUtils
     {
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static void DrawCubeTextureRec(Texture2D texture, Vector3 position, Quaternion rotation, float width, float height, float length, Color color, Faces f, bool tile = false, bool interpolate = false)
         {
             Vector3 axis;
@@ -187,7 +189,7 @@ namespace NetBlox.Rendering
 
             Rlgl.PopMatrix();
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static void DrawCubeTextureRec(Texture2D texture, float width, float height, float length, Color color, Faces f, bool tile = false, bool interpolate = false)
         {
             if (f != 0)
@@ -351,6 +353,7 @@ namespace NetBlox.Rendering
                 Rlgl.DisableTexture();
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static void DrawCubeTextureRec2(Texture2D texture, float width, float height, float length, Color color, Faces f, bool tile = false, bool interpolate = false)
         {
             if (f != 0)
@@ -513,6 +516,161 @@ namespace NetBlox.Rendering
 
                 Rlgl.DisableTexture();
             }
+        }
+        // ripped straight from raylib
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public static void CustomDrawMeshInstanced(Mesh mesh, Span<PartRenderInstanceInfo> transforms, WorkspaceRendererViewport viewport)
+        {
+            int instances = transforms.Length;
+            uint instancesVboId = 0;
+
+            Rlgl.EnableShader(viewport.SpecularLightingInstancedShader.Id);
+
+            // Get a copy of current matrices to work with,
+            // in case stereo render is required, and they need to be modified
+            // NOTE: At this point the modelview matrix contains the view matrix (camera)
+            // That's because BeginMode3D() sets it and there is no model-drawing function
+            // that modifies it, all use rlPushMatrix() and rlPopMatrix()
+            Matrix4x4 matModel = Raymath.MatrixIdentity();
+            Matrix4x4 matView = Rlgl.GetMatrixModelview();
+            Matrix4x4 matModelView = Raymath.MatrixIdentity();
+            Matrix4x4 matProjection = Rlgl.GetMatrixProjection();
+
+            // Upload view and projection matrices (if locations available)
+            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixView] != -1)
+                Rlgl.SetUniformMatrix(viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixView], matView);
+            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixProjection] != -1)
+                Rlgl.SetUniformMatrix(viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixProjection], matProjection);
+
+            // Enable mesh VAO to attach new buffer
+            Rlgl.EnableVertexArray(mesh.VaoId);
+
+            // This could alternatively use a static VBO and either glMapBuffer() or glBufferSubData()
+            // It isn't clear which would be reliably faster in all cases and on all platforms,
+            // anecdotally glMapBuffer() seems quite slow (syncs) while glBufferSubData() seems
+            // no faster, since all the transform matrices are transferred anyway
+            fixed (void* instanceTransformPtr = transforms)
+                instancesVboId = Rlgl.LoadVertexBuffer(instanceTransformPtr, instances * sizeof(PartRenderInstanceInfo), false);
+
+            Shader shader = viewport.SpecularLightingInstancedShader;
+
+            // Instances transformation matrices are sent to shader attribute location: SHADER_LOC_VERTEX_INSTANCETRANSFORM
+            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] != -1)
+            {
+                for (uint i = 0; i < 4; i++)
+                {
+                    Rlgl.EnableVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] + i);
+                    Rlgl.SetVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] + i, 4,
+                        Rlgl.FLOAT, 0, sizeof(PartRenderInstanceInfo), (int)(i * sizeof(Vector4)));
+                    Rlgl.SetVertexAttributeDivisor((uint)shader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] + i, 1);
+                }
+            }
+
+            int instanceColorLocation = shader.Locs[(int)ShaderLocationIndex.VertexColor];
+            if (instanceColorLocation != -1)
+            {
+                Rlgl.EnableVertexAttribute((uint)instanceColorLocation);
+                Rlgl.SetVertexAttribute((uint)instanceColorLocation, 4, Rlgl.FLOAT, 0,
+                    sizeof(PartRenderInstanceInfo), sizeof(Float16));
+                Rlgl.SetVertexAttributeDivisor((uint)instanceColorLocation, 1);
+            }
+
+            Rlgl.DisableVertexBuffer();
+            Rlgl.DisableVertexArray();
+
+            // Accumulate internal matrix transform (push/pop) and view matrix
+            // NOTE: In this case, model instance transformation must be computed in the shader
+            matModelView = Raymath.MatrixMultiply(Rlgl.GetMatrixTransform(), matView);
+
+            // Upload model normal matrix (if locations available)
+            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixNormal] != -1)
+                Rlgl.SetUniformMatrix(viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixNormal],
+                    Raymath.MatrixTranspose(Raymath.MatrixInvert(matModel)));
+            //-----------------------------------------------------
+
+            // Try binding vertex array objects (VAO)
+            // or use VBOs if not possible
+            if (!Rlgl.EnableVertexArray(mesh.VaoId))
+            {
+                // Bind mesh VBO data: vertex position (shader-location = 0)
+                Rlgl.EnableVertexBuffer(mesh.VboId[0]);
+                Rlgl.SetVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexPosition], 3, Rlgl.FLOAT, 0, 0, 0);
+                Rlgl.EnableVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexPosition]);
+
+                // Bind mesh VBO data: vertex texcoords (shader-location = 1)
+                Rlgl.EnableVertexBuffer(mesh.VboId[1]);
+                Rlgl.SetVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexTexcoord01], 2, Rlgl.FLOAT, 0, 0, 0);
+                Rlgl.EnableVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexTexcoord01]);
+
+                if (shader.Locs[(int)ShaderLocationIndex.VertexNormal] != -1)
+                {
+                    // Bind mesh VBO data: vertex normals (shader-location = 2)
+                    Rlgl.EnableVertexBuffer(mesh.VboId[2]);
+                    Rlgl.SetVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexNormal], 3, Rlgl.FLOAT, 0, 0, 0);
+                    Rlgl.EnableVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexNormal]);
+                }
+
+                // Bind mesh VBO data: vertex colors (shader-location = 3, if available)
+                if (shader.Locs[(int)ShaderLocationIndex.VertexColor] != -1)
+                {
+                    Rlgl.EnableVertexBuffer(mesh.VboId[3]);
+                    Rlgl.SetVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexColor], 4, Rlgl.UNSIGNED_BYTE, 1, 0, 0);
+                    Rlgl.EnableVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexColor]);
+                }
+
+                // Bind mesh VBO data: vertex tangents (shader-location = 4, if available)
+                if (shader.Locs[(int)ShaderLocationIndex.VertexTangent] != -1)
+                {
+                    Rlgl.EnableVertexBuffer(mesh.VboId[4]);
+                    Rlgl.SetVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexTangent], 4, Rlgl.FLOAT, 0, 0, 0);
+                    Rlgl.EnableVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexTangent]);
+                }
+
+                // Bind mesh VBO data: vertex texcoords2 (shader-location = 5, if available)
+                if (shader.Locs[(int)ShaderLocationIndex.VertexTexcoord02] != -1)
+                {
+                    Rlgl.EnableVertexBuffer(mesh.VboId[5]);
+                    Rlgl.SetVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexTexcoord02], 2, Rlgl.FLOAT, 0, 0, 0);
+                    Rlgl.EnableVertexAttribute((uint)shader.Locs[(int)ShaderLocationIndex.VertexTexcoord02]);
+                }
+
+                if (mesh.Indices != default) Rlgl.EnableVertexBufferElement(mesh.VboId[6]);
+            }
+
+            int eyeCount = 1;
+            if (Rlgl.IsStereoRenderEnabled()) eyeCount = 2;
+
+            for (int eye = 0; eye < eyeCount; eye++)
+            {
+                // Calculate model-view-projection matrix (MVP)
+                Matrix4x4 matModelViewProjection = Raymath.MatrixIdentity();
+                if (eyeCount == 1) matModelViewProjection = Raymath.MatrixMultiply(matModelView, matProjection);
+                else
+                {
+                    // Setup current eye viewport (half screen width)
+                    Rlgl.Viewport(eye * Rlgl.GetFramebufferWidth() / 2, 0, Rlgl.GetFramebufferWidth() / 2, Rlgl.GetFramebufferHeight());
+                    matModelViewProjection =
+                        Raymath.MatrixMultiply(
+                            Raymath.MatrixMultiply(matModelView, Rlgl.GetMatrixViewOffsetStereo(eye)), Rlgl.GetMatrixProjectionStereo(eye));
+                }
+
+                // Send combined model-view-projection matrix to shader
+                Rlgl.SetUniformMatrix(shader.Locs[(int)ShaderLocationIndex.MatrixMvp], matModelViewProjection);
+
+                // Draw mesh instanced
+                if (mesh.Indices != default) Rlgl.DrawVertexArrayElementsInstanced(0, mesh.TriangleCount * 3, default, instances);
+                else Rlgl.DrawVertexArrayInstanced(0, mesh.VertexCount, instances);
+            }
+
+            // Disable all possible vertex array objects (or VBOs)
+            Rlgl.DisableVertexArray();
+            Rlgl.DisableVertexBuffer();
+            Rlgl.DisableVertexBufferElement();
+
+            // Remove instance transforms buffer
+            Rlgl.UnloadVertexBuffer(instancesVboId);
+
+            Rlgl.DisableShader();
         }
     }
 }
