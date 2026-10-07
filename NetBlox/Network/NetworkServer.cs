@@ -22,6 +22,7 @@ public class NetworkServer : Instance
     public const ulong NETWORK_CONSTANT_ID = 21;
 
     public new ReplicationAgent ReplicationAgent;
+    public int MaxPhysicsUpdatesOverNetworkPerPacket = 150;
 
     private TcpListener? TcpListener;
     private bool hadStarted = false;
@@ -66,9 +67,13 @@ public class NetworkServer : Instance
     }
     public void CommitBroadcastPhysicsUpdates()
     {
-        NetworkPacket packet = NPPhysicsUpdate.Create(updateItems);
+        Span<BasePartPhysicsUpdateItem> physicsUpdates = updateItems.ToArray().AsSpan();
+        for (int i = 0; i < updateItems.Count; i += MaxPhysicsUpdatesOverNetworkPerPacket)
+        {
+            NetworkPacket packet = NPPhysicsUpdate.Create(physicsUpdates[i..(i + Math.Min(updateItems.Count - i, MaxPhysicsUpdatesOverNetworkPerPacket))]);
+            SendBroadcastNetworkPacketUnreliable(packet);
+        }
         updateItems.Clear();
-        SendBroadcastNetworkPacketUnreliable(packet);
     }
 
     public void SendBroadcastNetworkPacketReliable(NetworkPacket networkPacket)

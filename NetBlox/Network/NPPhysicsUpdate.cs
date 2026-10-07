@@ -7,14 +7,14 @@ namespace NetBlox.Network;
 
 public sealed class NPPhysicsUpdate : NetworkPacketHandler
 {
-    public static NetworkPacket Create(List<NetworkServer.BasePartPhysicsUpdateItem> allitems)
+    public static NetworkPacket Create(Span<NetworkServer.BasePartPhysicsUpdateItem> allitems)
     {
         using MemoryStream ms = new MemoryStream();
         using BinaryWriter bw = new BinaryWriter(ms);
 
-        bw.Write(allitems.Count);
+        bw.Write(allitems.Length);
 
-        for (int i = 0; i < allitems.Count; i++)
+        for (int i = 0; i < allitems.Length; i++)
         {
             bw.Write(allitems[i].Target.InstanceID);
             bw.Write(allitems[i].NewPosition.X);
