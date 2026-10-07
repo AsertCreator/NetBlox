@@ -520,13 +520,15 @@ namespace NetBlox.Rendering
         // ripped straight from raylib
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static void CustomDrawMeshInstanced(Mesh mesh, Span<PartRenderInstanceInfo> transforms,
-            WorkspaceRendererViewport viewport, PartSpecification partSpecification, bool useSurfaces)
+            WorkspaceRendererViewport viewport, PartSpecification partSpecification, bool useSurfaces, bool shadowPass = false)
         {
             int instances = transforms.Length;
             uint instancesVboId = 0;
 
-            viewport.ApplyPartSurfaceMaterial(partSpecification, useSurfaces);
-            Rlgl.EnableShader(viewport.SpecularLightingInstancedShader.Id);
+            Shader shader = shadowPass ? viewport.ShadowMapShader : viewport.SpecularLightingInstancedShader;
+            if (!shadowPass)
+                viewport.ApplyPartSurfaceMaterial(partSpecification, useSurfaces);
+            Rlgl.EnableShader(shader.Id);
 
             // Get a copy of current matrices to work with,
             // in case stereo render is required, and they need to be modified
@@ -539,10 +541,10 @@ namespace NetBlox.Rendering
             Matrix4x4 matProjection = Rlgl.GetMatrixProjection();
 
             // Upload view and projection matrices (if locations available)
-            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixView] != -1)
-                Rlgl.SetUniformMatrix(viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixView], matView);
-            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixProjection] != -1)
-                Rlgl.SetUniformMatrix(viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixProjection], matProjection);
+            if (shader.Locs[(int)ShaderLocationIndex.MatrixView] != -1)
+                Rlgl.SetUniformMatrix(shader.Locs[(int)ShaderLocationIndex.MatrixView], matView);
+            if (shader.Locs[(int)ShaderLocationIndex.MatrixProjection] != -1)
+                Rlgl.SetUniformMatrix(shader.Locs[(int)ShaderLocationIndex.MatrixProjection], matProjection);
 
             // Enable mesh VAO to attach new buffer
             Rlgl.EnableVertexArray(mesh.VaoId);
@@ -554,10 +556,8 @@ namespace NetBlox.Rendering
             fixed (void* instanceTransformPtr = transforms)
                 instancesVboId = Rlgl.LoadVertexBuffer(instanceTransformPtr, instances * sizeof(PartRenderInstanceInfo), false);
 
-            Shader shader = viewport.SpecularLightingInstancedShader;
-
             // Instances transformation matrices are sent to shader attribute location: SHADER_LOC_VERTEX_INSTANCETRANSFORM
-            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] != -1)
+            if (shader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] != -1)
             {
                 for (uint i = 0; i < 4; i++)
                 {
@@ -585,8 +585,8 @@ namespace NetBlox.Rendering
             matModelView = Raymath.MatrixMultiply(Rlgl.GetMatrixTransform(), matView);
 
             // Upload model normal matrix (if locations available)
-            if (viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixNormal] != -1)
-                Rlgl.SetUniformMatrix(viewport.SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixNormal],
+            if (shader.Locs[(int)ShaderLocationIndex.MatrixNormal] != -1)
+                Rlgl.SetUniformMatrix(shader.Locs[(int)ShaderLocationIndex.MatrixNormal],
                     Raymath.MatrixTranspose(Raymath.MatrixInvert(matModel)));
             //-----------------------------------------------------
 

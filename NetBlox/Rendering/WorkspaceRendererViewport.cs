@@ -128,9 +128,12 @@ public class WorkspaceRendererViewport : RendererViewport
             SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixMvp] = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "mvp");
             SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.VertexColor] = Raylib.GetShaderLocationAttrib(SpecularLightingInstancedShader, "vertexColor");
         });
-        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://shaders/shadowmap")?.AddCallbackForSuccess(x => 
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://shaders/shadowmap_instanced")?.AddCallbackForSuccess(x =>
         {
             ShadowMapShader = gameRenderer.GameManager.GameAssetManager.LoadShaderFromPath(x.LocalDownloadPath!);
+            ShadowMapShader.Locs[(int)ShaderLocationIndex.MatrixMvp] = Raylib.GetShaderLocation(ShadowMapShader, "mvp");
+            ShadowMapShader.Locs[(int)ShaderLocationIndex.VertexPosition] = Raylib.GetShaderLocationAttrib(ShadowMapShader, "vertexPosition");
+            ShadowMapShader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] = Raylib.GetShaderLocationAttrib(ShadowMapShader, "instanceTransform");
         });
 
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/blank.png")
@@ -144,7 +147,7 @@ public class WorkspaceRendererViewport : RendererViewport
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/kriscrossapplesaucex2.png")
             ?.AddCallbackForSuccess(x => glueSurfaceTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
         
-        ShadowMap = CreateShadowmap(1024, 1024);
+        ShadowMap = CreateShadowmap(3072, 3072);
     }
 
     // a code from a better experiment
@@ -279,27 +282,27 @@ public class WorkspaceRendererViewport : RendererViewport
     {
         Raylib.ClearBackground(Color.SkyBlue);
 
-        if (GameRenderer.GameManager.RootModel.GetService<Lighting>().RealTimeShadows)
+        Lighting lighting = GameRenderer.GameManager.RootModel.GetService<Lighting>();
+
+        if (lighting.RealTimeShadows)
         {
             LightCamera = new Camera3D()
             {
                 Projection = CameraProjection.Orthographic,
-                Position = GameRenderer.GameManager.RootModel.GetService<Lighting>().SunPosition * 2 + MainCamera.Position,
+                Position = GameRenderer.GameManager.RootModel.GetService<Lighting>().SunPosition * 20 + MainCamera.Position,
                 Target = MainCamera.Position,
-                Up = Vector3.UnitY
+                Up = Vector3.UnitY,
+                FovY = 100
             };
 
-            Raylib.BeginTextureMode(ShadowMap);
-            Raylib.BeginMode3D(LightCamera);
-            Raylib.ClearBackground(Color.Black);
+            float snap = LightCamera.FovY * 2 / ShadowMap.Depth.Height;
+            LightCamera.Position = LightCamera.Position.Snap(snap);
+            LightCamera.Target = LightCamera.Target.Snap(snap);
 
-            RenderingEventArgs.RenderingForShadowMap = true;
-            GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDER3D)?.Fire(RenderingEventArgs);
-            
-            Matrix4x4 matlightVP = Raymath.MatrixMultiply(Rlgl.GetMatrixModelview(), Rlgl.GetMatrixProjection());
-
-            Raylib.EndMode3D();
-            Raylib.EndTextureMode();
+            float shadowMapAspect = ShadowMap.Texture.Width / (float)ShadowMap.Texture.Height;
+            Matrix4x4 matlightVP = Raymath.MatrixMultiply(
+                Raylib.GetCameraViewMatrix(ref LightCamera),
+                Raylib.GetCameraProjectionMatrix(ref LightCamera, shadowMapAspect));
 
             Raylib.SetShaderValueTexture(SpecularLightingShader, uniform_shadowmap, ShadowMap.Depth);
             Raylib.SetShaderValueTexture(SpecularLightingInstancedShader, uniform_instanced_shadowmap, ShadowMap.Depth);
@@ -498,7 +501,6 @@ public class WorkspaceRendererViewport : RendererViewport
         {
             SpeedMultiplier = 4;
         }
-        
 
         for (int i = 0; i < SpeedMultiplier; i++)
         {
@@ -517,8 +519,22 @@ public class WorkspaceRendererViewport : RendererViewport
         if (Raylib.IsMouseButtonReleased(MouseButton.Right))
             Raylib.EnableCursor();
 
-        RenderingEventArgs.RenderingForShadowMap = false;
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDER3D)?.Fire(RenderingEventArgs);
+
+        if (lighting.RealTimeShadows)
+        {
+            Raylib.EndMode3D();
+            Raylib.BeginTextureMode(ShadowMap);
+            Raylib.BeginMode3D(LightCamera);
+
+            Raylib.ClearBackground(Color.Black);
+
+            DrawPartRenderBuffer(shadowPass: true);
+
+            Raylib.EndMode3D();
+            Raylib.EndTextureMode();
+            Raylib.BeginMode3D(MainCamera);
+        }
 
         DrawPartRenderBuffer();
 
@@ -543,7 +559,7 @@ public class WorkspaceRendererViewport : RendererViewport
 
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
     }
-    public virtual void DrawPartRenderBuffer()
+    public virtual void DrawPartRenderBuffer(bool shadowPass = false)
     {
         if (sphereMesh.VaoId == 0)
             sphereMesh = Raylib.GenMeshSphere(0.5f, 9, 15);
@@ -572,7 +588,7 @@ public class WorkspaceRendererViewport : RendererViewport
                     matrixies[i].Color.W = 1;
                 }
 
-                RenderUtils.CustomDrawMeshInstanced(cubeMesh, matrixies[..kvp.Value.Count], this, partSpecification, true);
+                RenderUtils.CustomDrawMeshInstanced(cubeMesh, matrixies[..kvp.Value.Count], this, partSpecification, true, shadowPass);
             }
             else if (partSpecification.Shape == PartType.Ball)
             {
@@ -598,7 +614,7 @@ public class WorkspaceRendererViewport : RendererViewport
                     matrixies[i].Color.W = 1;
                 }
 
-                RenderUtils.CustomDrawMeshInstanced(sphereMesh, matrixies[..kvp.Value.Count], this, partSpecification, false);
+                RenderUtils.CustomDrawMeshInstanced(sphereMesh, matrixies[..kvp.Value.Count], this, partSpecification, false, shadowPass);
             }
         }
     }

@@ -25,8 +25,7 @@ flat out int fragSurfaceType;
 out vec4 fragColor;
 out vec3 fragNormal;
 out vec3 fragPosition;
-out vec2 fragShadowTexCoord;
-out float fragShadowDepth;
+out vec4 fragLightSpacePosition;
 
 void main()
 {
@@ -56,15 +55,15 @@ void main()
         faceSize = vec2(1.0);
     }
 
+    mat3 normalMatrix = transpose(inverse(mat3(instanceTransform)));
+
     fragTexCoord = vertexTexCoord * faceSize * 0.5;
     fragColor = vertexColor;
-    fragNormal = normalize(vec3(instanceTransform * vec4(vertexNormal, 0.0)));
+    fragNormal = normalize(normalMatrix * vertexNormal);
     fragPosition = vec3(instanceTransform * vec4(vertexPosition, 1.0));
 
     vec4 worldSpace = instanceTransform * vec4(vertexPosition, 1.0); // position of the model in the scene
-    vec4 screenSpace = lightVP * worldSpace; // position of the vertex in screen space. equivalent to gl_Position above but for the light
-    fragShadowDepth = screenSpace.z / screenSpace.w; // .z component is depth in screen space.
-    fragShadowTexCoord = (screenSpace.xy / screenSpace.w) * 0.5 + 0.5; // .xy is position on the screen
+    fragLightSpacePosition = lightVP * worldSpace;
 
     gl_Position = mvp * instanceTransform * vec4(vertexPosition, 1.0);
 }

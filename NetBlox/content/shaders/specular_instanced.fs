@@ -7,8 +7,7 @@ flat in int fragSurfaceType;
 in vec4 fragColor;
 in vec3 fragNormal;
 in vec3 fragPosition;
-in vec2 fragShadowTexCoord;
-in float fragShadowDepth;
+in vec4 fragLightSpacePosition;
 
 uniform sampler2D blankTexture;
 uniform sampler2D studTexture;
@@ -57,7 +56,38 @@ vec4 diffuseColor() {
     return vec4(result.xyz, 1);
 }
 vec4 shadowColor() {
-    return diffuseColor() + vec4(specularColor(), 0);
+    if (fragLightSpacePosition.w <= 0.0) {
+        return diffuseColor() + vec4(specularColor(), 0);
+    }
+
+    vec3 lightNdc = fragLightSpacePosition.xyz / fragLightSpacePosition.w;
+    vec3 shadowCoord = lightNdc * 0.5 + 0.5;
+
+    if (any(lessThan(shadowCoord, vec3(0.0))) || any(greaterThan(shadowCoord, vec3(1.0)))) {
+        return diffuseColor() + vec4(specularColor(), 0);
+    }
+
+    vec3 normaldir = normalize(fragNormal);
+    vec3 lightdir = normalize(lightPosition);
+    float ndotL = max(dot(normaldir, lightdir), 0.0);
+
+    float minBias = 0.0002;
+    float slopeBias = 0.001 * (1.0 - ndotL);
+    float bias = max(minBias, slopeBias);
+
+    vec2 texelSize = 1.0 / textureSize(shadowmap, 0);
+    float shadow = 0;
+
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            float shadowDepth = texture(shadowmap, shadowCoord.xy + vec2(x, y) * texelSize).r;
+            shadow += shadowCoord.z - bias > shadowDepth ? 1.0 : 0.0;
+        }
+    }
+
+    shadow /= 9.0;
+
+    return mix(diffuseColor() + vec4(specularColor(), 0), vec4((diffuseColor() / 3).xyz, 1), shadow);
 }
 
 void main()

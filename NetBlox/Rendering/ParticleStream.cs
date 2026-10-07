@@ -1,6 +1,7 @@
 using System.Numerics;
 using NetBlox.Instances;
 using NetBlox.Structs;
+using Raylib_cs;
 
 namespace NetBlox.Rendering;
 
@@ -24,11 +25,13 @@ public class ParticleStream
 {
     public int ParticleLimit;
     public ParticleStreamMode Mode;
+    public readonly WorkspaceRendererViewport Viewport;
     public readonly Instance EffectProvider;
     public readonly ParticleState[] AllParticles;
 
-    public ParticleStream(Instance effectProvider, int maxParticles)
+    public ParticleStream(WorkspaceRendererViewport viewport, Instance effectProvider, int maxParticles)
     {
+        Viewport = viewport;
         EffectProvider = effectProvider;
         ParticleLimit = maxParticles;
         AllParticles = new ParticleState[maxParticles];
@@ -39,6 +42,10 @@ public class ParticleStream
         int maxParticles = AllParticles.Length;
         if (ParticleLimit < maxParticles)
             maxParticles = ParticleLimit;
+        
+        for (int i = 0; i < maxParticles; i++)
+        {
+        }
 
         // TODO: this
     }
