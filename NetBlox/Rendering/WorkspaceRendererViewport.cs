@@ -40,6 +40,24 @@ public class WorkspaceRendererViewport : RendererViewport
     private int uniform_instanced_lightPosition;
     private int uniform_instanced_shadowmap;
     private int uniform_instanced_lightVP;
+    private int uniform_instanced_surfaceTop;
+    private int uniform_instanced_surfaceBottom;
+    private int uniform_instanced_surfaceLeft;
+    private int uniform_instanced_surfaceRight;
+    private int uniform_instanced_surfaceFront;
+    private int uniform_instanced_surfaceBack;
+    private int uniform_instanced_useSurfaces;
+    private int uniform_instanced_blankTexture;
+    private int uniform_instanced_studTexture;
+    private int uniform_instanced_inletTexture;
+    private int uniform_instanced_universalTexture;
+    private int uniform_instanced_glueTexture;
+
+    private Texture2D blankSurfaceTexture;
+    private Texture2D studSurfaceTexture;
+    private Texture2D inletSurfaceTexture;
+    private Texture2D universalSurfaceTexture;
+    private Texture2D glueSurfaceTexture;
 
     private LRUCache<PartSpecification, GCMesh> partRenderBufferMeshCache;
     private Dictionary<PartSpecification, List<BasePart>> partRenderBuffer = [];
@@ -94,6 +112,19 @@ public class WorkspaceRendererViewport : RendererViewport
             uniform_instanced_lightPosition = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "lightPosition");
             uniform_instanced_shadowmap = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "shadowmap");
             uniform_instanced_lightVP = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "lightVP");
+            uniform_instanced_surfaceTop = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "surfaceTop");
+            uniform_instanced_surfaceBottom = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "surfaceBottom");
+            uniform_instanced_surfaceLeft = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "surfaceLeft");
+            uniform_instanced_surfaceRight = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "surfaceRight");
+            uniform_instanced_surfaceFront = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "surfaceFront");
+            uniform_instanced_surfaceBack = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "surfaceBack");
+            uniform_instanced_useSurfaces = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "useSurfaces");
+            uniform_instanced_blankTexture = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "blankTexture");
+            uniform_instanced_studTexture = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "studTexture");
+            uniform_instanced_inletTexture = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "inletTexture");
+            uniform_instanced_universalTexture = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "universalTexture");
+            uniform_instanced_glueTexture = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "glueTexture");
+
             SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixMvp] = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "mvp");
             SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.VertexColor] = Raylib.GetShaderLocationAttrib(SpecularLightingInstancedShader, "vertexColor");
         });
@@ -101,9 +132,63 @@ public class WorkspaceRendererViewport : RendererViewport
         {
             ShadowMapShader = gameRenderer.GameManager.GameAssetManager.LoadShaderFromPath(x.LocalDownloadPath!);
         });
+
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/blank.png")
+            ?.AddCallbackForSuccess(x => blankSurfaceTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/studx2.png")
+            ?.AddCallbackForSuccess(x => studSurfaceTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/inletx2.png")
+            ?.AddCallbackForSuccess(x => inletSurfaceTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/universalx2.png")
+            ?.AddCallbackForSuccess(x => universalSurfaceTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/kriscrossapplesaucex2.png")
+            ?.AddCallbackForSuccess(x => glueSurfaceTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
         
         ShadowMap = CreateShadowmap(1024, 1024);
     }
+
+    // a code from a better experiment
+
+    internal void ApplyPartSurfaceMaterial(PartSpecification specification, bool useSurfaces)
+    {
+        SetIntUniform(uniform_instanced_surfaceTop, (int)specification.TopSurface);
+        SetIntUniform(uniform_instanced_surfaceBottom, (int)specification.BottomSurface);
+        SetIntUniform(uniform_instanced_surfaceLeft, (int)specification.LeftSurface);
+        SetIntUniform(uniform_instanced_surfaceRight, (int)specification.RightSurface);
+        SetIntUniform(uniform_instanced_surfaceFront, (int)specification.FrontSurface);
+        SetIntUniform(uniform_instanced_surfaceBack, (int)specification.BackSurface);
+        SetIntUniform(uniform_instanced_useSurfaces, useSurfaces ? 1 : 0);
+
+        BindSurfaceTexture(uniform_instanced_blankTexture, blankSurfaceTexture, 0);
+        BindSurfaceTexture(uniform_instanced_studTexture, studSurfaceTexture, 1);
+        BindSurfaceTexture(uniform_instanced_inletTexture, inletSurfaceTexture, 2);
+        BindSurfaceTexture(uniform_instanced_universalTexture, universalSurfaceTexture, 3);
+        BindSurfaceTexture(uniform_instanced_glueTexture, glueSurfaceTexture, 4);
+        SetIntUniform(uniform_instanced_shadowmap, 5);
+        Rlgl.ActiveTextureSlot(5);
+        Rlgl.EnableTexture(ShadowMap.Depth.Id);
+        Rlgl.ActiveTextureSlot(0);
+    }
+
+    private unsafe void SetIntUniform(int location, int value)
+    {
+        if (location != -1)
+            Raylib.SetShaderValue(SpecularLightingInstancedShader, location, &value, ShaderUniformDataType.Int);
+    }
+    private void BindSurfaceTexture(int location, Texture2D texture, int textureUnit)
+    {
+        SetIntUniform(location, textureUnit);
+
+        if (texture.Id == 0)
+            texture = blankSurfaceTexture;
+
+        Rlgl.ActiveTextureSlot(textureUnit);
+        if (texture.Id != 0)
+            Rlgl.EnableTexture(texture.Id);
+        else
+            Rlgl.DisableTexture();
+    }
+
     public virtual void DrawSky()
     {
         Vector3 position = MainCamera.Position;
@@ -135,7 +220,8 @@ public class WorkspaceRendererViewport : RendererViewport
         string value = "NetBlox" + 
             ", fps: " + Raylib.GetFPS() + 
             ", actor count: " + (GameRenderer.GameManager.PhysicsSolver != null ? GameRenderer.GameManager.PhysicsSolver.GetActorCount() : 0) + 
-            ", instance count: " + GameRenderer.GameManager.GameRegistry.GetInstanceCount();
+            ", instance count: " + GameRenderer.GameManager.GameRegistry.GetInstanceCount() + 
+            ", part render buffer category count: " + partRenderBuffer.Count;
         
         NetworkClient? client = GameRenderer.Root.FindService<NetworkClient>();
 
@@ -326,7 +412,7 @@ public class WorkspaceRendererViewport : RendererViewport
                 part.Size = new Vector3(2, 2, 4);
                 part.BrickColor = BrickColor.Random();
                 part.Anchored = false;
-                part.Position = MainCamera.Position + new Vector3(Random.Shared.Next(-70, 70), Random.Shared.Next(0, 150), Random.Shared.Next(-70, 70));
+                part.Position = MainCamera.Position + new Vector3(Random.Shared.Next(-7, 7), Random.Shared.Next(0, 15), Random.Shared.Next(-7, 7));
                 if (Raylib.IsKeyDown(KeyboardKey.LeftAlt))
                     part.Shape = PartType.Ball;
 
@@ -452,6 +538,9 @@ public class WorkspaceRendererViewport : RendererViewport
         if (GameRenderer.DebugFlag)
             RenderDebugInfo();
 
+        partRenderBuffer.Clear();
+        maxPartRenderBufferDepth = 0;
+
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
     }
     public virtual void DrawPartRenderBuffer()
@@ -483,7 +572,7 @@ public class WorkspaceRendererViewport : RendererViewport
                     matrixies[i].Color.W = 1;
                 }
 
-                RenderUtils.CustomDrawMeshInstanced(cubeMesh, matrixies[..kvp.Value.Count], this);
+                RenderUtils.CustomDrawMeshInstanced(cubeMesh, matrixies[..kvp.Value.Count], this, partSpecification, true);
             }
             else if (partSpecification.Shape == PartType.Ball)
             {
@@ -511,12 +600,9 @@ public class WorkspaceRendererViewport : RendererViewport
                     matrixies[i].Color.W = 1;
                 }
 
-                RenderUtils.CustomDrawMeshInstanced(sphereMesh, matrixies[..kvp.Value.Count], this);
+                RenderUtils.CustomDrawMeshInstanced(sphereMesh, matrixies[..kvp.Value.Count], this, partSpecification, false);
             }
         }
-
-        partRenderBuffer.Clear();
-        maxPartRenderBufferDepth = 0;
     }
     public virtual void DrawGizmos(bool in3d)
     {

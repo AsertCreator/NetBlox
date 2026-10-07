@@ -519,11 +519,13 @@ namespace NetBlox.Rendering
         }
         // ripped straight from raylib
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        public static void CustomDrawMeshInstanced(Mesh mesh, Span<PartRenderInstanceInfo> transforms, WorkspaceRendererViewport viewport)
+        public static void CustomDrawMeshInstanced(Mesh mesh, Span<PartRenderInstanceInfo> transforms,
+            WorkspaceRendererViewport viewport, PartSpecification partSpecification, bool useSurfaces)
         {
             int instances = transforms.Length;
             uint instancesVboId = 0;
 
+            viewport.ApplyPartSurfaceMaterial(partSpecification, useSurfaces);
             Rlgl.EnableShader(viewport.SpecularLightingInstancedShader.Id);
 
             // Get a copy of current matrices to work with,
