@@ -6,6 +6,7 @@ in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 in vec3 vertexNormal;
 in vec4 vertexColor;
+in vec4 vertexTangent;
 
 in mat4 instanceTransform;
 
@@ -25,6 +26,7 @@ flat out int fragSurfaceType;
 out vec4 fragColor;
 out vec3 fragNormal;
 out vec3 fragPosition;
+out vec3 fragTangent;
 out vec4 fragLightSpacePosition;
 
 void main()
@@ -55,12 +57,14 @@ void main()
         faceSize = vec2(1.0);
     }
 
-    mat3 normalMatrix = transpose(inverse(mat3(instanceTransform)));
+    mat3 instanceTransformLinear = mat3(instanceTransform);
+    mat3 normalMatrix = transpose(inverse(instanceTransformLinear));
 
     fragTexCoord = vertexTexCoord * faceSize * 0.5;
     fragColor = vertexColor;
     fragNormal = normalize(normalMatrix * vertexNormal);
     fragPosition = vec3(instanceTransform * vec4(vertexPosition, 1.0));
+    fragTangent = normalize(instanceTransformLinear * vertexTangent.xyz);
 
     vec4 worldSpace = instanceTransform * vec4(vertexPosition, 1.0); // position of the model in the scene
     fragLightSpacePosition = lightVP * worldSpace;

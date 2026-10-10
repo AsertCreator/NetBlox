@@ -9,7 +9,7 @@ public class Lighting : Instance
 {
 
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
-    public Vector3 SunPosition { get; set; } = new Vector3(0, 70, -40);
+    public Vector3 SunPosition { get; set; } = new Vector3(-5, 70, -40);
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public bool RealTimeShadows { get; set; } = true;
     

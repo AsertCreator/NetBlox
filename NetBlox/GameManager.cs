@@ -252,24 +252,32 @@ public sealed class GameManager
                 wall1.Anchored = true;
                 wall1.Position = new Vector3(20, 6, 0);
                 wall1.Size = new Vector3(1, 30, 20);
+                wall1.LeftSurface = SurfaceType.Studs;
+                wall1.BackSurface = SurfaceType.Studs;
 
                 Part wall2 = GameRegistry.Construct<Part>();
                 wall2.Parent = workspace;
                 wall2.Anchored = true;
                 wall2.Position = new Vector3(0, 6, 0);
                 wall2.Size = new Vector3(1, 30, 20);
+                wall2.LeftSurface = SurfaceType.Studs;
+                wall2.BackSurface = SurfaceType.Studs;
 
                 Part wall3 = GameRegistry.Construct<Part>();
                 wall3.Parent = workspace;
                 wall3.Anchored = true;
                 wall3.Position = new Vector3(10, 6, 10);
                 wall3.Size = new Vector3(20, 30, 1);
+                wall3.LeftSurface = SurfaceType.Studs;
+                wall3.BackSurface = SurfaceType.Studs;
 
                 Part wall4 = GameRegistry.Construct<Part>();
                 wall4.Parent = workspace;
                 wall4.Anchored = true;
                 wall4.Position = new Vector3(10, 6, -10);
                 wall4.Size = new Vector3(20, 30, 1);
+                wall4.LeftSurface = SurfaceType.Studs;
+                wall4.BackSurface = SurfaceType.Studs;
 
                 Script script = GameRegistry.Construct<Script>();
                 script.Parent = workspace;
