@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using NetBlox.Instances.Services.Internal;
+using NetBlox.Runtime;
 
 namespace NetBlox.Structs;
 
@@ -12,6 +13,8 @@ public class AssetDownloadTask
     public CancellationTokenSource CancellationTokenSource = new();
     public GameAssetManager GameAssetManager;
     public string Error = "";
+
+    private static HttpClient? NetBloxNetworkAssetWorker;
 
     private ContentId contentId;
     private bool hadFinished;
@@ -85,6 +88,48 @@ public class AssetDownloadTask
                         hadErrored = false;
                         localDownloadPath = Path.GetFullPath(ContentId.AssetPath);
                         CallAllSuccessCallbacks();
+                        return;
+                    }
+                    break;
+                }
+            case ContentIdProtocol.NetBloxNetworkAsset:
+                {
+                    if (NetBloxNetworkAssetWorker == null)
+                        NetBloxNetworkAssetWorker = new HttpClient();
+
+                    if (ContentId.AssetPath != null)
+                    {
+                        NetBloxNetworkAssetWorker.GetAsync(ContentId.AssetPath).ContinueWith(async x =>
+                        {
+                            HttpResponseMessage responseMessage = x.Result;
+                            string data = await responseMessage.Content.ReadAsStringAsync();
+                            string folderPath = GetMasterCacheDirectory();
+                            string filePath = ResolveCacheFilePath(ContentId.AssetPath);
+                            string fullPath = Path.Combine(folderPath, filePath);
+
+                            await File.WriteAllTextAsync(fullPath, data);
+
+                            var task = GameAssetManager.GameManager.GameScheduler.Schedule("AssetDownloadTask completion", GameScheduler.SchedulerPhase.Network, _ =>
+                            {
+                                localDownloadPath = fullPath;
+                                hadFinished = true;
+
+                                if (responseMessage.IsSuccessStatusCode)
+                                {
+                                    hadErrored = false;
+                                    CallAllSuccessCallbacks();
+                                }
+                                else
+                                {
+                                    hadErrored = true;
+                                    CallAllFailureCallbacks();
+                                }
+                                
+                                return SchedulerTaskResult.CompletedSuccess;
+                            });
+
+                            task.Identity = SecurityIdentity.SI_EngineNetworker;
+                        });
                         return;
                     }
                     break;

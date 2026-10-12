@@ -93,6 +93,46 @@ public class PlaceParser
                         case "Color3":
                             propertyInfo.SetValue(myInstance, Color3.FromBGRA(uint.Parse(propertyElement.InnerText, CultureInfo.InvariantCulture)));
                             break;
+                        case "Color3uint8":
+                            propertyInfo.SetValue(myInstance, Color3.FromARGBuint8(uint.Parse(propertyElement.InnerText, CultureInfo.InvariantCulture)));
+                            break;
+                        case "CoordinateFrame":
+                        {
+                            CoordinateFrame cframe = default;
+
+                            XmlElement? xElement = propertyElement.GetElementsByTagName("X")[0] as XmlElement;
+                            XmlElement? yElement = propertyElement.GetElementsByTagName("Y")[0] as XmlElement;
+                            XmlElement? zElement = propertyElement.GetElementsByTagName("Z")[0] as XmlElement;
+
+                            XmlElement? r00Element = propertyElement.GetElementsByTagName("R00")[0] as XmlElement;
+                            XmlElement? r01Element = propertyElement.GetElementsByTagName("R01")[0] as XmlElement;
+                            XmlElement? r02Element = propertyElement.GetElementsByTagName("R02")[0] as XmlElement;
+                            XmlElement? r10Element = propertyElement.GetElementsByTagName("R10")[0] as XmlElement;
+                            XmlElement? r11Element = propertyElement.GetElementsByTagName("R11")[0] as XmlElement;
+                            XmlElement? r12Element = propertyElement.GetElementsByTagName("R12")[0] as XmlElement;
+                            XmlElement? r20Element = propertyElement.GetElementsByTagName("R20")[0] as XmlElement;
+                            XmlElement? r21Element = propertyElement.GetElementsByTagName("R21")[0] as XmlElement;
+                            XmlElement? r22Element = propertyElement.GetElementsByTagName("R22")[0] as XmlElement;
+
+                            if (xElement != null) cframe.Position.X = float.Parse(xElement.InnerText, CultureInfo.InvariantCulture);
+                            if (yElement != null) cframe.Position.Y = float.Parse(yElement.InnerText, CultureInfo.InvariantCulture);
+                            if (zElement != null) cframe.Position.Z = float.Parse(zElement.InnerText, CultureInfo.InvariantCulture);
+
+                            if (r00Element != null) cframe.Orientation.M11 = float.Parse(r00Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r01Element != null) cframe.Orientation.M12 = float.Parse(r01Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r02Element != null) cframe.Orientation.M13 = float.Parse(r02Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r10Element != null) cframe.Orientation.M21 = float.Parse(r10Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r11Element != null) cframe.Orientation.M22 = float.Parse(r11Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r12Element != null) cframe.Orientation.M23 = float.Parse(r12Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r20Element != null) cframe.Orientation.M31 = float.Parse(r20Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r21Element != null) cframe.Orientation.M32 = float.Parse(r21Element.InnerText, CultureInfo.InvariantCulture);
+                            if (r22Element != null) cframe.Orientation.M33 = float.Parse(r22Element.InnerText, CultureInfo.InvariantCulture);
+
+                            cframe.Orientation.M44 = 1;
+                            
+                            propertyInfo.SetValue(myInstance, cframe);
+                            break;
+                        }
                         case "Content":
                             if (propertyElement.FirstChild == null)
                                 ThrowMalformedException();
@@ -372,7 +412,7 @@ public class PlaceParser
 
             string marker = Encoding.ASCII.GetString(newbuffer);
 
-            if (marker == "<roblox>")
+            if (marker == "<roblox ")
                 isXml = true;
             else if (marker == "<roblox!")
                 isXml = false;

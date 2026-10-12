@@ -22,6 +22,10 @@ public class BasePart : PVInstance
         }
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual bool CastShadow { get; set; } = true;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual float Transparency { get; set; }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual Vector3 Velocity 
     {
         get => stateLinearVelocity;
@@ -52,6 +56,17 @@ public class BasePart : PVInstance
             stateAngularVelocity = value;
             if (InitializationStage >= InitializationStage.Initializing)
                 GameManager.PhysicsSolver?.FinalizeSetAngularVelocityForBasePart(this, value);
+        }
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual Vector3 size
+    {
+        get => stateSize;
+        set
+        {
+            stateSize = value;
+            if (InitializationStage >= InitializationStage.Initializing)
+                GameManager.PhysicsSolver?.FinalizeSetSizeForBasePart(this, value);
         }
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
@@ -101,6 +116,16 @@ public class BasePart : PVInstance
             color = value;
         }
     }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual Color3 Color3uint8
+    { 
+        get => color;
+        set
+        {
+            brickColor = BrickColor.GetBrickColorByClosestColor3(value);
+            color = value;
+        }
+    }
     public virtual Quaternion QuaternionRotation
     {
         get => stateRotation;
@@ -109,6 +134,21 @@ public class BasePart : PVInstance
             stateRotation = value;
             if (InitializationStage >= InitializationStage.Initializing)
                 GameManager.PhysicsSolver?.FinalizeSetRotationForBasePart(this, value);
+        }
+    }
+    public virtual CoordinateFrame CFrame
+    {
+        get
+        {
+            CoordinateFrame cframe = default;
+            cframe.Position = Position;
+            cframe.Orientation = Raymath.QuaternionToMatrix(QuaternionRotation);
+            return cframe;
+        }
+        set
+        {
+            Position = value.Position;
+            QuaternionRotation = Raymath.QuaternionFromMatrix(value.Orientation);
         }
     }
 

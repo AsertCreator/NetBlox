@@ -11,8 +11,9 @@ public class ServiceProvider : Instance
     {
     }
 
+    [LuaAlias(Name = "service")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public Instance GetService(string name)
+    public Instance? GetService(string name)
     {
         Instance? service = FindService(name);
         if (service != null)
@@ -20,7 +21,8 @@ public class ServiceProvider : Instance
         
         service = GameManager.GameRegistry.TryCreateNewDomesticInstanceOfClass(name);
         if (service == null)
-            throw new InvalidProgramException("GameManager.GameRegistry.TryCreateNewDomesticInstanceOfClass somehow failed");
+            return null; // i just realized how much of an idiot i am
+            // throw new InvalidProgramException("GameManager.GameRegistry.TryCreateNewDomesticInstanceOfClass somehow failed");
         service.Parent = this;
         service.ParentLocked = true;
 

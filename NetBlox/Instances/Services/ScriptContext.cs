@@ -169,7 +169,8 @@ public class ScriptContext : Instance
                 return DynValue.NewYieldReq([]);
             }
             
-            throw new ArgumentException("wait() requires 1 number argument");
+            return DynValue.NewYieldReq([]);
+            // throw new ArgumentException("wait() requires 1 number argument");
         });
 
         luaState.Globals["game"] = DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, Root));

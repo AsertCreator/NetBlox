@@ -54,6 +54,9 @@ vec4 surfaceNormalColor() {
 vec3 specularColor() {
     float shininess = 12;
 
+    if (fragColor.w < 0.25)
+        return vec3(0, 0, 0);
+
     vec3 norm = normalize(fragNormal);
     vec3 tangent = normalize(fragTangent);
     vec3 B = normalize(cross(norm, tangent));
@@ -87,13 +90,13 @@ vec4 diffuseColor() {
     vec3 lightDir = normalize(lightPosition);
     vec4 texelColor = surfaceColor();
     vec4 result = regularColor() * min(1, max(dot(norm, lightDir), 0.3));
-    return vec4(result.xyz, 1);
+    return vec4(result.xyz, fragColor.w);
 }
 vec4 shadowColor() {
     vec3 lightNdc = fragLightSpacePosition.xyz / fragLightSpacePosition.w;
     vec3 shadowCoord = lightNdc * 0.5 + 0.5;
 
-    if (any(lessThan(shadowCoord, vec3(0.0))) || any(greaterThan(shadowCoord, vec3(1.0)))) {
+    if (fragColor.w < 0.25 || any(lessThan(shadowCoord, vec3(0.0))) || any(greaterThan(shadowCoord, vec3(1.0)))) {
         return diffuseColor() + vec4(specularColor(), 0);
     }
 
@@ -117,10 +120,10 @@ vec4 shadowColor() {
 
     shadow /= 9.0;
 
-    return mix(diffuseColor() + vec4(specularColor(), 0), vec4((regularColor() * 0.3).xyz, 1), shadow);
+    return mix(diffuseColor() + vec4(specularColor(), 0), vec4((regularColor() * 0.3).xyz, fragColor.w), shadow);
 }
 
 void main()
 {
-    finalColor = vec4(shadowColor().xyz, 1);
+    finalColor = shadowColor();
 }

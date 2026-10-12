@@ -133,6 +133,23 @@ public static class InstanceBridge
                     ScriptCallable = scriptCallable  
                 };
 
+                LuaAliasAttribute[] aliases = cacheMethod.Method.GetCustomAttributes<LuaAliasAttribute>().ToArray();
+
+                for (int j = 0; j < aliases.Length; j++)
+                {
+                    InstanceClassCacheMethod aliasCacheMethod = new InstanceClassCacheMethod()
+                    {
+                        Name = aliases[j].Name,
+                        Method = methodInfo,
+                        Parameters = parameterTypes,
+                        ReturnType = methodInfo.ReturnType,
+                        Callback = newCallback,
+                        ScriptCallable = scriptCallable  
+                    };
+
+                    classCache.Methods[aliasCacheMethod.Name] = aliasCacheMethod;
+                }
+
                 classCache.Methods[cacheMethod.Name] = cacheMethod;
             }
 

@@ -56,7 +56,7 @@ public class Part : BasePart
         base.CommitStageInitialize();
     }
 
-    public override unsafe void OnRegisteredEvent(EngineEventArgs args)
+    public override void OnRegisteredEvent(EngineEventArgs args)
     {
         base.OnRegisteredEvent(args);
 

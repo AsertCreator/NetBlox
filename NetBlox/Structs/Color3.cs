@@ -15,7 +15,7 @@ public record struct Color3
 
     public static Color3 FromBGRA(uint bgra)
     {
-        Color3 color3 = new Color3();
+        Color3 color3 = default;
         color3.B = (byte)((bgra >> 0) & 0xFF);
         color3.G = (byte)((bgra >> 8) & 0xFF);
         color3.R = (byte)((bgra >> 16) & 0xFF);
@@ -28,6 +28,14 @@ public record struct Color3
         bgra |= (uint)(color.G << 8);
         bgra |= (uint)(color.R << 16);
         return bgra;
+    }
+    public static Color3 FromARGBuint8(uint argb)
+    {
+        Color3 color3 = default;
+        color3.R = (byte)((argb >> 16) & 0xFF);
+        color3.G = (byte)((argb >> 8) & 0xFF);
+        color3.B = (byte)((argb >> 0) & 0xFF);
+        return color3;
     }
 
     public static implicit operator Color3(Raylib_cs.Color color) => new Color3(color.R, color.G, color.B);

@@ -88,7 +88,7 @@ public sealed class GameManager
 
         RootModel = dataModel;
         SchedulerRunning = false;
-        ScriptsRunning = true;
+        ScriptsRunning = false;
         ShuttingDown = false;
 
         CloudConfiguration = new CloudConfiguration();
@@ -150,7 +150,7 @@ public sealed class GameManager
     }
     public GlobalTimestamp TimestampInTheFuture(TimeSpan timeSpan)
     {
-        return (ulong)((GlobalTime.Elapsed + timeSpan).TotalMicroseconds);
+        return (ulong)(GlobalTime.Elapsed + timeSpan).TotalMicroseconds;
     }
 
     public void InitializeRendering()
@@ -161,7 +161,7 @@ public sealed class GameManager
     {
         if (DestructionTimetable.Count > 0)
         {
-            bool hadRemovedAnything = false;
+            bool hadRemovedAnything;
             do
             {
                 hadRemovedAnything = false;
@@ -289,7 +289,25 @@ public sealed class GameManager
     }
     public void LoadPlaceFromFile(string path)
     {
-        
+        AssetDownloadTask? task = GameAssetManager.QuickLoad(path);
+        if (task == null)
+        {
+            Trace.TraceError("LoadPlaceFromFile failed; not loading anything");
+            return;
+        }
+
+        task.AddCallbackForSuccess(x =>
+        {
+            string? path = x.LocalDownloadPath;
+            if (path == null)
+            {
+                Trace.TraceError("LoadPlaceFromFile failed; LocalDownloadPath is empty");
+                return;
+            }
+
+            PlaceParser placeParser = new PlaceParser(this);
+            placeParser.LoadPlaceMultiplexed(path);
+        });
     }
     public void LoadLoadingPlace()
     {
@@ -360,7 +378,7 @@ public sealed class GameManager
         try
         {
             SchedulerRunning = true;
-            ScriptsRunning = true;
+            ScriptsRunning = false;
 
             CurrentPhase = InitializationStage.Alive;
 

@@ -68,9 +68,11 @@ public class WorkspaceRendererViewport : RendererViewport
     private Texture2D glueSurfaceNormalTexture;
 
     private LRUCache<PartSpecification, GCMesh> partRenderBufferMeshCache;
-    private Dictionary<PartSpecification, List<BasePart>> partRenderBuffer = [];
+    private Dictionary<PartSpecification, List<BasePart>> opaquePartRenderBuffer = [];
+    private Dictionary<PartSpecification, List<BasePart>> transparentPartRenderBuffer = [];
     private int maxPartRenderBufferDepth = 0;
     private GameSchedulerPerfEntry[] lastperfEntry;
+    private PartRenderInstanceInfo[]? renderInstances;
     private Mesh cubeMesh;
     private Mesh sphereMesh;
 
@@ -254,7 +256,7 @@ public class WorkspaceRendererViewport : RendererViewport
             ", fps: " + Raylib.GetFPS() + 
             ", actor count: " + (GameRenderer.GameManager.PhysicsSolver != null ? GameRenderer.GameManager.PhysicsSolver.GetActorCount() : 0) + 
             ", instance count: " + GameRenderer.GameManager.GameRegistry.GetInstanceCount() + 
-            ", part render buffer category count: " + partRenderBuffer.Count;
+            ", part render buffer category count: " + opaquePartRenderBuffer.Count + transparentPartRenderBuffer.Count;
         
         NetworkClient? client = GameRenderer.Root.FindService<NetworkClient>();
 
@@ -584,7 +586,8 @@ public class WorkspaceRendererViewport : RendererViewport
         if (GameRenderer.DebugFlag)
             RenderDebugInfo();
 
-        partRenderBuffer.Clear();
+        opaquePartRenderBuffer.Clear();
+        transparentPartRenderBuffer.Clear();
         maxPartRenderBufferDepth = 0;
 
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
@@ -596,57 +599,80 @@ public class WorkspaceRendererViewport : RendererViewport
         if (cubeMesh.VaoId == 0)
             cubeMesh = Raylib.GenMeshCube(1, 1, 1);
 
-        Span<PartRenderInstanceInfo> matrixies = stackalloc PartRenderInstanceInfo[maxPartRenderBufferDepth];
-
-        foreach (KeyValuePair<PartSpecification, List<BasePart>> kvp in partRenderBuffer)
+        void DoRenderABuffer(Dictionary<PartSpecification, List<BasePart>> renderBuffer)
         {
-            PartSpecification partSpecification = kvp.Key;
+            if (renderInstances == null)
+                renderInstances = new PartRenderInstanceInfo[maxPartRenderBufferDepth];
+            if (renderInstances != null && renderInstances.Length < maxPartRenderBufferDepth)
+                Array.Resize(ref renderInstances, maxPartRenderBufferDepth);
+            if (renderInstances == null)
+                throw new OutOfMemoryException("No memory for render instance list");
 
-            if (partSpecification.Shape == PartType.Block)
+            foreach (KeyValuePair<PartSpecification, List<BasePart>> kvp in renderBuffer)
             {
-                for (int i = 0; i < kvp.Value.Count; i++)
+                PartSpecification partSpecification = kvp.Key;
+
+                if (partSpecification.Shape == PartType.Block)
                 {
-                    BasePart basePart = kvp.Value[i];
-                    Matrix4x4 matrix = Matrix4x4.CreateScale(basePart.Size.X, basePart.Size.Y, basePart.Size.Z);
-                    matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
-                    matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
-                    matrix = Matrix4x4.Transpose(matrix);
-                    matrixies[i].Transform = Raymath.MatrixToFloatV(matrix);
-                    matrixies[i].Color.X = basePart.Color3.R / 255f;
-                    matrixies[i].Color.Y = basePart.Color3.G / 255f;
-                    matrixies[i].Color.Z = basePart.Color3.B / 255f;
-                    matrixies[i].Color.W = 1;
-                }
+                    int j = 0;
+                    for (int i = 0; i < kvp.Value.Count; i++)
+                    {
+                        BasePart basePart = kvp.Value[j];
+                        if ((!basePart.CastShadow || basePart.Transparency > 0.75f) && shadowPass)
+                            continue;
+                        j++;
+                        Matrix4x4 matrix = Matrix4x4.CreateScale(basePart.Size.X, basePart.Size.Y, basePart.Size.Z);
+                        matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
+                        matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
+                        matrix = Matrix4x4.Transpose(matrix);
+                        renderInstances[i].Transform = Raymath.MatrixToFloatV(matrix);
+                        renderInstances[i].Color.X = basePart.Color3.R / 255f;
+                        renderInstances[i].Color.Y = basePart.Color3.G / 255f;
+                        renderInstances[i].Color.Z = basePart.Color3.B / 255f;
+                        renderInstances[i].Color.W = 1 - basePart.Transparency;
+                    }
 
-                RenderUtils.CustomDrawMeshInstanced(cubeMesh, matrixies[..kvp.Value.Count], this, partSpecification, true, shadowPass);
-            }
-            else if (partSpecification.Shape == PartType.Ball)
-            {
-                for (int i = 0; i < kvp.Value.Count; i++)
+                    RenderUtils.CustomDrawMeshInstanced(cubeMesh, renderInstances[..j], this, partSpecification, true, shadowPass);
+                }
+                else if (partSpecification.Shape == PartType.Ball)
                 {
-                    BasePart basePart = kvp.Value[i];
-                    Vector3 size = basePart.Size;
-                    float minsize = size.X;
+                    int j = 0;
+                    for (int i = 0; i < kvp.Value.Count; i++)
+                    {
+                        BasePart basePart = kvp.Value[j];
+                        if ((!basePart.CastShadow || basePart.Transparency > 0.75f) && shadowPass)
+                            continue;
+                        j++;
 
-                    if (size.Y < minsize)
-                        minsize = size.Y;
-                    if (size.Z < minsize)
-                        minsize = size.Z;
+                        Vector3 size = basePart.Size;
+                        float minsize = size.X;
 
-                    Matrix4x4 matrix = Matrix4x4.CreateScale(minsize, minsize, minsize);
-                    matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
-                    matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
-                    matrix = Matrix4x4.Transpose(matrix);
-                    matrixies[i].Transform = Raymath.MatrixToFloatV(matrix);
-                    matrixies[i].Color.X = basePart.Color3.R / 255f;
-                    matrixies[i].Color.Y = basePart.Color3.G / 255f;
-                    matrixies[i].Color.Z = basePart.Color3.B / 255f;
-                    matrixies[i].Color.W = 1;
+                        if (size.Y < minsize)
+                            minsize = size.Y;
+                        if (size.Z < minsize)
+                            minsize = size.Z;
+
+                        Matrix4x4 matrix = Matrix4x4.CreateScale(minsize, minsize, minsize);
+                        matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
+                        matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
+                        matrix = Matrix4x4.Transpose(matrix);
+                        renderInstances[i].Transform = Raymath.MatrixToFloatV(matrix);
+                        renderInstances[i].Color.X = basePart.Color3.R / 255f;
+                        renderInstances[i].Color.Y = basePart.Color3.G / 255f;
+                        renderInstances[i].Color.Z = basePart.Color3.B / 255f;
+                        renderInstances[i].Color.W = 1 - basePart.Transparency;
+                    }
+
+                    RenderUtils.CustomDrawMeshInstanced(sphereMesh, renderInstances[..j], this, partSpecification, false, shadowPass);
                 }
-
-                RenderUtils.CustomDrawMeshInstanced(sphereMesh, matrixies[..kvp.Value.Count], this, partSpecification, false, shadowPass);
             }
         }
+
+        DoRenderABuffer(opaquePartRenderBuffer);
+
+        Rlgl.DisableDepthMask();
+        DoRenderABuffer(transparentPartRenderBuffer);
+        Rlgl.EnableDepthMask();
     }
     public virtual void DrawGizmos(bool in3d)
     {
@@ -711,12 +737,24 @@ public class WorkspaceRendererViewport : RendererViewport
             throw new NotImplementedException("Unsupported part type");
         }
 
-        if (!partRenderBuffer.TryGetValue(partSpecification, out _))
-            partRenderBuffer[partSpecification] = new();
-        
-        partRenderBuffer[partSpecification].Add(part);
-        if (partRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
-            maxPartRenderBufferDepth = partRenderBuffer[partSpecification].Count;
+        if (part.Transparency <= 0)
+        {
+            if (!opaquePartRenderBuffer.TryGetValue(partSpecification, out _))
+                opaquePartRenderBuffer[partSpecification] = new();
+            
+            opaquePartRenderBuffer[partSpecification].Add(part);
+            if (opaquePartRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
+                maxPartRenderBufferDepth = opaquePartRenderBuffer[partSpecification].Count;
+        }
+        else
+        {
+            if (!transparentPartRenderBuffer.TryGetValue(partSpecification, out _))
+                transparentPartRenderBuffer[partSpecification] = new();
+            
+            transparentPartRenderBuffer[partSpecification].Add(part);
+            if (transparentPartRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
+                maxPartRenderBufferDepth = transparentPartRenderBuffer[partSpecification].Count;
+        }
     }
     private unsafe RenderTexture2D CreateShadowmap(int width, int height) 
     {
