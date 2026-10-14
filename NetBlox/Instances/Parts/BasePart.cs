@@ -1,4 +1,6 @@
 using System.Numerics;
+using Jitter2.Collision.Shapes;
+using Jitter2.LinearMath;
 using NetBlox.Physics;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -134,9 +136,8 @@ public class BasePart : PVInstance
         }
     }
 
-    public event EventHandler? OnPhysicsActorChangedSubstancially;
-
-    public PhysicsActor? PhysicsActor;
+    public PhysicsActor? OwnPhysicsActor;
+    public PhysicsAssembly? PhysicsAssembly;
 
     public bool stateAnchored;
     public Vector3 stateSize;
@@ -164,43 +165,96 @@ public class BasePart : PVInstance
     public override void CommitStageInitialize()
     {
         base.CommitStageInitialize();
-        GameManager.PhysicsSolver?.AddBasePart(this);
+        if (PhysicsAssembly == null)
+            GameManager.PhysicsSolver?.AddBasePart(this);
     }
 
     public bool UpdateState()
     {
         bool muchChanges = false;
 
-        if (PhysicsActor == null)
+        if (OwnPhysicsActor == null && PhysicsAssembly != null)
             return false;
 
         if (InitializationStage >= InitializationStage.Initializing)
         {
-            if (PhysicsActor!.RigidBody != null)
+            float physicsError = 0.001f;
+
+            if (OwnPhysicsActor!.RigidBody != null)
             {
-                float physicsError = 0.001f;
-
-                if (statePosition.Length().WithinError(PhysicsActor!.RigidBody.Position.Length(), physicsError))
+                if (statePosition.Length().WithinError(OwnPhysicsActor!.RigidBody.Position.Length(), physicsError))
                     muchChanges = true;
-                if (stateRotation.Length().WithinError(PhysicsActor!.RigidBody.Orientation.Length(), physicsError))
+                if (stateRotation.Length().WithinError(OwnPhysicsActor!.RigidBody.Orientation.Length(), physicsError))
                     muchChanges = true;
-                if (stateLinearVelocity.Length().WithinError(PhysicsActor!.RigidBody.Velocity.Length(), physicsError))
+                if (stateLinearVelocity.Length().WithinError(OwnPhysicsActor!.RigidBody.Velocity.Length(), physicsError))
                     muchChanges = true;
-                if (stateAngularVelocity.Length().WithinError(PhysicsActor!.RigidBody.AngularVelocity.Length(), physicsError))
+                if (stateAngularVelocity.Length().WithinError(OwnPhysicsActor!.RigidBody.AngularVelocity.Length(), physicsError))
                     muchChanges = true;
 
-                statePosition = PhysicsActor!.RigidBody.Position;
-                stateRotation = PhysicsActor!.RigidBody.Orientation;
-                stateLinearVelocity = PhysicsActor!.RigidBody.Velocity;
-                stateAngularVelocity = PhysicsActor!.RigidBody.AngularVelocity;
+                statePosition = OwnPhysicsActor!.RigidBody.Position;
+                stateRotation = OwnPhysicsActor!.RigidBody.Orientation;
+                stateLinearVelocity = OwnPhysicsActor!.RigidBody.Velocity;
+                stateAngularVelocity = OwnPhysicsActor!.RigidBody.AngularVelocity;
+            }
+            if (PhysicsAssembly != null)
+            {
+                if (!PhysicsAssembly.ShapeMapping.TryGetValue(this, out TransformedShape? shape))
+                    return muchChanges;
+
+                Vector3 newposition = shape.WorldBoundingBox.Center;
+                Vector3 newlinearvelocity = PhysicsAssembly.CombinedRigidBody.Velocity;
+                Vector3 newangularvelocity = PhysicsAssembly.CombinedRigidBody.AngularVelocity;
+                Quaternion newrotation = PhysicsAssembly.CombinedRigidBody.Orientation * JQuaternion.CreateFromMatrix(shape.Transformation);
+
+                if (statePosition.Length().WithinError(newposition.Length(), physicsError))
+                    muchChanges = true;
+                if (stateRotation.Length().WithinError(newrotation.Length(), physicsError))
+                    muchChanges = true;
+                if (stateLinearVelocity.Length().WithinError(newlinearvelocity.Length(), physicsError))
+                    muchChanges = true;
+                if (stateAngularVelocity.Length().WithinError(newangularvelocity.Length(), physicsError))
+                    muchChanges = true;
+
+                statePosition = newposition;
+                stateRotation = newrotation;
+                stateLinearVelocity = newlinearvelocity;
+                stateAngularVelocity = newangularvelocity;
             }
         }
 
         return muchChanges;
     }
-    public void InvokeOnPhysicsActorChangedSubstancially()
+
+    public void JoinAssembliesWith(BasePart other)
     {
-        OnPhysicsActorChangedSubstancially?.Invoke(this, EventArgs.Empty);
+        if (PhysicsAssembly == null && other.PhysicsAssembly != null)
+            other.JoinAssembliesWith(this);
+        else if (PhysicsAssembly == null && other.PhysicsAssembly == null)
+        {
+            PhysicsAssembly = new PhysicsAssembly(GameManager, this);
+            OwnPhysicsActor = null;
+            PhysicsAssembly.AttachNewPart(other);
+
+            GameManager.PhysicsSolver!.AllPhysicsAssemblies.Add(PhysicsAssembly);
+        }
+        else if (PhysicsAssembly != null && other.PhysicsAssembly == null)
+        {
+            PhysicsAssembly.AttachNewPart(other);
+        }
+        else if (PhysicsAssembly != null && other.PhysicsAssembly != null)
+        {
+            if (PhysicsAssembly == other.PhysicsAssembly)
+                return;
+            PhysicsAssembly.MergeWith(other.PhysicsAssembly);
+        }
+    }
+    public void BreakAssembliesWith(BasePart other)
+    {
+        throw new NotImplementedException();
+    }
+    public virtual RigidBodyShape CreateShape()
+    {
+        throw new NotImplementedException();
     }
 
     public override bool IsA(string className)

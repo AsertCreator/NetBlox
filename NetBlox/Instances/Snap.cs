@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Jitter2.Dynamics.Constraints;
 using NetBlox.Runtime;
 using Raylib_cs;
 
@@ -12,7 +11,8 @@ public class Snap : JointInstance
 {
     protected InstanceID lastpart0;
     protected InstanceID lastpart1;
-    private WeldJoint? weldJoint;
+
+    private bool weldCreated;
 
     public override string ClassName => nameof(Snap);
 
@@ -26,10 +26,6 @@ public class Snap : JointInstance
     {
         Debug.Assert(Part0 != null);
         Debug.Assert(Part1 != null);
-        Debug.Assert(Part0.PhysicsActor != null);
-        Debug.Assert(Part1.PhysicsActor != null);
-        Debug.Assert(Part0.PhysicsActor.RigidBody != null);
-        Debug.Assert(Part1.PhysicsActor.RigidBody != null);
 
         if (GameManager.PhysicsSolver == null)
         {
@@ -37,18 +33,12 @@ public class Snap : JointInstance
             return;
         }
 
-        weldJoint = new WeldJoint(GameManager.PhysicsSolver.LocalWorld, Part0.PhysicsActor.RigidBody, Part1.PhysicsActor.RigidBody,
-            Part1.statePosition);
-        weldJoint.Enable();
+        Part0.JoinAssembliesWith(Part1);
     }
     private void DestroyWeld()
     {
-        if (weldJoint != null)
-        {
-            weldJoint.Disable();
-            weldJoint.Remove();
-            weldJoint = null;
-        }
+        if (Part0 != null && Part1 != null)
+            Part0.BreakAssembliesWith(Part1);
     }
 
     public override void OnRegisteredEvent(EngineEventArgs args)
@@ -57,7 +47,7 @@ public class Snap : JointInstance
 
         if (args.GameEvent.Id == GameEvent.EVENT_RENDERGIZMOS)
         {
-            if (Part0 != null && Part1 != null && weldJoint != null)
+            if (Part0 != null && Part1 != null && weldCreated)
             {
                 Rlgl.DisableDepthTest();
                 Raylib.DrawCylinderEx(Part0.Position, Part1.Position, 0.13f, 0.13f, 3, new Color(60, 128, 60));
@@ -66,14 +56,14 @@ public class Snap : JointInstance
         }
         else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS)
         {
-            if (weldJoint == null)
+            if (!weldCreated)
             {
-                if (Part0 != null && Part1 != null && Part0.PhysicsActor != null && Part1.PhysicsActor != null)
+                if (Part0 != null && Part1 != null)
                     CreateWeld();
             }
             else
             {
-                if (Part0 == null || Part1 == null || Part0.PhysicsActor == null || Part1.PhysicsActor == null)
+                if (Part0 == null || Part1 == null)
                     DestroyWeld();
             }
         }

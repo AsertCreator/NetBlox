@@ -287,6 +287,8 @@ public sealed class GameManager
                 break;
             }
         }
+        
+        GameRegistry.ClearNewborns();
     }
     public void LoadPlaceFromFile(string path)
     {
@@ -308,6 +310,8 @@ public sealed class GameManager
 
             PlaceParser placeParser = new PlaceParser(this);
             placeParser.LoadPlaceMultiplexed(path);
+
+            GameRegistry.ClearNewborns();
         });
     }
     public void LoadLoadingPlace()

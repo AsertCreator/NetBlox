@@ -13,7 +13,7 @@ public class PhysicsActor
     public PhysicsSolver Owner;
     public PhysicsActorType Type;
     public RigidBody? RigidBody;
-    public Shape? Shape;
+    public RigidBodyShape? Shape;
 
     public PhysicsActor(PhysicsSolver solver, PhysicsActorType type, BasePart reference)
     {

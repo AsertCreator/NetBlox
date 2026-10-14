@@ -3,6 +3,7 @@ using Jitter2.Collision.Shapes;
 using NetBlox.Rendering;
 using NetBlox.Runtime;
 using NetBlox.Structs;
+using Raylib_cs;
 
 namespace NetBlox.Instances.Parts;
 
@@ -55,6 +56,7 @@ public class Part : BasePart
     {
         Size = new Vector3(4, 1, 2);
 
+        GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGIZMOS)?.RegisterInstance(this);
         GameManager.TryGetEventForId(GameEvent.EVENT_BEFORE_PHYSICS)?.RegisterInstance(this);
     }
     public override void CommitStageInitialize()
@@ -74,39 +76,49 @@ public class Part : BasePart
         }
         else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS)
         {
-            if (currentPartType != lastPartType)
+            if (currentPartType != lastPartType && PhysicsAssembly == null && OwnPhysicsActor != null)
             {
-                if (PhysicsActor == null || PhysicsActor.RigidBody == null)
-                    return;
-                RigidBodyShape? rigidBodyShape = PhysicsActor.Shape as RigidBodyShape;
-                if (rigidBodyShape != null)
-                    PhysicsActor.RigidBody.RemoveShape(rigidBodyShape);
-                
-                switch (currentPartType)
+                if (OwnPhysicsActor.RigidBody!.Shapes.Contains(OwnPhysicsActor.Shape))
+                    OwnPhysicsActor.RigidBody.RemoveShape(OwnPhysicsActor.Shape!);
+                else
                 {
-                    case PartType.Block: 
-                        BoxShape boxShape = new BoxShape(Size);
-                        PhysicsActor.Shape = boxShape;
-                        PhysicsActor.RigidBody.AddShape(boxShape);
-                        break;
-                    case PartType.Ball:
-                        float radius = Size.X;
-                        if (radius > Size.Y)
-                            radius = Size.Y;
-                        if (radius > Size.Z)
-                            radius = Size.Z;
-                        radius /= 2;
-
-                        SphereShape sphereShape = new SphereShape(radius);
-                        PhysicsActor.Shape = sphereShape;
-                        PhysicsActor.RigidBody.AddShape(sphereShape);
-                        break;
-                    case PartType.Cylinder:
-                        throw new NotImplementedException("No cylinders for now");
+                    OwnPhysicsActor.Shape = CreateShape();
+                    OwnPhysicsActor.RigidBody.AddShape(OwnPhysicsActor.Shape);
                 }
-
+                
                 lastPartType = currentPartType;
             }
+        }
+        else if (args.GameEvent.Id == GameEvent.EVENT_RENDERGIZMOS)
+        {
+            if (PhysicsAssembly != null)
+            {
+                unsafe
+                {
+                    Raylib.DrawCubeWires(Position, Size.X, Size.Y, Size.Z, PhysicsAssembly.DebugColor.Color3);
+                }
+            }
+        }
+    }
+    public override RigidBodyShape CreateShape()
+    {
+        switch (Shape)
+        {
+            case PartType.Block: 
+                BoxShape boxShape = new BoxShape(Size);
+                return boxShape;
+            case PartType.Ball:
+                float radius = Size.X;
+                if (radius > Size.Y)
+                    radius = Size.Y;
+                if (radius > Size.Z)
+                    radius = Size.Z;
+                radius /= 2;
+
+                SphereShape sphereShape = new SphereShape(radius);
+                return sphereShape;
+            default:
+                throw new NotImplementedException("No cylinders for now");
         }
     }
 
