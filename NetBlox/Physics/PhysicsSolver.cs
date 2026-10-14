@@ -159,21 +159,19 @@ public class PhysicsSolver
         PhysicsAssembly? assembly = part.PhysicsAssembly;
         if (assembly != null)
         {
-            if (anchored)
-                assembly.CombinedRigidBody.MotionType = MotionType.Static;
-            else
+            bool hasAnchoredParticipant = false;
+            for (int i = 0; i < assembly.Participants.Count; i++)
             {
-                for (int i = 0; i < assembly.Participants.Count; i++)
+                if (assembly.Participants[i].Anchored)
                 {
-                    if (assembly.Participants[i].Anchored)
-                    {
-                        assembly.CombinedRigidBody.MotionType = MotionType.Static;
-                        break;
-                    }
+                    hasAnchoredParticipant = true;
+                    break;
                 }
-
-                assembly.CombinedRigidBody.MotionType = MotionType.Dynamic;
             }
+
+            assembly.CombinedRigidBody.MotionType = hasAnchoredParticipant
+                ? MotionType.Static
+                : MotionType.Dynamic;
 
             assembly.ReelectRoot();
         }

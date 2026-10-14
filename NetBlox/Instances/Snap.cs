@@ -34,6 +34,8 @@ public class Snap : JointInstance
         }
 
         Part0.JoinAssembliesWith(Part1);
+        weldCreated = true;
+        GameManager.PhysicsSolver?.FinalizeSetAnchoredForBasePart(Part0, Part0.Anchored);
     }
     private void DestroyWeld()
     {

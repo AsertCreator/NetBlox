@@ -28,6 +28,7 @@ public class PhysicsAssembly
         Debug.Assert(GameManager.PhysicsSolver != null);
 
         CombinedRigidBody = GameManager.PhysicsSolver.LocalWorld.CreateRigidBody();
+        CombinedRigidBody.MotionType = MotionType.Dynamic;
 
         if (first.OwnPhysicsActor != null)
         {
@@ -162,6 +163,7 @@ public class PhysicsAssembly
         physicsAssembly.ShapeMapping.Clear();
         physicsAssembly.ReelectRoot();
         GameManager.PhysicsSolver!.AllPhysicsAssemblies.Remove(physicsAssembly);
+        GameManager.PhysicsSolver!.LocalWorld.Remove(physicsAssembly.CombinedRigidBody);
 
         ReelectRoot();
     }
