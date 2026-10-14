@@ -14,6 +14,7 @@ public sealed class GameEvent
     public static readonly string EVENT_HEARTBEAT = nameof(EVENT_HEARTBEAT);
     public static readonly string EVENT_BEFORE_RENDER = nameof(EVENT_BEFORE_RENDER);
     public static readonly string EVENT_RENDER3D = nameof(EVENT_RENDER3D);
+    public static readonly string EVENT_RENDERGIZMOS = nameof(EVENT_RENDERGIZMOS);
     public static readonly string EVENT_RENDERGUI_LEVEL0 = nameof(EVENT_RENDERGUI_LEVEL0);
     public static readonly string EVENT_RENDERGUI_LEVEL1 = nameof(EVENT_RENDERGUI_LEVEL1);
     public static readonly string EVENT_RENDERGUI_LEVEL2 = nameof(EVENT_RENDERGUI_LEVEL2);

@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jitter2" Version="2.8.9" />
-    <PackageReference Include="Raylib-cs" Version="8.0.0" />
+    <PackageReference Include="Jitter2" Version="2.10.0" />
+    <PackageReference Include="Raylib-cs" Version="8.1.0" />
   </ItemGroup>
 
   <ItemGroup>

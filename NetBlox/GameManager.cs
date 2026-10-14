@@ -64,6 +64,7 @@ public sealed class GameManager
         CreateGameEventNamed(GameEvent.EVENT_BEFORE_RENDER, "Render - Before");
         CreateGameEventNamed(GameEvent.EVENT_AFTER_RENDER, "Render - After");
         CreateGameEventNamed(GameEvent.EVENT_RENDER3D, "Render 3D - Process");
+        CreateGameEventNamed(GameEvent.EVENT_RENDERGIZMOS, "Render Gizmos - Process");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL0, "Render GUI - Level 0");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL1, "Render GUI - Level 1");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL2, "Render GUI - Level 2");

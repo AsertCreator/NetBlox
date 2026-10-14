@@ -21,11 +21,17 @@ public class Part : BasePart
     public SurfaceType FrontSurface { get; set; } = SurfaceType.Smooth;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]   
     public SurfaceType BackSurface { get; set; } = SurfaceType.Smooth;
+    [LuaAlias(Name = "shape")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]   
     public PartType Shape 
     { 
         get => currentPartType;
-        set => currentPartType = value;
+        set
+        {
+            if (value == PartType.Cylinder)
+                value = PartType.Block; // TODO: implement cylinders
+            currentPartType = value;
+        }
     }
 
     public override Vector3 Size 

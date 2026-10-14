@@ -256,7 +256,7 @@ public class WorkspaceRendererViewport : RendererViewport
             ", fps: " + Raylib.GetFPS() + 
             ", actor count: " + (GameRenderer.GameManager.PhysicsSolver != null ? GameRenderer.GameManager.PhysicsSolver.GetActorCount() : 0) + 
             ", instance count: " + GameRenderer.GameManager.GameRegistry.GetInstanceCount() + 
-            ", part render buffer category count: " + opaquePartRenderBuffer.Count + transparentPartRenderBuffer.Count;
+            ", part render buffer category count: " + (opaquePartRenderBuffer.Count + transparentPartRenderBuffer.Count);
         
         NetworkClient? client = GameRenderer.Root.FindService<NetworkClient>();
 
@@ -716,6 +716,9 @@ public class WorkspaceRendererViewport : RendererViewport
 
             if (in3d)
                 Raylib.EndShaderMode();
+
+            if (in3d)
+                GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGIZMOS)?.Fire();
         }
     }
     public void WritePart(BasePart part)

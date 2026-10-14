@@ -189,6 +189,24 @@ public static class InstanceBridge
                     NetworkOrdinal = null
                 };
 
+                LuaAliasAttribute[] aliases = cacheProperty.Property.GetCustomAttributes<LuaAliasAttribute>().ToArray();
+
+                for (int j = 0; j < aliases.Length; j++)
+                {
+                    InstanceClassCacheProperty aliasCacheProperty = new InstanceClassCacheProperty()
+                    {
+                        Name = aliases[j].Name,
+                        Property = propertyInfo,
+                        PropertyType = propertyInfo.PropertyType,
+                        IsReadOnly = readOnly,
+                        CanBeReplicated = false,
+                        ScriptCallable = scriptCallable,
+                        NetworkOrdinal = null
+                    };
+
+                    classCache.Properties[aliasCacheProperty.Name] = cacheProperty;
+                }
+
                 classCache.Properties[cacheProperty.Name] = cacheProperty;
                 if (canBeReplicated && !readOnly)
                     replicatableProperties.Add(cacheProperty);

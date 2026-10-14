@@ -10,6 +10,7 @@ public class BasePart : PVInstance
 {
     public override string ClassName => nameof(BasePart);
 
+    [LuaAlias(Name = "anchored")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual bool Anchored 
     { 
@@ -57,18 +58,7 @@ public class BasePart : PVInstance
             if (InitializationStage >= InitializationStage.Initializing)
                 GameManager.PhysicsSolver?.FinalizeSetAngularVelocityForBasePart(this, value);
         }
-    }
-    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public virtual Vector3 size
-    {
-        get => stateSize;
-        set
-        {
-            stateSize = value;
-            if (InitializationStage >= InitializationStage.Initializing)
-                GameManager.PhysicsSolver?.FinalizeSetSizeForBasePart(this, value);
-        }
-    }
+    }[LuaAlias(Name = "size")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual Vector3 Size
     {
@@ -106,18 +96,9 @@ public class BasePart : PVInstance
             color = brickColor.Color3;
         }
     }
+    [LuaAlias(Name = "Color3uint8")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual Color3 Color3
-    { 
-        get => color;
-        set
-        {
-            brickColor = BrickColor.GetBrickColorByClosestColor3(value);
-            color = value;
-        }
-    }
-    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public virtual Color3 Color3uint8
     { 
         get => color;
         set
@@ -136,6 +117,7 @@ public class BasePart : PVInstance
                 GameManager.PhysicsSolver?.FinalizeSetRotationForBasePart(this, value);
         }
     }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual CoordinateFrame CFrame
     {
         get
@@ -151,6 +133,8 @@ public class BasePart : PVInstance
             QuaternionRotation = Raymath.QuaternionFromMatrix(value.Orientation);
         }
     }
+
+    public event EventHandler? OnPhysicsActorChangedSubstancially;
 
     public PhysicsActor? PhysicsActor;
 
@@ -213,6 +197,10 @@ public class BasePart : PVInstance
         }
 
         return muchChanges;
+    }
+    public void InvokeOnPhysicsActorChangedSubstancially()
+    {
+        OnPhysicsActorChangedSubstancially?.Invoke(this, EventArgs.Empty);
     }
 
     public override bool IsA(string className)

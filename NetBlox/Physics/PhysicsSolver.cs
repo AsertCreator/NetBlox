@@ -178,6 +178,8 @@ public class PhysicsSolver
                 LocalWorld.Remove(actor.RigidBody);
             partActors.Remove(part.InstanceID);
         }
+        part.PhysicsActor = null;
+        part.InvokeOnPhysicsActorChangedSubstancially();
     }
 
     public void AddBasePart(BasePart basePart)
@@ -185,6 +187,7 @@ public class PhysicsSolver
         PhysicsActor physicsActor = new PhysicsActor(this, PhysicsActorType.BasePart, basePart);
         partActors[basePart.InstanceID] = physicsActor;
         basePart.PhysicsActor = physicsActor;
+        basePart.InvokeOnPhysicsActorChangedSubstancially();
     }
     public PhysicsActor? GetPhysicsActor(BasePart basePart)
     {

@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Text;
 using System.Xml;
 using NetBlox.Instances;
+using NetBlox.Instances.Services;
+using NetBlox.Runtime.Bridges;
 using NetBlox.Structs;
 
 namespace NetBlox;
@@ -65,6 +67,9 @@ public class PlaceParser
             }
             else if (element.Name == "Properties")
             {
+                ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
+                InstanceBridge.InstanceClassCache cache = scriptContext.ResolveInstanceClassCacheForType(type);
+
                 for (int j = 0; j < element.ChildNodes.Count; j++)
                 {
                     XmlElement? propertyElement = element.ChildNodes[j] as XmlElement;
@@ -73,11 +78,13 @@ public class PlaceParser
                         continue;
 
                     string propertyName = propertyElement.GetAttribute("name");
-                    PropertyInfo? propertyInfo = type.GetProperty(propertyName);
+                    InstanceBridge.InstanceClassCacheProperty? property = cache.TryGetProperty(propertyName);
+                    if (property == null)
+                        continue;
+
+                    PropertyInfo propertyInfo = property.Property;
 
                     if (propertyName == "Parent")
-                        continue;
-                    if (propertyInfo == null)
                         continue;
                     if (!propertyInfo.CanWrite)
                         continue;
@@ -265,7 +272,8 @@ public class PlaceParser
                             propertyInfo.SetValue(myInstance, propertyElement.InnerText);
                             break;
                         case "token":
-                            // TODO: do this
+                            object enumvalue = Enum.ToObject(propertyInfo.PropertyType, int.Parse(propertyElement.InnerText, CultureInfo.InvariantCulture));
+                            propertyInfo.SetValue(myInstance, enumvalue);
                             break;
                     }
                 }
