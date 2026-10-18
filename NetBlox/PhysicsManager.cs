@@ -47,7 +47,7 @@ namespace NetBlox
 		}
 		public void SpringUpPhysics()
 		{
-			DisablePhysics = false;
+			// DisablePhysics = false;
 			Actors.ForEach(x => x.ReevaluatePhysicsRepresentation());
 		}
 		public void ClientStep()

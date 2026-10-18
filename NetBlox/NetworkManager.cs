@@ -155,7 +155,7 @@ namespace NetBlox
 
 			Server.Start();
 			GameManager.PauseReplication = false;
-			GameManager.PhysicsManager.DisablePhysics = false;
+			// GameManager.PhysicsManager.DisablePhysics = false;
 
 			LogManager.LogInfo($"Listening at {Server.IPAddress}:{ServerPort}");
 
