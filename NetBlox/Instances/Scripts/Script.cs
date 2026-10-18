@@ -20,7 +20,8 @@ public class Script : BaseScript
         {
             if (GameManager.CurrentPhase < InitializationStage.Alive)
                 return;
-            ExecutionOpportunity(SecurityIdentity.SI_GameScript);
+            if (!GameManager.DisableUserScripts)
+                ExecutionOpportunity(SecurityIdentity.SI_GameScript);
             GameManager.TryGetEventForId(GameEvent.EVENT_HEARTBEAT)?.UnregisterInstance(this);
         }
     }

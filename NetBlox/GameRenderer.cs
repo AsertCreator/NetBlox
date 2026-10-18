@@ -32,6 +32,7 @@ public sealed class GameRenderer
     {
         GameManager = gameManager;
 
+        Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.SetExitKey(KeyboardKey.Null);
         Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.HighDpiWindow | ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow);
         Raylib.InitWindow(1600, 900, "NetBlox");

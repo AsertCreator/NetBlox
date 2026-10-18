@@ -29,6 +29,7 @@ public sealed class GameManager
     public int HeartbeatRate = 30;
     public bool SchedulerRunning;
     public bool ScriptsRunning;
+    public bool DisableUserScripts = true;
     public bool ShuttingDown;
     public readonly NetworkMode NetworkMode;
     public Stopwatch GlobalTime;
@@ -299,20 +300,22 @@ public sealed class GameManager
             return;
         }
 
-        task.AddCallbackForSuccess(x =>
+        task.WaitUntilFinished();
+
+        if (task.HadFinished && !task.HadErrored)
         {
-            string? path = x.LocalDownloadPath;
-            if (path == null)
+            string? localpath = task.LocalDownloadPath;
+            if (localpath == null)
             {
                 Trace.TraceError("LoadPlaceFromFile failed; LocalDownloadPath is empty");
                 return;
             }
 
             PlaceParser placeParser = new PlaceParser(this);
-            placeParser.LoadPlaceMultiplexed(path);
+            placeParser.LoadPlaceMultiplexed(localpath);
 
             GameRegistry.ClearNewborns();
-        });
+        }
     }
     public void LoadLoadingPlace()
     {
@@ -383,7 +386,7 @@ public sealed class GameManager
         try
         {
             SchedulerRunning = true;
-            ScriptsRunning = false;
+            ScriptsRunning = true;
 
             CurrentPhase = InitializationStage.Alive;
 

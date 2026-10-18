@@ -21,6 +21,8 @@ public class CompoundConnection : IDisposable
     private bool everReceivedMessages;
     private bool clientMode = false;
 
+    private object reliableSendLock = new object();
+
     public event EventHandler? OnDisconnectedByOtherMeans;
     public event EventHandler? OnFirstMessageTimeout;
     public event NetworkMessageEventHandler? OnMessage;
@@ -94,20 +96,12 @@ public class CompoundConnection : IDisposable
             Span<byte> typebytes = stackalloc byte[4];
             int length = BitConverter.ToInt32(lengthbytes);
 
-            if (stream.Read(typebytes) != 4)
-            {
-                SeeIfConnectionIsStillUp();
-                return;
-            }
+            stream.ReadExactly(typebytes);
 
             int type = BitConverter.ToInt32(typebytes);
             byte[] packetbody = new byte[length - 4];
 
-            if (stream.Read(packetbody) != length - 4)
-            {
-                SeeIfConnectionIsStillUp();
-                return;
-            }
+            stream.ReadExactly(packetbody);
 
             stream.BeginRead(lengthbytes, 0, 4, HandleReliablePacketStart, lengthbytes);
 
@@ -214,18 +208,21 @@ public class CompoundConnection : IDisposable
     {
         try
         {
-            if (SeeIfConnectionIsStillUp())
-                return;
+            lock (reliableSendLock)
+            {
+                if (SeeIfConnectionIsStillUp())
+                    return;
 
-            NetworkStream networkStream = TcpClient.GetStream();
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter bw = new BinaryWriter(ms);
+                NetworkStream networkStream = TcpClient.GetStream();
+                using MemoryStream ms = new MemoryStream();
+                using BinaryWriter bw = new BinaryWriter(ms);
 
-            bw.Write(networkPacket.Payload.Length + 4);
-            bw.Write(networkPacket.Type);
-            bw.Write(networkPacket.Payload);
+                bw.Write(networkPacket.Payload.Length + 4);
+                bw.Write(networkPacket.Type);
+                bw.Write(networkPacket.Payload);
 
-            networkStream.Write(ms.ToArray());
+                networkStream.Write(ms.ToArray());
+            }
         }
         catch
         {

@@ -22,12 +22,14 @@ public class AssetDownloadTask
     private bool isLocal;
     private string? localDownloadPath = null;
     private byte[]? buffer;
+    private EventWaitHandle finishedEvent;
     private List<Action<AssetDownloadTask>> callbacksFailure = [];
     private List<Action<AssetDownloadTask>> callbacksSuccess = [];
 
     public AssetDownloadTask(GameAssetManager gameAssetManager, ContentId contentId)
     {
         this.contentId = contentId;
+        finishedEvent = new EventWaitHandle(false, EventResetMode.ManualReset);
         GameAssetManager = gameAssetManager;
     }
 
@@ -61,6 +63,12 @@ public class AssetDownloadTask
                 return null;
             return new MemoryStream(buffer);
         }
+    }
+    public void WaitUntilFinished()
+    {
+        if (hadFinished)
+            return;
+        finishedEvent.WaitOne();
     }
     public void SetBuffer(byte[] buffer)
     {
@@ -109,26 +117,19 @@ public class AssetDownloadTask
 
                             await File.WriteAllTextAsync(fullPath, data);
 
-                            var task = GameAssetManager.GameManager.GameScheduler.Schedule("AssetDownloadTask completion", GameScheduler.SchedulerPhase.Network, _ =>
+                            localDownloadPath = fullPath;
+                            hadFinished = true;
+
+                            if (responseMessage.IsSuccessStatusCode)
                             {
-                                localDownloadPath = fullPath;
-                                hadFinished = true;
-
-                                if (responseMessage.IsSuccessStatusCode)
-                                {
-                                    hadErrored = false;
-                                    CallAllSuccessCallbacks();
-                                }
-                                else
-                                {
-                                    hadErrored = true;
-                                    CallAllFailureCallbacks();
-                                }
-                                
-                                return SchedulerTaskResult.CompletedSuccess;
-                            });
-
-                            task.Identity = SecurityIdentity.SI_EngineNetworker;
+                                hadErrored = false;
+                                CallAllSuccessCallbacks();
+                            }
+                            else
+                            {
+                                hadErrored = true;
+                                CallAllFailureCallbacks();
+                            }
                         });
                         return;
                     }
@@ -242,6 +243,7 @@ public class AssetDownloadTask
     {
         Trace.TraceInformation("AssetDownloadTask: CallAllFailureCallbacks + " + ContentId.ToString());
         callbacksFailure.ForEach(x => x(this));
+        finishedEvent.Set();
         lock (GameAssetManager)
             GameAssetManager.AllCurrentDownloadTasks.Remove(this);
     }
@@ -249,6 +251,7 @@ public class AssetDownloadTask
     {
         // Trace.TraceInformation("AssetDownloadTask: CallAllSuccessCallbacks + " + ContentId.ToString());
         callbacksSuccess.ForEach(x => x(this));
+        finishedEvent.Set();
         lock (GameAssetManager)
             GameAssetManager.AllCurrentDownloadTasks.Remove(this);
     }

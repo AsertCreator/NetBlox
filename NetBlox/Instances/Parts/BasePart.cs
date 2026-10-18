@@ -119,6 +119,7 @@ public class BasePart : PVInstance
                 GameManager.PhysicsSolver?.FinalizeSetRotationForBasePart(this, value);
         }
     }
+    [NotReplicated]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual CoordinateFrame CFrame
     {

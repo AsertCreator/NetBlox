@@ -69,6 +69,22 @@ public static class NetworkMarshal
             writer.Write(udim2.Y.Scale);
             writer.Write(udim2.Y.Offset);
         }
+        else if (clrType == cachedCoordinateFrameType)
+        {
+            CoordinateFrame cframe = (CoordinateFrame)value;
+            writer.Write(cframe.Position.X);
+            writer.Write(cframe.Position.Y);
+            writer.Write(cframe.Position.Z);
+            writer.Write(cframe.Orientation.M11);
+            writer.Write(cframe.Orientation.M12);
+            writer.Write(cframe.Orientation.M13);
+            writer.Write(cframe.Orientation.M21);
+            writer.Write(cframe.Orientation.M22);
+            writer.Write(cframe.Orientation.M23);
+            writer.Write(cframe.Orientation.M31);
+            writer.Write(cframe.Orientation.M32);
+            writer.Write(cframe.Orientation.M33);
+        }
         else if (clrType == cachedColor3Type)
             writer.Write(Color3.ToBGRA((Color3)value));
         else if (clrType == cachedBrickColorType)
@@ -178,6 +194,23 @@ public static class NetworkMarshal
                 },
             };
         }
+        else if (clrType == cachedCoordinateFrameType)
+        {
+            CoordinateFrame cframe = default;
+            cframe.Position.X = reader.ReadSingle();
+            cframe.Position.Y = reader.ReadSingle();
+            cframe.Position.Z = reader.ReadSingle();
+            cframe.Orientation.M11 = reader.ReadSingle();
+            cframe.Orientation.M12 = reader.ReadSingle();
+            cframe.Orientation.M13 = reader.ReadSingle();
+            cframe.Orientation.M21 = reader.ReadSingle();
+            cframe.Orientation.M22 = reader.ReadSingle();
+            cframe.Orientation.M23 = reader.ReadSingle();
+            cframe.Orientation.M31 = reader.ReadSingle();
+            cframe.Orientation.M32 = reader.ReadSingle();
+            cframe.Orientation.M33 = reader.ReadSingle();
+            return cframe;
+        }
         else if (clrType == cachedColor3Type)
         {
             return Color3.FromBGRA(reader.ReadUInt32());
@@ -213,4 +246,5 @@ public static class NetworkMarshal
     private static readonly Type cachedUDim2Type = typeof(UDim2);
     private static readonly Type cachedColor3Type = typeof(Color3);
     private static readonly Type cachedBrickColorType = typeof(BrickColor);
+    private static readonly Type cachedCoordinateFrameType = typeof(CoordinateFrame);
 }
