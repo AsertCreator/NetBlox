@@ -9,8 +9,20 @@ please don't laugh at me if the code is actually worse than i thought.
 build server and client as a regular .NET projects by using `dotnet build`. then start the
 server with `dotnet run` with following arguments, adjusting them accordingly: `-Port 44500`.
 then start the client with following arguments, adjusting them accrodingly as well:
-`-Server 127.0.0.1 -Port 44500`. you can add `-Pause` to make the client wait until a keypress
-before starting. you can do the same on Visual Studio and Visual Studio Code if you know how.
+`-Server 127.0.0.1 -Port 44500 -MaxPlayers 10`. you can add `-Pause` to make the client wait
+until a keypress before starting. you can do the same on Visual Studio and Visual Studio Code
+if you know how.
+### Running. Alternatively
+if you press G key on the server window and then press "Copy Server Ticket" button you'll get a
+ticket copied into your clipboard. then you start a client with this structure `-Ticket <paste your ticket here>`.
+and your client automagically connects to the server. this will supposedly make it simpler and easier.
+### Modes
+- `Copy Server Ticket (public)` means it will create a ticket meant for public use. it will contain your
+public IP address, you would have to open up your server port for it to work. may break with VPNs.
+- `Copy Server Ticket (LAN-only)` means it will create a ticket meant for local-only use. it will
+contain your private LAN IP address, it will only work on the same network. breaks with VPNs.
+- `Copy Server Ticket (localhost-only)` means it will create a ticket meant for localhost use. only
+works with clients running on the same machine as the server.
 
 ## What?
 as i said earlier, the project is basically a game engine, aiming to be API-compatible

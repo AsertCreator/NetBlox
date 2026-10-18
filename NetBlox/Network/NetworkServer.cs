@@ -2,9 +2,12 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
+using System.Text;
+using System.Xml.Serialization;
 using NetBlox.Instances;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
+using NetBlox.Instances.Services.Internal;
 using NetBlox.Runtime;
 
 namespace NetBlox.Network;
@@ -15,14 +18,17 @@ public class NetworkServer : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public int FirstMessageTimeout { get; set; }
-    public override string ClassName => nameof(NetworkServer);
-
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public int MaxPhysicsUpdatesOverNetworkPerPacket { get; set; } = 150;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public int MaxPlayerCount { get; set; } = 10;
     public IPEndPoint? EndPoint => TcpListener == null ? null : TcpListener.LocalEndpoint as IPEndPoint;
+
+    public override string ClassName => nameof(NetworkServer);
 
     public const ulong NETWORK_CONSTANT_ID = 21;
 
     public new ReplicationAgent ReplicationAgent;
-    public int MaxPhysicsUpdatesOverNetworkPerPacket = 150;
 
     private TcpListener? TcpListener;
     private bool hadStarted = false;
@@ -35,6 +41,11 @@ public class NetworkServer : Instance
         public Vector3 NewOrientation = bp.Rotation;
         public Vector3 NewLinearVelocity = bp.Velocity;
         public Vector3 NewAngularVelocity = bp.AngularVelocity;
+    }
+
+    public enum CreateTicketMode
+    {
+        Localhost, LAN, Public
     }
 
     public NetworkServer(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
@@ -121,6 +132,46 @@ public class NetworkServer : Instance
         gameSchedulerTask.WaitingTimeTarget = GameManager.TimestampInTheFuture(TimeSpan.FromSeconds(1));
     }
 
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string CreateServerTicket(CreateTicketMode mode)
+    {
+        if (TcpListener == null)
+            throw new InvalidOperationException("Server has no listener yet");
+
+        PlatformService platformService = Root.GetService<PlatformService>();
+
+        IPEndPoint? iPEndPoint = TcpListener.LocalEndpoint as IPEndPoint;
+
+        if (iPEndPoint == null)
+            throw new InvalidOperationException("Server has no bound address yet");
+
+        if (mode == CreateTicketMode.Public)
+        {
+            iPEndPoint.Address = IPAddress.Parse(platformService.GetIPv4Public());
+        }
+        else if (mode == CreateTicketMode.LAN)
+        {
+            iPEndPoint.Address = IPAddress.Parse(platformService.GetIPv4LANOnly());
+        }
+        else if (mode == CreateTicketMode.Localhost)
+        {
+            iPEndPoint.Address = IPAddress.Loopback;
+        }
+            
+        NetworkClient.TicketData ticketData = new NetworkClient.TicketData()
+        {
+            ServerIP = iPEndPoint.Address.MapToIPv4().ToString(),
+            ServerPort = iPEndPoint.Port,
+            ServerParameters = ""
+        };
+
+        XmlSerializer xmlSerializer = new XmlSerializer(typeof(NetworkClient.TicketData));
+        using StringWriter stringWriter = new StringWriter();
+
+        xmlSerializer.Serialize(stringWriter, ticketData);
+
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(stringWriter.ToString()));
+    }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public void StartServer(string endpointstring)
     {

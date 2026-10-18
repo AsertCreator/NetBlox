@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Xml.Serialization;
 using NetBlox.Instances;
 using NetBlox.Runtime;
 
@@ -31,6 +32,32 @@ public class NetworkClient : Instance
         ReplicationAgent = new ReplicationAgent(gameManager);
     }
 
+    public record class TicketData
+    {
+        public required string ServerIP;
+        public required string ServerParameters;
+        public required int ServerPort;
+    }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public void ConnectWithTicket(string ticketString)
+    {
+        try
+        {
+            using StringReader stringReader = new StringReader(ticketString);
+            XmlSerializer serializer = new XmlSerializer(typeof(TicketData));
+            TicketData? ticketData = serializer.Deserialize(stringReader) as TicketData;
+
+            if (ticketData == null)
+                throw new InvalidDataException("Ticket deserializaton failed");
+
+            ConnectToServer(ticketData.ServerIP + ":" + ticketData.ServerPort, 3000);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidDataException("Malformed ticket data; " + ex.GetType() + ", message: " + ex.Message);
+        }
+    }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public void ConnectToServer(string endpointstring, int firstMessageTimeout)
     {

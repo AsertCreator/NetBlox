@@ -38,6 +38,7 @@ public sealed class NPServerboundHandshake : NetworkPacketHandler
         using BinaryReader br = new BinaryReader(ms);
 
         NetworkServer networkServer = gm.RootModel.GetService<NetworkServer>();
+        Players players = gm.RootModel.GetService<Players>();
 
         Entity entity = default;
         entity.ProtocolVersion = br.ReadInt32();
@@ -45,6 +46,12 @@ public sealed class NPServerboundHandshake : NetworkPacketHandler
         entity.VersionMinor = br.ReadInt16();
         entity.VersionPatch = br.ReadInt16();
         entity.EvaluatedClientFlags = (ClientFlags)br.ReadInt16();
+
+        if (players.children.Count > networkServer.MaxPlayerCount)
+        {
+            networkServer.ForceDisconnectPlayerWithMessage(player, "Server out of capacity; please join later");
+            return;
+        }
 
         if (entity.ProtocolVersion != PROTOCOL_VERSION)
         {

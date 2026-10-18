@@ -1,5 +1,9 @@
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using NetBlox.Runtime;
+using Raylib_cs;
 
 namespace NetBlox.Instances.Services.Internal;
 
@@ -11,6 +15,7 @@ public class PlatformService : Instance
 
     public const ulong NETWORK_CONSTANT_ID = 100;
 
+    public const string PublicIPProvider = "http://ipv4.icanhazip.com";
     public const string API_AssetDelivery = "/api/assetdelivery";
 
     public PlatformService(ulong id, GameManager gameManager) : base(NETWORK_CONSTANT_ID, gameManager)
@@ -43,6 +48,42 @@ public class PlatformService : Instance
         processStartInfo.UseShellExecute = true;
         processStartInfo.FileName = link;
         Process.Start(processStartInfo);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string GetIPv4Public()
+    {
+        using HttpClient httpClient = new HttpClient();
+        Task<string> task = httpClient.GetStringAsync(PublicIPProvider);
+        task.Wait();
+        return task.Result.Trim();
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string GetIPv4LANOnly()
+    {
+        using Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
+        socket.Connect("8.8.8.8", 65530);   
+        IPEndPoint? endPoint = socket.LocalEndPoint as IPEndPoint;
+        return endPoint?.Address.ToString() ?? "";
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public void SetClipboard(string text)
+    {
+        Raylib.SetClipboardText(text);
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string PasteFromClipboard()
+    {
+        return Raylib.GetClipboardText_();
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string DecodeBase64(string base64)
+    {
+        return Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+    }
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public string EncodeBase64(string base64)
+    {
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(base64));
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public string GetLicenseText()

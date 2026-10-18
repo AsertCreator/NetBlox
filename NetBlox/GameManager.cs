@@ -83,6 +83,9 @@ public sealed class GameManager
         CreateGameEventNamed(GameEvent.EVENT_NETWORKCLIENT_STOPPED, "Network Client - Stopped");
 
         RegisterVerb("shutdown", Shutdown);
+        RegisterVerb("copyTicket", CopyServerTicket);
+        RegisterVerb("copyTicketLO", CopyServerTicketForLANOnly);
+        RegisterVerb("copyTicketLH", CopyServerTicketForLocalhost);
 
         DataModel? dataModel = GameRegistry.TryCreateNewDomesticInstanceOfClass("DataModel") as DataModel;
         if (dataModel == null)
@@ -228,6 +231,48 @@ public sealed class GameManager
         ShuttingDown = true;
 
         CurrentPhase = InitializationStage.Destroying;
+    }
+    public void CopyServerTicket()
+    {
+        if (NetworkMode == NetworkMode.Server)
+        {
+            PlatformService platformService = RootModel.GetService<PlatformService>();
+            NetworkServer? server = RootModel.FindService<NetworkServer>();
+
+            if (server == null)
+                return;
+
+            string ticket = server.CreateServerTicket(NetworkServer.CreateTicketMode.Public);
+            platformService.SetClipboard(ticket);
+        }
+    }
+    public void CopyServerTicketForLANOnly()
+    {
+        if (NetworkMode == NetworkMode.Server)
+        {
+            PlatformService platformService = RootModel.GetService<PlatformService>();
+            NetworkServer? server = RootModel.FindService<NetworkServer>();
+
+            if (server == null)
+                return;
+
+            string ticket = server.CreateServerTicket(NetworkServer.CreateTicketMode.LAN);
+            platformService.SetClipboard(ticket);
+        }
+    }
+    public void CopyServerTicketForLocalhost()
+    {
+        if (NetworkMode == NetworkMode.Server)
+        {
+            PlatformService platformService = RootModel.GetService<PlatformService>();
+            NetworkServer? server = RootModel.FindService<NetworkServer>();
+
+            if (server == null)
+                return;
+
+            string ticket = server.CreateServerTicket(NetworkServer.CreateTicketMode.Localhost);
+            platformService.SetClipboard(ticket);
+        }
     }
     public void LoadPlaceFromDefaults(int id)
     {

@@ -1,4 +1,5 @@
 local CoreGui = game:GetService("CoreGui");
+local PlatformService = game:GetService("PlatformService");
 local RobloxGui = Instance.new("ScreenGui");
 
 RobloxGui.Parent = CoreGui;
@@ -9,16 +10,23 @@ local ConsoleArguments = game:ReadAllConsoleArguments();
 function ConnectToServer()
     local NetworkClient = game:GetService("NetworkClient");
 
-    local CA_Verbose = ConsoleArguments.unpaired["Verbose"] == true;
-    local CA_Server = ConsoleArguments.paired["Server"];
-    local CA_Port = ConsoleArguments.paired["Port"];
+    if ConsoleArguments.paired["Ticket"] then
+        local CA_Ticket = ConsoleArguments.paired["Ticket"];
+        CA_Ticket = PlatformService:DecodeBase64(CA_Ticket);
 
-    if CA_Server == nil or CA_Port == nil then
-        warn("No port or address specified, skipping...")
-        return;
+        NetworkClient:ConnectWithTicket(CA_Ticket);
+    else
+        local CA_Verbose = ConsoleArguments.unpaired["Verbose"] == true;
+        local CA_Server = ConsoleArguments.paired["Server"];
+        local CA_Port = ConsoleArguments.paired["Port"];
+
+        if CA_Server == nil or CA_Port == nil then
+            warn("No port or address specified, skipping...")
+            return;
+        end
+
+        NetworkClient:ConnectToServer(CA_Server .. ":" .. CA_Port, Timeout);
     end
-
-    NetworkClient:ConnectToServer(CA_Server .. ":" .. CA_Port, Timeout);
 
     SpawnWindow("main", "Main Window", UDim2.new(0.5, 0, 0.5, 0), UDim2.new(0, 50, 0, 50), Vector2.new(0.5, 0.5));
 end

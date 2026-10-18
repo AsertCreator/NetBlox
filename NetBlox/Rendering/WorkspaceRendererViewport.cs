@@ -501,16 +501,40 @@ public class WorkspaceRendererViewport : RendererViewport
             TextButton shutdownButton = GameRenderer.GameManager.GameRegistry.Construct<TextButton>();
             shutdownButton.Parent = screenGui;
             shutdownButton.Text = "Shutdown";
-            shutdownButton.Size = new UDim2(0, 200, 0, 25);
+            shutdownButton.Size = new UDim2(0, 240, 0, 25);
             shutdownButton.Position = new UDim2(0.5f, 0, 0.8f, 0);
             shutdownButton.AnchorPoint = new Vector2(0.5f, 0.5f);
             shutdownButton.SetVerb("shutdown");
 
+            TextButton copyTicketButton = GameRenderer.GameManager.GameRegistry.Construct<TextButton>();
+            copyTicketButton.Parent = screenGui;
+            copyTicketButton.Text = "Copy Server Ticket (public)";
+            copyTicketButton.Size = new UDim2(0, 240, 0, 25);
+            copyTicketButton.Position = new UDim2(0.5f, 0, 0.8f, 27);
+            copyTicketButton.AnchorPoint = new Vector2(0.5f, 0.5f);
+            copyTicketButton.SetVerb("copyTicket");
+
+            TextButton copyTicketLOButton = GameRenderer.GameManager.GameRegistry.Construct<TextButton>();
+            copyTicketLOButton.Parent = screenGui;
+            copyTicketLOButton.Text = "Copy Server Ticket (LAN-only)";
+            copyTicketLOButton.Size = new UDim2(0, 240, 0, 25);
+            copyTicketLOButton.Position = new UDim2(0.5f, 0, 0.8f, 54);
+            copyTicketLOButton.AnchorPoint = new Vector2(0.5f, 0.5f);
+            copyTicketLOButton.SetVerb("copyTicketLO");
+
+            TextButton copyTicketLHButton = GameRenderer.GameManager.GameRegistry.Construct<TextButton>();
+            copyTicketLHButton.Parent = screenGui;
+            copyTicketLHButton.Text = "Copy Server Ticket (localhost-only)";
+            copyTicketLHButton.Size = new UDim2(0, 240, 0, 25);
+            copyTicketLHButton.Position = new UDim2(0.5f, 0, 0.8f, 81);
+            copyTicketLHButton.AnchorPoint = new Vector2(0.5f, 0.5f);
+            copyTicketLHButton.SetVerb("copyTicketLH");
+
             TextButton doNothingButton = GameRenderer.GameManager.GameRegistry.Construct<TextButton>();
             doNothingButton.Parent = screenGui;
             doNothingButton.Text = "Do nothing";
-            doNothingButton.Size = new UDim2(0, 200, 0, 25);
-            doNothingButton.Position = new UDim2(0.5f, 0, 0.8f, 27);
+            doNothingButton.Size = new UDim2(0, 240, 0, 25);
+            doNothingButton.Position = new UDim2(0.5f, 0, 0.8f, 108);
             doNothingButton.AnchorPoint = new Vector2(0.5f, 0.5f);
 
             GameRenderer.GameManager.RootModel.GetService<StarterGui>().ShowDevelopmentGui = true;
