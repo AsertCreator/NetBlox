@@ -10,6 +10,7 @@ using NetBlox.Network;
 using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
+using Model = NetBlox.Instances.Parts.Model;
 
 namespace NetBlox.Rendering;
 
@@ -608,16 +609,88 @@ public class WorkspaceRendererViewport : RendererViewport
         }
         if (Raylib.IsKeyPressed(KeyboardKey.H))
         {
-            Hint hint = GameRenderer.GameManager.GameRegistry.Construct<Hint>();
-            hint.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
-            hint.Text = "This is a Hint class example";
+            Part humanoidRootPart = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            Part torso = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            Part leftLeg = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            Part rightLeg = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            Part leftArm = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            Part rightArm = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            Part head = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            Humanoid humanoid = GameRenderer.GameManager.GameRegistry.Construct<Humanoid>();
+            Model model = GameRenderer.GameManager.GameRegistry.Construct<Model>();
 
-            Message message = GameRenderer.GameManager.GameRegistry.Construct<Message>();
-            message.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
-            message.Text = "This is a Message class example";
+            humanoidRootPart.Name = "HumanoidRootPart";
+            humanoidRootPart.Transparency = 1;
+            humanoidRootPart.CanCollide = false;
+            humanoidRootPart.Parent = model;
+            humanoidRootPart.Size = new Vector3(1, 3, 2);
 
-            GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(hint, 2);
-            GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(message, 3);
+            torso.Name = "Torso";
+            torso.Parent = model;
+            torso.Size = new Vector3(1, 2, 2);
+            torso.BrickColor = BrickColor.Random();
+
+            leftArm.Name = "Left Arm";
+            leftArm.Parent = model;
+            leftArm.Size = new Vector3(1, 2, 1);
+            leftArm.Position = new Vector3(0, 0, 1.5f);
+            leftArm.BrickColor = BrickColor.Random();
+
+            rightArm.Name = "Right Arm";
+            rightArm.Parent = model;
+            rightArm.Size = new Vector3(1, 2, 1);
+            rightArm.Position = new Vector3(0, 0, -1.5f);
+            rightArm.BrickColor = leftArm.BrickColor;
+
+            leftLeg.Name = "Left Leg";
+            leftLeg.Parent = model;
+            leftLeg.Size = new Vector3(1, 2, 1);
+            leftLeg.Position = new Vector3(0, -2, 0.5f);
+            leftLeg.BrickColor = BrickColor.Random();
+
+            rightLeg.Name = "Right Leg";
+            rightLeg.Parent = model;
+            rightLeg.Size = new Vector3(1, 2, 1);
+            rightLeg.Position = new Vector3(0, -2, -0.5f);
+            rightLeg.BrickColor = leftLeg.BrickColor;
+
+            head.Name = "Head";
+            head.Parent = model;
+            head.Shape = PartType.Ball;
+            head.Size = new Vector3(1.5f, 1.5f, 1.5f);
+            head.Position = new Vector3(0, 1.7f, 0);
+            head.BrickColor = BrickColor.Random();
+
+            Weld weld;
+
+            weld = GameRenderer.GameManager.GameRegistry.Construct<Weld>();
+            weld.Part0 = torso;
+            weld.Part1 = humanoidRootPart;
+            weld.Parent = humanoidRootPart;
+            weld = GameRenderer.GameManager.GameRegistry.Construct<Weld>();
+            weld.Part0 = leftArm;
+            weld.Part1 = humanoidRootPart;
+            weld.Parent = humanoidRootPart;
+            weld = GameRenderer.GameManager.GameRegistry.Construct<Weld>();
+            weld.Part0 = rightArm;
+            weld.Part1 = humanoidRootPart;
+            weld.Parent = humanoidRootPart;
+            weld = GameRenderer.GameManager.GameRegistry.Construct<Weld>();
+            weld.Part0 = leftLeg;
+            weld.Part1 = humanoidRootPart;
+            weld.Parent = humanoidRootPart;
+            weld = GameRenderer.GameManager.GameRegistry.Construct<Weld>();
+            weld.Part0 = rightLeg;
+            weld.Part1 = humanoidRootPart;
+            weld.Parent = humanoidRootPart;
+            weld = GameRenderer.GameManager.GameRegistry.Construct<Weld>();
+            weld.Part0 = head;
+            weld.Part1 = humanoidRootPart;
+            weld.Parent = humanoidRootPart;
+
+            humanoid.Parent = model;
+
+            model.TranslateBy(MainCamera.Position);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.G))
         {
@@ -821,7 +894,7 @@ public class WorkspaceRendererViewport : RendererViewport
             if (opaquePartRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
                 maxPartRenderBufferDepth = opaquePartRenderBuffer[partSpecification].Count;
         }
-        else
+        else if (part.Transparency < 1)
         {
             if (!transparentPartRenderBuffer.TryGetValue(partSpecification, out _))
                 transparentPartRenderBuffer[partSpecification] = new();
@@ -830,6 +903,7 @@ public class WorkspaceRendererViewport : RendererViewport
             if (transparentPartRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
                 maxPartRenderBufferDepth = transparentPartRenderBuffer[partSpecification].Count;
         }
+        // so if the transparency is 1 it doesnt get put into the render buffer at all
     }
     private unsafe RenderTexture2D CreateShadowmap(int width, int height) 
     {

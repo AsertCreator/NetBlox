@@ -39,30 +39,20 @@ public class PhysicsAssembly
         {
             if (first.OwnPhysicsActor.RigidBody != null)
             {
-                if (first.OwnPhysicsActor.Shape != null)
-                {
-                    TransformedShape transformedShape = new TransformedShape(first.OwnPhysicsActor.Shape, new JVector());
-
-                    ShapeMapping[first] = transformedShape;
-                    ShapeMappingInverse[transformedShape] = first;
-                    CombinedRigidBody.AddShape(transformedShape);
-                }
-                
                 GameManager.PhysicsSolver.LocalWorld.Remove(first.OwnPhysicsActor.RigidBody);
                 first.OwnPhysicsActor.RigidBody = null;
             }
 
             first.OwnPhysicsActor = null;
+            GameManager.PhysicsSolver.PartActors.Remove(first.InstanceID);
         }
-        else
-        {
-            TransformedShape transformedShape = new TransformedShape(first.CreateShape(), new JVector());
 
-            ShapeMapping[first] = transformedShape;
-            ShapeMappingById[transformedShape.ShapeId] = transformedShape;
-            ShapeMappingInverse[transformedShape] = first;
-            CombinedRigidBody.AddShape(transformedShape);
-        }
+        TransformedShape transformedShape = new TransformedShape(first.CreateShape(), new JVector());
+
+        ShapeMapping[first] = transformedShape;
+        ShapeMappingById[transformedShape.ShapeId] = transformedShape;
+        ShapeMappingInverse[transformedShape] = first;
+        CombinedRigidBody.AddShape(transformedShape);
 
         CombinedRigidBody.Position = first.Position;
         CombinedRigidBody.Orientation = first.QuaternionRotation;
@@ -83,26 +73,6 @@ public class PhysicsAssembly
         {
             if (basePart.OwnPhysicsActor.RigidBody != null)
             {
-                if (basePart.OwnPhysicsActor.Shape != null)
-                {
-                    Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
-                        basePart.statePosition - CombinedRigidBody.Position,
-                        Quaternion.Inverse(CombinedRigidBody.Orientation));
-                    Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
-                    Vector3 axisAngle = default;
-                    float angle = default;
-
-                    Raymath.QuaternionToAxisAngle(localRotation, &axisAngle, &angle);
-
-                    TransformedShape transformedShape = new TransformedShape(basePart.OwnPhysicsActor.Shape, 
-                        differenceInPosition, JMatrix.CreateRotationMatrix(axisAngle, angle));
-
-                    ShapeMapping[basePart] = transformedShape;
-                    ShapeMappingById[transformedShape.ShapeId] = transformedShape;
-                    ShapeMappingInverse[transformedShape] = basePart;
-                    CombinedRigidBody.AddShape(transformedShape, MassInertiaUpdateMode.Preserve);
-                }
-                
                 GameManager.PhysicsSolver.LocalWorld.Remove(basePart.OwnPhysicsActor.RigidBody);
                 basePart.OwnPhysicsActor.RigidBody = null;
             }
@@ -110,25 +80,23 @@ public class PhysicsAssembly
             basePart.OwnPhysicsActor = null;
             GameManager.PhysicsSolver.PartActors.Remove(basePart.InstanceID);
         }
-        else
-        {
-            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
-                basePart.statePosition - CombinedRigidBody.Position,
-                Quaternion.Inverse(CombinedRigidBody.Orientation));
-            Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
-            Vector3 axisAngle = default;
-            float angle = default;
+        
+        Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+            basePart.statePosition - CombinedRigidBody.Position,
+            Quaternion.Inverse(CombinedRigidBody.Orientation));
+        Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
+        Vector3 axisAngle = default;
+        float angle = default;
 
-            Raymath.QuaternionToAxisAngle(localRotation, &axisAngle, &angle);
+        Raymath.QuaternionToAxisAngle(localRotation, &axisAngle, &angle);
 
-            TransformedShape transformedShape = new TransformedShape(basePart.CreateShape(), 
-                differenceInPosition, JMatrix.CreateRotationMatrix(axisAngle, angle));
+        TransformedShape transformedShape = new TransformedShape(basePart.CreateShape(), 
+            differenceInPosition, JMatrix.CreateRotationMatrix(axisAngle, angle));
 
-            ShapeMapping[basePart] = transformedShape;
-            ShapeMappingById[transformedShape.ShapeId] = transformedShape;
-            ShapeMappingInverse[transformedShape] = basePart;
-            CombinedRigidBody.AddShape(transformedShape, MassInertiaUpdateMode.Preserve);
-        }
+        ShapeMapping[basePart] = transformedShape;
+        ShapeMappingById[transformedShape.ShapeId] = transformedShape;
+        ShapeMappingInverse[transformedShape] = basePart;
+        CombinedRigidBody.AddShape(transformedShape, MassInertiaUpdateMode.Preserve);
 
         CombinedRigidBody.SetMassInertia();
 

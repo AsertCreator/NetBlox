@@ -422,6 +422,8 @@ public class Instance
                 Process(childrenPool[i]);
         }
 
+        Process(this);
+
         return instances.ToArray();
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
@@ -621,5 +623,10 @@ public class Instance
             OnBeforeRendering();
         if (args.GameEvent.Id == GameEvent.EVENT_AFTER_RENDER)
             OnAfterRendering();
+    }
+
+    public override string ToString()
+    {
+        return ClassName + " - " + GetFullName();
     }
 }

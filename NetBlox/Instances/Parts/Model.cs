@@ -28,8 +28,7 @@ public class Model : PVInstance
         Instance[] instances = GetDescendants();
         for (int i = 0; i < instances.Length; i++)
         {
-            BasePart? basePart = instances[i] as BasePart;
-            if (basePart != null)
+            if (instances[i] is BasePart basePart)
                 basePart.Position += delta;
         }
     }
