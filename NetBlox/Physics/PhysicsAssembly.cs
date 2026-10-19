@@ -56,6 +56,9 @@ public class PhysicsAssembly
             CombinedRigidBody.AddShape(transformedShape);
         }
 
+        CombinedRigidBody.Position = first.Position;
+        CombinedRigidBody.Orientation = first.QuaternionRotation;
+
         first.PhysicsAssembly = this;
 
         Participants.Add(first);
@@ -74,7 +77,9 @@ public class PhysicsAssembly
             {
                 if (basePart.OwnPhysicsActor.Shape != null)
                 {
-                    Vector3 differenceInPosition = basePart.statePosition - CombinedRigidBody.Position;
+                    Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+                        basePart.statePosition - CombinedRigidBody.Position,
+                        Quaternion.Inverse(CombinedRigidBody.Orientation));
                     Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
                     Vector3 axisAngle = default;
                     float angle = default;
@@ -97,7 +102,9 @@ public class PhysicsAssembly
         }
         else
         {
-            Vector3 differenceInPosition = basePart.statePosition - CombinedRigidBody.Position;
+            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+                basePart.statePosition - CombinedRigidBody.Position,
+                Quaternion.Inverse(CombinedRigidBody.Orientation));
             Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
             Vector3 axisAngle = default;
             float angle = default;
@@ -113,6 +120,8 @@ public class PhysicsAssembly
 
         CombinedRigidBody.SetMassInertia();
 
+        CenterOfMassToCenterOfGeometry();
+
         basePart.PhysicsAssembly = this;
 
         ReelectRoot();
@@ -124,12 +133,43 @@ public class PhysicsAssembly
             CombinedRigidBody.RemoveShape(transformedShape);
             CombinedRigidBody.SetMassInertia();
             ShapeMapping.Remove(basePart);
+
+            CenterOfMassToCenterOfGeometry();
         }
 
         Participants.Remove(basePart);
         GameManager.PhysicsSolver!.AddBasePart(basePart);
 
         ReelectRoot();
+    }
+    public void CenterOfMassToCenterOfGeometry()
+    {
+        Vector3 centerOfGeometrySum = default;
+        Vector3 centerOfGeometry;
+
+        foreach (RigidBodyShape shape in CombinedRigidBody.Shapes)
+        {
+            if (shape is TransformedShape anotherTransformedShape)
+                centerOfGeometrySum += anotherTransformedShape.Translation;
+        }
+
+        centerOfGeometry = centerOfGeometrySum / CombinedRigidBody.Shapes.Count;
+
+        if (float.IsNaN(centerOfGeometry.X) || float.IsNaN(centerOfGeometry.Y) || float.IsNaN(centerOfGeometry.Z))
+            centerOfGeometry = default;
+
+        foreach (RigidBodyShape shape in CombinedRigidBody.Shapes)
+        {
+            if (shape is TransformedShape anotherTransformedShape)
+                anotherTransformedShape.Translation -= centerOfGeometry;
+            GameManager.PhysicsSolver!.LocalWorld.DynamicTree.Update(shape);
+        }
+
+        CombinedRigidBody.Position += Raymath.Vector3RotateByQuaternion(
+            centerOfGeometry, CombinedRigidBody.Orientation);
+
+        CombinedRigidBody.ClearContactCache();
+        CombinedRigidBody.SetMassInertia();
     }
     public unsafe void MergeWith(PhysicsAssembly physicsAssembly)
     {
@@ -140,7 +180,9 @@ public class PhysicsAssembly
             physicsAssembly.Participants[i].PhysicsAssembly = this;
             physicsAssembly.Participants[i].OwnPhysicsActor = null;
             
-            Vector3 differenceInPosition = physicsAssembly.Participants[i].statePosition - CombinedRigidBody.Position;
+            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+                physicsAssembly.Participants[i].statePosition - CombinedRigidBody.Position,
+                Quaternion.Inverse(CombinedRigidBody.Orientation));
             Quaternion localRotation = Quaternion.Inverse(physicsAssembly.Participants[i].stateRotation) * CombinedRigidBody.Orientation;
             Vector3 axisAngle = default;
             float angle = default;
@@ -157,6 +199,8 @@ public class PhysicsAssembly
         }
 
         CombinedRigidBody.SetMassInertia();
+
+        CenterOfMassToCenterOfGeometry();
 
         physicsAssembly.CombinedRigidBody.ClearShapes();
         physicsAssembly.Participants.Clear();

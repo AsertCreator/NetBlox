@@ -174,28 +174,28 @@ public class BasePart : PVInstance
     {
         bool muchChanges = false;
 
-        if (OwnPhysicsActor == null && PhysicsAssembly != null)
+        if (OwnPhysicsActor == null && PhysicsAssembly == null)
             return false;
 
         if (InitializationStage >= InitializationStage.Initializing)
         {
             float physicsError = 0.001f;
 
-            if (OwnPhysicsActor!.RigidBody != null)
+            if (OwnPhysicsActor != null && OwnPhysicsActor.RigidBody != null)
             {
-                if (statePosition.Length().WithinError(OwnPhysicsActor!.RigidBody.Position.Length(), physicsError))
+                if (statePosition.Length().WithinError(OwnPhysicsActor.RigidBody.Position.Length(), physicsError))
                     muchChanges = true;
-                if (stateRotation.Length().WithinError(OwnPhysicsActor!.RigidBody.Orientation.Length(), physicsError))
+                if (stateRotation.Length().WithinError(OwnPhysicsActor.RigidBody.Orientation.Length(), physicsError))
                     muchChanges = true;
-                if (stateLinearVelocity.Length().WithinError(OwnPhysicsActor!.RigidBody.Velocity.Length(), physicsError))
+                if (stateLinearVelocity.Length().WithinError(OwnPhysicsActor.RigidBody.Velocity.Length(), physicsError))
                     muchChanges = true;
-                if (stateAngularVelocity.Length().WithinError(OwnPhysicsActor!.RigidBody.AngularVelocity.Length(), physicsError))
+                if (stateAngularVelocity.Length().WithinError(OwnPhysicsActor.RigidBody.AngularVelocity.Length(), physicsError))
                     muchChanges = true;
 
-                statePosition = OwnPhysicsActor!.RigidBody.Position;
-                stateRotation = OwnPhysicsActor!.RigidBody.Orientation;
-                stateLinearVelocity = OwnPhysicsActor!.RigidBody.Velocity;
-                stateAngularVelocity = OwnPhysicsActor!.RigidBody.AngularVelocity;
+                statePosition = OwnPhysicsActor.RigidBody.Position;
+                stateRotation = OwnPhysicsActor.RigidBody.Orientation;
+                stateLinearVelocity = OwnPhysicsActor.RigidBody.Velocity;
+                stateAngularVelocity = OwnPhysicsActor.RigidBody.AngularVelocity;
             }
             if (PhysicsAssembly != null)
             {
