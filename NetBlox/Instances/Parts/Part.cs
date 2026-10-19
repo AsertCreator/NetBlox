@@ -1,5 +1,6 @@
 using System.Numerics;
 using Jitter2.Collision.Shapes;
+using NetBlox.Instances.Services;
 using NetBlox.Rendering;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -68,6 +69,9 @@ public class Part : BasePart
     {
         base.OnRegisteredEvent(args);
 
+        if (ParentService is not Workspace)
+            return;
+
         if (args.GameEvent.Id == GameEvent.EVENT_RENDER3D)
         {
             RenderingEventArgs renderingEventArgs = (RenderingEventArgs)args.EventData!;
@@ -95,7 +99,17 @@ public class Part : BasePart
             {
                 unsafe
                 {
-                    Raylib.DrawCubeWires(Position, Size.X, Size.Y, Size.Z, PhysicsAssembly.DebugColor.Color3);
+                    Rlgl.DisableDepthTest();
+                    Rlgl.PushMatrix();
+                    Vector3 v3;
+                    float angle;
+                    Raymath.QuaternionToAxisAngle(stateRotation, &v3, &angle);
+                    Rlgl.Translatef(Position.X, Position.Y, Position.Z);
+                    Rlgl.Rotatef(angle * 180 / MathF.PI, v3.X, v3.Y, v3.Z);
+                    Rlgl.Scalef(Size.X, Size.Y, Size.Z);
+                    Raylib.DrawCubeWires(default, 1, 1, 1, PhysicsAssembly.DebugColor.Color3);
+                    Rlgl.PopMatrix();
+                    Rlgl.EnableDepthTest();
                 }
             }
         }

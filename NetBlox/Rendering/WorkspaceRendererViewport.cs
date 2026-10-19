@@ -346,6 +346,8 @@ public class WorkspaceRendererViewport : RendererViewport
             Raylib.SetShaderValueMatrix(SpecularLightingInstancedShader, uniform_instanced_lightVP, matlightVP);
         }
 
+        DoDebugKeys();
+
         Raylib.SetShaderValue(SpecularLightingShader, uniform_viewPosition, MainCamera.Position, ShaderUniformDataType.Vec3);
         Raylib.SetShaderValue(SpecularLightingShader, uniform_lightPosition, 
             GameRenderer.GameManager.RootModel.GetService<Lighting>().SunPosition, ShaderUniformDataType.Vec3);
@@ -361,8 +363,6 @@ public class WorkspaceRendererViewport : RendererViewport
 
         Rlgl.DrawRenderBatchActive();
         Rlgl.EnableDepthTest();
-
-        DoDebugKeys();
 
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDER3D)?.Fire(RenderingEventArgs);
 
@@ -391,10 +391,10 @@ public class WorkspaceRendererViewport : RendererViewport
         if (GameRenderer.DebugFlag)
             DrawGizmos(false);
 
-        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL0)?.Fire();
-        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL1)?.Fire();
-        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL2)?.Fire();
-        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL3)?.Fire();
+        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL0)?.Fire(RenderingEventArgs);
+        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL1)?.Fire(RenderingEventArgs);
+        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL2)?.Fire(RenderingEventArgs);
+        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL3)?.Fire(RenderingEventArgs);
 
         if (GameRenderer.DebugFlag)
             RenderDebugInfo();
@@ -538,6 +538,22 @@ public class WorkspaceRendererViewport : RendererViewport
                 part.TopSurface = SurfaceType.Glue;
 
             part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+        }
+        if (Raylib.IsKeyPressed(KeyboardKey.B))
+        {
+            Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            part.Size = new Vector3(0.75f, 0.75f, 0.75f);
+            part.BrickColor = BrickColor.Blue;
+            part.Anchored = false;
+            part.Position = MainCamera.Position;
+            part.Shape = PartType.Ball;
+            part.Velocity = Vector3.Normalize(MainCamera.Target - MainCamera.Position) * 14 * SpeedMultiplier;
+            if (Raylib.IsKeyDown(KeyboardKey.LeftAlt))
+                part.Shape = PartType.Ball;
+
+            part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+
+            GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 5);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.O))
         {
@@ -689,6 +705,8 @@ public class WorkspaceRendererViewport : RendererViewport
             weld.Parent = humanoidRootPart;
 
             humanoid.Parent = model;
+
+            model.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
 
             model.TranslateBy(MainCamera.Position);
         }

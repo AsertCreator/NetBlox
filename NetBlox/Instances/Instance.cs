@@ -98,7 +98,7 @@ public class Instance
     {
         get
         {
-            if (Parent == null && ClassName == "DataModel")
+            if (Parent == null && this is DataModel)
                 return true;
             if (Parent == null)
                 return false;

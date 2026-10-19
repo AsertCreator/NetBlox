@@ -24,6 +24,8 @@ public class PhysicsActor
         RigidBody = solver.LocalWorld.CreateRigidBody();
         RigidBody.Position = reference.Position;
         RigidBody.Orientation = reference.QuaternionRotation;
+        RigidBody.Velocity = reference.stateLinearVelocity;
+        RigidBody.AngularVelocity = reference.stateAngularVelocity;
         // RigidBody.EnableSpeculativeContacts = true;
 
         solver.PartMapFromRigidBodies[RigidBody] = reference.InstanceID;
