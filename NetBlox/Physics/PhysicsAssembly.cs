@@ -14,7 +14,9 @@ public class PhysicsAssembly
     public readonly GameManager GameManager;
     public RigidBody CombinedRigidBody;
     public List<BasePart> Participants = [];
+    public Dictionary<ulong, TransformedShape> ShapeMappingById = [];
     public Dictionary<BasePart, TransformedShape> ShapeMapping = [];
+    public Dictionary<TransformedShape, BasePart> ShapeMappingInverse = [];
     public BasePart? CurrentAssemblyRoot;
     public BrickColor DebugColor = BrickColor.Random();
 
@@ -30,6 +32,8 @@ public class PhysicsAssembly
         CombinedRigidBody = GameManager.PhysicsSolver.LocalWorld.CreateRigidBody();
         CombinedRigidBody.MotionType = MotionType.Dynamic;
 
+        GameManager.PhysicsSolver.PhysicsAssemblyMap[CombinedRigidBody] = this;
+
         if (first.OwnPhysicsActor != null)
         {
             if (first.OwnPhysicsActor.RigidBody != null)
@@ -39,6 +43,7 @@ public class PhysicsAssembly
                     TransformedShape transformedShape = new TransformedShape(first.OwnPhysicsActor.Shape, new JVector());
 
                     ShapeMapping[first] = transformedShape;
+                    ShapeMappingInverse[transformedShape] = first;
                     CombinedRigidBody.AddShape(transformedShape);
                 }
                 
@@ -53,6 +58,8 @@ public class PhysicsAssembly
             TransformedShape transformedShape = new TransformedShape(first.CreateShape(), new JVector());
 
             ShapeMapping[first] = transformedShape;
+            ShapeMappingById[transformedShape.ShapeId] = transformedShape;
+            ShapeMappingInverse[transformedShape] = first;
             CombinedRigidBody.AddShape(transformedShape);
         }
 
@@ -90,6 +97,8 @@ public class PhysicsAssembly
                         differenceInPosition, JMatrix.CreateRotationMatrix(axisAngle, angle));
 
                     ShapeMapping[basePart] = transformedShape;
+                    ShapeMappingById[transformedShape.ShapeId] = transformedShape;
+                    ShapeMappingInverse[transformedShape] = basePart;
                     CombinedRigidBody.AddShape(transformedShape, MassInertiaUpdateMode.Preserve);
                 }
                 
@@ -115,6 +124,8 @@ public class PhysicsAssembly
                 differenceInPosition, JMatrix.CreateRotationMatrix(axisAngle, angle));
 
             ShapeMapping[basePart] = transformedShape;
+            ShapeMappingById[transformedShape.ShapeId] = transformedShape;
+            ShapeMappingInverse[transformedShape] = basePart;
             CombinedRigidBody.AddShape(transformedShape, MassInertiaUpdateMode.Preserve);
         }
 
@@ -133,6 +144,8 @@ public class PhysicsAssembly
             CombinedRigidBody.RemoveShape(transformedShape);
             CombinedRigidBody.SetMassInertia();
             ShapeMapping.Remove(basePart);
+            ShapeMappingById.Remove(transformedShape.ShapeId);
+            ShapeMappingInverse.Remove(transformedShape);
 
             CenterOfMassToCenterOfGeometry();
         }
@@ -193,6 +206,8 @@ public class PhysicsAssembly
                 differenceInPosition, JMatrix.CreateRotationMatrix(axisAngle, angle));
 
             ShapeMapping[physicsAssembly.Participants[i]] = transformedShape;
+            ShapeMappingById[transformedShape.ShapeId] = transformedShape;
+            ShapeMappingInverse[transformedShape] = physicsAssembly.Participants[i];
             CombinedRigidBody.AddShape(transformedShape, MassInertiaUpdateMode.Preserve);
 
             Participants.Add(physicsAssembly.Participants[i]);
@@ -205,6 +220,8 @@ public class PhysicsAssembly
         physicsAssembly.CombinedRigidBody.ClearShapes();
         physicsAssembly.Participants.Clear();
         physicsAssembly.ShapeMapping.Clear();
+        physicsAssembly.ShapeMappingById.Clear();
+        physicsAssembly.ShapeMappingInverse.Clear();
         physicsAssembly.ReelectRoot();
         GameManager.PhysicsSolver!.AllPhysicsAssemblies.Remove(physicsAssembly);
         GameManager.PhysicsSolver!.LocalWorld.Remove(physicsAssembly.CombinedRigidBody);

@@ -10,6 +10,9 @@ public class LuaEvent
     public event EventHandler<DynValue[]>? OnBeforeFired;
     public event EventHandler<DynValue[]>? OnAfterFired;
 
+    public bool HasConnections => eventListeners.Count > 0;
+    public bool HasWaiters => awaitingTasks.Count > 0;
+
     private List<LuaEventConnection> eventListeners;
     private List<GameSchedulerTask> awaitingTasks;
 
@@ -24,6 +27,12 @@ public class LuaEvent
         SecurityIdentity? securityIdentity = gameManager.GameScheduler.GetCurrentSecurityIdentity();
         if (securityIdentity == null)
             return null;
+        LuaEventConnection eventConnection = new LuaEventConnection(this, securityIdentity, gameManager, dynValue, attacher);
+        eventListeners.Add(eventConnection);
+        return eventConnection;
+    }
+    public LuaEventConnection? Connect(GameManager gameManager, SecurityIdentity securityIdentity, DynValue dynValue, BaseScript? attacher)
+    {
         LuaEventConnection eventConnection = new LuaEventConnection(this, securityIdentity, gameManager, dynValue, attacher);
         eventListeners.Add(eventConnection);
         return eventConnection;

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
@@ -556,6 +557,35 @@ public class WorkspaceRendererViewport : RendererViewport
         else if (Raylib.IsKeyPressed(KeyboardKey.Four))
         {
             SpeedMultiplier = 4;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.Nine))
+        {
+            Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
+            part.Size = new Vector3(2, 2, Random.Shared.Next(2, 10));
+            part.BrickColor = BrickColor.Random();
+            part.Anchored = false;
+            part.Position = MainCamera.Position;
+
+            int surfaceLottery = Random.Shared.Next(4);
+            if (surfaceLottery == 0)
+                part.TopSurface = SurfaceType.Studs;
+            else if (surfaceLottery == 1)
+                part.TopSurface = SurfaceType.Inlet;
+            else if (surfaceLottery == 2)
+                part.TopSurface = SurfaceType.Universal;
+            else if (surfaceLottery == 3)
+                part.TopSurface = SurfaceType.Glue;
+
+            ScriptContext scriptContext = GameRenderer.Root.GetService<ScriptContext>();
+            Script script = scriptContext.GetLuaStateFor(SecurityIdentity.SI_ElevatedGameScript);
+
+            LuaEventConnection? connection = part.Touched.Connect(part.GameManager, SecurityIdentity.SI_ElevatedGameScript, DynValue.NewCallback((_, args) =>
+            {
+                part.BrickColor = BrickColor.Random();
+                return DynValue.Void;
+            }), null);
+
+            part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
         }
 
         for (int i = 0; i < SpeedMultiplier; i++)

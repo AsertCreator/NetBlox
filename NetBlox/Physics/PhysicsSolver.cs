@@ -1,11 +1,12 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Jitter2;
+using Jitter2.Collision;
 using Jitter2.Collision.Shapes;
 using Jitter2.Dynamics;
 using Jitter2.LinearMath;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
-using NetBlox.Instances.UI;
 using NetBlox.Network;
 using NetBlox.Runtime;
 
@@ -22,13 +23,53 @@ public class PhysicsSolver
     private int spcounter;
 
     public List<PhysicsAssembly> AllPhysicsAssemblies = [];
+    public Dictionary<RigidBody, ulong> PartMapFromRigidBodies = new Dictionary<RigidBody, ulong>();
     public Dictionary<ulong, PhysicsActor> PartActors = new Dictionary<ulong, PhysicsActor>();
+    public Dictionary<RigidBody, PhysicsAssembly> PhysicsAssemblyMap = new Dictionary<RigidBody, PhysicsAssembly>();
 
     public PhysicsSolver(GameManager gameManager)
     {
         GameManager = gameManager;
         LocalWorld = new World();
-        LocalWorld.Gravity = new Jitter2.LinearMath.JVector(0, -18f, 0);
+        LocalWorld.Gravity = new JVector(0, -18f, 0);
+        LocalWorld.DynamicTree.Filter = DynamicTreeFilter;
+    }
+
+    private bool DynamicTreeFilter(IDynamicTreeProxy proxyA, IDynamicTreeProxy proxyB)
+    {
+        RigidBodyShape? shapeA = proxyA as RigidBodyShape;
+        RigidBodyShape? shapeB = proxyB as RigidBodyShape;
+
+        if (shapeA == null || shapeB == null)
+            return true;
+
+        if (shapeA.RigidBody == shapeB.RigidBody)
+            return false;
+
+        BasePart? basePartA = ResolvePartForShape(shapeA);
+        BasePart? basePartB = ResolvePartForShape(shapeB);
+
+        if (basePartA == null || basePartB == null)
+            return true;
+
+        if (basePartA.CanCollide && basePartB.CanCollide)
+            return true;
+
+        return false;
+    }
+
+    public BasePart? ResolvePartForShape(RigidBodyShape shape)
+    {
+        if (shape is TransformedShape transformedShape) // part of an assembly
+        {
+            if (!PhysicsAssemblyMap.TryGetValue(transformedShape.RigidBody, out PhysicsAssembly? assembly))
+                return null;
+            return assembly.ShapeMappingInverse[transformedShape];
+        }
+        else
+        {
+            return GameManager.GameRegistry.GetLocalInstanceById(PartMapFromRigidBodies[shape.RigidBody]) as BasePart;
+        }
     }
 
     public void Step()
@@ -135,6 +176,7 @@ public class PhysicsSolver
             PhysicsAssembly assembly = deadOnes.Values[i];
             LocalWorld.Remove(assembly.CombinedRigidBody);
             AllPhysicsAssemblies.Remove(deadOnes.Values[i]);
+            PhysicsAssemblyMap.Remove(assembly.CombinedRigidBody);
         }
     }
 
@@ -319,6 +361,7 @@ public class PhysicsSolver
             if (actor.RigidBody != null)
                 LocalWorld.Remove(actor.RigidBody);
             PartActors.Remove(part.InstanceID);
+            PartMapFromRigidBodies.Remove(actor.RigidBody!);
         }
 
         PhysicsAssembly? assembly = part.PhysicsAssembly;

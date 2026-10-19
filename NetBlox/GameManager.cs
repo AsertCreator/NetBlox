@@ -17,6 +17,7 @@ namespace NetBlox;
 
 public sealed class GameManager
 {
+    public GameLogger GameLogger { get; private set; }
     public GameRegistry GameRegistry { get; private set; }
     public GameScheduler GameScheduler { get; private set; }
     public GameRenderer? GameRenderer { get; private set; }
@@ -47,6 +48,7 @@ public sealed class GameManager
 
     public GameManager(NetworkMode networkMode)
     {
+        GameLogger = new GameLogger(this);
         GameRegistry = new GameRegistry(this);
         GameScheduler = new GameScheduler(this);
         PhysicsSolver = new PhysicsSolver(this);

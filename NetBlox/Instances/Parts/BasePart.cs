@@ -27,6 +27,10 @@ public class BasePart : PVInstance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual bool CastShadow { get; set; } = true;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual bool CanCollide { get; set; } = true;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual bool CanTouch { get; set; } = true;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual float Transparency { get; set; }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual Vector3 Velocity 
@@ -136,6 +140,9 @@ public class BasePart : PVInstance
             QuaternionRotation = Raymath.QuaternionFromMatrix(value.Orientation);
         }
     }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual LuaEvent Touched { get; } = new LuaEvent();
 
     public PhysicsActor? OwnPhysicsActor;
     public PhysicsAssembly? PhysicsAssembly;

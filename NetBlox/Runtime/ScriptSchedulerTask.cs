@@ -54,12 +54,17 @@ public class ScriptSchedulerTask : GameSchedulerTask
             if (RootCoroutine == null)
                 RootCoroutine = script.CreateCoroutine(RootFunction);
             
-            RootCoroutine.Coroutine.AutoYieldCounter = -1;
+            if (RootCoroutine.Coroutine.Type != Coroutine.CoroutineType.ClrCallback)
+                RootCoroutine.Coroutine.AutoYieldCounter = -1;
+
             lock (this)
             {
                 if (ErrorOnReexecution && ErrorOnReexecutionDetails != null)
                     throw new Exception(ErrorOnReexecutionDetails);
-                AsyncFunctionArguments = RootCoroutine.Coroutine.Resume(AsyncFunctionArguments);
+                if (RootCoroutine.Coroutine.Type != Coroutine.CoroutineType.ClrCallback)
+                    AsyncFunctionArguments = RootCoroutine.Coroutine.Resume(AsyncFunctionArguments);
+                else
+                    AsyncFunctionArguments = RootCoroutine.Coroutine.Resume((ScriptExecutionContext)null!, AsyncFunctionArguments);
             }
             if (RootCoroutine.Coroutine.State == CoroutineState.Dead)
             {
