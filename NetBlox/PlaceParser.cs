@@ -19,6 +19,7 @@ public class PlaceParser
     private XmlDocument? xmlDocument;
     private Dictionary<string, Instance> instances = [];
     private Dictionary<string, string> sharedStrings = [];
+    private HashSet<string> metClasses = [];
     private List<(PropertyInfo Property, Instance Instance, string Reference)> refFixups = [];
 
     public PlaceParser(GameManager gameManager)
@@ -31,7 +32,12 @@ public class PlaceParser
     {
         throw new InvalidDataException("Cannot load this place/model file - data malformed");
     }
-    private Instance? ParseItem(bool isRoot, XmlElement xmlElement)
+    [DoesNotReturn]
+    void ThrowNotSupportedException()
+    {
+        throw new InvalidDataException("Cannot load this place/model file - place unsupported");
+    }
+    private Instance? ParseItemXml(bool isRoot, XmlElement xmlElement)
     {
         string className = xmlElement.GetAttribute("class");
         Instance? myInstance = null;
@@ -43,7 +49,11 @@ public class PlaceParser
         
         if (myInstance == null)
         {
-            Trace.TraceWarning("Unknown Instance type while loading a place/model file: " + className);
+            if (!metClasses.Contains(className))
+            {
+                Trace.TraceWarning("Unknown Instance type while loading a place/model file: " + className);
+                metClasses.Add(className);
+            }
             return null;
         }
         
@@ -61,7 +71,7 @@ public class PlaceParser
             
             if (element.Name == "Item")
             {
-                Instance? child = ParseItem(false, element);
+                Instance? child = ParseItemXml(false, element);
                 if (child != null)
                     child.Parent = myInstance;
             }
@@ -326,7 +336,7 @@ public class PlaceParser
 
             if (rootChild.Name == "Item")
             {
-                Instance? result = ParseItem(false, rootChild);
+                Instance? result = ParseItemXml(false, rootChild);
                 if (result != null)
                     allInstances.Add(result);
             }
@@ -348,10 +358,10 @@ public class PlaceParser
     }
     private void LoadPlaceXml(string path)
     {
-        string allData = File.ReadAllText(path);
+        using Stream stream = File.OpenRead(path);
         xmlDocument = new XmlDocument();
 
-        xmlDocument.LoadXml(allData);
+        xmlDocument.Load(stream);
 
         XmlElement? rootElement = xmlDocument.FirstChild as XmlElement;
         if (rootElement == null || rootElement.Name != "roblox")
@@ -388,7 +398,7 @@ public class PlaceParser
                 continue;
 
             if (rootChild.Name == "Item")
-                ParseItem(true, rootChild);
+                ParseItemXml(true, rootChild);
         }
 
         for (int i = 0; i < refFixups.Count; i++)
@@ -403,9 +413,146 @@ public class PlaceParser
             }
         }
     }
+    // made with https://github.com/RobloxAPI/spec/blob/master/formats/rbxl.md
     private void LoadPlaceBinary(string path)
     {
-        // TODO: load place binary
+        using Stream stream = File.OpenRead(path);
+        using BinaryReader superReader = new BinaryReader(stream);
+
+        // check header signature, it's supposedly the same everywhere
+
+        if (superReader.ReadUInt64() != 0x21786F6C626F723C)
+            ThrowMalformedException();
+        if (superReader.ReadUInt32() != 0x0A0DFF89)
+            ThrowMalformedException();
+        if (superReader.ReadUInt16() != 0x0A1A)
+            ThrowMalformedException();
+        
+        ushort version = superReader.ReadUInt16();
+
+        if (version != 0)
+            ThrowNotSupportedException();
+        
+        int classCount = superReader.ReadInt32();
+        int instanceCount = superReader.ReadInt32();
+        stream.Position += 8;
+
+        Dictionary<string, string> metadata = [];
+        Dictionary<int, string> classesIdToName = [];
+        Dictionary<int, Dictionary<int, Instance>> binstance = [];
+        Dictionary<int, Dictionary<string, List<object>>> bpropval = [];
+
+        bool endReached = false;
+
+        int[] ReadReferences(BinaryReader br, int count)
+        {
+            byte[] buffer = br.ReadBytes(count * 4);
+            Span<byte> work = stackalloc byte[4];
+            var values = new int[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                work[0] = buffer[(3 * count) + i];
+                work[1] = buffer[(2 * count) + i];
+                work[2] = buffer[(1 * count) + i];
+                work[3] = buffer[(0 * count) + i];
+
+                int value = BitConverter.ToInt32(work);
+                values[i] = (int)((uint)value >> 1) ^ (-(value & 1));
+                if (i > 1)
+                    values[i] += values[i - 1];
+            }
+
+            return values;
+        }
+        string ReadRobloxString(BinaryReader binaryReader)
+        {
+            return Encoding.UTF8.GetString(binaryReader.ReadBytes(binaryReader.ReadInt32()));
+        }
+        void ProcessChunk(uint chunkName, byte[] chunkData)
+        {
+            using MemoryStream ms = new MemoryStream(chunkData);
+            using BinaryReader br = new BinaryReader(ms);
+
+            if (chunkName == 0x4154454D) // META
+            {
+                uint length = br.ReadUInt32();
+                for (uint i = 0; i < length; i++)
+                {
+                    string key = ReadRobloxString(br);
+                    string val = ReadRobloxString(br);
+                    metadata[key] = val;
+                }
+            }
+            else if (chunkName == 0x52545353) // SSTR
+            {
+                int version = br.ReadInt32();
+                if (version != 0)
+                    ThrowNotSupportedException();
+                
+                uint length = br.ReadUInt32();
+
+                for (uint i = 0; i < length; i++)
+                {
+                    Guid guid = new Guid(br.ReadBytes(16));
+                    string str = ReadRobloxString(br);
+
+                    sharedStrings[guid.ToString()] = str;
+                }
+            }
+            else if (chunkName == 0x54534E49) // INST
+            {
+                int classId = br.ReadInt32();
+                string className = ReadRobloxString(br);
+                bool hasService = br.ReadBoolean();
+                int length = br.ReadInt32();
+
+                classesIdToName[classId] = className;
+
+                if (!GameManager.GameRegistry.IsTypeDefined(className))
+                {
+                    Trace.TraceWarning("Unknown Instance type while loading a place/model file: " + className);
+                    return;
+                }
+
+                int[] references = ReadReferences(br, length);
+
+                binstance[classId] = new Dictionary<int, Instance>();
+
+                for (int i = 0; i < length; i++)
+                    binstance[classId][references[i]] = GameManager.GameRegistry.TryCreateNewDomesticInstanceOfClass(className)!;
+
+                // actually we'll not read the rest fuck that
+            }
+            else if (chunkName == 0x504F5250) // PROP
+            {
+                int classId = br.ReadInt32();
+                string propertyName = ReadRobloxString(br);
+
+                if (!bpropval.ContainsKey(classId))
+                    bpropval[classId] = new Dictionary<string, List<object>>();
+                if (!bpropval[classId].ContainsKey(propertyName))
+                    bpropval[classId][propertyName] = new List<object>();
+
+                
+            }
+        }
+
+        while (!endReached)
+        {
+            uint chunkName = superReader.ReadUInt32();
+            uint compressedLength = superReader.ReadUInt32();
+            uint uncompressedLength = superReader.ReadUInt32();
+
+            stream.Position += 4;
+
+            if (compressedLength == 0 && uncompressedLength != 0)
+                ProcessChunk(chunkName, superReader.ReadBytes((int)uncompressedLength));
+            else
+            {
+                
+            }
+        }
     }
     public void LoadPlaceMultiplexed(string path)
     {

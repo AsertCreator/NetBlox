@@ -25,6 +25,10 @@ public sealed class GameRegistry(GameManager gameManager)
         return t;
     }
 
+    public bool IsTypeDefined(string className)
+    {
+        return _constructorCache.ContainsKey(className);
+    }
     public bool TryResolveInstanceById(ulong instanceId, [NotNullWhen(true)] out Instance? instance)
     {
         return _trueInstances.TryGetValue(instanceId, out instance);

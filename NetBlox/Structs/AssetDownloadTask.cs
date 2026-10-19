@@ -107,40 +107,50 @@ public class AssetDownloadTask
 
                     if (ContentId.AssetPath != null)
                     {
-                        NetBloxNetworkAssetWorker.GetAsync(ContentId.AssetPath).ContinueWith(async x =>
+                        try
                         {
-                            try
+                            NetBloxNetworkAssetWorker.GetAsync(ContentId.AssetPath).ContinueWith(async x =>
                             {
-                                HttpResponseMessage responseMessage = x.Result;
-                                string data = await responseMessage.Content.ReadAsStringAsync();
-                                string folderPath = GetMasterCacheDirectory();
-                                string filePath = ResolveCacheFilePath(ContentId.AssetPath);
-                                string fullPath = Path.Combine(folderPath, filePath);
-
-                                await File.WriteAllTextAsync(fullPath, data);
-
-                                localDownloadPath = fullPath;
-                                hadFinished = true;
-
-                                if (responseMessage.IsSuccessStatusCode)
+                                try
                                 {
-                                    hadErrored = false;
-                                    CallAllSuccessCallbacks();
+                                    HttpResponseMessage responseMessage = x.Result;
+                                    string data = await responseMessage.Content.ReadAsStringAsync();
+                                    string folderPath = GetMasterCacheDirectory();
+                                    string filePath = ResolveCacheFilePath(ContentId.AssetPath);
+                                    string fullPath = Path.Combine(folderPath, filePath);
+
+                                    await File.WriteAllTextAsync(fullPath, data);
+
+                                    localDownloadPath = fullPath;
+                                    hadFinished = true;
+
+                                    if (responseMessage.IsSuccessStatusCode)
+                                    {
+                                        hadErrored = false;
+                                        CallAllSuccessCallbacks();
+                                    }
+                                    else
+                                    {
+                                        Error = "Server returned non-2xx status code (" + responseMessage.StatusCode + ")";
+                                        hadErrored = true;
+                                        CallAllFailureCallbacks();
+                                    }
                                 }
-                                else
+                                catch (Exception ex)
                                 {
-                                    Error = "Server returned non-2xx status code (" + responseMessage.StatusCode + ")";
+                                    Error = ex.GetType() + ", msg: " + ex.Message;
                                     hadErrored = true;
                                     CallAllFailureCallbacks();
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                Error = ex.GetType() + ", msg: " + ex.Message;
-                                hadErrored = true;
-                                CallAllFailureCallbacks();
-                            }
-                        });
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Error = ex.GetType() + ", msg: " + ex.Message;
+                            hadErrored = true;
+                            CallAllFailureCallbacks();
+                        }
+                        
                         return;
                     }
                     break;
