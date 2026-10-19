@@ -313,7 +313,7 @@ public static class InstanceBridge
             if (method != null)
                 return method.Callback;
 
-            Instance? childInstance = thisInstance.FindFirstChild(name);
+            Instance? childInstance = thisInstance.FindFirstChild_Fast(name);
             if (childInstance != null)
                 return DynValue.NewUserData(PushUserData(GameManager, childInstance));
             

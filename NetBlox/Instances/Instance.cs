@@ -46,10 +46,25 @@ public class Instance
 
             if (value != myParent)
             {
+                if (value != null)
+                {
+                    if (!value.fastNameLookup.ContainsKey(Name))
+                        value.fastNameLookup[Name] = InstanceID;
+                }
+
                 myParent?.children.Remove(InstanceID);
                 myParent?.OnChildRemoved(this);
                 value?.children.Add(InstanceID);
                 value?.OnChildAdded(this);
+
+                if (myParent != null)
+                {
+                    Instance? othersiblingofsamename = myParent.FindFirstChild(Name);
+                    if (othersiblingofsamename == null)
+                        myParent.fastNameLookup.Remove(Name);
+                    else
+                        myParent.fastNameLookup[Name] = othersiblingofsamename.InstanceID;
+                }
 
                 if (value is not null)
                 {
@@ -94,7 +109,26 @@ public class Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public bool Archivable { get; set; } = true;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public string Name { get; set; }
+    public string Name 
+    { 
+        get => field;
+        set
+        {
+            string oldname = field;
+            field = value;
+
+            if (Parent != null)
+            {
+                Instance? othersiblingofsamename = Parent.FindFirstChild(oldname);
+                if (othersiblingofsamename == null)
+                    Parent.fastNameLookup.Remove(oldname);
+                else
+                    Parent.fastNameLookup[oldname] = othersiblingofsamename.InstanceID;
+                if (!Parent.fastNameLookup.ContainsKey(field))
+                    Parent.fastNameLookup[field] = InstanceID;
+            }
+        }
+    }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual string ClassName => nameof(Instance);
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
@@ -107,6 +141,8 @@ public class Instance
     public LuaEvent DescendantRemoved { get; set; } = new();
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public LuaEvent AncestryChanged { get; set; } = new();
+
+    private Dictionary<string, ulong> fastNameLookup = [];
 
     public bool ParentLocked;
     public int ViewportIndex;
@@ -295,6 +331,12 @@ public class Instance
         return rootClone;
     }
 
+    public Instance? FindFirstChild_Fast(string name)
+    {
+        fastNameLookup.TryGetValue(name, out InstanceID value);
+        return GameManager.GameRegistry.GetLocalInstanceById(value);
+    }
+
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public Instance? FindFirstChild(string name)
     {
@@ -379,18 +421,35 @@ public class Instance
     public virtual Instance[] GetChildren()
     {
         List<Instance> instances = [];
-        List<ulong> deadChildren = [];
+        using RentedSpan<ulong> deadChildren = new RentedSpan<ulong>(children.Count);
+        int deadChildrenCount = 0;
+
         for (int i = 0; i < children.Count; i++)
         {
             ulong childId = children[i];
             Instance? childRef = GameManager.GameRegistry.GetLocalInstanceById(childId);
             if (childRef == null)
-                deadChildren.Add(childId);
+                deadChildren.Values[deadChildrenCount++] = childId;
             else
                 instances.Add(childRef);
         }
-        for (int i = 0; i < deadChildren.Count; i++)
-            children.Remove(deadChildren[i]);
+        if (deadChildrenCount > 0)
+        {
+            string[] keys = fastNameLookup.Keys.ToArray();
+            ulong[] values = fastNameLookup.Values.ToArray();
+            using RentedSpan<string> deadNames = new RentedSpan<string>(deadChildrenCount);
+            int deadNameCount = 0;
+
+            for (int i = 0; i < deadChildrenCount; i++)
+            {
+                int index = Array.IndexOf<ulong>(values, deadChildren.Values[i]);
+                deadNames.Values[deadNameCount++] = keys[index];
+                children.Remove(deadChildren.Values[i]);
+            }
+
+            for (int i = 0; i < deadNameCount; i++)
+                fastNameLookup.Remove(deadNames.Values[i]);
+        }
         return instances.ToArray();
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

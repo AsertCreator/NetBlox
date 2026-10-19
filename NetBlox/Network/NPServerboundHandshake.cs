@@ -82,7 +82,7 @@ public sealed class NPServerboundHandshake : NetworkPacketHandler
             {
                 do
                     resultingUsername = "Guest " + Random.Shared.Next(10, 10000);
-                while (players.FindFirstChild(resultingUsername) != null);
+                while (players.FindFirstChild_Fast(resultingUsername) != null);
             }
 
             player.Name = resultingUsername;
