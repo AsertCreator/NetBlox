@@ -8,10 +8,10 @@
             gameManager.AddConsoleArguments(args);
             if (args.Contains("-Graphics"))
                 gameManager.InitializeRendering();
-            if (!args.Contains("-Crossroads"))
+            if (!gameManager.PairedConsoleArguments.ContainsKey("PlaceUrl"))
                 gameManager.LoadPlaceFromDefaults(0);
             else
-                gameManager.LoadPlaceFromFile("net-network://http://127.0.0.1:8000/places/Crossroads.rbxlx");
+                gameManager.LoadPlaceFromFile(gameManager.PairedConsoleArguments["PlaceUrl"]);
             gameManager.BeginInitializationPhase();
             gameManager.BeginAlivePhase();
             gameManager.GameScheduler.EnterRunLoop();

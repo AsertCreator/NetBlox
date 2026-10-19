@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using MoonSharp.Interpreter;
 using NetBlox.Instances;
@@ -262,7 +263,7 @@ public class WorkspaceRendererViewport : RendererViewport
         NetworkClient? client = GameRenderer.Root.FindService<NetworkClient>();
 
         if (client != null)
-            value += ", ping: " + client.LastServerPingValue.TotalMilliseconds + " ms";
+            value += ", ping: " + client.LastServerPingValue.TotalMilliseconds.ToString(CultureInfo.InvariantCulture) + " ms";
 
         return value;
     }

@@ -33,7 +33,6 @@ public sealed class NPPing : NetworkPacketHandler
 
         int pingValue = br.ReadInt32();
 
-        NetworkPacket packet = Create(-pingValue);
-        connection.SendPacketReliable(packet);
+        gm.RootModel.GetService<NetworkClient>().ReportPing();
     }
 }
