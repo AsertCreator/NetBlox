@@ -6,6 +6,14 @@ namespace NetBlox.Instances.Parts;
 [Creatable]
 public class Model : PVInstance
 {
+    public BasePart? PrimaryPart
+    {
+        get => GameManager.GameRegistry.GetLocalInstanceById(primaryPart) as BasePart;
+        set => primaryPart = value != null ? value.InstanceID : 0;
+    }
+
+    private InstanceID primaryPart;
+
     public override string ClassName => nameof(Model);
 
     public Model(ulong id, GameManager gameManager) : base(id, gameManager)

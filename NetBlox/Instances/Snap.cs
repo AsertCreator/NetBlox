@@ -4,7 +4,7 @@ using Raylib_cs;
 
 namespace NetBlox.Instances;
 
-// synchronize all changes with Weld.cs
+// synchronize all changes with Weld.cs & Glue.cs
 
 [Creatable]
 public class Snap : JointInstance
@@ -58,17 +58,28 @@ public class Snap : JointInstance
         }
         else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS)
         {
-            if (!weldCreated)
-            {
-                if (Part0 != null && Part1 != null)
-                    CreateWeld();
-            }
-            else
-            {
-                if (Part0 == null || Part1 == null)
-                    DestroyWeld();
-            }
+            UpdateWeld();
         }
+    }
+
+    public void UpdateWeld()
+    {
+        if (!weldCreated)
+        {
+            if (Part0 != null && Part1 != null)
+                CreateWeld();
+        }
+        else
+        {
+            if (Part0 == null || Part1 == null)
+                DestroyWeld();
+        }
+    }
+
+    public override void CommitStageInitialize()
+    {
+        base.CommitStageInitialize();
+        UpdateWeld();
     }
 
     public override void CommitStageDestroying()

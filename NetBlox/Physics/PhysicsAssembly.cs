@@ -31,6 +31,7 @@ public class PhysicsAssembly
 
         CombinedRigidBody = GameManager.PhysicsSolver.LocalWorld.CreateRigidBody();
         CombinedRigidBody.MotionType = MotionType.Dynamic;
+        // CombinedRigidBody.EnableSpeculativeContacts = true;
 
         GameManager.PhysicsSolver.PhysicsAssemblyMap[CombinedRigidBody] = this;
 

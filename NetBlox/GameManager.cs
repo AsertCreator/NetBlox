@@ -284,53 +284,15 @@ public sealed class GameManager
             {
                 Workspace workspace = RootModel.GetService<Workspace>();
 
+                workspace.DestroyAllChildren();
+
                 Part baseplate = GameRegistry.Construct<Part>();
                 baseplate.Parent = workspace;
                 baseplate.Anchored = true;
+                baseplate.Locked = true;
                 baseplate.Name = "Baseplate";
-                baseplate.Size = new Vector3(2048, 1, 2048);
-                baseplate.Position = new Vector3(0, -5, 0);
-
-                Part part = GameRegistry.Construct<Part>();
-                part.Parent = workspace;
-                part.Anchored = false;
-                part.Position = new Vector3(10, 6, 0);
-
-                Part wall1 = GameRegistry.Construct<Part>();
-                wall1.Parent = workspace;
-                wall1.Anchored = true;
-                wall1.Position = new Vector3(20, 6, 0);
-                wall1.Size = new Vector3(1, 30, 20);
-                wall1.LeftSurface = SurfaceType.Studs;
-                wall1.BackSurface = SurfaceType.Studs;
-
-                Part wall2 = GameRegistry.Construct<Part>();
-                wall2.Parent = workspace;
-                wall2.Anchored = true;
-                wall2.Position = new Vector3(0, 6, 0);
-                wall2.Size = new Vector3(1, 30, 20);
-                wall2.LeftSurface = SurfaceType.Studs;
-                wall2.BackSurface = SurfaceType.Studs;
-
-                Part wall3 = GameRegistry.Construct<Part>();
-                wall3.Parent = workspace;
-                wall3.Anchored = true;
-                wall3.Position = new Vector3(10, 6, 10);
-                wall3.Size = new Vector3(20, 30, 1);
-                wall3.LeftSurface = SurfaceType.Studs;
-                wall3.BackSurface = SurfaceType.Studs;
-
-                Part wall4 = GameRegistry.Construct<Part>();
-                wall4.Parent = workspace;
-                wall4.Anchored = true;
-                wall4.Position = new Vector3(10, 6, -10);
-                wall4.Size = new Vector3(20, 30, 1);
-                wall4.LeftSurface = SurfaceType.Studs;
-                wall4.BackSurface = SurfaceType.Studs;
-
-                Script script = GameRegistry.Construct<Script>();
-                script.Parent = workspace;
-                script.Source = "print(42); printidentity(); print(math.sin(math.pi / 2)); local x = Vector3.new(6, 7, 0) + Vector3.new(1, 1, 1); x.Z = 483; print(x * 4);";
+                baseplate.Size = new Vector3(512, 20, 512);
+                baseplate.Position = new Vector3(0, -10, 0);
 
                 break;
             }

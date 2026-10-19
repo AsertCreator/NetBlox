@@ -4,7 +4,7 @@ using Raylib_cs;
 
 namespace NetBlox.Instances;
 
-// synchronize all changes with Snap.cs
+// synchronize all changes with Snap.cs & Glue.cs
 
 [Creatable]
 public class Weld : JointInstance

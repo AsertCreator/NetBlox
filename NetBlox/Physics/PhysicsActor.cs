@@ -24,6 +24,7 @@ public class PhysicsActor
         RigidBody = solver.LocalWorld.CreateRigidBody();
         RigidBody.Position = reference.Position;
         RigidBody.Orientation = reference.QuaternionRotation;
+        // RigidBody.EnableSpeculativeContacts = true;
 
         solver.PartMapFromRigidBodies[RigidBody] = reference.InstanceID;
 
@@ -37,8 +38,8 @@ public class PhysicsActor
 
     private void HandleArbiter(Arbiter arbiter)
     {
-        BasePart? part0 = null;
-        BasePart? part1 = null;
+        BasePart? part0;
+        BasePart? part1;
 
         if (arbiter.Body1.Shapes.Count > 1 || arbiter.Body1.Shapes[0] is TransformedShape) // body 1 is a part assembly
         {

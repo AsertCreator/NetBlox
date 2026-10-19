@@ -53,10 +53,19 @@ public sealed class GameRenderer
         DefaultFontSpecification.Size = 16;
         FontRegistry = new FontRegistry(this);
 
-        rendererViewports.Add(new WorkspaceRendererViewport(this));
-        rendererViewports.Add(new DebugRendererViewport(this));
-        rendererViewports.Add(new UnitTestRendererViewport(this));
-        rendererViewports.Add(new CoreGuiRendererViewport(this));
+        if (GameManager.NetworkMode == Network.NetworkMode.Server)
+        {
+            rendererViewports.Add(new WorkspaceRendererViewport(this));
+            rendererViewports.Add(new DebugRendererViewport(this));
+            rendererViewports.Add(new UnitTestRendererViewport(this));
+            rendererViewports.Add(new CoreGuiRendererViewport(this));
+        }
+        else if (GameManager.NetworkMode == Network.NetworkMode.Client)
+        {
+            rendererViewports.Add(new ClientRendererViewport(this));
+            rendererViewports.Add(new UnitTestRendererViewport(this));
+            rendererViewports.Add(new CoreGuiRendererViewport(this));
+        }
 
         GameManager.GameScheduler.BeginTracedSecurityOverride(SecurityIdentity.SI_EngineRenderer, "Creating GameRenderer task");
         RendererTask = GameManager.GameScheduler.Schedule("GameRenderer", GameScheduler.SchedulerPhase.Rendering, thisJob =>
@@ -79,7 +88,7 @@ public sealed class GameRenderer
 
                 Raylib.EndDrawing();
 
-                if (Raylib.IsKeyPressed(KeyboardKey.P))
+                if (Raylib.IsKeyPressed(KeyboardKey.P) && DebugFlag)
                 {
                     if (++rendererViewportIndex >= rendererViewports.Count)
                         rendererViewportIndex = 0;
