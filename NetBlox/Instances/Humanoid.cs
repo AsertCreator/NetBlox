@@ -1,7 +1,9 @@
 using System.Numerics;
 using NetBlox.Instances.Parts;
+using NetBlox.Instances.Services;
 using NetBlox.Rendering;
 using NetBlox.Runtime;
+using NetBlox.Structs;
 using Raylib_cs;
 using Model = NetBlox.Instances.Parts.Model;
 
@@ -14,24 +16,86 @@ public class Humanoid : Instance
     public float Health { get; set; } = 100;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public float MaxHealth { get; set; } = 100;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public float WalkSpeed { get; set; } = 16;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public float JumpPower { get; set; } = 16;
 
     public override string ClassName => nameof(Humanoid);
 
     public Humanoid(ulong id, GameManager gameManager) : base(id, gameManager)
     {
         RegisterForEventId(GameEvent.EVENT_RENDERGUI_LEVEL0);
+        WalkSpeed = Root.GetService<StarterPlayer>().CharacterWalkSpeed;
+        JumpPower = Root.GetService<StarterPlayer>().CharacterJumpPower;
     }
 
     public override void OnRegisteredEvent(EngineEventArgs args)
     {
         base.OnRegisteredEvent(args);
-        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL0 && Parent is Model && IsPartOfDataModel)
+        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL0 && Parent is Model model && IsPartOfDataModel)
         {
             RenderingEventArgs? renderingEventArgs = args.EventData as RenderingEventArgs;
             if (renderingEventArgs == null)
                 return;
+
             WorkspaceRendererViewport viewport = renderingEventArgs.Viewport;
             RenderName(viewport);
+
+            model.PrimaryPart ??= model.FindFirstChild_Fast("HumanoidRootPart") as BasePart;
+            if (model.PrimaryPart == null)
+                return;
+
+            float totalTranslationX = default;
+            float totalTranslationZ = default;
+
+            if (Raylib.IsKeyDown(KeyboardKey.Up))
+                totalTranslationX += 1;
+            if (Raylib.IsKeyDown(KeyboardKey.Left))
+                totalTranslationZ += -1;
+            if (Raylib.IsKeyDown(KeyboardKey.Down))
+                totalTranslationX += -1;
+            if (Raylib.IsKeyDown(KeyboardKey.Right))
+                totalTranslationZ += 1;
+
+            float ttlength = totalTranslationX * totalTranslationX + totalTranslationZ * totalTranslationZ;
+            ttlength = MathF.Sqrt(ttlength);
+
+            if (ttlength > 0)
+            {
+                totalTranslationX /= ttlength;
+                totalTranslationZ /= ttlength;
+
+                totalTranslationX *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS) / 2;
+                totalTranslationZ *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS) / 2;
+
+                Vector3 primaryForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitX, model.PrimaryPart.QuaternionRotation);
+                Vector2 idealLookatVector = new Vector2(totalTranslationX, totalTranslationZ);
+                Vector2 currentLookatVector = new Vector2(primaryForward.X, primaryForward.Z);
+                Vector2 globalForwardLookatVector = new Vector2(1, 0);
+
+                idealLookatVector = -Vector2.Normalize(idealLookatVector);
+                currentLookatVector = Vector2.Normalize(currentLookatVector);
+
+                float idealAngle = MathF.Acos(Vector2.Dot(idealLookatVector, globalForwardLookatVector));
+                float currentAngle = MathF.Acos(Vector2.Dot(currentLookatVector, globalForwardLookatVector));
+                
+                if (ttlength > 0.001)
+                {
+                    Vector3 rotation = model.PrimaryPart.Rotation;
+                    rotation.Y = (currentAngle + idealAngle) / 2 * (180 / MathF.PI);
+                    rotation.X = 0;
+                    rotation.Z = 0;
+
+                    rotation /= 180 / MathF.PI;
+                    Quaternion quaternion = Raymath.QuaternionFromEuler(rotation.Z, rotation.Y, rotation.X);
+                    CoordinateFrame coordinateFrame = default;
+                    coordinateFrame.Orientation = Raymath.QuaternionToMatrix(quaternion);
+                    coordinateFrame.Position = model.PrimaryPart.Position + new Vector3(totalTranslationX, 0, totalTranslationZ);
+
+                    model.PivotTo(coordinateFrame);
+                }
+            }
         }
     }
 

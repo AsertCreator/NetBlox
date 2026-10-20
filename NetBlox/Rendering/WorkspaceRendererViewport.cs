@@ -728,6 +728,7 @@ public class WorkspaceRendererViewport : RendererViewport
             humanoid.Parent = model;
 
             model.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+            model.PrimaryPart = humanoidRootPart;
 
             model.TranslateBy(MainCamera.Position);
         }

@@ -7,23 +7,23 @@ namespace NetBlox.Instances.Services;
 public class StarterPlayer : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public bool AutoJumpEnabled { get; set; }
+    public bool AutoJumpEnabled { get; set; } = false;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public float CameraMaxZoomDistance { get; set; }
+    public float CameraMaxZoomDistance { get; set; } = 256;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public float CameraMinZoomDistance { get; set; }
+    public float CameraMinZoomDistance { get; set; } = 0.05f;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public float CharacterJumpHeight { get; set; }
+    public float CharacterJumpHeight { get; set; } = 5;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public float CharacterJumpPower { get; set; }
+    public float CharacterJumpPower { get; set; } = 16;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public float CharacterMaxSlopeAngle { get; set; }
+    public float CharacterMaxSlopeAngle { get; set; } = 1;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public bool CharacterUseJumpPower { get; set; }
+    public bool CharacterUseJumpPower { get; set; } = true;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public float CharacterWalkSpeed { get; set; }
+    public float CharacterWalkSpeed { get; set; } = 16;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public bool EnableMouseLockOption { get; set; }
+    public bool EnableMouseLockOption { get; set; } = true;
 
     public override string ClassName => nameof(StarterPlayer);
 

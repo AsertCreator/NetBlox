@@ -9,6 +9,7 @@ using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
 using NetBlox.Runtime;
+using Raylib_cs;
 
 namespace NetBlox.Physics;
 
@@ -279,12 +280,15 @@ public class PhysicsSolver
         {
             if (!assembly.ShapeMapping.TryGetValue(part, out TransformedShape? shape))
                 return;
-            Vector3 difference = value - assembly.CombinedRigidBody.Position;
-            shape.Translation = difference;
+            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+                part.statePosition - assembly.CombinedRigidBody.Position,
+                Quaternion.Inverse(assembly.CombinedRigidBody.Orientation));
+            shape.Translation = differenceInPosition;
 
             LocalWorld.DynamicTree.Update(shape);
             assembly.CombinedRigidBody.ClearContactCache();
             assembly.CombinedRigidBody.SetMassInertia();
+            assembly.CenterOfMassToCenterOfGeometry();
         }
     }
     public void FinalizeSetRotationForBasePart(BasePart part, Quaternion value)
@@ -302,7 +306,7 @@ public class PhysicsSolver
         {
             if (!assembly.ShapeMapping.TryGetValue(part, out TransformedShape? shape))
                 return;
-            Quaternion difference = Quaternion.Inverse(value) * assembly.CombinedRigidBody.Orientation;
+            Quaternion difference = Quaternion.Inverse(assembly.CombinedRigidBody.Orientation) * value;
             shape.Transformation = JMatrix.CreateFromQuaternion(difference);
 
             LocalWorld.DynamicTree.Update(shape);
