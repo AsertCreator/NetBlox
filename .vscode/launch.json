@@ -43,6 +43,16 @@
             "type": "dotnet",
             "request": "launch",
             "projectPath": "${workspaceFolder}/NetBloxServer/NetBloxServer.csproj",
+        },
+        {
+            "name": "C#: Dump API",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/NBApiDumper/bin/Debug/net10.0/NBApiDumper.dll",
+            "cwd": "${workspaceFolder}/NBApiDumper/bin/Debug/net10.0",
+            "launchSettingsFilePath": "${workspaceFolder}/NBApiDumper/Properties/launchSettings.json",
+            "launchSettingsProfile": "NBApiDumper",
+            "preLaunchTask": "dotnet: build"
         }
     ],
     "compounds": [

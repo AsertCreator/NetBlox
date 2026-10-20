@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NBApiDumper": {
+      "commandName": "Project",
+      "commandLineArgs": "../../../../NetBloxClient/bin/Debug/net10.0/NetBlox.dll ref"
+    }
+  }
+}
