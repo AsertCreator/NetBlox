@@ -48,15 +48,32 @@ public class Humanoid : Instance
 
             float totalTranslationX = default;
             float totalTranslationZ = default;
+            float x1 = viewport.MainCamera.Position.X;
+            float y1 = viewport.MainCamera.Position.Z;
+            float x2 = viewport.MainCamera.Target.X;
+            float y2 = viewport.MainCamera.Target.Z;
+            float cameraangle = MathF.Atan2(y2 - y1, x2 - x1);
 
-            if (Raylib.IsKeyDown(KeyboardKey.Up))
-                totalTranslationX += 1;
-            if (Raylib.IsKeyDown(KeyboardKey.Left))
-                totalTranslationZ += -1;
-            if (Raylib.IsKeyDown(KeyboardKey.Down))
-                totalTranslationX += -1;
-            if (Raylib.IsKeyDown(KeyboardKey.Right))
-                totalTranslationZ += 1;
+            if (Raylib.IsKeyDown(KeyboardKey.Up) || Raylib.IsKeyDown(KeyboardKey.W))
+            {
+                totalTranslationX += WalkSpeed * MathF.Cos(cameraangle);
+                totalTranslationZ += WalkSpeed * MathF.Sin(cameraangle);
+            }
+            if (Raylib.IsKeyDown(KeyboardKey.Left) || Raylib.IsKeyDown(KeyboardKey.A))
+            {
+                totalTranslationX += WalkSpeed * MathF.Cos(cameraangle - MathF.PI / 2);
+                totalTranslationZ += WalkSpeed * MathF.Sin(cameraangle - MathF.PI / 2);
+            }
+            if (Raylib.IsKeyDown(KeyboardKey.Down) || Raylib.IsKeyDown(KeyboardKey.S))
+            {
+                totalTranslationX -= WalkSpeed * MathF.Cos(cameraangle);
+                totalTranslationZ -= WalkSpeed * MathF.Sin(cameraangle);
+            }
+            if (Raylib.IsKeyDown(KeyboardKey.Right) || Raylib.IsKeyDown(KeyboardKey.D))
+            {
+                totalTranslationX -= WalkSpeed * MathF.Cos(cameraangle - MathF.PI / 2);
+                totalTranslationZ -= WalkSpeed * MathF.Sin(cameraangle - MathF.PI / 2);
+            }
 
             float ttlength = totalTranslationX * totalTranslationX + totalTranslationZ * totalTranslationZ;
             ttlength = MathF.Sqrt(ttlength);
@@ -70,25 +87,18 @@ public class Humanoid : Instance
                 totalTranslationZ *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS) / 2;
 
                 Vector3 primaryForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitX, model.PrimaryPart.QuaternionRotation);
-                Vector2 idealLookatVector = new Vector2(totalTranslationX, totalTranslationZ);
-                Vector2 currentLookatVector = new Vector2(primaryForward.X, primaryForward.Z);
-                Vector2 globalForwardLookatVector = new Vector2(1, 0);
-
-                idealLookatVector = -Vector2.Normalize(idealLookatVector);
-                currentLookatVector = Vector2.Normalize(currentLookatVector);
-
-                float idealAngle = MathF.Acos(Vector2.Dot(idealLookatVector, globalForwardLookatVector));
-                float currentAngle = MathF.Acos(Vector2.Dot(currentLookatVector, globalForwardLookatVector));
+                Vector2 idealLookatVector = -Vector2.Normalize(new Vector2(totalTranslationX, totalTranslationZ));
+                float idealAngle = MathF.Atan2(-idealLookatVector.Y, idealLookatVector.X);
+                float currentAngle = MathF.Atan2(-primaryForward.Z, primaryForward.X);
                 
                 if (ttlength > 0.001)
                 {
-                    Vector3 rotation = model.PrimaryPart.Rotation;
-                    rotation.Y = (currentAngle + idealAngle) / 2 * (180 / MathF.PI);
-                    rotation.X = 0;
-                    rotation.Z = 0;
+                    float angleDifference = MathF.Atan2(
+                        MathF.Sin(idealAngle - currentAngle),
+                        MathF.Cos(idealAngle - currentAngle));
+                    float rotationY = currentAngle + angleDifference / 6;
 
-                    rotation /= 180 / MathF.PI;
-                    Quaternion quaternion = Raymath.QuaternionFromEuler(rotation.Z, rotation.Y, rotation.X);
+                    Quaternion quaternion = Raymath.QuaternionFromEuler(0, rotationY, 0);
                     CoordinateFrame coordinateFrame = default;
                     coordinateFrame.Orientation = Raymath.QuaternionToMatrix(quaternion);
                     coordinateFrame.Position = model.PrimaryPart.Position + new Vector3(totalTranslationX, 0, totalTranslationZ);

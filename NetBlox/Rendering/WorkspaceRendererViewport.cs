@@ -79,12 +79,13 @@ public class WorkspaceRendererViewport : RendererViewport
     private PartRenderInstanceInfo[]? renderInstances;
     private Mesh cubeMesh;
     private Mesh sphereMesh;
+    private Humanoid? followHumanoid;
 
     public unsafe WorkspaceRendererViewport(GameRenderer gameRenderer) : base(gameRenderer)
     {
         MainCamera = new Camera3D()
         {
-            Position = new Vector3(40, 20, 0),
+            Position = new Vector3(10, 5, 0),
             Target = new Vector3(0, 0, 0),
             Up = Vector3.UnitY,
             FovY = 90
@@ -493,7 +494,7 @@ public class WorkspaceRendererViewport : RendererViewport
         if (Raylib.IsMouseButtonPressed(MouseButton.Right))
             Raylib.DisableCursor();
 
-        if (Raylib.IsMouseButtonDown(MouseButton.Right))
+        if (Raylib.IsMouseButtonDown(MouseButton.Right) || followHumanoid != null)
         {
             Vector3 position = MainCamera.Position;
             Vector3 target = MainCamera.Target;
@@ -501,8 +502,23 @@ public class WorkspaceRendererViewport : RendererViewport
             // an already slow update loop, slowified even more.
             for (int i = 0; i < SpeedMultiplier; i++)
             {
-                Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
-                Raylib.UpdateCamera(ref MainCamera, CameraMode.FirstPerson);
+                Raylib.UpdateCamera(ref MainCamera, followHumanoid == null ? CameraMode.FirstPerson : CameraMode.ThirdPerson);
+                Raylib.UpdateCamera(ref MainCamera, followHumanoid == null ? CameraMode.FirstPerson : CameraMode.ThirdPerson);
+            }
+
+            if (followHumanoid != null)
+            {
+                Vector3 difference = MainCamera.Position - MainCamera.Target;
+                Model? model = followHumanoid.Parent as Model;
+                if (model != null)
+                {
+                    BasePart? head = model.FindFirstChild_Fast("Head") as BasePart;
+                    if (head != null)
+                    {
+                        MainCamera.Target = head.Position;
+                        MainCamera.Position = difference + MainCamera.Target;
+                    }
+                }
             }
 
             if (MainCamera.Position != position || MainCamera.Target != target)
@@ -576,21 +592,6 @@ public class WorkspaceRendererViewport : RendererViewport
 
             GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 5);
         }
-        if (Raylib.IsKeyPressed(KeyboardKey.O))
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
-                part.Size = new Vector3(2, 2, 4);
-                part.BrickColor = BrickColor.Blue;
-                part.Anchored = false;
-                part.Position = MainCamera.Position + new Vector3(0, 2.5f * i, 0);
-                if (Raylib.IsKeyDown(KeyboardKey.LeftAlt))
-                    part.Shape = PartType.Ball;
-
-                part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
-            }
-        }
         if (Raylib.IsKeyPressed(KeyboardKey.C))
         {
             for (int i = 0; i < 100; i++)
@@ -623,13 +624,11 @@ public class WorkspaceRendererViewport : RendererViewport
         }
         if (Raylib.IsKeyPressed(KeyboardKey.I))
         {
-            Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
-            part.Size = new Vector3(2, 2, Random.Shared.Next(2, 10));
-            part.Shape = PartType.Ball;
-            part.BrickColor = BrickColor.Random();
-            part.Anchored = false;
-            part.Position = MainCamera.Position;
-            part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
+            Raylib.CameraMoveToTarget(ref MainCamera, 1f / GameRenderer.PreferredFPS);
+        }
+        if (Raylib.IsKeyPressed(KeyboardKey.O))
+        {
+            Raylib.CameraMoveToTarget(ref MainCamera, -1f / GameRenderer.PreferredFPS);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.M))
         {
@@ -644,7 +643,7 @@ public class WorkspaceRendererViewport : RendererViewport
             GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(hint, 2);
             GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(message, 3);
         }
-        if (Raylib.IsKeyPressed(KeyboardKey.H))
+        if (Raylib.IsKeyPressed(KeyboardKey.H) && followHumanoid == null)
         {
             Part humanoidRootPart = GameRenderer.GameManager.GameRegistry.Construct<Part>();
             Part torso = GameRenderer.GameManager.GameRegistry.Construct<Part>();
@@ -726,6 +725,7 @@ public class WorkspaceRendererViewport : RendererViewport
             weld.Parent = humanoidRootPart;
 
             humanoid.Parent = model;
+            followHumanoid = humanoid;
 
             model.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
             model.PrimaryPart = humanoidRootPart;
