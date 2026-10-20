@@ -488,6 +488,9 @@ public class Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual void Destroy()
     {
+        if (InitializationStage >= InitializationStage.Destroying)
+            return;
+            
         InitializationStage = InitializationStage.Destroying;
 
         if (InitializationSettings.HasEverBeenAPartOfReplicatableDataModel)

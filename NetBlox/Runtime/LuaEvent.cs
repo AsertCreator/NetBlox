@@ -49,7 +49,7 @@ public class LuaEvent
             BaseScript? attacher = eventConnection.Attacher;
             DynValue function = eventConnection.Handler;
 
-            GameSchedulerTask task = gameManager.GameScheduler.Schedule(new ScriptSchedulerTask(attacher, function)
+            ScriptSchedulerTask task = (ScriptSchedulerTask)gameManager.GameScheduler.Schedule(new ScriptSchedulerTask(attacher, function)
             {
                 DebugName = $"Event Handler - {attacher?.ToString() ?? "<>"} - {function}",
                 GameScheduler = gameManager.GameScheduler,
@@ -57,6 +57,7 @@ public class LuaEvent
             });
 
             task.Identity = eventConnection.Identity;
+            task.AsyncFunctionArguments =  DynValue.NewTuple(args); // literally how did i not notice that
         }
 
         if (awaitingTasks.Count > 0)

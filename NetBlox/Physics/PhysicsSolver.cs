@@ -127,7 +127,10 @@ public class PhysicsSolver
                 basePart.Destroy();
         }
 
-        foreach (PhysicsAssembly physicsAssembly in AllPhysicsAssemblies)
+        using RentedSpan<PhysicsAssembly> immutable = new RentedSpan<PhysicsAssembly>(AllPhysicsAssemblies.Count);
+        AllPhysicsAssemblies.CopyTo(immutable.Values);
+
+        foreach (PhysicsAssembly physicsAssembly in immutable.Values)
         {
             using RentedSpan<BasePart> expireds = new RentedSpan<BasePart>(physicsAssembly.Participants.Count);
             int expiredcount = 0;
@@ -367,7 +370,7 @@ public class PhysicsSolver
         PhysicsAssembly? assembly = part.PhysicsAssembly;
         if (assembly != null)
         {
-            assembly.RemovePart(part);
+            assembly.RemovePart(part, true);
         }
 
         part.OwnPhysicsActor = null;
@@ -375,6 +378,8 @@ public class PhysicsSolver
 
     public void AddBasePart(BasePart basePart)
     {
+        if (basePart.InitializationStage >= InitializationStage.Destroying)
+            return;
         PhysicsActor physicsActor = new PhysicsActor(this, PhysicsActorType.BasePart, basePart);
         PartActors[basePart.InstanceID] = physicsActor;
         basePart.OwnPhysicsActor = physicsActor;

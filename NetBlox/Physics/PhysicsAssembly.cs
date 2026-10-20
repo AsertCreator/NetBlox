@@ -3,7 +3,9 @@ using System.Numerics;
 using Jitter2.Collision.Shapes;
 using Jitter2.Dynamics;
 using Jitter2.LinearMath;
+using NetBlox.Instances;
 using NetBlox.Instances.Parts;
+using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 
@@ -106,7 +108,55 @@ public class PhysicsAssembly
 
         ReelectRoot();
     }
-    public void RemovePart(BasePart basePart)
+    public unsafe void AttachNewParts(Span<BasePart> baseParts)
+    {
+        Debug.Assert(GameManager.PhysicsSolver != null);
+
+        Participants.AddRange(baseParts);
+
+        for (int i = 0; i < baseParts.Length; i++)
+        {
+            BasePart basePart = baseParts[i];
+
+            if (basePart.OwnPhysicsActor != null)
+            {
+                if (basePart.OwnPhysicsActor.RigidBody != null)
+                {
+                    GameManager.PhysicsSolver.LocalWorld.Remove(basePart.OwnPhysicsActor.RigidBody);
+                    basePart.OwnPhysicsActor.RigidBody = null;
+                }
+
+                basePart.OwnPhysicsActor = null;
+                GameManager.PhysicsSolver.PartActors.Remove(basePart.InstanceID);
+            }
+
+            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+                basePart.statePosition - CombinedRigidBody.Position,
+                Quaternion.Inverse(CombinedRigidBody.Orientation));
+            Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
+            Vector3 axisAngle = default;
+            float angle = default;
+
+            Raymath.QuaternionToAxisAngle(localRotation, &axisAngle, &angle);
+
+            TransformedShape transformedShape = new TransformedShape(basePart.CreateShape(), 
+                differenceInPosition, JMatrix.CreateRotationMatrix(axisAngle, angle));
+
+            ShapeMapping[basePart] = transformedShape;
+            ShapeMappingById[transformedShape.ShapeId] = transformedShape;
+            ShapeMappingInverse[transformedShape] = basePart;
+            CombinedRigidBody.AddShape(transformedShape, MassInertiaUpdateMode.Preserve);
+
+            basePart.PhysicsAssembly = this;
+        }
+
+        CombinedRigidBody.SetMassInertia();
+
+        CenterOfMassToCenterOfGeometry();
+
+        ReelectRoot();
+    }
+    public void RemovePart(BasePart basePart, bool finalizing = false)
     {
         if (ShapeMapping.TryGetValue(basePart, out TransformedShape? transformedShape))
         {
@@ -120,7 +170,8 @@ public class PhysicsAssembly
         }
 
         Participants.Remove(basePart);
-        GameManager.PhysicsSolver!.AddBasePart(basePart);
+        if (!finalizing)
+            GameManager.PhysicsSolver!.AddBasePart(basePart);
 
         ReelectRoot();
     }
@@ -197,6 +248,132 @@ public class PhysicsAssembly
 
         ReelectRoot();
     }
+    public void BreakBetween(BasePart a, BasePart b)
+    {
+        Debug.Assert(a.PhysicsAssembly != null);
+        Debug.Assert(a.PhysicsAssembly == b.PhysicsAssembly);
+
+        JointInstance? theweld = null;
+
+        foreach (ulong jointId in a.joints)
+        {
+            Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(jointId);
+            if (instance == null)
+                continue;
+            if (instance.IsA("Weld") || instance.IsA("Snap") || instance.IsA("Glue"))
+            {
+                theweld = instance as JointInstance;
+                break;
+            }
+        }
+
+        if (theweld == null)
+        {
+            Trace.TraceWarning("Cannot break up the assembly between two parts that don't immediately connect with each other");
+            return;
+        }
+        
+        HashSet<ulong> allParts = [];
+        HashSet<ulong> metParts = [];
+
+        for (int i = 0; i < Participants.Count; i++)
+            allParts.Add(Participants[i].InstanceID);
+
+        void Walk(BasePart basePart, JointInstance? toIgnore)
+        {
+            metParts.Add(basePart.InstanceID);
+
+            foreach (ulong jointId in basePart.joints)
+            {
+                JointInstance? currentweld = GameManager.GameRegistry.GetLocalInstanceById(jointId) as JointInstance;
+                if (currentweld == null)
+                    continue;
+                if (!currentweld.IsA("Weld") && !currentweld.IsA("Snap") && !currentweld.IsA("Glue"))
+                    continue;
+                if (currentweld == toIgnore)
+                    continue;
+                
+                BasePart? theOtherPart = currentweld.Part1;
+                if (theOtherPart == basePart)
+                    theOtherPart = currentweld.Part0;
+                if (theOtherPart == basePart)
+                    continue;
+
+                if (theOtherPart == null)
+                    continue;
+                
+                if (metParts.Contains(theOtherPart.InstanceID))
+                    continue;
+                
+                Walk(theOtherPart, toIgnore);
+            }
+        }
+
+        Walk(a, theweld);
+
+        if (metParts.Count == allParts.Count)
+        {
+            // probably the assembly is still connected through other thingies
+        }
+        else
+        {
+            List<List<ulong>> newAssemblies = [];
+            newAssemblies.Add(metParts.ToList());
+            allParts.ExceptWith(metParts);
+            metParts.Clear();
+
+            while (allParts.Count > 0)
+            {
+                BasePart? basePart = GameManager.GameRegistry.GetLocalInstanceById(allParts.ElementAt(0)) as BasePart;
+                for (int i = 1; basePart == null && i < allParts.Count; i++)
+                    basePart = GameManager.GameRegistry.GetLocalInstanceById(allParts.ElementAt(i)) as BasePart;
+                if (basePart == null)
+                    break;
+                Walk(basePart, theweld);
+
+                newAssemblies.Add(metParts.ToList());
+                allParts.ExceptWith(metParts);
+                metParts.Clear();
+            }
+
+            // first we kill ourselves
+            CurrentAssemblyRoot = null;
+            CombinedRigidBody.ClearContactCache();
+            CombinedRigidBody.ClearShapes();
+            Participants.ForEach(x => x.PhysicsAssembly = null);
+            Participants.Clear();
+            // FlushDeadAssemblies will clean us up
+
+            for (int i = 0; i < newAssemblies.Count; i++)
+            {
+                List<ulong> newAssembly = newAssemblies[i];
+                BasePart[] newAssemblyParts = 
+                    newAssembly.Select(x => GameManager.GameRegistry.GetLocalInstanceById(x) as BasePart)
+                    .Where(x => x is not null).ToArray()!;
+
+                if (newAssemblyParts.Length == 0)
+                {
+                    // uhh
+                }
+                else if (newAssemblyParts.Length == 1)
+                {
+                    GameManager.PhysicsSolver!.AddBasePart(newAssemblyParts[0]!);
+                }
+                else if (newAssemblyParts.Length == 2)
+                {
+                    newAssemblyParts[0].JoinAssembliesWith(newAssemblyParts[1]);
+                }
+                else
+                {
+                    newAssemblyParts[0].JoinAssembliesWith(newAssemblyParts[1]);
+                    newAssemblyParts[0].PhysicsAssembly?.AttachNewParts(newAssemblyParts.AsSpan()[2..]);
+                }
+            }
+        }
+
+        if (theweld.InitializationStage < InitializationStage.Destroying)
+            theweld.Destroy();
+    }
 
     public void ReelectRoot()
     {
@@ -211,8 +388,25 @@ public class PhysicsAssembly
             if (Participants[i].Anchored)
             {
                 CurrentAssemblyRoot = Participants[i];
+                CombinedRigidBody.MotionType = MotionType.Static;
                 return;
             }
+        }
+
+        BasePart? possibleRoot;
+
+        possibleRoot = Participants.Find(x => x.Name == "HumanoidRootPart");
+        if (possibleRoot != null)
+        {
+            CurrentAssemblyRoot = possibleRoot;
+            return;
+        }
+
+        possibleRoot = Participants.Find(x => x.Name == "Torso");
+        if (possibleRoot != null)
+        {
+            CurrentAssemblyRoot = possibleRoot;
+            return;
         }
 
         CurrentAssemblyRoot = Participants[0];

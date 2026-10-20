@@ -8,6 +8,7 @@ using NetBlox.Instances.Services;
 using NetBlox.Instances.UI;
 using NetBlox.Network;
 using NetBlox.Runtime;
+using NetBlox.Runtime.Bridges;
 using NetBlox.Structs;
 using Raylib_cs;
 using Model = NetBlox.Instances.Parts.Model;
@@ -553,6 +554,26 @@ public class WorkspaceRendererViewport : RendererViewport
 
             part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
 
+            if (Raylib.IsKeyDown(KeyboardKey.LeftAlt))
+            {
+                part.BrickColor = BrickColor.Red;
+                ScriptContext scriptContext = GameRenderer.Root.GetService<ScriptContext>();
+                Script script = scriptContext.GetLuaStateFor(SecurityIdentity.SI_ElevatedGameScript);
+
+                LuaEventConnection? connection = part.Touched.Connect(part.GameManager, SecurityIdentity.SI_ElevatedGameScript, DynValue.NewCallback((_, args) =>
+                {
+                    InstanceBridge.InstanceBridgeDescriptor? otherPartD = args[0].UserData.Descriptor as InstanceBridge.InstanceBridgeDescriptor;
+                    if (otherPartD == null)
+                        return DynValue.Void;
+                    BasePart? basePart = GameRenderer.GameManager.GameRegistry.GetLocalInstanceById(otherPartD.Value) as BasePart;
+                    if (basePart == null)
+                        return DynValue.Void;
+                    basePart.Destroy();
+                    part.Destroy();
+                    return DynValue.Void;
+                }), null);
+            }
+
             GameRenderer.GameManager.RootModel.GetService<Debris>().AddItem(part, 5);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.O))
@@ -789,6 +810,14 @@ public class WorkspaceRendererViewport : RendererViewport
         else if (Raylib.IsKeyPressed(KeyboardKey.Four))
         {
             SpeedMultiplier = 4;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.Five))
+        {
+            SpeedMultiplier = 5;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.Six))
+        {
+            SpeedMultiplier = 6;
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.Nine))
         {

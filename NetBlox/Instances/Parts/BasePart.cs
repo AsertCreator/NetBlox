@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using Jitter2.Collision.Shapes;
 using Jitter2.LinearMath;
@@ -148,6 +149,7 @@ public class BasePart : PVInstance
 
     public PhysicsActor? OwnPhysicsActor;
     public PhysicsAssembly? PhysicsAssembly;
+    public HashSet<ulong> joints = [];
 
     public bool stateAnchored;
     public Vector3 stateSize;
@@ -260,7 +262,10 @@ public class BasePart : PVInstance
     }
     public void BreakAssembliesWith(BasePart other)
     {
-        throw new NotImplementedException();
+        if (PhysicsAssembly == null || PhysicsAssembly != other.PhysicsAssembly)
+            return;
+
+        PhysicsAssembly.BreakBetween(this, other);
     }
     public virtual RigidBodyShape CreateShape()
     {
