@@ -15,6 +15,7 @@ public sealed class GameRenderer
     public RendererViewport CurrentViewport => rendererViewports[rendererViewportIndex];
 
     public FontSpecification DefaultFontSpecification;
+    public FontSpecification DefaultFontSpecification1_5em;
     public FontRegistry FontRegistry;
 
     public bool IsDesktop = true;
@@ -51,6 +52,10 @@ public sealed class GameRenderer
 
         DefaultFontSpecification.FontFilePath = GameManager.GameAssetManager.QuickLoad("rbxasset://fonts/arialbd.ttf")!.LocalDownloadPath!;
         DefaultFontSpecification.Size = 16;
+
+        DefaultFontSpecification1_5em.FontFilePath = DefaultFontSpecification.FontFilePath;
+        DefaultFontSpecification1_5em.Size = DefaultFontSpecification.Size * 1.5f;
+
         FontRegistry = new FontRegistry(this);
 
         if (GameManager.NetworkMode == Network.NetworkMode.Server)

@@ -380,7 +380,7 @@ public class PhysicsSolver
     {
         if (basePart.InitializationStage >= InitializationStage.Destroying)
             return;
-        PhysicsActor physicsActor = new PhysicsActor(this, PhysicsActorType.BasePart, basePart);
+        PhysicsActor physicsActor = new PhysicsActor(this, basePart);
         PartActors[basePart.InstanceID] = physicsActor;
         basePart.OwnPhysicsActor = physicsActor;
     }

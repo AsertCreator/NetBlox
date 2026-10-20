@@ -6,21 +6,15 @@ using NetBlox.Runtime.Bridges;
 
 namespace NetBlox.Physics;
 
-public enum PhysicsActorType
-{
-    BasePart, Humanoid
-}
 public class PhysicsActor
 {
     public PhysicsSolver Owner;
-    public PhysicsActorType Type;
     public RigidBody? RigidBody;
     public RigidBodyShape? Shape;
 
-    public PhysicsActor(PhysicsSolver solver, PhysicsActorType type, BasePart reference)
+    public PhysicsActor(PhysicsSolver solver, BasePart reference)
     {
         Owner = solver;
-        Type = type;
         RigidBody = solver.LocalWorld.CreateRigidBody();
         RigidBody.Position = reference.Position;
         RigidBody.Orientation = reference.QuaternionRotation;

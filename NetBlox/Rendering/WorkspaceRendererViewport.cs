@@ -179,7 +179,7 @@ public class WorkspaceRendererViewport : RendererViewport
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/kriscrossapplesaucex2normal.png")
             ?.AddCallbackForSuccess(x => glueSurfaceNormalTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
         
-        ShadowMap = CreateShadowmap(3072, 3072);
+        ShadowMap = CreateShadowmap(4096, 4096);
     }
 
     // a code from a better experiment
@@ -328,10 +328,10 @@ public class WorkspaceRendererViewport : RendererViewport
                 Position = GameRenderer.GameManager.RootModel.GetService<Lighting>().SunPosition * 20 + MainCamera.Position,
                 Target = MainCamera.Position,
                 Up = Vector3.UnitY,
-                FovY = 60
+                FovY = 320
             };
 
-            float snap = LightCamera.FovY * 2 / ShadowMap.Depth.Height;
+            float snap = LightCamera.FovY * 10 / ShadowMap.Depth.Height;
             LightCamera.Position = LightCamera.Position.Snap(snap);
             LightCamera.Target = LightCamera.Target.Snap(snap);
 
