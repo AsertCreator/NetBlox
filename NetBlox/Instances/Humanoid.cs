@@ -1,4 +1,5 @@
 using System.Numerics;
+using Jitter2.Dynamics;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
 using NetBlox.Rendering;
@@ -26,6 +27,7 @@ public class Humanoid : Instance
     public Humanoid(ulong id, GameManager gameManager) : base(id, gameManager)
     {
         RegisterForEventId(GameEvent.EVENT_RENDERGUI_LEVEL0);
+        RegisterForEventId(GameEvent.EVENT_BEFORE_PHYSICS);
         WalkSpeed = Root.GetService<StarterPlayer>().CharacterWalkSpeed;
         JumpPower = Root.GetService<StarterPlayer>().CharacterJumpPower;
     }
@@ -33,7 +35,18 @@ public class Humanoid : Instance
     public override void OnRegisteredEvent(EngineEventArgs args)
     {
         base.OnRegisteredEvent(args);
-        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL0 && Parent is Model model && IsPartOfDataModel)
+        if (Parent is not Model model || !IsPartOfDataModel)
+            return;
+
+        if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS)
+        {
+            model.PrimaryPart ??= model.FindFirstChild_Fast("HumanoidRootPart") as BasePart;
+            if (model.PrimaryPart != null)
+                KeepUpright(model.PrimaryPart);
+            return;
+        }
+
+        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL0)
         {
             RenderingEventArgs? renderingEventArgs = args.EventData as RenderingEventArgs;
             if (renderingEventArgs == null)
@@ -74,6 +87,12 @@ public class Humanoid : Instance
                 totalTranslationX -= WalkSpeed * MathF.Cos(cameraangle - MathF.PI / 2);
                 totalTranslationZ -= WalkSpeed * MathF.Sin(cameraangle - MathF.PI / 2);
             }
+            if (Raylib.IsKeyPressed(KeyboardKey.Space))
+            {
+                Vector3 vector3 = model.PrimaryPart.Velocity;
+                vector3.Y += JumpPower;
+                model.PrimaryPart.Velocity = vector3;
+            }
 
             float ttlength = totalTranslationX * totalTranslationX + totalTranslationZ * totalTranslationZ;
             ttlength = MathF.Sqrt(ttlength);
@@ -107,6 +126,15 @@ public class Humanoid : Instance
                 }
             }
         }
+    }
+
+    private void KeepUpright(BasePart rootPart)
+    {
+        MotionAxes allowedMotion = MotionAxes.Linear | MotionAxes.AngularY;
+        if (rootPart.OwnPhysicsActor?.RigidBody != null)
+            rootPart.OwnPhysicsActor?.RigidBody.AllowedMotion = allowedMotion;
+        if (rootPart.PhysicsAssembly != null)
+            rootPart.PhysicsAssembly.CombinedRigidBody.AllowedMotion = allowedMotion;
     }
 
     private void RenderName(WorkspaceRendererViewport viewport)

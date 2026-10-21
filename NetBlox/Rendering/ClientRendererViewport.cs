@@ -1,3 +1,5 @@
+using Raylib_cs;
+
 namespace NetBlox.Rendering;
 
 public class ClientRendererViewport : WorkspaceRendererViewport
@@ -6,6 +8,10 @@ public class ClientRendererViewport : WorkspaceRendererViewport
     {
     }
 
+    public override void RenderFrame()
+    {
+        base.RenderFrame();
+    }
     public override void DoDebugKeys()
     {
         // NOP
