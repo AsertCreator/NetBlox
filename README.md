@@ -9,7 +9,7 @@ please don't laugh at me if the code is actually worse than i thought.
 build server and client as a regular .NET projects by using `dotnet build`. then start the
 server with `dotnet run` with following arguments, adjusting them accordingly: `-Port 44500 -Graphics -PlaceUrl rbxasset://places/CrossroadsButBetter.rbxlx`.
 then start the client with following arguments, adjusting them accrodingly as well:
-`-Server 127.0.0.1 -Port 44500 -MaxPlayers 10`. you can add `-Pause` to make the client wait
+`-Server 127.0.0.1 -Port 44500`. you can add `-Pause` to make the client wait
 until a keypress before starting. you can do the same on Visual Studio and Visual Studio Code 
 if you know how.
 
