@@ -90,7 +90,7 @@ public class Humanoid : Instance
             if (Raylib.IsKeyPressed(KeyboardKey.Space))
             {
                 Vector3 vector3 = model.PrimaryPart.Velocity;
-                vector3.Y += JumpPower;
+                vector3.Y += JumpPower * 4;
                 model.PrimaryPart.Velocity = vector3;
             }
 
@@ -102,8 +102,8 @@ public class Humanoid : Instance
                 totalTranslationX /= ttlength;
                 totalTranslationZ /= ttlength;
 
-                totalTranslationX *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS) / 2;
-                totalTranslationZ *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS) / 2;
+                totalTranslationX *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS);
+                totalTranslationZ *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS);
 
                 Vector3 primaryForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitX, model.PrimaryPart.QuaternionRotation);
                 Vector2 idealLookatVector = -Vector2.Normalize(new Vector2(totalTranslationX, totalTranslationZ));

@@ -32,7 +32,7 @@ public class PhysicsSolver
     {
         GameManager = gameManager;
         LocalWorld = new World();
-        LocalWorld.Gravity = new JVector(0, -18f, 0);
+        LocalWorld.Gravity = new JVector(0, -36f, 0);
         LocalWorld.DynamicTree.Filter = DynamicTreeFilter;
     }
 
