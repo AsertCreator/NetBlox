@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using NetBlox.Instances.Services;
 using NetBlox.Runtime;
 
 namespace NetBlox.Instances;
@@ -37,6 +38,10 @@ public class ServiceProvider : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public Instance? FindService(string name)
     {
+        Instance? possibleCandidate = FindFirstChild_Fast(name);
+        if (possibleCandidate != null)
+            return possibleCandidate;
+
         for (int i = 0; i < children.Count; i++)
         {
             Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(children[i]);
@@ -45,8 +50,20 @@ public class ServiceProvider : Instance
         }
         return null;
     }
+    private string ResolveServiceNameForFastLookup<T>()
+    {
+        if (typeof(T) == typeof(ScriptContext))
+            return "Script Context";
+        if (typeof(T) == typeof(RunService))
+            return "Run Service";
+        return typeof(T).Name;
+    }
     public T GetService<T>() where T : Instance
     {
+        Instance? possibleCandidate = FindFirstChild_Fast(ResolveServiceNameForFastLookup<T>());
+        if (possibleCandidate is T t)
+            return t;
+
         for (int i = 0; i < children.Count; i++)
         {
             Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(children[i]);

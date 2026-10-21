@@ -2,7 +2,7 @@ namespace NetBlox.Rendering;
 
 public abstract class RendererViewport
 {
-    protected GameRenderer GameRenderer;
+    public readonly GameRenderer GameRenderer;
 
     public RendererViewport(GameRenderer gameRenderer)
     {

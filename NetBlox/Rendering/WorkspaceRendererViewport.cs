@@ -27,11 +27,17 @@ public class WorkspaceRendererViewport : RendererViewport
     public Texture2D? SkyboxFront;
     public Texture2D? SkyboxBack;
 
+    public Texture2D ParticleFireTexture;
+    public Texture2D ParticleSmokeTexture;
+    public Texture2D ParticleForceFieldTexture;
+
     public Shader SpecularLightingInstancedShader;
     public Shader SpecularLightingShader;
     public Shader ShadowMapShader;
     public RenderTexture2D ShadowMap;
     public RenderingEventArgs RenderingEventArgs;
+
+    public List<ParticleStream> ParticleStreams = [];
 
     public int SpeedMultiplier = 1;
 
@@ -109,6 +115,13 @@ public class WorkspaceRendererViewport : RendererViewport
             ?.AddCallbackForSuccess(x => SkyboxFront = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_bk.png")
             ?.AddCallbackForSuccess(x => SkyboxBack = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/particleFire.png")
+            ?.AddCallbackForSuccess(x => ParticleFireTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/particleSmoke.png")
+            ?.AddCallbackForSuccess(x => ParticleSmokeTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/particleForceField.png")
+            ?.AddCallbackForSuccess(x => ParticleForceFieldTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
 
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://shaders/specular")?.AddCallbackForSuccess(x => 
         {
@@ -315,6 +328,11 @@ public class WorkspaceRendererViewport : RendererViewport
                 new Vector2(vector2.X - 130, vector2.Y + 140 + i * 18), 16, 0, brickColor.Color3);
         }
     }
+    public virtual void RenderParticles()
+    {
+        foreach (ParticleStream particleStream in ParticleStreams)
+            particleStream.StepAndRenderAllParticles();
+    }
     public override void RenderFrame()
     {
         Raylib.ClearBackground(Color.SkyBlue);
@@ -384,6 +402,7 @@ public class WorkspaceRendererViewport : RendererViewport
         }
 
         DrawPartRenderBuffer();
+        RenderParticles();
 
         if (GameRenderer.DebugFlag)
             DrawGizmos(true);
@@ -606,6 +625,14 @@ public class WorkspaceRendererViewport : RendererViewport
 
                 part.Parent = GameRenderer.GameManager.RootModel.GetService<Workspace>();
             }
+        }
+        if (Raylib.IsKeyPressed(KeyboardKey.F))
+        {
+            ParticleStream stream = new ParticleStream(
+                this, ParticleStreamMode.Fire, null, 100
+            );
+            stream.Position = MainCamera.Target;
+            ParticleStreams.Add(stream);
         }
         if (Raylib.IsKeyPressed(KeyboardKey.V))
         {
