@@ -6,12 +6,14 @@ to work with and it's more optimized, however it currently has less features tha
 please don't laugh at me if the code is actually worse than i thought.
 
 ## Building
-build server and client as a regular .NET projects by using `dotnet build`. then start the
-server with `dotnet run` with following arguments, adjusting them accordingly: `-Port 44500 -Graphics -PlaceUrl rbxasset://places/CrossroadsButBetter.rbxlx`.
-then start the client with following arguments, adjusting them accrodingly as well:
-`-Server 127.0.0.1 -Port 44500`. you can add `-Pause` to make the client wait
-until a keypress before starting. you can do the same on Visual Studio and Visual Studio Code 
-if you know how.
+build server and client as a regular .NET projects by using `dotnet build`. then start the server
+with `dotnet run --project NetBloxServer`. this will automatically create a non-headless server that
+listens on port 44500 and opens crossroads. you can customize the server if you use this syntax:
+`dotnet run --project NetBloxServer -- -Port 44500 -Graphics -PlaceUrl rbxasset://places/CrossroadsButBetter.rbxlx`.
+replace everything you want to change with what you want to put. removing `-Graphics` makes a headless server.
+then start the client with following syntax, adjusting them arguments to your liking as well:
+`dotnet run --project NetBloxClient -- -Server 127.0.0.1 -Port 44500`. you can add `-Pause` to make the client wait
+until a keypress before starting. you can do the same on Visual Studio and Visual Studio Code if you know how.
 
 about the `-PlaceUrl` part. you can replace the path after the `rbxasset://` with a different relative path
 inside the `content` directory of the server. or you can also replace it entirely with `net-network://http://localhost/places/yadayada.rbxlx`.
