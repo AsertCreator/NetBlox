@@ -271,8 +271,9 @@ public class PlaceParser
                             if (propertyInfo.PropertyType == typeof(BrickColor))
                                 propertyInfo.SetValue(myInstance, 
                                     BrickColor.GetBrickColorByIndex(int.Parse(propertyElement.InnerText, CultureInfo.InvariantCulture)));
-                            propertyInfo.SetValue(myInstance, 
-                                Convert.ChangeType(int.Parse(propertyElement.InnerText, CultureInfo.InvariantCulture), propertyInfo.PropertyType));
+                            else 
+                                propertyInfo.SetValue(myInstance, 
+                                    Convert.ChangeType(int.Parse(propertyElement.InnerText, CultureInfo.InvariantCulture), propertyInfo.PropertyType));
                             break;
                         case "int64":
                             propertyInfo.SetValue(myInstance, 

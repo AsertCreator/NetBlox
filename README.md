@@ -7,11 +7,19 @@ please don't laugh at me if the code is actually worse than i thought.
 
 ## Building
 build server and client as a regular .NET projects by using `dotnet build`. then start the
-server with `dotnet run` with following arguments, adjusting them accordingly: `-Port 44500`.
+server with `dotnet run` with following arguments, adjusting them accordingly: `-Port 44500 -Graphics -PlaceUrl rbxasset://places/CrossroadsButBetter.rbxlx`.
 then start the client with following arguments, adjusting them accrodingly as well:
 `-Server 127.0.0.1 -Port 44500 -MaxPlayers 10`. you can add `-Pause` to make the client wait
-until a keypress before starting. you can do the same on Visual Studio and Visual Studio Code
+until a keypress before starting. you can do the same on Visual Studio and Visual Studio Code 
 if you know how.
+
+about the `-PlaceUrl` part. you can replace the path after the `rbxasset://` with a different relative path
+inside the `content` directory of the server. or you can also replace it entirely with `net-network://http://localhost/places/yadayada.rbxlx`.
+this will make the server fetch the place file off of that URL and open it. replace the HTTP URL
+with what you want and you can then just open stuff. don't expect like anything to work though, even
+crossroads is still buggy, incomplete due to most Instance classes being unimplemented and the game
+has user scripts disabled temporarily.
+
 ### Running. Alternatively
 if you press G key on the server window and then press "Copy Server Ticket" button you'll get a
 ticket copied into your clipboard. then you start a client with this structure `-Ticket <paste your ticket here>`.
@@ -27,14 +35,18 @@ works with clients running on the same machine as the server.
 ## What?
 as i said earlier, the project is basically a game engine, aiming to be API-compatible
 with roblox. if i get a lot of free time then maybe it's gonna be compatible enough to cross-play with
-native roblox clients on native roblox servers, although probably not with the modern ones. the project follows a regular structure of multiplayer games, we have
+native roblox clients on native roblox servers, although probably not with the modern ones. the project 
+follows a regular structure of multiplayer games, we have
 `NetBloxServer` program and `NetBloxClient`, which are the server and client of this game
 respectively and i believe everything else is straightforward.
 
 now i really have nothing to say as to why this project even exists, but i believe i made
-it spontaneously and i didn't have any motivation to work with it after some time fiddling around. over three weeks i added
-a thing or two and abandoned the project. then spring of 2024 came and i found this project
-on my computer and decided to give it a go, and now we're here. oh and then 2025 came, i got carried away by the finals, i had them finished and forgot like everything about this codebase, it was like i was looking at somebody else's code. that was partially a reason why i chose to rewrite this whole thing from scratch instead of hopelessly trying to fix the original.
+it spontaneously and i didn't have any motivation to work with it after some time fiddling around. over 
+three weeks i added a thing or two and abandoned the project. then spring of 2024 came and i found this project
+on my computer and decided to give it a go, and now we're here. oh and then 2025 came, i got carried away by 
+the finals, i had them finished and forgot like everything about this codebase, it was like i was looking 
+at somebody else's code. that was partially a reason why i chose to rewrite this whole thing from scratch 
+instead of hopelessly trying to fix the original.
 
 just like roblox, it's supposed to support physics, scripting, characters, multiplayer, nice 
 rendering and the social network part. so far, little was achieved, but scripting
