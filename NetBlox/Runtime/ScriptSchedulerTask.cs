@@ -39,11 +39,11 @@ public class ScriptSchedulerTask : GameSchedulerTask
         if (!GameScheduler.GameManager.ScriptsRunning)
             return SchedulerTaskResult.NotCompleted;
 
+        ScriptContext scriptContext = GameScheduler.GameManager.RootModel.GetService<ScriptContext>();
+        MoonSharp.Interpreter.Script script = scriptContext.GetLuaStateFor(Identity);
+
         try
         {
-            ScriptContext scriptContext = GameScheduler.GameManager.RootModel.GetService<ScriptContext>();
-            MoonSharp.Interpreter.Script script = scriptContext.GetLuaStateFor(Identity);
-
             if (RootFunction == null && associatedCode != null)
             {
                 if (Self != null)
@@ -86,7 +86,8 @@ public class ScriptSchedulerTask : GameSchedulerTask
             for (int i = 0; i < runtimeError.CallStack.Count; i++)
             {
                 WatchItem watchItem = runtimeError.CallStack[i];
-                Trace.TraceError("\tat " + watchItem.Location.ToLine + ":" + watchItem.Location.ToChar);
+                SourceCode code = script.GetSourceCode(watchItem.Location.SourceIdx);
+                Trace.TraceError("\tat " + code.Name + ":" + (watchItem.Name ?? "<root>") + ":" + watchItem.Location.ToLine + ":" + watchItem.Location.ToChar);
             }
             CallbackAfterFailedExecution?.Invoke();
             return SchedulerTaskResult.CompletedFailed;
@@ -94,6 +95,16 @@ public class ScriptSchedulerTask : GameSchedulerTask
         catch (Exception otherError)
         {
             Trace.TraceError("Script error: " + otherError.Message);
+            if (RootCoroutine != null)
+            {
+                WatchItem[] stacktrace = RootCoroutine.Coroutine.GetStackTrace(0);
+                for (int i = 0; i < stacktrace.Length; i++)
+                {
+                    WatchItem watchItem = stacktrace[i];
+                    SourceCode code = script.GetSourceCode(watchItem.Location.SourceIdx);
+                    Trace.TraceError("\tat " + code.Name + ":" + (watchItem.Name ?? "<root>") + ":" + watchItem.Location.ToLine + ":" + watchItem.Location.ToChar);
+                }
+            }
             CallbackAfterFailedExecution?.Invoke();
             return SchedulerTaskResult.CompletedFailed;
         }

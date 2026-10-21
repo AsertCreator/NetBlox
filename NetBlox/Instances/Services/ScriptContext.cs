@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using NetBlox.Instances.Scripts;
 using NetBlox.Runtime;
 using MoonSharp.Interpreter;
@@ -297,7 +297,7 @@ public class ScriptContext : Instance
         Debug.Assert(securityIdentity != null);
         Table table = new Table(GetLuaStateFor(securityIdentity));
 
-        table["script"] = baseScript;
+        table["script"] = DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, baseScript));
         table.MetaTable = new Table(GetLuaStateFor(securityIdentity));
         table.MetaTable["__index"] = GetLuaStateFor(securityIdentity).Globals;
         table.MetaTable["__metatable"] = "Locked";

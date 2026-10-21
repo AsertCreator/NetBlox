@@ -36,7 +36,7 @@ public class BaseScript : Instance
 
             if (identity != null)
                 GameManager.GameScheduler.BeginTracedSecurityOverride(identity, "Starting a script");
-            if (LocalEnvironment != null)
+            if (LocalEnvironment == null)
                 LocalEnvironment = Root.GetService<ScriptContext>().CreateNewLocalEnvironment(this);
             Root.GetService<ScriptContext>().StartScriptWithCurrentIdentity(this, true);
             if (identity != null)

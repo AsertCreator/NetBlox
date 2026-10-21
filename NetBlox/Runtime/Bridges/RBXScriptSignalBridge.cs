@@ -27,6 +27,7 @@ public static class RBXScriptSignalBridge
             {
                 switch (index.String)
                 {
+                    case "connect":
                     case "Connect":
                         return DynValue.NewCallback((x, y) =>
                         {
@@ -39,6 +40,7 @@ public static class RBXScriptSignalBridge
                                 throw new Exception("Failed to connect to an event");
                             return DynValue.Void; 
                         });
+                    case "wait":
                     case "Wait":
                         return DynValue.NewCallback((x, y) =>
                         {

@@ -247,6 +247,7 @@ public class Instance
     //  Below are Lua API functions
     //
 
+    [LuaAlias(Name = "clone")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public Instance? Clone()
     {

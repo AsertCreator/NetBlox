@@ -26,6 +26,7 @@ public static class RBXScriptConnectionBridge
             {
                 switch (index.String)
                 {
+                    case "disconnect":
                     case "Disconnect":
                         return DynValue.NewCallback((x, y) =>
                         {
