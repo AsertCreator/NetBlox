@@ -11,7 +11,8 @@ namespace NetBlox.Instances;
 /// <list type="bullet">
 /// <item>You must override ClassName and IsA to reflect your class</item>
 /// <item>Do NOT contain raw Instance references in fields/autoproperties. Store the reference as ulong of the instance's ID. Having properties
-///       that automatically convert these ID's into Instance objects is OK, though.</item>
+///       that automatically convert these ID's into Instance objects is OK, though. You must handle references that don't mean anything due to an Instance
+///       being destroyed</item>
 /// </list>
 /// If you don't follow them then you will be hereby cursed with endless sleepless bugfixing nights
 /// </summary>

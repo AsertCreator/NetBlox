@@ -8,7 +8,7 @@ namespace NetBlox.Instances.Services;
 public class StarterGui : BasePlayerGui
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public bool ShowDevelopmentGui { get; set; } = true;
+    public bool ShowDevelopmentGui { get; set; }
 
     public override string ClassName => nameof(StarterGui);
 

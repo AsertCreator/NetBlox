@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using NetBlox.Instances;
 using NetBlox.Instances.Services;
+using NetBlox.Instances.UI;
 
 namespace NetBlox.Network;
 
@@ -95,6 +97,14 @@ public sealed class NPServerboundHandshake : NetworkPacketHandler
                 Trace.TraceError("Something went horribly wrong with Player bookkeeping, imma die");
                 return SchedulerTaskResult.CompletedFailed;
             }
+
+            StarterGui starterGui = gm.RootModel.GetService<StarterGui>();
+            PlayerGui playerGui = gm.GameRegistry.Construct<PlayerGui>();
+            playerGui.Parent = player;
+            
+            Instance[] guiChildren = starterGui.GetChildren();
+            for (int i = 0; i < guiChildren.Length; i++)
+                guiChildren[i].Clone()?.Parent = playerGui;
 
             player.Connection.SendPacketReliable(NPClientboundHandshake.Create(response));
 

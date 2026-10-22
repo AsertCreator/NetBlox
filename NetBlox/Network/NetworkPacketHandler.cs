@@ -16,7 +16,7 @@ public abstract class NetworkPacketHandler
         [(int)NetworkPacketType.NPClientCameraUpdate] = new NPClientCameraUpdate()
     };
 
-    public const int PROTOCOL_VERSION = 1;
+    public const int PROTOCOL_VERSION = 2;
 
     public static NetworkPacketHandler? ForPacketType(int targetType)
     {

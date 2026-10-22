@@ -684,38 +684,44 @@ public class WorkspaceRendererViewport : RendererViewport
 
             humanoidRootPart.Name = "HumanoidRootPart";
             humanoidRootPart.Transparency = 1;
-            humanoidRootPart.CanCollide = false;
+            humanoidRootPart.CanCollide = true;
             humanoidRootPart.Parent = model;
-            humanoidRootPart.Size = new Vector3(1, 3, 2);
+            humanoidRootPart.Size = new Vector3(1, 5, 2);
+            humanoidRootPart.Position = new Vector3(0, -0.5f, 0);
 
             torso.Name = "Torso";
             torso.Parent = model;
             torso.Size = new Vector3(1, 2, 2);
             torso.BrickColor = BrickColor.Random();
+            torso.CanCollide = false;
 
             leftArm.Name = "Left Arm";
             leftArm.Parent = model;
             leftArm.Size = new Vector3(1, 2, 1);
             leftArm.Position = new Vector3(0, 0, 1.5f);
             leftArm.BrickColor = BrickColor.Random();
+            leftArm.CanCollide = false;
 
             rightArm.Name = "Right Arm";
             rightArm.Parent = model;
             rightArm.Size = new Vector3(1, 2, 1);
             rightArm.Position = new Vector3(0, 0, -1.5f);
             rightArm.BrickColor = leftArm.BrickColor;
+            rightArm.CanCollide = false;
 
             leftLeg.Name = "Left Leg";
             leftLeg.Parent = model;
             leftLeg.Size = new Vector3(1, 2, 1);
             leftLeg.Position = new Vector3(0, -2, 0.5f);
             leftLeg.BrickColor = BrickColor.Random();
+            leftLeg.CanCollide = false;
 
             rightLeg.Name = "Right Leg";
             rightLeg.Parent = model;
             rightLeg.Size = new Vector3(1, 2, 1);
             rightLeg.Position = new Vector3(0, -2, -0.5f);
             rightLeg.BrickColor = leftLeg.BrickColor;
+            rightLeg.CanCollide = false;
 
             head.Name = "Head";
             head.Parent = model;
@@ -723,6 +729,7 @@ public class WorkspaceRendererViewport : RendererViewport
             head.Size = new Vector3(1.5f, 1.5f, 1.5f);
             head.Position = new Vector3(0, 1.7f, 0);
             head.BrickColor = BrickColor.Random();
+            head.CanCollide = false;
 
             Weld weld;
 

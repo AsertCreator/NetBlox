@@ -78,6 +78,24 @@ public class ReplicationAgent
             
             Instance[] instances = instance.GetChildren();
 
+            if (instance.ClassName == "DataModel")
+            {
+                List<Instance> betterInstances = new List<Instance>();
+
+                for (int i = 0; i < instances.Length; i++)
+                {
+                    if (instances[i].ClassName == "ReplicatedFirst")
+                        betterInstances.Add(instances[i]);
+                }
+                for (int i = 0; i < instances.Length; i++)
+                {
+                    if (instances[i].ClassName != "ReplicatedFirst")
+                        betterInstances.Add(instances[i]);
+                }
+
+                instances = betterInstances.ToArray();
+            }
+            
             if (cache.CanChildrenBeReplicated)
             {
                 bw.Write(instances.Length);

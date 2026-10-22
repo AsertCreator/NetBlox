@@ -315,7 +315,7 @@ public class NetworkServer : Instance
 
         UdpClient udpClient = new UdpClient(0, AddressFamily.InterNetwork);
 
-        Player player = GameManager.GameRegistry.Construct<Player>();
+        Player player = Root.GetService<Players>().CreatePlayer(0, "");
         player.Connection = new CompoundConnection(tcpClient, udpClient);
         player.Connection.OnDisconnectedByOtherMeans += (_, _) =>
         {

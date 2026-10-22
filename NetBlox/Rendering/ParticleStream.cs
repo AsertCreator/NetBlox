@@ -56,7 +56,7 @@ public class ParticleStream
             return;
 
         Rlgl.DisableDepthMask();
-        Rlgl.SetBlendMode(BlendMode.Multiplied);
+        Rlgl.SetBlendMode(BlendMode.Additive);
 
         Vector3 cameraTrueUp = cameraForward;
         cameraTrueUp = Vector3.Normalize(Vector3.Cross(cameraTrueUp, Viewport.MainCamera.Up));
@@ -70,10 +70,11 @@ public class ParticleStream
                 AllParticles[i].WorldPosition = Position;
                 AllParticles[i].WorldVelocity = new Vector3(
                     (Random.Shared.NextSingle() - 0.5f) / Viewport.GameRenderer.PreferredFPS * 1.3f,
-                    4f / Viewport.GameRenderer.PreferredFPS, 
+                    (4f + Random.Shared.NextSingle() * 4) / Viewport.GameRenderer.PreferredFPS, 
                     (Random.Shared.NextSingle() - 0.5f) / Viewport.GameRenderer.PreferredFPS * 1.3f);
                 AllParticles[i].ParticleLifetime = Random.Shared.Next(0, (int)(Viewport.GameRenderer.PreferredFPS * 1.5f));
                 AllParticles[i].ParticleRotation = Random.Shared.NextSingle() * 360;
+                AllParticles[i].ParticleScale = 1;
             }
         }
         
@@ -86,20 +87,30 @@ public class ParticleStream
                 AllParticles[i].WorldVelocity *= 0.95f;
                 AllParticles[i].ParticleLifetime++;
 
-                if (AllParticles[i].ParticleLifetime > Viewport.GameRenderer.PreferredFPS * 1f)
+                if (AllParticles[i].ParticleLifetime > Viewport.GameRenderer.PreferredFPS * 0.5f)
+                {
+                    AllParticles[i].ParticleScale = 
+                        1 - (AllParticles[i].ParticleLifetime - Viewport.GameRenderer.PreferredFPS * 0.5f) / (Viewport.GameRenderer.PreferredFPS * 0.5f);
+                }
+                if (AllParticles[i].ParticleLifetime > Viewport.GameRenderer.PreferredFPS * 0.75f)
                 {
                     AllParticles[i].ParticleTransparency = 
-                        (AllParticles[i].ParticleLifetime - Viewport.GameRenderer.PreferredFPS * 1f) * 2;
+                        (AllParticles[i].ParticleLifetime - Viewport.GameRenderer.PreferredFPS * 0.75f) * 2;
                 }
-                if (AllParticles[i].ParticleLifetime > Viewport.GameRenderer.PreferredFPS * 1.5f)
+                if (AllParticles[i].ParticleLifetime > Viewport.GameRenderer.PreferredFPS)
                 {
-                    AllParticles[i].WorldPosition = Position;
+                    AllParticles[i].WorldPosition = Position + new Vector3(
+                        Random.Shared.NextSingle() - 0.5f, 0,
+                        Random.Shared.NextSingle() - 0.5f
+                    );
                     AllParticles[i].WorldVelocity = new Vector3(
-                        (Random.Shared.NextSingle() - 0.5f) / Viewport.GameRenderer.PreferredFPS * 1.3f, 
-                        4f / Viewport.GameRenderer.PreferredFPS, 
-                        (Random.Shared.NextSingle() - 0.5f) / Viewport.GameRenderer.PreferredFPS * 1.3f);
+                        (Position.X - AllParticles[i].WorldPosition.X) / Viewport.GameRenderer.PreferredFPS, 
+                        (4f + Random.Shared.NextSingle() * 4) / Viewport.GameRenderer.PreferredFPS,
+                        (Position.Z - AllParticles[i].WorldPosition.Z) / Viewport.GameRenderer.PreferredFPS);
                     AllParticles[i].ParticleLifetime = 0;
                     AllParticles[i].ParticleRotation = Random.Shared.NextSingle() * 360;
+                    AllParticles[i].ParticleScale = 1;
+                    AllParticles[i].ParticleTransparency = 0;
                 }
 
                 Color tint = Color.White;
@@ -107,7 +118,10 @@ public class ParticleStream
                 Raylib.DrawBillboardPro(Viewport.MainCamera, 
                     AllParticles[i].ParticleTexture, 
                     new Raylib_cs.Rectangle(0, 0, AllParticles[i].ParticleTexture.Width, AllParticles[i].ParticleTexture.Height),
-                    AllParticles[i].WorldPosition, cameraTrueUp, new Vector2(1, 1), new Vector2(0.5f, 0.5f), AllParticles[i].ParticleRotation, tint);
+                    AllParticles[i].WorldPosition, cameraTrueUp, 
+                    new Vector2(1, 1) * AllParticles[i].ParticleScale, 
+                    new Vector2(0.5f, 0.5f) * AllParticles[i].ParticleScale,
+                    AllParticles[i].ParticleRotation, tint);
             }
         }
 

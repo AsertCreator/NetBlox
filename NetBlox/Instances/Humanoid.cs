@@ -125,6 +125,13 @@ public class Humanoid : Instance
                     model.PivotTo(coordinateFrame);
                 }
             }
+
+            model.PrimaryPart.Velocity = new Vector3(
+                model.PrimaryPart.Velocity.X / 2,
+                model.PrimaryPart.Velocity.Y,
+                model.PrimaryPart.Velocity.Z / 2
+            );
+            model.PrimaryPart.AngularVelocity /= 4;
         }
     }
 
