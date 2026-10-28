@@ -120,7 +120,10 @@ public class Humanoid : Instance
                     Quaternion quaternion = Raymath.QuaternionFromEuler(0, rotationY, 0);
                     CoordinateFrame coordinateFrame = default;
                     coordinateFrame.Orientation = Raymath.QuaternionToMatrix(quaternion);
-                    coordinateFrame.Position = model.PrimaryPart.Position + new Vector3(totalTranslationX, 0, totalTranslationZ);
+                    coordinateFrame.Position = model.PrimaryPart.Position;
+
+                    Vector3 newtranslation = model.TransformDisplacementForCollisionalSliding(new Vector3(totalTranslationX, 0, totalTranslationZ));
+                    coordinateFrame.Position += newtranslation;
 
                     model.PivotTo(coordinateFrame);
                 }

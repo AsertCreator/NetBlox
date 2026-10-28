@@ -942,7 +942,30 @@ public class WorkspaceRendererViewport : RendererViewport
             }
 
             if (in3d)
+            {
+                Workspace workspace = GameRenderer.Root.GetService<Workspace>();
+                TraceResult result = workspace.Trace(MainCamera.Position, (MainCamera.Target - MainCamera.Position) * 200 + MainCamera.Position, null);
+                Vector3 fp = (result.End - result.Start) * result.Fraction + result.Start;
+
+                Raylib.DrawSphere(fp, 0.25f, Color.Magenta);
+                Raylib.DrawSphere(fp + result.Normal, 0.25f, Color.Magenta);
+            }
+
+            if (in3d)
                 Raylib.EndShaderMode();
+
+            if (in3d)
+            {
+                Rlgl.DisableDepthMask();
+                Rlgl.DisableDepthTest();
+
+                Raylib.DrawLine3D(MainCamera.Target, MainCamera.Target + Vector3.UnitX, Color.Red);
+                Raylib.DrawLine3D(MainCamera.Target, MainCamera.Target + Vector3.UnitY, Color.Green);
+                Raylib.DrawLine3D(MainCamera.Target, MainCamera.Target + Vector3.UnitZ, Color.Blue);
+
+                Rlgl.EnableDepthTest();
+                Rlgl.EnableDepthMask();
+            }
 
             if (in3d)
                 GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGIZMOS)?.Fire();
