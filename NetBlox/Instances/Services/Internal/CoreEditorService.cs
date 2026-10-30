@@ -39,6 +39,7 @@ public class CoreEditorService : Instance
             return;
         if (!everInitialized)
         {
+            EditorWindows.Add(CreatePropertiesWindow());
             EditorWindows.Add(CreateExplorerWindow());
             EditorWindows.Add(CreateInstanceWindow());
             everInitialized = true;
@@ -64,8 +65,8 @@ public class CoreEditorService : Instance
     public EditorWindow CreateExplorerWindow()
     {
         EditorWindow editorWindow = new EditorWindow();
-        editorWindow.Position = new UDim2(0.7f, 0, 0, 0);
-        editorWindow.Size = new UDim2(0.3f, 0, 1, 0);
+        editorWindow.Position = new UDim2(0.8f, 0, 0, 0);
+        editorWindow.Size = new UDim2(0.2f, 0, 1, 0);
         editorWindow.Title = "Explorer";
 
         EditorExplorerViewControl editorExplorerViewControl = new EditorExplorerViewControl();
@@ -75,10 +76,24 @@ public class CoreEditorService : Instance
 
         return editorWindow;
     }
+    public EditorWindow CreatePropertiesWindow()
+    {
+        EditorWindow editorWindow = new EditorWindow();
+        editorWindow.Position = default;
+        editorWindow.Size = new UDim2(0.3f, 0, 1, 0);
+        editorWindow.Title = "Properties";
+
+        EditorPropertiesViewControl editorPropertiesViewControl = new EditorPropertiesViewControl();
+        editorPropertiesViewControl.Position = default;
+        editorPropertiesViewControl.Size = new UDim2(1, 0, 1, 0);
+        editorWindow.Children.Add(editorPropertiesViewControl);
+
+        return editorWindow;
+    }
     public EditorWindow CreateInstanceWindow()
     {
         EditorWindow editorWindow = new EditorWindow();
-        editorWindow.Position = new UDim2(0.5f, -150, 0, 0);
+        editorWindow.Position = new UDim2(0.5f, -150, 0.8f, 0);
         editorWindow.Size = new UDim2(0, 300, 0.2f, 0);
         editorWindow.Title = "Instance";
 

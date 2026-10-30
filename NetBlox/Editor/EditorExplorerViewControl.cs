@@ -8,6 +8,9 @@ using Raylib_cs;
 
 namespace NetBlox.Editor;
 
+/// <summary>
+/// The Explorer window custom control for NetBlox Editor. Please don't use it anywhere else. It assumes it's the only in the explorer window.
+/// </summary>
 public class EditorExplorerViewControl : EditorControl
 {
     public float ScrollOffset;
@@ -25,6 +28,8 @@ public class EditorExplorerViewControl : EditorControl
 
         Instance[] selection = service.Root.GetService<Selection>().Get();
 
+        const float explorerLineMargin = 5;
+
         float y = 0;
         float x = 0;
 
@@ -35,9 +40,11 @@ public class EditorExplorerViewControl : EditorControl
             if (completePosition.Y >= offset.Y - fontSpecification.Size && completePosition.Y < offset.Y + size.Y)
             {
                 if (selection.Contains(instance))
-                    Raylib.DrawRectangle((int)completePosition.X, (int)completePosition.Y, (int)size.X, (int)(fontSpecification.Size + 3), Color.Blue);
+                    Raylib.DrawRectangle((int)completePosition.X, (int)completePosition.Y, 
+                        (int)size.X, (int)(fontSpecification.Size + explorerLineMargin), Color.Blue);
                 
-                Raylib.DrawTextEx(font, instance.Name + " - " + instance.ClassName, completePosition + new Vector2(fontSpecification.Size + 4, 0) * 2,
+                Raylib.DrawTextEx(font, instance.Name + " - " + instance.ClassName, 
+                    completePosition + new Vector2((fontSpecification.Size + explorerLineMargin) * 2 + 2, explorerLineMargin / 2),
                     fontSpecification.Size, 0, Color.White);
                 
                 Type instanceType = instance.GetType();
@@ -47,25 +54,29 @@ public class EditorExplorerViewControl : EditorControl
                 int explorerIconIndex = ExplorerIconIndexAttributeMap[instanceType].Index;
 
                 Raylib.DrawTexturePro(service.InstanceClassAtlas,
-                    new Rectangle(16 * explorerIconIndex, 0, 16, 16), new Rectangle(completePosition + new Vector2(fontSpecification.Size + 4, 0), 16, 16),
+                    new Rectangle(16 * explorerIconIndex, 0, 16, 16),
+                    new Rectangle(completePosition + 
+                        new Vector2(fontSpecification.Size + explorerLineMargin + 1, (explorerLineMargin + fontSpecification.Size) / 2 - 8), 16, 16),
                     default, 0, Color.White);
                 
                 if (instance.AliveChildrenCount > 0)
                 {
                     if (!InstanceState.ContainsKey(instance))
                         Raylib.DrawRectangle(
-                            (int)completePosition.X + 3, (int)completePosition.Y + 3, (int)fontSpecification.Size - 3, (int)fontSpecification.Size - 3,
+                            (int)(completePosition.X + explorerLineMargin), (int)(completePosition.Y + explorerLineMargin),
+                            (int)(fontSpecification.Size - explorerLineMargin), (int)(fontSpecification.Size - explorerLineMargin),
                             Color.Red);
                     else
                         Raylib.DrawRectangle(
-                            (int)completePosition.X + 3, (int)completePosition.Y + 3, (int)fontSpecification.Size - 3, (int)fontSpecification.Size - 3,
+                            (int)(completePosition.X + explorerLineMargin), (int)(completePosition.Y + explorerLineMargin),
+                            (int)(fontSpecification.Size - explorerLineMargin), (int)(fontSpecification.Size - explorerLineMargin),
                             InstanceState[instance] ? Color.Green : Color.Red);
                 }
             
                 // handle Expand/Close button click
 
-                if (mousePosition.X >= completePosition.X && mousePosition.X <= completePosition.X + fontSpecification.Size + 3 &&
-                    mousePosition.Y >= completePosition.Y && mousePosition.Y <= completePosition.Y + fontSpecification.Size + 2 &&
+                if (mousePosition.X >= completePosition.X && mousePosition.X <= completePosition.X + fontSpecification.Size + explorerLineMargin &&
+                    mousePosition.Y >= completePosition.Y && mousePosition.Y <= completePosition.Y + fontSpecification.Size + explorerLineMargin &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left))
                 {
                     if (!InstanceState.ContainsKey(instance))
@@ -73,15 +84,15 @@ public class EditorExplorerViewControl : EditorControl
                     else
                         InstanceState[instance] = !InstanceState[instance];
                 }
-                if (mousePosition.X > completePosition.X + fontSpecification.Size + 3 &&
-                    mousePosition.Y >= completePosition.Y && mousePosition.Y <= completePosition.Y + fontSpecification.Size + 3 &&
+                if (mousePosition.X > completePosition.X + fontSpecification.Size + explorerLineMargin &&
+                    mousePosition.Y >= completePosition.Y && mousePosition.Y <= completePosition.Y + fontSpecification.Size + explorerLineMargin &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left))
                 {
                     service.Root.GetService<Selection>().Set([instance]);
                 }
             }
 
-            y += fontSpecification.Size + 2;
+            y += fontSpecification.Size + explorerLineMargin;
 
             using RentedSpan<Instance?> rentedChildren = instance.GetChildren_Fast();
             
@@ -111,13 +122,17 @@ public class EditorExplorerViewControl : EditorControl
             RenderItem(childInstance);
         }
 
-        ScrollOffset -= actualMousewheelMovE.Y * Raylib.GetWindowScaleDPI().Y * 3;   
-        if (ScrollOffset < 0)
-            ScrollOffset = 0;
-        if (ScrollOffset > y - size.Y)
-            ScrollOffset = y - size.Y;
-        if (y < size.Y)
-            ScrollOffset = 0;
+        if (mousePosition.X > offset.X && mousePosition.X < offset.X + size.X &&
+            mousePosition.Y > offset.Y && mousePosition.Y < offset.Y + size.Y)
+        {
+            ScrollOffset -= actualMousewheelMovE.Y * Raylib.GetWindowScaleDPI().Y * 3;   
+            if (ScrollOffset < 0)
+                ScrollOffset = 0;
+            if (ScrollOffset > y - size.Y)
+                ScrollOffset = y - size.Y;
+            if (y < size.Y)
+                ScrollOffset = 0;
+        }
     }
 }
 

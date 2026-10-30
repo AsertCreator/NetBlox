@@ -18,6 +18,8 @@ public static class InstanceBridge
         public required MethodInfo Method;
         public required DynValue Callback;
         public required ScriptCallableAttribute ScriptCallable;
+        public required bool IsObsolete;
+        public required bool IsAnAlias;
 
         public override string ToString()
         {
@@ -33,6 +35,8 @@ public static class InstanceBridge
         public required bool CanBeReplicated;
         public required bool IsReadOnly;
         public required int? NetworkOrdinal;
+        public required bool IsObsolete;
+        public required bool IsAnAlias;
 
         public override string ToString()
         {
@@ -51,6 +55,8 @@ public static class InstanceBridge
         public GameManager GameManager;
         public Type TargetType;
         public Type? ParentType;
+
+        private InstanceClassCacheProperty[]? StudioProperties;
 
         private InstanceClassCache(GameManager gameManager, Type type)
         {
@@ -130,7 +136,9 @@ public static class InstanceBridge
                     Parameters = parameterTypes,
                     ReturnType = methodInfo.ReturnType,
                     Callback = newCallback,
-                    ScriptCallable = scriptCallable  
+                    ScriptCallable = scriptCallable,
+                    IsObsolete = methodInfo.GetCustomAttribute<ObsoleteAttribute>() != null,
+                    IsAnAlias = false
                 };
 
                 LuaAliasAttribute[] aliases = cacheMethod.Method.GetCustomAttributes<LuaAliasAttribute>().ToArray();
@@ -144,7 +152,9 @@ public static class InstanceBridge
                         Parameters = parameterTypes,
                         ReturnType = methodInfo.ReturnType,
                         Callback = newCallback,
-                        ScriptCallable = scriptCallable  
+                        ScriptCallable = scriptCallable,
+                        IsObsolete = cacheMethod.IsObsolete,
+                        IsAnAlias = true
                     };
 
                     classCache.Methods[aliasCacheMethod.Name] = aliasCacheMethod;
@@ -186,7 +196,9 @@ public static class InstanceBridge
                     IsReadOnly = readOnly,
                     CanBeReplicated = canBeReplicated,
                     ScriptCallable = scriptCallable,
-                    NetworkOrdinal = null
+                    NetworkOrdinal = null,
+                    IsAnAlias = false,
+                    IsObsolete = propertyInfo.GetCustomAttribute<ObsoleteAttribute>() != null
                 };
 
                 LuaAliasAttribute[] aliases = cacheProperty.Property.GetCustomAttributes<LuaAliasAttribute>().ToArray();
@@ -201,7 +213,9 @@ public static class InstanceBridge
                         IsReadOnly = readOnly,
                         CanBeReplicated = false,
                         ScriptCallable = scriptCallable,
-                        NetworkOrdinal = null
+                        NetworkOrdinal = null,
+                        IsAnAlias = true,
+                        IsObsolete = cacheProperty.IsObsolete
                     };
 
                     classCache.Properties[aliasCacheProperty.Name] = cacheProperty;
@@ -245,6 +259,34 @@ public static class InstanceBridge
                 return null;
             ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
             return scriptContext.ResolveInstanceClassCacheForType(ParentType);
+        }
+
+        public InstanceClassCacheProperty[] GetStudioProperties()
+        {
+            if (StudioProperties == null)
+            {
+                Dictionary<string, InstanceClassCacheProperty> properties = [];
+                InstanceClassCache? cache = this;
+
+                while (cache != null)
+                {
+                    InstanceClassCacheProperty[] cacheProperties = cache.Properties.Values.ToArray();
+                    foreach (InstanceClassCacheProperty property in cacheProperties)
+                    {
+                        if (!property.IsAnAlias && property.PropertyType != typeof(LuaEvent) && !property.IsObsolete)
+                            properties[property.Name] = property;
+                    }
+                    cache = cache.RetrieveParentCache();
+                }
+
+                List<InstanceClassCacheProperty> abcProperties = properties.Values.ToList();
+
+                abcProperties.Sort((x, y) => x.Name.CompareTo(y.Name));
+
+                StudioProperties = abcProperties.ToArray();
+            }
+
+            return StudioProperties;
         }
 
         public override string ToString()
