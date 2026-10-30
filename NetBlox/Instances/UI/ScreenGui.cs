@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.UI;
 
 [Creatable]
+[ExplorerIconIndex(47)]
 public class ScreenGui : LayerCollector
 {
     public override string ClassName => nameof(ScreenGui);

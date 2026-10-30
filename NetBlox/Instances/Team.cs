@@ -4,6 +4,7 @@ using NetBlox.Structs;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(24)]
 public class Team : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

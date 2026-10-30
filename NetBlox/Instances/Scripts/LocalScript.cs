@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Scripts;
 
 [Creatable]
+[ExplorerIconIndex(18)]
 public class LocalScript : BaseScript
 {
     public override string ClassName => nameof(LocalScript);

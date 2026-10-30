@@ -16,6 +16,8 @@ namespace NetBlox.Instances;
 /// </list>
 /// If you don't follow them then you will be hereby cursed with endless sleepless bugfixing nights
 /// </summary>
+
+[ExplorerIconIndex(0)]
 public class Instance
 {
     public struct InstanceInitializationSettings
@@ -162,6 +164,24 @@ public class Instance
             if (Parent == Root)
                 return this;
             return Parent.ParentService;
+        }
+    }
+
+    public virtual int AliveChildrenCount
+    {
+        get
+        {
+            int deadChildrenCount = 0;
+
+            for (int i = 0; i < children.Count; i++)
+            {
+                ulong childId = children[i];
+                Instance? childRef = GameManager.GameRegistry.GetLocalInstanceById(childId);
+                if (childRef == null)
+                    deadChildrenCount++;
+            }
+
+            return children.Count - deadChildrenCount;
         }
     }
 

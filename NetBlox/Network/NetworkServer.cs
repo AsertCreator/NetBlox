@@ -14,6 +14,7 @@ namespace NetBlox.Network;
 
 [Service]
 [NotReplicated]
+[ExplorerIconIndex(15)]
 public class NetworkServer : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]

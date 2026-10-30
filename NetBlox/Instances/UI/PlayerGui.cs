@@ -1,9 +1,8 @@
-using NetBlox.Structs;
-using Raylib_cs;
-using Rectangle = NetBlox.Structs.Rectangle;
+using NetBlox.Runtime;
 
 namespace NetBlox.Instances.UI;
 
+[ExplorerIconIndex(46)]
 public class PlayerGui : BasePlayerGui
 {
     public override string ClassName => nameof(PlayerGui);

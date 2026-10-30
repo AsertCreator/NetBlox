@@ -4,6 +4,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [NotReplicated]
+[ExplorerIconIndex(30)]
 public class Debris : Instance
 {
     public override string ClassName => nameof(Debris);

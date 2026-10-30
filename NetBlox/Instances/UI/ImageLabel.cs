@@ -8,6 +8,7 @@ using Rectangle = NetBlox.Structs.Rectangle;
 namespace NetBlox.Instances.UI;
 
 [Creatable]
+[ExplorerIconIndex(49)]
 public class ImageLabel : GuiLabel
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

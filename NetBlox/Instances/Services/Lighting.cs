@@ -5,6 +5,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(13)]
 public class Lighting : Instance
 {
 

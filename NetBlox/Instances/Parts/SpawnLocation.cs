@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Parts;
 
 [Creatable]
+[ExplorerIconIndex(25)]
 public class SpawnLocation : Part
 {
     public override string ClassName => nameof(SpawnLocation);

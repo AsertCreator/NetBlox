@@ -5,6 +5,7 @@ using MoonSharp.Interpreter;
 using NetBlox.Instances;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Services;
+using NetBlox.Instances.Services.Internal;
 using NetBlox.Instances.UI;
 using NetBlox.Network;
 using NetBlox.Runtime;
@@ -416,6 +417,7 @@ public class WorkspaceRendererViewport : RendererViewport
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL1)?.Fire(RenderingEventArgs);
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL2)?.Fire(RenderingEventArgs);
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL3)?.Fire(RenderingEventArgs);
+        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL4)?.Fire(RenderingEventArgs);
 
         if (GameRenderer.DebugFlag)
             RenderDebugInfo();
@@ -853,6 +855,11 @@ public class WorkspaceRendererViewport : RendererViewport
         else if (Raylib.IsKeyPressed(KeyboardKey.Six))
         {
             SpeedMultiplier = 6;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.Eight))
+        {
+            CoreEditorService coreEditorService = GameRenderer.Root.GetService<CoreEditorService>();
+            coreEditorService.ToggleEditorMode();
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.Nine))
         {

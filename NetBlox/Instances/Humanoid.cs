@@ -134,7 +134,7 @@ public class Humanoid : Instance
                 model.PrimaryPart.Velocity.Y,
                 model.PrimaryPart.Velocity.Z / 2
             );
-            model.PrimaryPart.AngularVelocity /= 4;
+            model.PrimaryPart.AngularVelocity /= 16;
         }
     }
 

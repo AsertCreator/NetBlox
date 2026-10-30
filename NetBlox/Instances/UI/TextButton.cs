@@ -1,5 +1,4 @@
 using System.Numerics;
-using MoonSharp.Interpreter;
 using NetBlox.Rendering;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -9,6 +8,7 @@ using Rectangle = NetBlox.Structs.Rectangle;
 namespace NetBlox.Instances.UI;
 
 [Creatable]
+[ExplorerIconIndex(51)]
 public class TextButton : GuiButton
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

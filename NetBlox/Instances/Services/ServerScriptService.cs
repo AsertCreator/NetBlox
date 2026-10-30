@@ -4,6 +4,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [NotReplicated]
+[ExplorerIconIndex(71)]
 public class ServerScriptService : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.Plugin)]

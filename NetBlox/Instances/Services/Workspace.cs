@@ -11,6 +11,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(19)]
 public class Workspace : Model
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

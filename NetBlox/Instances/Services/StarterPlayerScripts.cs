@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Services;
 
 [ReplicateChildren]
+[ExplorerIconIndex(78)]
 public class StarterPlayerScripts : Instance
 {
     public override string ClassName => nameof(StarterPlayerScripts);

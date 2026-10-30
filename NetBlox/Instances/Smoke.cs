@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(59)]
 public class Smoke : Instance
 {
     public override string ClassName => nameof(Smoke);

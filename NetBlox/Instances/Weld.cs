@@ -7,6 +7,7 @@ namespace NetBlox.Instances;
 // synchronize all changes with Snap.cs & Glue.cs
 
 [Creatable]
+[ExplorerIconIndex(34)]
 public class Weld : JointInstance
 {
     protected InstanceID lastpart0;

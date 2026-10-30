@@ -6,6 +6,7 @@ using Raylib_cs;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(33)]
 public class Message : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

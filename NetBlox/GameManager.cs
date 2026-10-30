@@ -72,6 +72,7 @@ public sealed class GameManager
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL1, "Render GUI - Level 1");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL2, "Render GUI - Level 2");
         CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL3, "Render GUI - Level 3");
+        CreateGameEventNamed(GameEvent.EVENT_RENDERGUI_LEVEL4, "Render GUI - Level 4");
         CreateGameEventNamed(GameEvent.EVENT_BEFORE_PHYSICS, "Physics - Before");
         CreateGameEventNamed(GameEvent.EVENT_AFTER_PHYSICS, "Physics - After");
 

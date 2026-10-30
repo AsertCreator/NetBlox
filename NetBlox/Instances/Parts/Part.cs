@@ -9,6 +9,7 @@ using Raylib_cs;
 namespace NetBlox.Instances.Parts;
 
 [Creatable]
+[ExplorerIconIndex(1)]
 public class Part : BasePart
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]   

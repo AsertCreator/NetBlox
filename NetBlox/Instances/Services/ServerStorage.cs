@@ -4,6 +4,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [NotReplicated]
+[ExplorerIconIndex(69)]
 public class ServerStorage : Instance
 {
     public override string ClassName => nameof(ServerStorage);

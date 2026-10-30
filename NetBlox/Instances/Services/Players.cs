@@ -7,6 +7,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(21)]
 public class Players : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

@@ -5,6 +5,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(46)]
 public class StarterGui : BasePlayerGui
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

@@ -8,6 +8,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [NotReplicated]
+[ExplorerIconIndex(46)]
 public class CoreGui : BasePlayerGui
 {
     public override string ClassName => nameof(CoreGui);

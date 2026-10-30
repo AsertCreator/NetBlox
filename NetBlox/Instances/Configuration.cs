@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(58)]
 public class Configuration : Instance
 {
     public override string ClassName => nameof(Configuration);

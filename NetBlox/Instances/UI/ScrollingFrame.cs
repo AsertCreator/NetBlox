@@ -7,6 +7,7 @@ using Rectangle = NetBlox.Structs.Rectangle;
 namespace NetBlox.Instances.UI;
 
 [Creatable]
+[ExplorerIconIndex(48)]
 public class ScrollingFrame : GuiObject
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

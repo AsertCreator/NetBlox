@@ -11,6 +11,7 @@ using Rectangle = NetBlox.Structs.Rectangle;
 namespace NetBlox.Instances.UI;
 
 [Creatable]
+[ExplorerIconIndex(51)]
 public class TextBox : GuiObject
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

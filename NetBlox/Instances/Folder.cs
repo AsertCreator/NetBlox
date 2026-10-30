@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(77)]
 public class Folder : Instance
 {
     public override string ClassName => nameof(Folder);

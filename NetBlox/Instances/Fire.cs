@@ -4,6 +4,7 @@ using NetBlox.Structs;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(61)]
 public class Fire : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

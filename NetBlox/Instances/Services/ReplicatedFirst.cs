@@ -4,6 +4,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(70)]
 public class ReplicatedFirst : Instance
 {
     public override string ClassName => nameof(ReplicatedFirst);

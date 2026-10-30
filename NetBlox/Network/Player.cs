@@ -10,6 +10,7 @@ using NetBlox.Structs;
 namespace NetBlox.Network;
 
 [Creatable]
+[ExplorerIconIndex(12)]
 public class Player : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

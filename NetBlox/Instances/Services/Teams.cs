@@ -4,6 +4,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(23)]
 public class Teams : Instance
 {
     public override string ClassName => nameof(Teams);

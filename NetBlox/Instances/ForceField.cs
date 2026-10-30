@@ -3,6 +3,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(37)]
 public class ForceField : Instance
 {
     public override string ClassName => nameof(ForceField);

@@ -7,6 +7,7 @@ using Raylib_cs;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(54)]
 public class SelectionBox : InstanceAdornment
 {
 	[ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

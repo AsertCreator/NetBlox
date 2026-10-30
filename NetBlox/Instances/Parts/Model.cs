@@ -7,6 +7,7 @@ using Raylib_cs;
 namespace NetBlox.Instances.Parts;
 
 [Creatable]
+[ExplorerIconIndex(2)]
 public class Model : PVInstance
 {
     public BasePart? PrimaryPart

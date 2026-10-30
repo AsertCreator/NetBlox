@@ -1,5 +1,8 @@
+using NetBlox.Runtime;
+
 namespace NetBlox.Instances.Values;
 
+[ExplorerIconIndex(4)]
 public class ValueBase : Instance
 {
     public override string ClassName => nameof(ValueBase);

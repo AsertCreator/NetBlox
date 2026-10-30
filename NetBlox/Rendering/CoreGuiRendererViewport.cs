@@ -70,6 +70,7 @@ public class CoreGuiRendererViewport : RendererViewport
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL1)?.Fire();
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL2)?.Fire();
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL3)?.Fire();
+        GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDERGUI_LEVEL4)?.Fire();
 
         if (GameRenderer.DebugFlag)
             RenderDebugInfo();

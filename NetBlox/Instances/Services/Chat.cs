@@ -4,6 +4,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(33)]
 public class Chat : Instance
 {
     public override string ClassName => nameof(Chat);

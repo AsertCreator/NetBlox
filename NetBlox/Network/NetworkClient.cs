@@ -8,6 +8,7 @@ namespace NetBlox.Network;
 
 [Service]
 [NotReplicated]
+[ExplorerIconIndex(16)]
 public class NetworkClient : Instance
 {
     public CompoundConnection? CurrentServerConnection;

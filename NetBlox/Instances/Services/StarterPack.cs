@@ -4,6 +4,7 @@ namespace NetBlox.Instances.Services;
 
 [Service]
 [ReplicateChildren]
+[ExplorerIconIndex(20)]
 public class StarterPack : Instance
 {
     public override string ClassName => nameof(StarterPack);
