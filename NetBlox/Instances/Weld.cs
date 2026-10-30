@@ -57,7 +57,7 @@ public class Weld : JointInstance
                 Rlgl.EnableDepthTest();
             }
         }
-        else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS)
+        else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS && IsPartOfDataModel)
         {
             UpdateWeld();
         }

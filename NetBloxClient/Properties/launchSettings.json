@@ -2,7 +2,7 @@
   "profiles": {
     "NetBloxClient": {
       "commandName": "Project",
-      "commandLineArgs": "-Pause -Server 127.0.0.1 -Port 44500"
+      "commandLineArgs": "-Pause -Server 127.0.0.1 -Port 44500 -DisableUserScripts"
     },
     "NetBloxClient (in-app)": {
       "commandName": "Project",

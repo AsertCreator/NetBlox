@@ -19,7 +19,8 @@ public class CoreScript : BaseScript
         {
             if (GameManager.CurrentPhase < InitializationStage.Alive)
                 return;
-            ExecutionOpportunity(SecurityIdentity.SI_ElevatedGameScript);
+            if (!GameManager.AccessFlags.HasFlag(AccessFlags.DisableCoreScripts))
+                ExecutionOpportunity(SecurityIdentity.SI_ElevatedGameScript);
             GameManager.TryGetEventForId(GameEvent.EVENT_HEARTBEAT)?.UnregisterInstance(this);
         }
     }

@@ -5,17 +5,26 @@ using NetBlox.Runtime;
 
 namespace NetBlox;
 
-public sealed class GameRegistry(GameManager gameManager)
+public sealed class GameRegistry
 {
     public const ulong SERVICE_ID_BOUNDARY = 1000;
 
     private Dictionary<ulong, Instance> _trueInstances = [];
     private Dictionary<string, ConstructorInfo> _constructorCache = [];
     private List<Instance> newborns = [];
+    private List<Assembly> assemblies = [];
+    private readonly GameManager gameManager;
 
     private static readonly Type[] defaultConstructor = [typeof(ulong), typeof(GameManager)];
     private static readonly Type instanceRootType = typeof(Instance);
     private static readonly Random random = new Random();
+
+    public GameRegistry(GameManager gameManager)
+    {
+        this.gameManager = gameManager;
+
+        assemblies.Add(Assembly.GetExecutingAssembly());
+    }
 
     public T Construct<T>() where T : Instance
     {
@@ -23,6 +32,11 @@ public sealed class GameRegistry(GameManager gameManager)
         if (instance == null || instance is not T t)
             throw new InvalidProgramException("Somehow TryCreateNewDomesticInstanceOfClass returned the wrong type");
         return t;
+    }
+
+    public void RegisterAssembly(Assembly assembly)
+    {
+        
     }
 
     public bool IsTypeDefined(string className)
@@ -112,13 +126,23 @@ public sealed class GameRegistry(GameManager gameManager)
         while (_trueInstances.ContainsKey(candidate));
         return candidate;
     }
+    private Type? GetTypeInRegisteredAssemblies(string className)
+    {
+        foreach (Assembly assembly in assemblies)
+        {
+            Type? type = assembly.GetTypes().FirstOrDefault(x => x.Name == className);
+            if (type != null)
+                return type;
+        }
+        return null;
+    }
     private ConstructorInfo? TryResolveConstructorForClass(string className, bool onlyCreatableClasses)
     {
         if (className == "Instance")
             return null;
         if (_constructorCache.TryGetValue(className, out ConstructorInfo? cachedConstructore))
             return cachedConstructore;
-        Type? potentialinstancetype = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(x => x.Name == className);
+        Type? potentialinstancetype = GetTypeInRegisteredAssemblies(className);
         if (potentialinstancetype == null)
             return null;
         if (!potentialinstancetype.IsAssignableTo(instanceRootType))

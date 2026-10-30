@@ -3,6 +3,7 @@ global using InstanceID = ulong;
 
 using System.Diagnostics;
 using System.Numerics;
+using System.Reflection;
 using NetBlox.Instances;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Scripts;
@@ -30,12 +31,12 @@ public sealed class GameManager
     public int HeartbeatRate = 30;
     public bool SchedulerRunning;
     public bool ScriptsRunning;
-    public bool DisableUserScripts = true;
     public bool ShuttingDown;
     public readonly NetworkMode NetworkMode;
     public Stopwatch GlobalTime;
     public EditorMode EditorMode;
     public bool WindowReady;
+    public AccessFlags AccessFlags;
 
     public Dictionary<string, string> PairedConsoleArguments = [];
     public List<string> UnpairedConsoleArguments = [];
@@ -137,7 +138,57 @@ public sealed class GameManager
         {
             Trace.TraceWarning("Failed to parse console arguments; skipping the rest of them...");
         }
+
+        if (PairedConsoleArguments.ContainsKey("AccessFlags"))
+            AccessFlags = (AccessFlags)int.Parse(PairedConsoleArguments["AccessFlags"]);
+
+        // not sure what's the point of this. ig it's useful when you just want to run a server as un utility (like for thumbnail generation ??)
+
+        if (UnpairedConsoleArguments.Contains("DisableUserScripts"))
+            AccessFlags |= AccessFlags.DisableUserScripts;
+        if (UnpairedConsoleArguments.Contains("DisableCoreScripts"))
+            AccessFlags |= AccessFlags.DisableCoreScripts;
+        if (UnpairedConsoleArguments.Contains("DisableHttpAccess"))
+            AccessFlags |= AccessFlags.DisableHttpAccess;
+        if (UnpairedConsoleArguments.Contains("DisableNetworking"))
+            AccessFlags |= AccessFlags.DisableNetworking;
+        if (UnpairedConsoleArguments.Contains("DisableFilesystemAccess"))
+            AccessFlags |= AccessFlags.DisableFilesystemAccess;
+        if (UnpairedConsoleArguments.Contains("DisableCaching"))
+            AccessFlags |= AccessFlags.DisableCaching;
+        if (UnpairedConsoleArguments.Contains("AllowCustomAssemblies"))
+            AccessFlags |= AccessFlags.AllowCustomAssemblies;
+
+        if (PairedConsoleArguments.ContainsKey("AuxAssembly") && NetworkMode != NetworkMode.Client)
+            LoadAuxiliaryAssemblyFrom(PairedConsoleArguments["AuxAssembly"]);
     }
+
+    public void LoadAuxiliaryAssemblyFrom(string assemblyPath)
+    {
+        if (!AccessFlags.HasFlag(AccessFlags.AllowCustomAssemblies))
+        {
+            Trace.TraceError("Cannot load an auxiliary assembly due to a missing policy");
+            return;
+        }
+
+        Assembly assembly = Assembly.LoadFrom(assemblyPath);
+        Type? type = assembly.GetType("AuxiliaryAssemblyEntrypoint");
+        if (type == null)
+        {
+            Trace.TraceError("The loaded auxiliary assembly is missing AuxiliaryAssemblyEntrypoint class. Oh well!");
+            return;
+        }
+
+        MethodInfo? methodInfo = type.GetMethod("AttachToGameManager");
+        if (methodInfo == null || !methodInfo.IsStatic)
+        {
+            Trace.TraceError("The loaded auxiliary assembly is missing a static AttachToGameManager method. Oh well!");
+            return;
+        }
+
+        methodInfo.Invoke(null, [this]);
+    }
+
     public void RegisterVerb(string id, Action action)
     {
         allVerbs[id] = action;

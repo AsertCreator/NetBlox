@@ -28,6 +28,9 @@ public class CoreAuthenticationService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public LuaYield LoginAs(string username, string password)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess))
+            throw new InvalidOperationException("Cannot authenticate due to a policy");
+
         ScriptSchedulerTask? task = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
         if (task == null)
             throw new InvalidOperationException("Cannot run async methods without a script task context");

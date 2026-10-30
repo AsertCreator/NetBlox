@@ -45,6 +45,16 @@
             "projectPath": "${workspaceFolder}/NetBloxServer/NetBloxServer.csproj",
         },
         {
+            "name": "C#: NetBloxServer Debug (test: -Script)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/NetBloxServer/bin/Debug/net10.0/NetBloxServer.dll",
+            "cwd": "${workspaceFolder}/NetBloxServer/bin/Debug/net10.0",
+            "launchSettingsFilePath": "${workspaceFolder}/NetBloxServer/Properties/launchSettings.json",
+            "launchSettingsProfile": "NetBloxServer (test: -Script)",
+            "preLaunchTask": "dotnet: build"
+        },
+        {
             "name": "C#: Dump API",
             "type": "coreclr",
             "request": "launch",

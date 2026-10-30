@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using NetBlox.Instances;
+using NetBlox.Runtime;
 using NetBlox.Structs;
 using Raylib_cs;
 
@@ -26,8 +27,8 @@ public sealed class GameAssetManager
     public DataModel Root => GameManager.RootModel;
 
     private bool disallowAnything = false;
-    private Dictionary<string, Texture2D> cachedImages = [];
-    private Dictionary<string, Shader> cachedShaders = [];
+    private Dictionary<object, Texture2D> cachedImages = [];
+    private Dictionary<object, Shader> cachedShaders = [];
 
     public GameAssetManager(GameManager gameManager, bool assemblyAsSource)
     {
@@ -70,6 +71,9 @@ public sealed class GameAssetManager
     {
         if (disallowAnything)
             return null;
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess) || GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            return null;
+
         AssetDownloadTask assetDownloadTask = new AssetDownloadTask(this, contentId);
         lock (AllCurrentDownloadTasks)
             AllCurrentDownloadTasks.Add(assetDownloadTask);
@@ -81,6 +85,41 @@ public sealed class GameAssetManager
         if (!TryParseContentId(contentId, out ContentId contentId1))
             return null;
         return BeginDownloadingFileFrom(contentId1);
+    }
+    public Texture2D LoadTextureFromStream(string type, Stream imageStream)
+    {
+        if (cachedImages.TryGetValue(imageStream, out Texture2D texture2D))
+            return texture2D;
+        if (GameManager.WindowReady)
+        {
+            RentedSpan<byte> rentedSpan = new RentedSpan<byte>((int)imageStream.Length);
+            imageStream.ReadExactly(rentedSpan.GetArray(), 0, (int)imageStream.Length);
+
+            Image image = Raylib.LoadImageFromMemory(type, rentedSpan.GetArray());
+
+            cachedImages[imageStream] = Raylib.LoadTextureFromImage(image);
+            Raylib.SetTextureFilter(cachedImages[imageStream], TextureFilter.Anisotropic4X);
+
+            Raylib.UnloadImage(image);
+
+            return cachedImages[imageStream];
+        }
+        return default;
+    }
+    public Shader LoadShaderFromStreams(Stream fsFile, Stream vsFile)
+    {
+        if (cachedShaders.TryGetValue(fsFile, out Shader shader) || cachedShaders.TryGetValue(vsFile, out shader))
+            return shader;
+        if (GameManager.WindowReady)
+        {
+            using StreamReader fsReader = new StreamReader(fsFile, System.Text.Encoding.UTF8, leaveOpen: true);
+            using StreamReader vsReader = new StreamReader(vsFile, System.Text.Encoding.UTF8, leaveOpen: true);
+
+            shader = Raylib.LoadShaderFromMemory(fsReader.ReadToEnd(), vsReader.ReadToEnd());
+            cachedShaders[fsFile] = shader;
+            cachedShaders[vsFile] = shader;
+        }
+        return default;
     }
     public Texture2D LoadTextureFromPath(string filePath)
     {

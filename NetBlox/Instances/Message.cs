@@ -22,7 +22,7 @@ public class Message : Instance
     {
         base.OnRegisteredEvent(args);
 
-        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL2)
+        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL2 && IsPartOfDataModel)
         {
             FontSpecification fontSpecification = GameManager.GameRenderer!.DefaultFontSpecification;
             fontSpecification.Size += 4;

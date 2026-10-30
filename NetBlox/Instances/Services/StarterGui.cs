@@ -24,7 +24,7 @@ public class StarterGui : BasePlayerGui
     {
         base.OnRegisteredEvent(args);
         
-        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL1 && ShowDevelopmentGui)
+        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL1 && ShowDevelopmentGui && IsPartOfDataModel)
         {
             Render();
         }

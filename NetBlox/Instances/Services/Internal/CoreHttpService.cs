@@ -20,6 +20,9 @@ public class CoreHttpService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public LuaYield GetAsync(string url)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess) || GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("CoreHttpService is disabled");
+
         if (HttpClient == null)
             return new LuaYield();
         
@@ -67,6 +70,9 @@ public class CoreHttpService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public LuaYield PostAsync(string url, string body)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess) || GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("CoreHttpService is disabled");
+
         if (HttpClient == null)
             return new LuaYield();
         

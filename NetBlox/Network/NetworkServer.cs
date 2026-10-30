@@ -136,6 +136,8 @@ public class NetworkServer : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public string CreateServerTicket(CreateTicketMode mode)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot use CreateServerTicket due to a policy");
         if (TcpListener == null)
             throw new InvalidOperationException("Server has no listener yet");
 
@@ -176,12 +178,18 @@ public class NetworkServer : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public void StartServer(string endpointstring)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot use StartServer due to a policy");
+
         IPEndPoint iPEndPoint = IPEndPoint.Parse(endpointstring);
         Start(iPEndPoint);
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public void StopServer()
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot use StopServer due to a policy");
+
         if (!hadStarted)
             throw new NetworkException("Cannot stop a stopped NetworkServer");
 
@@ -214,6 +222,9 @@ public class NetworkServer : Instance
 
     public void Start(IPEndPoint at)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot start a NetworkServer due to a policy");
+
         if (hadStarted)
             throw new NetworkException("Cannot start a NetworkServer a second time");
         
@@ -233,6 +244,9 @@ public class NetworkServer : Instance
 
     private SchedulerTaskResult DoServerLoop(GameSchedulerTask task)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot run a NetworkServer due to a policy");
+
         try
         {
             if (GameManager.ShuttingDown)

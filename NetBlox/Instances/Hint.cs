@@ -17,7 +17,7 @@ public class Hint : Message
 
     public override void OnRegisteredEvent(EngineEventArgs args)
     {
-        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL2)
+        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL2 && IsPartOfDataModel)
         {
             FontSpecification fontSpecification = GameManager.GameRenderer!.DefaultFontSpecification;
             Font font = GameManager.GameRenderer!.FontRegistry.LoadFontFromSpecification(fontSpecification);

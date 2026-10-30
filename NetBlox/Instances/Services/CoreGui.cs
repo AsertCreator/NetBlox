@@ -41,38 +41,55 @@ public class CoreGui : BasePlayerGui
     {
         base.CommitStageInitialize();
 
-        GameManager.GameScheduler.BeginTracedSecurityOverride(SecurityIdentity.SI_StarterScript, "Starting StarterScript");
-
-        if (GameManager.NetworkMode == Network.NetworkMode.Server)
+        if (!GameManager.AccessFlags.HasFlag(AccessFlags.DisableCoreScripts))
         {
-            AssetDownloadTask? starterScript = GameManager.GameAssetManager.QuickLoad("rbxasset://scripts/ServerStarterScript.lua");
-            if (starterScript == null)
-                throw new InvalidOperationException("ServerStarterScript couldn't be found");
-            
-            using Stream stream = starterScript.ReadAsset()!;
-            using StreamReader streamReader = new StreamReader(stream, System.Text.Encoding.UTF8, leaveOpen: true);
-            ScriptContext context = Root.GetService<ScriptContext>();
+            GameManager.GameScheduler.BeginTracedSecurityOverride(SecurityIdentity.SI_StarterScript, "Starting StarterScript");
 
-            context.StartSourceScriptWithCurrentIdentity("ServerStarterScript", streamReader.ReadToEnd());
-        }
-        else if (GameManager.NetworkMode == Network.NetworkMode.Client)
-        {
-            AssetDownloadTask? starterScript = GameManager.GameAssetManager.QuickLoad("rbxasset://scripts/StarterScript.lua");
-            if (starterScript == null)
-                throw new InvalidOperationException("StarterScript couldn't be found");
-            
-            using Stream stream = starterScript.ReadAsset()!;
-            using StreamReader streamReader = new StreamReader(stream, System.Text.Encoding.UTF8, leaveOpen: true);
-            ScriptContext context = Root.GetService<ScriptContext>();
+            if (GameManager.NetworkMode == Network.NetworkMode.Server)
+            {
+                AssetDownloadTask? starterScript = GameManager.GameAssetManager.QuickLoad("rbxasset://scripts/ServerStarterScript.lua");
+                if (starterScript == null)
+                    throw new InvalidOperationException("ServerStarterScript couldn't be found");
+                
+                using Stream stream = starterScript.ReadAsset()!;
+                using StreamReader streamReader = new StreamReader(stream, System.Text.Encoding.UTF8, leaveOpen: true);
+                ScriptContext context = Root.GetService<ScriptContext>();
 
-            context.StartSourceScriptWithCurrentIdentity("StarterScript", streamReader.ReadToEnd());
+                context.StartSourceScriptWithCurrentIdentity("ServerStarterScript", streamReader.ReadToEnd());
+            }
+            else if (GameManager.NetworkMode == Network.NetworkMode.Client)
+            {
+                AssetDownloadTask? starterScript = GameManager.GameAssetManager.QuickLoad("rbxasset://scripts/StarterScript.lua");
+                if (starterScript == null)
+                    throw new InvalidOperationException("StarterScript couldn't be found");
+                
+                using Stream stream = starterScript.ReadAsset()!;
+                using StreamReader streamReader = new StreamReader(stream, System.Text.Encoding.UTF8, leaveOpen: true);
+                ScriptContext context = Root.GetService<ScriptContext>();
+
+                context.StartSourceScriptWithCurrentIdentity("StarterScript", streamReader.ReadToEnd());
+            }
+            else
+            {
+                Trace.TraceWarning("Skipping StarterScript for the Neither network mode");
+            }
+
+            GameManager.GameScheduler.EndTracedSecurityOverride();
         }
         else
         {
-            Trace.TraceWarning("Skipping StarterScript for the Neither network mode");
+            Trace.TraceInformation("Skipping StarterScript due to AccessFlags policy");
         }
 
-        GameManager.GameScheduler.EndTracedSecurityOverride();
+        if (GameManager.PairedConsoleArguments.ContainsKey("Script") && GameManager.NetworkMode == Network.NetworkMode.Server)
+        {
+            string filePath = GameManager.PairedConsoleArguments["Script"];
+            ScriptContext context = Root.GetService<ScriptContext>();
+
+            GameSchedulerTask? task = context.StartSourceScriptWithCurrentIdentity("ServerScript", File.ReadAllText(filePath));
+            if (task != null)
+                task.Identity = SecurityIdentity.SI_StarterScript;
+        }
     }
 
     public override Instance[] GetChildren()
@@ -102,7 +119,7 @@ public class CoreGui : BasePlayerGui
     {
         base.OnRegisteredEvent(args);
 
-        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL3 && GameManager.NetworkMode == Network.NetworkMode.Client)
+        if (args.GameEvent.Id == GameEvent.EVENT_RENDERGUI_LEVEL3 && GameManager.NetworkMode == Network.NetworkMode.Client && IsPartOfDataModel)
         {
             Render();
         }

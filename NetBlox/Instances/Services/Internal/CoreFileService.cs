@@ -17,6 +17,9 @@ public class CoreFileService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public LuaYield WriteText(string filePathInContainer, string content)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableFilesystemAccess))
+            throw new InvalidOperationException("CoreFileService is disabled");
+
         ScriptSchedulerTask? task = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
         if (task == null)
             throw new InvalidOperationException("Cannot run async methods without a script task context");
@@ -54,6 +57,9 @@ public class CoreFileService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public LuaYield ReadText(string filePathInContainer)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableFilesystemAccess))
+            throw new InvalidOperationException("CoreFileService is disabled");
+            
         ScriptSchedulerTask? task = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
         if (task == null)
             throw new InvalidOperationException("Cannot run async methods without a script task context");

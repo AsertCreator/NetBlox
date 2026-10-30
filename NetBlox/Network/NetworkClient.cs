@@ -43,6 +43,9 @@ public class NetworkClient : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public void ConnectWithTicket(string ticketString)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot connect due to a policy");
+
         try
         {
             using StringReader stringReader = new StringReader(ticketString);
@@ -62,6 +65,9 @@ public class NetworkClient : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public void ConnectToServer(string endpointstring, int firstMessageTimeout)
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot connect due to a policy");
+            
         try
         {
             if (IsConnected)

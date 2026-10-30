@@ -44,6 +44,9 @@ public class PlatformService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public void OpenShellLink(string link)
     {
+        if (GameManager.AccessFlags != 0)
+            throw new InvalidOperationException("Cannot use OpenShellLink when policies are applied");
+
         ProcessStartInfo processStartInfo = new ProcessStartInfo();
         processStartInfo.UseShellExecute = true;
         processStartInfo.FileName = link;
@@ -52,6 +55,11 @@ public class PlatformService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public string GetIPv4Public()
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess))
+            throw new InvalidOperationException("Cannot use GetIPv4Public due to a policy");
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot use GetIPv4Public due to a policy");
+
         using HttpClient httpClient = new HttpClient();
         Task<string> task = httpClient.GetStringAsync(PublicIPProvider);
         task.Wait();
@@ -60,6 +68,9 @@ public class PlatformService : Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public string GetIPv4LANOnly()
     {
+        if (GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+            throw new InvalidOperationException("Cannot use GetIPv4LANOnly due to a policy");
+
         using Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
         socket.Connect("8.8.8.8", 65530);   
         IPEndPoint? endPoint = socket.LocalEndPoint as IPEndPoint;

@@ -13,6 +13,8 @@ public ref struct RentedSpan<T>
         Values = array.AsSpan(0, i);
     }
 
+    public T[] GetArray() => array;
+
     public void Dispose()
     {
         ArrayPool<T>.Shared.Return(array);

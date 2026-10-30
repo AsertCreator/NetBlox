@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using NetBlox.Instances.Services.Internal;
 using NetBlox.Runtime;
 
@@ -81,11 +82,23 @@ public class AssetDownloadTask
             case ContentIdProtocol.NetBloxLocalFile:
                 {
                     isLocal = true;
+                    if (GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableFilesystemAccess))
+                    {
+                        Trace.TraceError("AssetDownloadTask: filesystem access restricted");
+                        hadFinished = true;
+                        hadErrored = true;
+                        isLocal = true;
+                        Error = "Blocked due to a policy";
+                        CallAllFailureCallbacks();
+                        return;
+                    }
+
                     if (string.IsNullOrWhiteSpace(ContentId.AssetPath))
                     {
                         Trace.TraceError("AssetDownloadTask: local path is null; cannot resolve");
                         hadFinished = true;
                         hadErrored = true;
+                        isLocal = true;
                         Error = "Local path is null; cannot resolve";
                         CallAllFailureCallbacks();
                         return;
@@ -94,6 +107,7 @@ public class AssetDownloadTask
                     {
                         hadFinished = true;
                         hadErrored = false;
+                        isLocal = true;
                         localDownloadPath = Path.GetFullPath(ContentId.AssetPath);
                         CallAllSuccessCallbacks();
                         return;
@@ -104,6 +118,16 @@ public class AssetDownloadTask
                 {
                     if (NetBloxNetworkAssetWorker == null)
                         NetBloxNetworkAssetWorker = new HttpClient();
+
+                    if (GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess) || GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+                    {
+                        Trace.TraceError("AssetDownloadTask: network access restricted");
+                        hadFinished = true;
+                        hadErrored = true;
+                        Error = "Blocked due to a policy";
+                        CallAllFailureCallbacks();
+                        return;
+                    }
 
                     if (ContentId.AssetPath != null)
                     {
@@ -119,9 +143,17 @@ public class AssetDownloadTask
                                     string filePath = ResolveCacheFilePath(ContentId.AssetPath);
                                     string fullPath = Path.Combine(folderPath, filePath);
 
-                                    await File.WriteAllTextAsync(fullPath, data);
-
-                                    localDownloadPath = fullPath;
+                                    if (GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableCaching))
+                                    {
+                                        buffer = Encoding.UTF8.GetBytes(data);
+                                    }
+                                    else
+                                    {
+                                        await File.WriteAllTextAsync(fullPath, data);
+                                        isLocal = true;
+                                        localDownloadPath = fullPath;
+                                    }
+                                    
                                     hadFinished = true;
 
                                     if (responseMessage.IsSuccessStatusCode)
@@ -159,24 +191,44 @@ public class AssetDownloadTask
                 {
                     if (ContentId.AssetId.HasValue)
                     {
+                        if (GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess) || GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+                        {
+                            Trace.TraceError("AssetDownloadTask: network access restricted");
+                            hadFinished = true;
+                            hadErrored = true;
+                            Error = "Blocked due to a policy";
+                            CallAllFailureCallbacks();
+                            return;
+                        }
+
                         StartDownloadingAssetId(ContentId.AssetId.Value);
                     }
                     else
                     {
-                        isLocal = true;
-
                         if (string.IsNullOrWhiteSpace(ContentId.AssetPath))
                         {
                             Trace.TraceError("AssetDownloadTask: local path is null; cannot resolve");
                             hadFinished = true;
                             hadErrored = true;
+                            isLocal = true;
                             Error = "Local path is null; cannot resolve";
+                            CallAllFailureCallbacks();
+                            return;
+                        }
+                        if (ContentId.AssetPath.Contains("./") || ContentId.AssetPath.Contains(".."))
+                        {
+                            Trace.TraceError("AssetDownloadTask: path is unsanitized");
+                            hadFinished = true;
+                            hadErrored = true;
+                            isLocal = true;
+                            Error = "Malicious path; cannot resolve";
                             CallAllFailureCallbacks();
                             return;
                         }
                         
                         hadFinished = true;
                         hadErrored = false;
+                        isLocal = true;
                         localDownloadPath = Path.GetFullPath(GameAssetManager.ContentDirectory + "/" + ContentId.AssetPath);
                         CallAllSuccessCallbacks();
                         return;
@@ -220,37 +272,61 @@ public class AssetDownloadTask
     }
     private void StartDownloadingAssetId(long assetId)
     {
+        if (GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableHttpAccess) || GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableNetworking))
+        {
+            Trace.TraceError("AssetDownloadTask: network access restricted");
+            hadFinished = true;
+            hadErrored = true;
+            Error = "Blocked due to a policy";
+            CallAllFailureCallbacks();
+            return;
+        }
+
         PlatformService platformService = GameAssetManager.Root.GetService<PlatformService>();
 
         string cacheKey = assetId + GameAssetManager.BaseUrl;
         string cacheFile = ResolveCacheFilePath(cacheKey);
 
-        if (File.Exists(cacheFile) && File.GetLastWriteTimeUtc(cacheFile) - DateTime.UtcNow > GameAssetManager.CacheExpirySpan)
-            File.Delete(cacheFile);
-        
-        if (File.Exists(cacheFile))
+        if (!GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableCaching))
         {
-            hadFinished = true;
-            hadErrored = false;
-            localDownloadPath = cacheFile;
-            CallAllSuccessCallbacks();
-        }
-
-        var task = GameAssetManager.HttpClient.GetAsync(platformService.ResolveAPI_AssetDelivery_Get(assetId), CancellationTokenSource.Token);
-        task.ContinueWith(response =>
-        {
-            try
+            if (File.Exists(cacheFile) && File.GetLastWriteTimeUtc(cacheFile) - DateTime.UtcNow > GameAssetManager.CacheExpirySpan)
+                File.Delete(cacheFile);
+            
+            if (File.Exists(cacheFile))
             {
-                using FileStream cacheFileStream = File.OpenWrite(cacheFile);
-                response.Result.Content.CopyTo(cacheFileStream, null, CancellationTokenSource.Token);
-
-                if (CancellationTokenSource.IsCancellationRequested)
-                    return;
-
                 hadFinished = true;
                 hadErrored = false;
                 localDownloadPath = cacheFile;
                 CallAllSuccessCallbacks();
+            }
+        }
+
+        var task = GameAssetManager.HttpClient.GetAsync(platformService.ResolveAPI_AssetDelivery_Get(assetId), CancellationTokenSource.Token);
+        task.ContinueWith(async (response) =>
+        {
+            try
+            {
+                if (GameAssetManager.GameManager.AccessFlags.HasFlag(AccessFlags.DisableCaching))
+                {
+                    hadFinished = true;
+                    hadErrored = false;
+                    buffer = await response.Result.Content.ReadAsByteArrayAsync();
+                    CallAllSuccessCallbacks();
+                }
+                else
+                {
+                    using FileStream cacheFileStream = File.OpenWrite(cacheFile);
+                    response.Result.Content.CopyTo(cacheFileStream, null, CancellationTokenSource.Token);
+
+                    if (CancellationTokenSource.IsCancellationRequested)
+                        return;
+
+                    hadFinished = true;
+                    hadErrored = false;
+                    isLocal = true;
+                    localDownloadPath = cacheFile;
+                    CallAllSuccessCallbacks();
+                }
             }
             catch
             {
