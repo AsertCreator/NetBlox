@@ -3,5 +3,5 @@ namespace NetBlox.Network;
 public enum NetworkPacketType
 {
     NPServerboundHandshake, NPClientboundHandshake, NPKick, NPRequestInitialReplication, NPRespondInitialReplication, NPPhysicsUpdate,
-    NPUnreliableConnectionInfo, NPRespondDeltaReplication, NPPing, NPClientCameraUpdate
+    NPUnreliableConnectionInfo, NPRespondDeltaReplication, NPPing, NPClientCameraUpdate, NPRemoteEvent, NPRemoteFunctionRequest, NPRemoteFunctionResponse
 }

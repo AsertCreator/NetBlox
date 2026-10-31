@@ -30,6 +30,7 @@ public class NetworkServer : Instance
     public const ulong NETWORK_CONSTANT_ID = 21;
 
     public new ReplicationAgent ReplicationAgent;
+    public Dictionary<int, RemoteFunctionAwaiterItem> RemoteFunctionAwaiterItems = [];
 
     private TcpListener? TcpListener;
     private bool hadStarted = false;
@@ -383,6 +384,22 @@ public class NetworkServer : Instance
         player.Connection.SendPacketReliable(NPUnreliableConnectionInfo.Create(entity));
 
         return SchedulerTaskResult.CompletedSuccess;
+    }
+
+    public void AddRemoteFunctionAwaiter(RemoteFunction remoteFunction, int nonce)
+    {
+        ScriptSchedulerTask? scriptSchedulerTask = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
+        if (scriptSchedulerTask == null)
+            throw new InvalidOperationException("Cannot use RemoteFunction from C#");
+
+        RemoteFunctionAwaiterItem remoteFunctionAwaiterItem = new RemoteFunctionAwaiterItem()
+        {
+            ScriptSchedulerTask = scriptSchedulerTask,
+            Nonce = nonce,
+            Function = remoteFunction
+        };
+
+        RemoteFunctionAwaiterItems[nonce] = remoteFunctionAwaiterItem;
     }
 
     public override void Destroy()

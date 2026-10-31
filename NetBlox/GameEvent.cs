@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using NetBlox.Instances;
 
 namespace NetBlox;
@@ -68,7 +69,7 @@ public sealed class GameEvent
     public void RegisterInstance(ulong instanceId)
     {
         if (eventListenerData.Contains(instanceId))
-            throw new NotSupportedException("Trying to register the same instance again for one event");
+            Trace.TraceWarning("Trying to register the same instance again for one event");
         eventListenerData.Add(instanceId);
     }
     public void RegisterInstance(Instance instance)

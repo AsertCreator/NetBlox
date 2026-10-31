@@ -106,6 +106,14 @@ public sealed class GameManager
         RootModel.GetService<CoreGui>();
     }
 
+    public ScriptContext GetScriptContext() => RootModel.GetService<ScriptContext>();
+    public MoonSharp.Interpreter.Script GetCurrentLuaState()
+    {
+        ScriptContext scriptContext = GetScriptContext();
+        SecurityIdentity securityIdentity = GameScheduler.GetCurrentSecurityIdentity();
+        return scriptContext.GetLuaStateFor(securityIdentity);
+    }
+
     public void AddConsoleArguments(string[] strings)
     {
         try

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
 using NetBlox.Network;
@@ -52,7 +53,10 @@ public class Instance
                 if (value != null)
                 {
                     if (!value.fastNameLookup.ContainsKey(Name))
+                    {
                         value.fastNameLookup[Name] = InstanceID;
+                        value.OnNativeChildRenamedOrAdded?.Invoke(value, Name);
+                    }
                 }
 
                 myParent?.children.Remove(InstanceID);
@@ -128,7 +132,10 @@ public class Instance
                 else
                     Parent.fastNameLookup[oldname] = othersiblingofsamename.InstanceID;
                 if (!Parent.fastNameLookup.ContainsKey(field))
+                {
                     Parent.fastNameLookup[field] = InstanceID;
+                    OnNativeChildRenamedOrAdded?.Invoke(this, field);
+                }
             }
         }
     }
@@ -153,6 +160,8 @@ public class Instance
     public InitializationStage InitializationStage = InitializationStage.Newborn;
     public readonly InstanceID InstanceID;
     public readonly GameManager GameManager;
+
+    public event EventHandler<string>? OnNativeChildRenamedOrAdded;
 
     public DataModel Root => GameManager.RootModel;
     public Instance? ParentService
@@ -559,6 +568,51 @@ public class Instance
             instance.Parent = null;
         }
     }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public object? WaitForChild(string name)
+    {
+        ScriptSchedulerTask? scriptSchedulerTask = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
+        if (scriptSchedulerTask == null)
+            throw new InvalidOperationException("Cannot call WaitForChild from C#");
+
+        Instance? potential = FindFirstChild_Fast(name);
+        if (potential != null)
+            return potential;
+        
+        scriptSchedulerTask.IsWaiting = true;
+
+        EventHandler<string>? eventHandler = null;
+        bool found = false;
+
+        GameSchedulerTask gameSchedulerTask = GameManager.GameScheduler.Schedule("WaitForChild watchdog", GameScheduler.SchedulerPhase.Any, _ =>
+        {
+            if (!found)
+                Trace.TraceWarning("Infinite yield possible on " + GetFullName() + "." + name);
+            return SchedulerTaskResult.CompletedSuccess;
+        });
+
+        gameSchedulerTask.WaitingTimeTarget = GameManager.TimestampInTheFuture(TimeSpan.FromSeconds(3));
+
+        eventHandler = delegate (object? sender, string _name)
+        {
+            if (name == _name)
+            {
+                scriptSchedulerTask.AsyncFunctionArguments = DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, FindFirstChild_Fast(_name)!));
+                scriptSchedulerTask.IsWaiting = false;
+                found = true;
+
+                gameSchedulerTask.WaitingTimeTarget = 0;
+
+                OnNativeChildRenamedOrAdded -= eventHandler;
+            }
+        };
+
+        OnNativeChildRenamedOrAdded += eventHandler;
+        
+        return new LuaYield();
+    }
+
     /// <summary>
     /// NetBlox API extension, not in Roblox.
     /// </summary>

@@ -97,7 +97,12 @@ public static class InstanceBridge
                 if (scriptCallable == null)
                     continue;
 
-                Type[] parameterTypes = methodInfo.GetParameters().Select(x => x.ParameterType).ToArray();
+                ParameterInfo[] parameterInfos = methodInfo.GetParameters();
+                Type[] parameterTypes = parameterInfos.Select(x => x.ParameterType).ToArray();
+
+                bool methodTakesTuple = false;
+                if (parameterInfos.Length > 0)
+                    methodTakesTuple = parameterInfos[^1].IsDefined(typeof(ParamArrayAttribute));
 
                 DynValue newCallback = DynValue.NewCallback((x, y) =>
                 {
@@ -120,11 +125,23 @@ public static class InstanceBridge
                         if (!identity.IsAbleToCallInstanceMethod(instance, methodInfo))
                             throw new InvalidOperationException("Cannot call method " + methodName);
 
-                        object?[] marshalled = LuaMarshal.MarshalLuaToClrArray(methodName, ctx, y.GetArray(1), parameterTypes);
-                        object? returnval = methodInfo.Invoke(instance, marshalled);
-                        DynValue luaReturn = LuaMarshal.MarshalClrToLua(methodName, ctx, returnval);
-
-                        return luaReturn;
+                        if (!methodTakesTuple)
+                        {
+                            object?[] marshalled = LuaMarshal.MarshalLuaToClrArray(methodName, ctx, y.GetArray(1), parameterTypes);
+                            object? returnval = methodInfo.Invoke(instance, marshalled);
+                            DynValue luaReturn = LuaMarshal.MarshalClrToLua(methodName, ctx, returnval);
+                            return luaReturn;
+                        }
+                        else
+                        {
+                            object?[] marshalled = LuaMarshal.MarshalLuaToClrArray(methodName, ctx, y.GetArray(1)[0..(parameterTypes.Length - 1)],
+                                parameterTypes[0..(parameterTypes.Length - 1)]);
+                            Array.Resize(ref marshalled, marshalled.Length + 1);
+                            marshalled[marshalled.Length - 1] = y.GetArray(1)[(parameterTypes.Length - 1)..];
+                            object? returnval = methodInfo.Invoke(instance, marshalled);
+                            DynValue luaReturn = LuaMarshal.MarshalClrToLua(methodName, ctx, returnval);
+                            return luaReturn;
+                        }
                     }
                     throw new InvalidOperationException(methodName + " method call went terribly wrong");   
                 });
@@ -273,7 +290,8 @@ public static class InstanceBridge
                     InstanceClassCacheProperty[] cacheProperties = cache.Properties.Values.ToArray();
                     foreach (InstanceClassCacheProperty property in cacheProperties)
                     {
-                        if (!property.IsAnAlias && property.PropertyType != typeof(LuaEvent) && !property.IsObsolete)
+                        if ((!property.IsAnAlias && property.PropertyType != typeof(LuaEvent) && !property.IsObsolete) ||
+                            property.Property.IsDefined(typeof(EditorPropertyForceShownAttribute)))
                             properties[property.Name] = property;
                     }
                     cache = cache.RetrieveParentCache();
@@ -282,6 +300,12 @@ public static class InstanceBridge
                 List<InstanceClassCacheProperty> abcProperties = properties.Values.ToList();
 
                 abcProperties.Sort((x, y) => x.Name.CompareTo(y.Name));
+
+                for (int i = 0; i < abcProperties.Count; i++)
+                {
+                    if (abcProperties[i].Property.IsDefined(typeof(EditorPropertyHiddenAttribute)))
+                        abcProperties.RemoveAt(i--);
+                }
 
                 StudioProperties = abcProperties.ToArray();
             }

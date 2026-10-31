@@ -13,7 +13,10 @@ public abstract class NetworkPacketHandler
         [(int)NetworkPacketType.NPUnreliableConnectionInfo] = new NPUnreliableConnectionInfo(),
         [(int)NetworkPacketType.NPRespondDeltaReplication] = new NPRespondDeltaReplication(),
         [(int)NetworkPacketType.NPPing] = new NPPing(),
-        [(int)NetworkPacketType.NPClientCameraUpdate] = new NPClientCameraUpdate()
+        [(int)NetworkPacketType.NPClientCameraUpdate] = new NPClientCameraUpdate(),
+        [(int)NetworkPacketType.NPRemoteFunctionRequest] = new NPRemoteFunctionRequest(),
+        [(int)NetworkPacketType.NPRemoteFunctionResponse] = new NPRemoteFunctionResponse(),
+        [(int)NetworkPacketType.NPRemoteEvent] = new NPRemoteEvent(),
     };
 
     public const int PROTOCOL_VERSION = 2;

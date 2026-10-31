@@ -22,6 +22,7 @@ public class NetworkClient : Instance
     public new ReplicationAgent ReplicationAgent;
 
     public TimeSpan LastServerPingValue;
+    public Dictionary<int, RemoteFunctionAwaiterItem> RemoteFunctionAwaiterItems = [];
 
     private bool waitingForPing;
     private GlobalTimestamp waitingForPingLastTime;
@@ -38,6 +39,22 @@ public class NetworkClient : Instance
         public required string ServerIP;
         public required string ServerParameters;
         public required int ServerPort;
+    }
+
+    public void AddRemoteFunctionAwaiter(RemoteFunction remoteFunction, int nonce)
+    {
+        ScriptSchedulerTask? scriptSchedulerTask = GameManager.GameScheduler.CurrentSchedulerTask as ScriptSchedulerTask;
+        if (scriptSchedulerTask == null)
+            throw new InvalidOperationException("Cannot use RemoteFunction from C#");
+
+        RemoteFunctionAwaiterItem remoteFunctionAwaiterItem = new RemoteFunctionAwaiterItem()
+        {
+            ScriptSchedulerTask = scriptSchedulerTask,
+            Nonce = nonce,
+            Function = remoteFunction
+        };
+
+        RemoteFunctionAwaiterItems[nonce] = remoteFunctionAwaiterItem;
     }
 
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]

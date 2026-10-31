@@ -39,6 +39,16 @@
             "preLaunchTask": "dotnet: build"
         },
         {
+            "name": "C#: NetBloxClient with scripts",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/NetBloxClient/bin/Debug/net10.0/NetBloxClient.dll",
+            "cwd": "${workspaceFolder}/NetBloxClient/bin/Debug/net10.0",
+            "launchSettingsFilePath": "${workspaceFolder}/NetBloxClient/Properties/launchSettings.json",
+            "launchSettingsProfile": "NetBloxClient with scripts",
+            "preLaunchTask": "dotnet: build"
+        },
+        {
             "name": "C#: NetBloxServer Debug",
             "type": "dotnet",
             "request": "launch",
@@ -69,6 +79,10 @@
         {
             "name": "Both Server and Client",
             "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxServer Debug"]
+        },
+        {
+            "name": "Both Server (-Script) and Client",
+            "configurations": ["C#: NetBloxClient with scripts", "C#: NetBloxServer Debug (test: -Script)"]
         },
         {
             "name": "Server and Two Clients",

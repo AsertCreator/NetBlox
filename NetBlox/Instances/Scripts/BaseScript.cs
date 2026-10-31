@@ -7,6 +7,7 @@ namespace NetBlox.Instances.Scripts;
 public class BaseScript : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.Plugin)]
+    [EditorPropertyHidden]
     public string Source { get; set; } = "";
 
     public override string ClassName => nameof(BaseScript);

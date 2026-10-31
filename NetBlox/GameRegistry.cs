@@ -36,7 +36,18 @@ public sealed class GameRegistry
 
     public void RegisterAssembly(Assembly assembly)
     {
-        
+        if (!assemblies.Contains(assembly))
+            assemblies.Add(assembly);
+    }
+    public Type? GetEnumFromRegisteredAssemblies(string enumName)
+    {
+        foreach (Assembly assembly in assemblies)
+        {
+            Type? possibleEnumType = assembly.DefinedTypes.FirstOrDefault(x => x.Name == enumName && x.IsEnum);
+            if (possibleEnumType != null)
+                return possibleEnumType;
+        }
+        return null;
     }
 
     public bool IsTypeDefined(string className)
@@ -130,7 +141,7 @@ public sealed class GameRegistry
     {
         foreach (Assembly assembly in assemblies)
         {
-            Type? type = assembly.GetTypes().FirstOrDefault(x => x.Name == className);
+            Type? type = assembly.DefinedTypes.FirstOrDefault(x => x.Name == className);
             if (type != null)
                 return type;
         }

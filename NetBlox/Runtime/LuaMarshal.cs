@@ -1,5 +1,6 @@
 using System.Numerics;
 using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.Interop;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime.Bridges;
@@ -268,6 +269,194 @@ public static class LuaMarshal
         }
         else
             throw new Exception("Unsupported type");
+    }
+    public static DynValue DeserializeLuaFromBytes(byte[] bytes, ScriptContext scriptContext, SecurityIdentity securityIdentity)
+    {
+        using MemoryStream ms = new MemoryStream(bytes);
+        using BinaryReader br = new BinaryReader(ms);
+
+        Script script = scriptContext.GetLuaStateFor(securityIdentity);
+
+        DynValue ProcessItem()
+        {
+            DataType dataType = (DataType)br.ReadByte();
+            switch (dataType)
+            {
+                case DataType.Number:
+                    return DynValue.NewNumber(br.ReadDouble());
+                case DataType.Boolean:
+                    return br.ReadBoolean() ? DynValue.True : DynValue.False;
+                case DataType.String:
+                    return DynValue.NewString(br.ReadString());
+                case DataType.Table:
+                    int length = br.ReadInt32();
+                    Table table = new Table(script);
+                    for (int i = 0; i < length; i++)
+                        table[ProcessItem()] = ProcessItem();
+                    return DynValue.NewTable(table);
+                case DataType.UserData:
+                    byte b = br.ReadByte();
+                    if (b == 1)
+                    {
+                        InstanceID instanceID = br.ReadUInt64();
+                        Instance? instance = scriptContext.GameManager.GameRegistry.GetLocalInstanceById(instanceID);
+                        if (instance == null)
+                            return DynValue.Nil;
+                        return DynValue.NewUserData(InstanceBridge.PushUserData(scriptContext.GameManager, instance));
+                    }
+                    else if (b == 2)
+                    {
+                        BrickColor brickColor = BrickColor.GetBrickColorByIndex(br.ReadInt32());
+                        return DynValue.NewUserData(BrickColorBridge.PushUserData(scriptContext.GameManager, brickColor));
+                    }
+                    else if (b == 3)
+                    {
+                        Color3 color3 = default;
+                        color3.R = br.ReadByte();
+                        color3.G = br.ReadByte();
+                        color3.B = br.ReadByte();
+                        return DynValue.NewUserData(Color3Bridge.PushUserData(scriptContext.GameManager, color3));
+                    }
+                    else if (b == 4)
+                    {
+                        Type? enumtype = scriptContext.GameManager.GameRegistry.GetEnumFromRegisteredAssemblies(br.ReadString());
+                        if (enumtype == null)
+                            throw new InvalidOperationException("Cannot unpack unknown enum type!");
+
+                        EnumValue enumValue = default;
+                        enumValue.EnumType = enumtype;
+                        enumValue.Value = br.ReadInt32();
+                        enumValue.Name = Enum.GetName(enumtype, enumValue.Value) ?? "<network corruption>";
+                        return DynValue.NewUserData(EnumValueBridge.PushUserData(scriptContext.GameManager, enumValue));
+                    }
+                    else if (b == 5)
+                    {
+                        UDim2 uDim2 = default;
+                        uDim2.X.Scale = br.ReadSingle();
+                        uDim2.X.Offset = br.ReadSingle();
+                        uDim2.Y.Scale = br.ReadSingle();
+                        uDim2.Y.Offset = br.ReadSingle();
+                        return DynValue.NewUserData(UDim2Bridge.PushUserData(scriptContext.GameManager, uDim2));
+                    }
+                    else if (b == 6)
+                    {
+                        UDim uDim = default;
+                        uDim.Scale = br.ReadSingle();
+                        uDim.Offset = br.ReadSingle();
+                        return DynValue.NewUserData(UDimBridge.PushUserData(scriptContext.GameManager, uDim));
+                    }
+                    else if (b == 7)
+                    {
+                        Vector2 vector2 = default;
+                        vector2.X = br.ReadSingle();
+                        vector2.Y = br.ReadSingle();
+                        return DynValue.NewUserData(Vector2Bridge.PushUserData(scriptContext.GameManager, vector2));
+                    }
+                    else if (b == 8)
+                    {
+                        Vector3 vector3 = default;
+                        vector3.X = br.ReadSingle();
+                        vector3.Y = br.ReadSingle();
+                        vector3.Z = br.ReadSingle();
+                        return DynValue.NewUserData(Vector3Bridge.PushUserData(scriptContext.GameManager, vector3));
+                    }
+                    break;
+            }
+            return DynValue.Nil;
+        }
+
+        return ProcessItem();
+    }
+    public static byte[] SerializeLuaToBytes(DynValue value)
+    {
+        using MemoryStream ms = new MemoryStream();
+        using BinaryWriter bw = new BinaryWriter(ms);
+
+        void ProcessItem(DynValue item)
+        {
+            bw.Write((byte)item.Type);
+            switch (item.Type)
+            {
+                case DataType.Number:
+                    bw.Write(item.Number);
+                    break;
+                case DataType.Boolean:
+                    bw.Write(item.Boolean);
+                    break;
+                case DataType.String:
+                    bw.Write(item.String);
+                    break;
+                case DataType.Table:
+                    bw.Write(item.Table.Length);
+                    foreach (TablePair tablePair in item.Table.Pairs)
+                    {
+                        ProcessItem(tablePair.Key);
+                        ProcessItem(tablePair.Value);
+                    }
+                    break;
+                case DataType.UserData:
+                    IUserDataDescriptor userDataDescriptor = item.UserData.Descriptor;
+                    if (userDataDescriptor is InstanceBridge.InstanceBridgeDescriptor inst)
+                    {
+                        bw.Write((byte)1);
+                        bw.Write(inst.Value);
+                    }
+                    else if (userDataDescriptor is BrickColorBridge.BrickColorDescriptor brickColor)
+                    {
+                        bw.Write((byte)2);
+                        bw.Write(brickColor.Value.Index);
+                    }
+                    else if (userDataDescriptor is Color3Bridge.Color3Descriptor color3)
+                    {
+                        bw.Write((byte)3);
+                        bw.Write(color3.Value.R);
+                        bw.Write(color3.Value.G);
+                        bw.Write(color3.Value.B);
+                    }
+                    else if (userDataDescriptor is EnumValueBridge.EnumValueDescriptor enumval)
+                    {
+                        bw.Write((byte)4);
+                        bw.Write(enumval.Value.EnumType.Name);
+                        bw.Write(enumval.Value.Value);
+                    }
+                    else if (userDataDescriptor is UDim2Bridge.UDim2Descriptor udim2)
+                    {
+                        bw.Write((byte)5);
+                        bw.Write(udim2.Value.X.Scale);
+                        bw.Write(udim2.Value.X.Offset);
+                        bw.Write(udim2.Value.Y.Scale);
+                        bw.Write(udim2.Value.Y.Offset);
+                    }
+                    else if (userDataDescriptor is UDimBridge.UDimDescriptor udim)
+                    {
+                        bw.Write((byte)6);
+                        bw.Write(udim.Value.Scale);
+                        bw.Write(udim.Value.Offset);
+                    }
+                    else if (userDataDescriptor is Vector2Bridge.Vector2Descriptor vector2)
+                    {
+                        bw.Write((byte)7);
+                        bw.Write(vector2.Value.X);
+                        bw.Write(vector2.Value.Y);
+                    }
+                    else if (userDataDescriptor is Vector3Bridge.Vector3Descriptor vector3)
+                    {
+                        bw.Write((byte)8);
+                        bw.Write(vector3.Value.X);
+                        bw.Write(vector3.Value.Y);
+                        bw.Write(vector3.Value.Z);
+                    }
+                    else
+                    {
+                        bw.Write((byte)9); // this means that there's nothing to serialize
+                    }
+                    break;
+            }
+        }
+
+        ProcessItem(value);
+
+        return ms.ToArray();
     }
 
     private static readonly Type cachedInt8Type = typeof(SByte);
