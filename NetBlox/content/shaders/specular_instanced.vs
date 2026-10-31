@@ -21,7 +21,7 @@ uniform int surfaceFront;
 uniform int surfaceBack;
 uniform int useSurfaces;
 
-smooth out vec2 fragTexCoord;
+out vec2 fragTexCoord;
 flat out int fragSurfaceType;
 out vec4 fragColor;
 out vec3 fragNormal;

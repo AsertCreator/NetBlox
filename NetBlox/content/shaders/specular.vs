@@ -12,7 +12,7 @@ uniform mat4 matModel;
 uniform mat4 lightVP;
 uniform mat4 matNormal;
 
-smooth out vec2 fragTexCoord;
+out vec2 fragTexCoord;
 out vec4 fragColor;
 out vec3 fragNormal;
 out vec3 fragPosition;
