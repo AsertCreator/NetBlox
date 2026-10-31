@@ -194,7 +194,7 @@ public sealed class GameAssetManager
                     return true;
                 }
             }
-            else if (contentIdString.StartsWith("net-internal://"))
+            else if (contentIdString.StartsWith("net-internal://") && GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls))
             {
                 contentId = new ContentId()
                 {
@@ -203,7 +203,7 @@ public sealed class GameAssetManager
                 };
                 return true;
             }
-            else if (contentIdString.StartsWith("net-local://"))
+            else if (contentIdString.StartsWith("net-local://") && GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls))
             {
                 contentId = new ContentId()
                 {
@@ -212,7 +212,7 @@ public sealed class GameAssetManager
                 };
                 return true;
             }
-            else if (contentIdString.StartsWith("net-network://"))
+            else if (contentIdString.StartsWith("net-network://") && GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls))
             {
                 contentId = new ContentId()
                 {

@@ -50,7 +50,7 @@ public class ScriptContext : Instance
         if (luaStates.TryGetValue(securityIdentity, out Script? luaState))
             return luaState;
         
-        luaState = new Script(CoreModules.Metatables | CoreModules.String | CoreModules.Table | CoreModules.OS_System | CoreModules.Basic |
+        luaState = new Script(CoreModules.Metatables | CoreModules.String | CoreModules.Table | CoreModules.OS_Time | CoreModules.Basic |
             CoreModules.Math | CoreModules.TableIterators | CoreModules.Coroutine | CoreModules.Bit32 | CoreModules.OS_Time);
 
         luaStates[securityIdentity] = luaState;

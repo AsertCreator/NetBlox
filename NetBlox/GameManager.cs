@@ -166,6 +166,8 @@ public sealed class GameManager
             AccessFlags |= AccessFlags.DisableCaching;
         if (UnpairedConsoleArguments.Contains("AllowCustomAssemblies"))
             AccessFlags |= AccessFlags.AllowCustomAssemblies;
+        if (UnpairedConsoleArguments.Contains("AllowNetBloxSpecificAssetUrls"))
+            AccessFlags |= AccessFlags.AllowNetBloxSpecificAssetUrls;
 
         if (PairedConsoleArguments.ContainsKey("AuxAssembly") && NetworkMode != NetworkMode.Client)
             LoadAuxiliaryAssemblyFrom(PairedConsoleArguments["AuxAssembly"]);
