@@ -1,6 +1,8 @@
 using MoonSharp.Interpreter;
+using NetBlox.Instances;
 using NetBlox.Instances.Scripts;
 using NetBlox.Instances.Services;
+using NetBlox.Runtime.Bridges;
 
 namespace NetBlox.Runtime;
 
@@ -43,6 +45,61 @@ public class LuaEvent
         LuaEventConnection eventConnection = new LuaEventConnection(this, securityIdentity, gameManager, dynValue, attacher);
         eventListeners.Add(eventConnection);
         return eventConnection;
+    }
+    public void FireWithNetworkLuaPayload(Instance firstArgument, byte[] payload)
+    {
+        Dictionary<SecurityIdentity, DynValue> cached = [];
+
+        DynValue DecodeFor(GameManager gameManager, SecurityIdentity securityIdentity)
+        {
+            DynValue dynValue = LuaMarshal.DeserializeLuaFromBytes(payload, gameManager.RootModel.GetService<ScriptContext>(), securityIdentity);
+            List<DynValue> arguments = [];
+
+            arguments.Add(DynValue.NewUserData(InstanceBridge.PushUserData(gameManager, firstArgument)));
+
+            if (dynValue.Type == DataType.Table)
+                arguments.AddRange(dynValue.Table.Values.ToArray());
+            else if (dynValue.Type == DataType.Tuple)
+                arguments.AddRange(dynValue.Tuple);
+            
+            return DynValue.NewTuple(arguments.ToArray());
+        }
+
+        for (int i = 0; i < eventListeners.Count; i++)
+        {
+            LuaEventConnection eventConnection = eventListeners[i];
+            GameManager gameManager = eventConnection.GameManager;
+            BaseScript? attacher = eventConnection.Attacher;
+            DynValue function = eventConnection.Handler;
+
+            ScriptSchedulerTask task = (ScriptSchedulerTask)gameManager.GameScheduler.Schedule(new ScriptSchedulerTask(attacher, function)
+            {
+                DebugName = $"Event Handler - {attacher?.ToString() ?? "<>"} - {function}",
+                GameScheduler = gameManager.GameScheduler,
+                Delegate = _ => SchedulerTaskResult.NotCompleted
+            });
+
+            if (!cached.ContainsKey(eventConnection.Identity))
+                cached[eventConnection.Identity] = DecodeFor(gameManager, eventConnection.Identity);
+
+            task.Identity = eventConnection.Identity;
+            task.AsyncFunctionArguments = cached[eventConnection.Identity];
+        }
+
+        if (awaitingTasks.Count > 0)
+        {
+            for (int i = 0; i < awaitingTasks.Count; i++)
+            {
+                if (awaitingTasks[i] is ScriptSchedulerTask scriptSchedulerTask)
+                {
+                    if (!cached.ContainsKey(scriptSchedulerTask.Identity!))
+                        cached[scriptSchedulerTask.Identity!] = DecodeFor(scriptSchedulerTask.GameScheduler.GameManager, scriptSchedulerTask.Identity!);
+                    scriptSchedulerTask.AsyncFunctionArguments = cached[scriptSchedulerTask.Identity!];
+                }
+                awaitingTasks[i].IsWaiting = false;
+            }
+            awaitingTasks.Clear();
+        }
     }
     public void FireWithNetworkLuaPayload(byte[] payload)
     {

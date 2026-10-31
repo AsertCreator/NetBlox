@@ -43,7 +43,7 @@ public sealed class NPRemoteEvent : NetworkPacketHandler
         if (!remoteEvent.OnServerEvent.HasConnections && !remoteEvent.OnServerEvent.HasWaiters)
             return; // or maybe not
 
-        remoteEvent.OnServerEvent.FireWithNetworkLuaPayload(payload);
+        remoteEvent.OnServerEvent.FireWithNetworkLuaPayload(player, payload);
     }
     public override void HandleClientboundPacket(NetworkPacket networkPacket, GameManager gm, CompoundConnection connection)
     {
