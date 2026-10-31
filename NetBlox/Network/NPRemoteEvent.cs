@@ -8,7 +8,7 @@ namespace NetBlox.Network;
 
 public sealed class NPRemoteEvent : NetworkPacketHandler
 {
-    public static NetworkPacket Create(RemoteEvent remoteEvent, DynValue arguments)
+    public static NetworkPacket Create(BaseRemoteEvent remoteEvent, DynValue arguments)
     {
         using MemoryStream ms = new MemoryStream();
         using BinaryWriter bw = new BinaryWriter(ms);
@@ -31,7 +31,7 @@ public sealed class NPRemoteEvent : NetworkPacketHandler
         NetworkServer networkServer = gm.RootModel.GetService<NetworkServer>();
         ScriptContext scriptContext = gm.RootModel.GetService<ScriptContext>();
 
-        RemoteEvent? remoteEvent = gm.GameRegistry.GetLocalInstanceById(br.ReadUInt64()) as RemoteEvent;
+        BaseRemoteEvent? remoteEvent = gm.GameRegistry.GetLocalInstanceById(br.ReadUInt64()) as BaseRemoteEvent;
         if (remoteEvent == null)
         {
             Trace.TraceWarning("Recevied a call to a RemoteEvent that didn't arrive yet!");
@@ -53,7 +53,7 @@ public sealed class NPRemoteEvent : NetworkPacketHandler
         NetworkClient networkServer = gm.RootModel.GetService<NetworkClient>();
         ScriptContext scriptContext = gm.RootModel.GetService<ScriptContext>();
 
-        RemoteEvent? remoteEvent = gm.GameRegistry.GetLocalInstanceById(br.ReadUInt64()) as RemoteEvent;
+        BaseRemoteEvent? remoteEvent = gm.GameRegistry.GetLocalInstanceById(br.ReadUInt64()) as BaseRemoteEvent;
         if (remoteEvent == null)
         {
             Trace.TraceWarning("Recevied a call to a RemoteEvent that didn't arrive yet!");
