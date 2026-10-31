@@ -153,6 +153,9 @@ public static class Vector2Bridge
                 throw new ScriptRuntimeException("Vector2.new requires 2 number arguments");
             });
             vector2module.MetaTable = vector2meta;
+
+            vector2meta.Frozen = true;
+            vector2module.Frozen = true;
         }
 
         script.Globals["Vector2"] = vector2module;

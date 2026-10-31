@@ -55,6 +55,8 @@ public class ScriptContext : Instance
 
         luaStates[securityIdentity] = luaState;
 
+        luaState.Globals.Frozen = false;
+
         luaState.Globals["_G"] = DynValue.NewTable(luaState);
         luaState.Globals["shared"] = DynValue.NewTable(luaState);
         luaState.Globals["getgenv"] = DynValue.Nil;
@@ -186,6 +188,8 @@ public class ScriptContext : Instance
         BrickColorBridge.Setup(GameManager);
         InstanceBridge.Setup(GameManager);
         EnumValueBridge.Setup(GameManager);
+
+        luaState.Globals.Frozen = true;
 
         return luaState;
     }

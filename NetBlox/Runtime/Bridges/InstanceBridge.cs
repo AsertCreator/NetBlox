@@ -493,6 +493,9 @@ public static class InstanceBridge
                 throw new ScriptRuntimeException("Instance.new requires 1 string argument and an optional Instance argument");
             });
             instancemodule.MetaTable = instancemeta;
+
+            instancemeta.Frozen = true;
+            instancemodule.Frozen = true;
         }
 
         script.Globals["Instance"] = instancemodule;

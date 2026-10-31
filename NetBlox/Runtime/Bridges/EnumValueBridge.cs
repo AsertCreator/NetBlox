@@ -97,6 +97,8 @@ public static class EnumValueBridge
                     enumtable[enumnames[i]] = dv;
                 }
 
+                enumtable.Frozen = true;
+
                 Enummeta[enumtype.Name] = enumtable;
             }
 
@@ -105,8 +107,13 @@ public static class EnumValueBridge
             AddEnum<PartType>();
             AddEnum<TextXAlignment>();
             AddEnum<TextYAlignment>();
+            AddEnum<NormalId>();
+            AddEnum<Axis>();
 
             Enummodule.MetaTable = Enummeta;
+
+            Enummeta.Frozen = true;
+            Enummodule.Frozen = true;
         }
 
         script.Globals["Enum"] = Enummodule;

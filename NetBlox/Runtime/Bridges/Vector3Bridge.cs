@@ -161,6 +161,9 @@ public static class Vector3Bridge
                 throw new ScriptRuntimeException("Vector3.new requires 3 number arguments");
             });
             vector3module.MetaTable = vector3meta;
+
+            vector3meta.Frozen = true;
+            vector3module.Frozen = true;
         }
 
         script.Globals["Vector3"] = vector3module;

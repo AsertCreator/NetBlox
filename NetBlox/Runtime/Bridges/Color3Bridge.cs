@@ -123,6 +123,9 @@ public static class Color3Bridge
                 throw new ScriptRuntimeException("Color3.new requires 3 number arguments");
             });
             Color3module.MetaTable = Color3meta;
+
+            Color3meta.Frozen = true;
+            Color3module.Frozen = true;
         }
 
         script.Globals["Color3"] = Color3module;

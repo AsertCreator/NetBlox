@@ -220,6 +220,9 @@ public static class BrickColorBridge
                 throw new ArgumentException("BrickColor.new requires 1 number argument or 1 string argument or 1 Color3 argument or 3 number arguments");
             });
             bcolormodule.MetaTable = bcolormeta;
+
+            bcolormeta.Frozen = true;
+            bcolormodule.Frozen = true;
         }
 
         script.Globals["BrickColor"] = bcolormodule;

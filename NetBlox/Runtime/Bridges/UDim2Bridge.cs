@@ -145,6 +145,9 @@ public static class UDim2Bridge
                 throw new ScriptRuntimeException("UDim2.new requires 2 UDim arguments or 4 number arguments");
             });
             udim2module.MetaTable = udim2meta;
+
+            udim2meta.Frozen = true;
+            udim2module.Frozen = true;
         }
 
         script.Globals["UDim2"] = udim2module;

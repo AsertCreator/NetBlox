@@ -130,6 +130,9 @@ public static class UDimBridge
                 throw new ScriptRuntimeException("UDim.new requires 2 number arguments");
             });
             udimmodule.MetaTable = udimmeta;
+
+            udimmeta.Frozen = true;
+            udimmodule.Frozen = true;
         }
 
         script.Globals["UDim"] = udimmodule;
