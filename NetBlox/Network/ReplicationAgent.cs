@@ -422,6 +422,9 @@ public class ReplicationAgent
                 Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
                 int propertyChangeCount = br.ReadInt32();
 
+                if (instance == null)
+                    continue;
+
                 InstanceBridge.InstanceClassCache cache = scriptContext.ResolveInstanceClassCacheForType(instance!.GetType());
 
                 for (int j = 0; j < propertyChangeCount; j++)

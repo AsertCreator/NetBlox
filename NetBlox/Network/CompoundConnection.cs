@@ -96,6 +96,12 @@ public class CompoundConnection : IDisposable
             Span<byte> typebytes = stackalloc byte[4];
             int length = BitConverter.ToInt32(lengthbytes);
 
+            if (length < 4)
+            {
+                SeeIfConnectionIsStillUp();
+                return;
+            }
+
             stream.ReadExactly(typebytes);
 
             int type = BitConverter.ToInt32(typebytes);

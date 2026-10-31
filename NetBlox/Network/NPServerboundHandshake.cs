@@ -49,7 +49,7 @@ public sealed class NPServerboundHandshake : NetworkPacketHandler
         entity.VersionPatch = br.ReadInt16();
         entity.EvaluatedClientFlags = (ClientFlags)br.ReadInt16();
 
-        if (players.children.Count > networkServer.MaxPlayerCount)
+        if (players.children.Count >= networkServer.MaxPlayerCount)
         {
             networkServer.ForceDisconnectPlayerWithMessage(player, "Server out of capacity; please join later");
             return;
