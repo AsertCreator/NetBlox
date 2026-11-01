@@ -338,6 +338,7 @@ public class WorkspaceRendererViewport : RendererViewport
     {
         Raylib.ClearBackground(Color.SkyBlue);
 
+        CoreEditorService? coreEditorService = GameRenderer.GameManager.RootModel.FindService<CoreEditorService>();
         Lighting lighting = GameRenderer.GameManager.RootModel.GetService<Lighting>();
 
         if (lighting.RealTimeShadows)
@@ -367,7 +368,13 @@ public class WorkspaceRendererViewport : RendererViewport
             Raylib.SetShaderValueMatrix(SpecularLightingInstancedShader, uniform_instanced_lightVP, matlightVP);
         }
 
-        DoDebugKeys();
+        if (coreEditorService != null)
+        {
+            if (!coreEditorService.KeyboardFocused)
+                DoDebugKeys();
+        }
+        else
+            DoDebugKeys();
 
         Raylib.SetShaderValue(SpecularLightingShader, uniform_viewPosition, MainCamera.Position, ShaderUniformDataType.Vec3);
         Raylib.SetShaderValue(SpecularLightingShader, uniform_lightPosition, 

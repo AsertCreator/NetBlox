@@ -15,6 +15,8 @@ public class CoreEditorService : Instance
 
     public override string ClassName => nameof(CoreEditorService);
 
+    public bool KeyboardFocused;
+
     public Texture2D InstanceClassAtlas;
     public List<EditorWindow> EditorWindows;
     private bool everInitialized;
@@ -151,9 +153,12 @@ public class CoreEditorService : Instance
                 window.RenderWindow(this);
             }
 
-            if (Raylib.IsKeyPressed(KeyboardKey.Backspace) && (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) ||
-                Raylib.IsKeyPressed(KeyboardKey.Delete) && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()))
-                InvokeVerbDelete();
+            if (!KeyboardFocused)
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Backspace) && (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) ||
+                    Raylib.IsKeyPressed(KeyboardKey.Delete) && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()))
+                    InvokeVerbDelete();
+            }
         }
     }
 
