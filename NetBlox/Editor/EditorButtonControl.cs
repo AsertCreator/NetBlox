@@ -1,6 +1,4 @@
 using System.Numerics;
-using NetBlox.Instances;
-using NetBlox.Instances.Services.Internal;
 using NetBlox.Rendering;
 using Raylib_cs;
 
@@ -15,10 +13,10 @@ public class EditorButtonControl : EditorControl
     public EditorButtonControlClickedCallback ClickedCallback = () => {};
     public string Text = "";
 
-    public override void Render(CoreEditorService service, EditorWindow window, Vector2 offset, Vector2 windowSize)
+    public override void Render(EditorWindow window, Vector2 offset, Vector2 windowSize)
     {
-        FontSpecification fontSpecification = service.GameManager.GameRenderer!.DefaultFontSpecification;
-        Font font = service.GameManager.GameRenderer.FontRegistry.LoadFontFromSpecification(fontSpecification);
+        FontSpecification fontSpecification = EditorService.GameManager.GameRenderer!.DefaultFontSpecification;
+        Font font = EditorService.GameManager.GameRenderer.FontRegistry.LoadFontFromSpecification(fontSpecification);
         Vector2 size = Size.Resolve(windowSize);
         Vector2 position = Position.Resolve(windowSize);
         Vector2 mousePosition = Raylib.GetMousePosition();

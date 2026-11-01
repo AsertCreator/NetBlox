@@ -86,6 +86,12 @@ public sealed class GameAssetManager
             return null;
         return BeginDownloadingFileFrom(contentId1);
     }
+    public AssetDownloadTask? QuickLoadForInternalUse(string contentId)
+    {
+        if (!TryParseContentId(contentId, out ContentId contentId1, true))
+            return null;
+        return BeginDownloadingFileFrom(contentId1);
+    }
     public Texture2D LoadTextureFromStream(string type, Stream imageStream)
     {
         if (cachedImages.TryGetValue(imageStream, out Texture2D texture2D))
@@ -151,7 +157,7 @@ public sealed class GameAssetManager
         AllCurrentDownloadTasks.ForEach(x => x.CancellationTokenSource.Cancel());
         AllCurrentDownloadTasks.Clear();
     }
-    public bool TryParseContentId(string contentIdString, out ContentId contentId)
+    public bool TryParseContentId(string contentIdString, out ContentId contentId, bool securityOverride = false)
     {
         try
         {
@@ -194,7 +200,7 @@ public sealed class GameAssetManager
                     return true;
                 }
             }
-            else if (contentIdString.StartsWith("net-internal://") && GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls))
+            else if (contentIdString.StartsWith("net-internal://") && (GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls) || securityOverride))
             {
                 contentId = new ContentId()
                 {
@@ -203,7 +209,7 @@ public sealed class GameAssetManager
                 };
                 return true;
             }
-            else if (contentIdString.StartsWith("net-local://") && GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls))
+            else if (contentIdString.StartsWith("net-local://") && (GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls) || securityOverride))
             {
                 contentId = new ContentId()
                 {
@@ -212,7 +218,7 @@ public sealed class GameAssetManager
                 };
                 return true;
             }
-            else if (contentIdString.StartsWith("net-network://") && GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls))
+            else if (contentIdString.StartsWith("net-network://") && (GameManager.AccessFlags.HasFlag(AccessFlags.AllowNetBloxSpecificAssetUrls) || securityOverride))
             {
                 contentId = new ContentId()
                 {

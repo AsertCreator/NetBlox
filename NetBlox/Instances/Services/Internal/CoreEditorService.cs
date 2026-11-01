@@ -66,7 +66,7 @@ public class CoreEditorService : Instance
 
     public EditorWindow CreateExplorerWindow()
     {
-        EditorWindow editorWindow = new EditorWindow();
+        EditorWindow editorWindow = new EditorWindow(this);
         editorWindow.Position = new UDim2(0.8f, 0, 0, 0);
         editorWindow.Size = new UDim2(0.2f, 0, 1, 0);
         editorWindow.Title = "Explorer";
@@ -80,7 +80,7 @@ public class CoreEditorService : Instance
     }
     public EditorWindow CreatePropertiesWindow()
     {
-        EditorWindow editorWindow = new EditorWindow();
+        EditorWindow editorWindow = new EditorWindow(this);
         editorWindow.Position = default;
         editorWindow.Size = new UDim2(0.3f, 0, 1, 0);
         editorWindow.Title = "Properties";
@@ -94,7 +94,7 @@ public class CoreEditorService : Instance
     }
     public EditorWindow CreateInstanceWindow()
     {
-        EditorWindow editorWindow = new EditorWindow();
+        EditorWindow editorWindow = new EditorWindow(this);
         editorWindow.Position = new UDim2(0.5f, -150, 0.8f, 0);
         editorWindow.Size = new UDim2(0, 300, 0.2f, 0);
         editorWindow.Title = "Instance";
@@ -150,7 +150,7 @@ public class CoreEditorService : Instance
                 Raylib.DrawRectangle((int)position.X, (int)position.Y, (int)size.X, (int)size.Y, windowBackgroundColor);
                 Raylib.DrawTextEx(font, window.Title, position + new Vector2(3, 3), fontSpecification.Size, 0, Color.White);
 
-                window.RenderWindow(this);
+                window.RenderWindow();
             }
 
             if (!KeyboardFocused)

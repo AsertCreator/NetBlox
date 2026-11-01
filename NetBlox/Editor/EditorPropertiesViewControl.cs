@@ -55,11 +55,23 @@ public class EditorPropertiesViewControl : EditorControl
 
             lockFocus = true;
         }
+        else if (property.PropertyType == typeof(int))
+        {
+            // RenderPropertyEditorNumber(property, font, fontSpecification, instance);
+
+            if (property == currentEditedProperty)
+            {
+                Raylib.DrawRectangleLines(
+                    (int)propertyEditPosition.X, (int)propertyEditPosition.Y, (int)propertyEditSize.X, (int)propertyEditSize.Y, Color.SkyBlue);
+            }
+
+            lockFocus = true;
+        }
         else if (property.PropertyType == typeof(bool))
         {
             RenderPropertyEditorBoolean(property, font, fontSpecification, instance);
         }
-        else
+        else 
         {
             // as in disabled
             Raylib.DrawTextEx(
@@ -207,24 +219,24 @@ public class EditorPropertiesViewControl : EditorControl
         }
     }
 
-    public override void Render(CoreEditorService service, EditorWindow window, Vector2 offset, Vector2 windowSize)
+    public override void Render(EditorWindow window, Vector2 offset, Vector2 windowSize)
     {
-        FontSpecification fontSpecification = service.GameManager.GameRenderer!.DefaultFontSpecification;
-        Font font = service.GameManager.GameRenderer.FontRegistry.LoadFontFromSpecification(fontSpecification);
+        FontSpecification fontSpecification = EditorService.GameManager.GameRenderer!.DefaultFontSpecification;
+        Font font = EditorService.GameManager.GameRenderer.FontRegistry.LoadFontFromSpecification(fontSpecification);
 
         absoluteSize = Size.Resolve(windowSize);
         absoluteOffset = offset;
 
         Vector2 mousePosition = Raylib.GetMousePosition();
 
-        Instance[] selection = service.Root.GetService<Selection>().Get();
+        Instance[] selection = EditorService.Root.GetService<Selection>().Get();
 
         currentHeight = 0;
 
         if (selection.Length == 1)
         {
             Instance instance = selection[0];
-            ScriptContext scriptContext = service.Root.GetService<ScriptContext>();
+            ScriptContext scriptContext = EditorService.Root.GetService<ScriptContext>();
             InstanceBridge.InstanceClassCache classCache = scriptContext.ResolveInstanceClassCacheForType(instance.GetType());
 
             InstanceBridge.InstanceClassCacheProperty[] properties = classCache.GetStudioProperties();

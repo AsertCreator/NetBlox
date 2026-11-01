@@ -121,7 +121,7 @@ public class DataModel : ServiceProvider
             return SchedulerTaskResult.CompletedSuccess;
         }
 
-        GameManager.GameAssetManager.QuickLoad(path)?
+        GameManager.GameAssetManager.QuickLoadForInternalUse(path)?
             .AddCallbackForFailure(x =>
             {
                 Trace.TraceError("Failed to load place: couldn't fetch place");

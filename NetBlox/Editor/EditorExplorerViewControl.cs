@@ -47,13 +47,13 @@ public class EditorExplorerViewControl : EditorControl
         InstanceState[instance] = true;
     }
 
-    private void RenderItem(CoreEditorService service, Instance instance)
+    private void RenderItem(Instance instance)
     {
-        Instance[] selection = service.Root.GetService<Selection>().Get();
+        Instance[] selection = EditorService.Root.GetService<Selection>().Get();
         Vector2 completePosition = absoluteOffset + new Vector2(currentTabulation, currentHeight - ScrollOffset);
 
-        FontSpecification fontSpecification = service.GameManager.GameRenderer!.DefaultFontSpecification;
-        Font font = service.GameManager.GameRenderer.FontRegistry.LoadFontFromSpecification(fontSpecification);
+        FontSpecification fontSpecification = EditorService.GameManager.GameRenderer!.DefaultFontSpecification;
+        Font font = EditorService.GameManager.GameRenderer.FontRegistry.LoadFontFromSpecification(fontSpecification);
 
         Vector2 mousePosition = Raylib.GetMousePosition();
 
@@ -75,7 +75,7 @@ public class EditorExplorerViewControl : EditorControl
             
             int explorerIconIndex = ExplorerIconIndexAttributeMap[instanceType].Index;
 
-            Raylib.DrawTexturePro(service.InstanceClassAtlas,
+            Raylib.DrawTexturePro(EditorService.InstanceClassAtlas,
                 new Rectangle(16 * explorerIconIndex, 0, 16, 16),
                 new Rectangle(completePosition + 
                     new Vector2(fontSpecification.Size + explorerLineMargin + 1, (explorerLineMargin + fontSpecification.Size) / 2 - 8), 16, 16),
@@ -107,7 +107,7 @@ public class EditorExplorerViewControl : EditorControl
                 mousePosition.Y >= completePosition.Y && mousePosition.Y <= completePosition.Y + fontSpecification.Size + explorerLineMargin &&
                 Raylib.IsMouseButtonPressed(MouseButton.Left))
             {
-                service.Root.GetService<Selection>().Set([instance]);
+                EditorService.Root.GetService<Selection>().Set([instance]);
             }
         }
 
@@ -124,13 +124,13 @@ public class EditorExplorerViewControl : EditorControl
                 Instance? childInstance = rentedChildren.Values[i];
                 if (childInstance == null)
                     continue;
-                RenderItem(service, childInstance);
+                RenderItem(childInstance);
             }
 
             currentTabulation -= 20;
         }
     }
-    public override void Render(CoreEditorService service, EditorWindow window, Vector2 offset, Vector2 windowSize)
+    public override void Render(EditorWindow window, Vector2 offset, Vector2 windowSize)
     {
         absoluteSize = Size.Resolve(windowSize);
         absoluteOffset = offset;
@@ -138,7 +138,7 @@ public class EditorExplorerViewControl : EditorControl
         currentHeight = 0;
         currentTabulation = 0;
 
-        using RentedSpan<Instance?> rentedDataModelChildren = service.Root.GetChildren_Fast();
+        using RentedSpan<Instance?> rentedDataModelChildren = EditorService.Root.GetChildren_Fast();
 
         allInstances.Clear();
 
@@ -147,58 +147,60 @@ public class EditorExplorerViewControl : EditorControl
             Instance? childInstance = rentedDataModelChildren.Values[i];
             if (childInstance == null)
                 continue;
-            RenderItem(service, childInstance);
+            RenderItem(childInstance);
         }
 
-        if (!service.Root.GetService<CoreEditorService>().KeyboardFocused)
-            HandleKeyNavigation(service);
+        if (!EditorService.Root.GetService<CoreEditorService>().KeyboardFocused)
+            HandleKeyNavigation();
         HandleScrolling();
     }
 
-    private void HandleKeyNavigation(CoreEditorService service)
+    private void HandleKeyNavigation()
     {
+        Selection selectionService = EditorService.Root.GetService<Selection>();
+
         if (Raylib.IsKeyPressed(KeyboardKey.Down))
         {
-            Instance[] selection = service.Root.GetService<Selection>().Get();
+            Instance[] selection = selectionService.Get();
             if (selection.Length == 1)
             {
                 int index = allInstances.IndexOf(selection[0]);
                 if (index != -1 && index != allInstances.Count - 1)
-                    service.Root.GetService<Selection>().Set([allInstances[index + 1]]);
+                    selectionService.Set([allInstances[index + 1]]);
             }
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.Up))
         {
-            Instance[] selection = service.Root.GetService<Selection>().Get();
+            Instance[] selection = selectionService.Get();
             if (selection.Length == 1)
             {
                 int index = allInstances.IndexOf(selection[0]);
                 if (index != -1 && index != 0)
-                    service.Root.GetService<Selection>().Set([allInstances[index - 1]]);
+                    selectionService.Set([allInstances[index - 1]]);
             }
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.Left))
         {
-            Instance[] selection = service.Root.GetService<Selection>().Get();
+            Instance[] selection = selectionService.Get();
             if (selection.Length == 1)
             {
                 if (selection[0].Parent is not null && selection[0].Parent is not DataModel)
                 {
                     Collapse(selection[0].Parent!);
-                    service.Root.GetService<Selection>().Set([selection[0].Parent!]);
+                    selectionService.Set([selection[0].Parent!]);
                 }
                 else
-                    service.Root.GetService<Selection>().Set([selection[0]]);
+                    selectionService.Set([selection[0]]);
             }
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.Right))
         {
-            Instance[] selection = service.Root.GetService<Selection>().Get();
+            Instance[] selection = selectionService.Get();
             if (selection.Length == 1)
             {
                 if (selection[0].AliveChildrenCount > 0)
                 {
-                    service.Root.GetService<Selection>().Set([selection[0].GetChildren()[0]]);
+                    selectionService.Set([selection[0].GetChildren()[0]]);
                     Expand(selection[0]);
                 }
             }
