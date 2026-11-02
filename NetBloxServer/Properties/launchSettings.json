@@ -4,6 +4,14 @@
       "commandName": "Project",
       "commandLineArgs": "-Verbose -Port 44500 -Graphics -PlaceUrl rbxasset://places/CrossroadsButBetter.rbxlx -DisableUserScripts"
     },
+    "NetBloxServer (Welcoming.rbxlx)": {
+      "commandName": "Project",
+      "commandLineArgs": "-Verbose -Port 44500 -Graphics -PlaceUrl rbxasset://places/Welcoming.rbxlx"
+    },
+    "NetBloxServer (EngineTesting.rbxlx)": {
+      "commandName": "Project",
+      "commandLineArgs": "-Verbose -Port 44500 -Graphics -PlaceUrl rbxasset://places/EngineTesting.rbxlx"
+    },
     "NetBloxServer (test: -Script)": {
       "commandName": "Project",
       "commandLineArgs": "-Verbose -Port 44500 -Graphics -Script ../../../../scripts/lua/trunk.lua -DisableUserScripts"
