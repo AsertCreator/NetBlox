@@ -52,7 +52,8 @@ public sealed class GameRegistry
 
     public bool IsTypeDefined(string className)
     {
-        return _constructorCache.ContainsKey(className);
+        ConstructorInfo? constructor = TryResolveConstructorForClass(className, false);
+        return constructor != null;
     }
     public bool TryResolveInstanceById(ulong instanceId, [NotNullWhen(true)] out Instance? instance)
     {

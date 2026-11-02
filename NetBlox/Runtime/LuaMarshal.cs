@@ -17,6 +17,20 @@ public static class LuaMarshal
 
         Type clrType = value.GetType();
 
+        if (clrType.IsArray)
+        {
+            SecurityIdentity securityIdentity = ctx.GameManager.GameScheduler.GetCurrentSecurityIdentity();
+            Script script = ctx.GetLuaStateFor(securityIdentity);
+            Table returnvalue = new Table(script);
+
+            Array array = (Array)value;
+
+            for (int i = 0; i < array.Length; i++)
+                returnvalue.Append(MarshalClrToLua(funcName, ctx, array.GetValue(i)));
+            
+            return DynValue.NewTable(returnvalue);
+        }
+
         if (clrType == cachedDynValueType)
             return (DynValue)value;
         else if (clrType == cachedInt8Type)

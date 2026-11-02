@@ -12,6 +12,10 @@
       "commandName": "Project",
       "commandLineArgs": "-Verbose -Port 44500 -Graphics -PlaceUrl rbxasset://places/EngineTesting.rbxlx"
     },
+    "NetBloxServer (Trunk.rbxl)": {
+      "commandName": "Project",
+      "commandLineArgs": "-Verbose -Port 44500 -Graphics -PlaceUrl rbxasset://places/Trunk.rbxl"
+    },
     "NetBloxServer (test: -Script)": {
       "commandName": "Project",
       "commandLineArgs": "-Verbose -Port 44500 -Graphics -Script ../../../../scripts/lua/trunk.lua -DisableUserScripts"
