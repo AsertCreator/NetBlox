@@ -91,7 +91,7 @@ public class SoundService : Instance
 
         if (GameManager.GameRenderer != null)
         {
-            GameManager.GameAssetManager.QuickLoad("rbxasset://sounds/birdambient.mp3")?
+            GameManager.GameAssetManager.QuickLoad("rbxasset://sounds/birdsambient.mp3")?
                 .AddCallbackForFailure(x =>
                 {
                     Trace.TraceWarning("Bird ambient sound missing - birds are dead");
