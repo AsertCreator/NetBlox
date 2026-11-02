@@ -11,6 +11,7 @@ using Model = NetBlox.Instances.Parts.Model;
 namespace NetBlox.Instances;
 
 [Creatable]
+[ExplorerIconIndex(9)]
 public class Humanoid : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]

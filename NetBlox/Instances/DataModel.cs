@@ -92,6 +92,9 @@ public class DataModel : ServiceProvider
         Root.FindService<Teams>()?.Destroy();
         Root.FindService<Chat>()?.Destroy();
         Root.FindService<CoreGui>()?.Destroy();
+        Root.FindService<Debris>()?.Destroy();
+        Root.FindService<SoundService>()?.Destroy();
+        Root.FindService<UserInputService>()?.Destroy();
         Root.FindService<PlatformService>()?.DestroyAllChildren();
 
         for (int i = 0; i < GameManager.GameScheduler.SchedulerTasks.Count; i++)

@@ -38,7 +38,7 @@ public class AssetDownloadTask
     {
         if (!hadFinished)
             callbacksFailure.Add(action);
-        else
+        else if (hadErrored)
             action(this);
         return this;
     }
@@ -46,7 +46,7 @@ public class AssetDownloadTask
     {
         if (!hadFinished)
             callbacksSuccess.Add(action);
-        else
+        else if (!hadErrored)
             action(this);
         return this;
     }

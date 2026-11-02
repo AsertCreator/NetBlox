@@ -36,6 +36,7 @@ public sealed class GameRenderer
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.HighDpiWindow | ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow);
         Raylib.InitWindow(1600, 900, "NetBlox");
+        Raylib.InitAudioDevice();
         Raylib.SetExitKey(KeyboardKey.Null);
 
         GameManager.WindowReady = true;
