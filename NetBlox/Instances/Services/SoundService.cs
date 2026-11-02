@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using NetBlox.Instances.Parts;
 using NetBlox.Rendering;
 using NetBlox.Runtime;
 using NetBlox.Structs;
@@ -19,6 +20,8 @@ public class SoundService : Instance
     private Music birdAmbientSound;
     private bool birdAmbientSoundLoaded;
     private bool lastEnableBirdAmbient = false;
+
+    private float previousVolume = 1;
 
     public const ulong NETWORK_CONSTANT_ID = 21;
 
@@ -72,12 +75,25 @@ public class SoundService : Instance
                     traceResult = workspace?.Trace(vector3, vector3 - Vector3.UnitY * 40, null);
                     if (traceResult.HasValue)
                         volume += 1 - traceResult.Value.Fraction;
+
+                    BasePart? baseplate = workspace!.FindFirstChild_Fast("Baseplate") as BasePart; // so heuristic
+
+                    if (baseplate != null)
+                    {
+                        float volumeMultiplier = 1 / (vector3.Y - baseplate.Position.Y);
+                        volumeMultiplier = MathF.Abs(volumeMultiplier);
+                        volumeMultiplier = 1.0f / (1.0f + MathF.Exp(-volumeMultiplier));
+
+                        volume *= volumeMultiplier;
+                    }
                 }
             }
 
             volume = Math.Min(Math.Max(volume, 0), 1);
 
-            Raylib.SetMusicVolume(birdAmbientSound, volume);
+            Raylib.SetMusicVolume(birdAmbientSound, (previousVolume + volume) / 2);
+
+            previousVolume = (previousVolume + volume) / 2;
         }
 
         schedulerTask.WaitingTimeTarget = GameManager.TimestampInTheFuture(TimeSpan.FromMilliseconds(1000 / 30));
