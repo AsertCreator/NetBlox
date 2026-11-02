@@ -13,6 +13,7 @@ public class Decal : FaceInstance
     public Color3 Color3 { get; set; } = Color.White;
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public float Transparency { get; set; }
+    [LuaAlias(Name = "Texture")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public string Content { get; set; } = "";
 

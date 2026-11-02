@@ -12,6 +12,7 @@ public class GCTexture2D
     }
     ~GCTexture2D()
     {
-        Raylib.UnloadTexture(Texture2D);
+        if (Texture2D.Id != 0)
+            Raylib.UnloadTexture(Texture2D);
     }
 }

@@ -140,6 +140,7 @@ public static class Vector2Bridge
         if (isNew)
         {
             Table vector2meta = scriptContext.AllocateTableInRegistry(nameof(Vector2Bridge) + "_meta", out _);
+            vector2meta.Frozen = false;
             vector2meta["__index"] = vector2meta;
             vector2meta["__metatable"] = "Locked";
             vector2meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
@@ -152,13 +153,17 @@ public static class Vector2Bridge
                 }
                 throw new ScriptRuntimeException("Vector2.new requires 2 number arguments");
             });
+            vector2module.Frozen = false;
             vector2module.MetaTable = vector2meta;
 
             vector2meta.Frozen = true;
             vector2module.Frozen = true;
         }
 
+        var ogf = script.Globals.Frozen;
+        script.Globals.Frozen = false;
         script.Globals["Vector2"] = vector2module;
+        script.Globals.Frozen = ogf;
     }
     public static UserData PushUserData(GameManager gameManager, Vector2 value)
     {

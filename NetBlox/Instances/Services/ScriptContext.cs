@@ -180,6 +180,8 @@ public class ScriptContext : Instance
         luaState.Globals["workspace"] = DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, Root.GetService<Workspace>()));
         luaState.Globals["Workspace"] = DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, Root.GetService<Workspace>()));
 
+        luaState.Globals.Frozen = false;
+
         Vector3Bridge.Setup(GameManager);
         Vector2Bridge.Setup(GameManager);
         Color3Bridge.Setup(GameManager);

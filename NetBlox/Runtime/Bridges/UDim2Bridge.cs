@@ -122,6 +122,7 @@ public static class UDim2Bridge
         if (isNew)
         {
             Table udim2meta = scriptContext.AllocateTableInRegistry(nameof(UDim2Bridge) + "_meta", out _);
+            udim2meta.Frozen = false;
             udim2meta["__index"] = udim2meta;
             udim2meta["__metatable"] = "Locked";
             udim2meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
@@ -144,13 +145,17 @@ public static class UDim2Bridge
                 }
                 throw new ScriptRuntimeException("UDim2.new requires 2 UDim arguments or 4 number arguments");
             });
+            udim2module.Frozen = false;
             udim2module.MetaTable = udim2meta;
 
             udim2meta.Frozen = true;
             udim2module.Frozen = true;
         }
 
+        var ogf = script.Globals.Frozen;
+        script.Globals.Frozen = false;
         script.Globals["UDim2"] = udim2module;
+        script.Globals.Frozen = ogf;
     }
     public static UserData PushUserData(GameManager gameManager, UDim2 value)
     {

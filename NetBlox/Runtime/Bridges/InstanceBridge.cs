@@ -460,6 +460,7 @@ public static class InstanceBridge
         if (isNew)
         {
             Table instancemeta = scriptContext.AllocateTableInRegistry(nameof(InstanceBridge) + "_meta", out _);
+            instancemeta.Frozen = false;
             instancemeta["__index"] = instancemeta;
             instancemeta["__metatable"] = "Locked";
             instancemeta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
@@ -492,13 +493,17 @@ public static class InstanceBridge
                 }
                 throw new ScriptRuntimeException("Instance.new requires 1 string argument and an optional Instance argument");
             });
+            instancemodule.Frozen = false;
             instancemodule.MetaTable = instancemeta;
 
             instancemeta.Frozen = true;
             instancemodule.Frozen = true;
         }
 
+        var ogf = script.Globals.Frozen;
+        script.Globals.Frozen = false;
         script.Globals["Instance"] = instancemodule;
+        script.Globals.Frozen = ogf;
     }
     public static UserData PushUserData(GameManager gameManager, Instance value)
     {

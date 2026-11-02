@@ -147,6 +147,7 @@ public static class Vector3Bridge
         if (isNew)
         {
             Table vector3meta = scriptContext.AllocateTableInRegistry(nameof(Vector3Bridge) + "_meta", out _);
+            vector3meta.Frozen = false;
             vector3meta["__index"] = vector3meta;
             vector3meta["__metatable"] = "Locked";
             vector3meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
@@ -160,13 +161,17 @@ public static class Vector3Bridge
                 }
                 throw new ScriptRuntimeException("Vector3.new requires 3 number arguments");
             });
+            vector3module.Frozen = false;
             vector3module.MetaTable = vector3meta;
 
             vector3meta.Frozen = true;
             vector3module.Frozen = true;
         }
 
+        var ogf = script.Globals.Frozen;
+        script.Globals.Frozen = false;
         script.Globals["Vector3"] = vector3module;
+        script.Globals.Frozen = ogf;
     }
     public static UserData PushUserData(GameManager gameManager, Vector3 value)
     {

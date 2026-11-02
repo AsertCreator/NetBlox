@@ -109,6 +109,7 @@ public static class Color3Bridge
         if (isNew)
         {
             Table Color3meta = scriptContext.AllocateTableInRegistry(nameof(Color3Bridge) + "_meta", out _);
+            Color3meta.Frozen = false;
             Color3meta["__index"] = Color3meta;
             Color3meta["__metatable"] = "Locked";
             Color3meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
@@ -122,13 +123,17 @@ public static class Color3Bridge
                 }
                 throw new ScriptRuntimeException("Color3.new requires 3 number arguments");
             });
+            Color3module.Frozen = false;
             Color3module.MetaTable = Color3meta;
 
             Color3meta.Frozen = true;
             Color3module.Frozen = true;
         }
 
+        var ogf = script.Globals.Frozen;
+        script.Globals.Frozen = false;
         script.Globals["Color3"] = Color3module;
+        script.Globals.Frozen = ogf;
     }
     public static UserData PushUserData(GameManager gameManager, Color3 value)
     {

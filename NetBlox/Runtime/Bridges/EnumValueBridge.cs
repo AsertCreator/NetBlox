@@ -74,6 +74,7 @@ public static class EnumValueBridge
         if (isNew)
         {
             Table Enummeta = scriptContext.AllocateTableInRegistry(nameof(EnumValueBridge) + "_meta", out _);
+            Enummeta.Frozen = false;
             Enummeta["__index"] = Enummeta;
             Enummeta["__metatable"] = "Locked";
             
@@ -110,13 +111,17 @@ public static class EnumValueBridge
             AddEnum<NormalId>();
             AddEnum<Axis>();
 
+            Enummodule.Frozen = false;
             Enummodule.MetaTable = Enummeta;
 
             Enummeta.Frozen = true;
             Enummodule.Frozen = true;
         }
 
+        var ogf = script.Globals.Frozen;
+        script.Globals.Frozen = false;
         script.Globals["Enum"] = Enummodule;
+        script.Globals.Frozen = ogf;
     }
     public static UserData PushUserData(GameManager gameManager, EnumValue value)
     {

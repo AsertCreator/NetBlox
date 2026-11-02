@@ -109,6 +109,7 @@ public static class BrickColorBridge
         if (isNew)
         {
             Table bcolormeta = scriptContext.AllocateTableInRegistry(nameof(BrickColorBridge) + "_meta", out _);
+            bcolormeta.Frozen = false;
             bcolormeta["__index"] = bcolormeta;
             bcolormeta["__metatable"] = "Locked";
             bcolormeta["pallete"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
@@ -219,13 +220,17 @@ public static class BrickColorBridge
                 }
                 throw new ArgumentException("BrickColor.new requires 1 number argument or 1 string argument or 1 Color3 argument or 3 number arguments");
             });
+            bcolormodule.Frozen = false;
             bcolormodule.MetaTable = bcolormeta;
 
             bcolormeta.Frozen = true;
             bcolormodule.Frozen = true;
         }
 
+        var ogf = script.Globals.Frozen;
+        script.Globals.Frozen = false;
         script.Globals["BrickColor"] = bcolormodule;
+        script.Globals.Frozen = ogf;
     }
     public static UserData PushUserData(GameManager gameManager, BrickColor value)
     {
