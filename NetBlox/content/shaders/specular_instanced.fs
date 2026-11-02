@@ -21,10 +21,34 @@ uniform sampler2D universalNormalTexture;
 uniform sampler2D glueNormalTexture;
 uniform sampler2D shadowmap;
 
+// this code just gets more and more horrible oh god
+
+uniform sampler2D decalTop;
+uniform sampler2D decalLeft;
+uniform sampler2D decalRight;
+uniform sampler2D decalBottom;
+uniform sampler2D decalFront;
+uniform sampler2D decalBack;
+
+uniform vec4 decalTopTint;
+uniform vec4 decalLeftTint;
+uniform vec4 decalRightTint;
+uniform vec4 decalBottomTint;
+uniform vec4 decalFrontTint;
+uniform vec4 decalBackTint;
+
 uniform vec3 viewPosition;
 uniform vec3 lightPosition;
 
 out vec4 finalColor;
+
+float kernel[25] = float[25](
+    1, 4, 7, 4, 1,
+    4, 16, 26, 16, 4,
+    7, 26, 41, 26, 7,
+    4, 16, 26, 16, 4,
+    1, 4, 7, 4, 1
+);
 
 vec3 lightColor = vec3(1, 1, 0.85);
 
@@ -111,14 +135,16 @@ vec4 shadowColor() {
     vec2 texelSize = 1.0 / textureSize(shadowmap, 0);
     float shadow = 0;
 
-    for (int x = -1; x <= 1; x++) {
-        for (int y = -1; y <= 1; y++) {
+    for (int x = -2; x <= 2; x++) {
+        for (int y = -2; y <= 2; y++) {
             float shadowDepth = texture(shadowmap, shadowCoord.xy + vec2(x, y) * texelSize).r;
-            shadow += shadowCoord.z - bias > shadowDepth ? 1.0 : 0.0;
+            float core = shadowCoord.z - bias > shadowDepth ? 1.0 : 0.0;
+
+            shadow += core * kernel[(x + 2) * 5 + (y + 2)];
         }
     }
 
-    shadow /= 9.0;
+    shadow /= 256.0;
 
     return mix(diffuseColor() + vec4(specularColor(), 0), vec4((regularColor() * 0.3).xyz, fragColor.w), shadow);
 }

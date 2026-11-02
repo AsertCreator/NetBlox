@@ -11,4 +11,10 @@ public record struct PartSpecification
     public SurfaceType BottomSurface;
     public SurfaceType FrontSurface;
     public SurfaceType BackSurface;
+    public DecalSpecification TopDecal;
+    public DecalSpecification LeftDecal;
+    public DecalSpecification RightDecal;
+    public DecalSpecification BottomDecal;
+    public DecalSpecification FrontDecal;
+    public DecalSpecification BackDecal;
 }

@@ -68,6 +68,20 @@ public class WorkspaceRendererViewport : RendererViewport
     private int uniform_instanced_universalNormalTexture;
     private int uniform_instanced_glueNormalTexture;
 
+    private int uniform_instanced_decalTop;
+    private int uniform_instanced_decalLeft;
+    private int uniform_instanced_decalRight;
+    private int uniform_instanced_decalBottom;
+    private int uniform_instanced_decalFront;
+    private int uniform_instanced_decalBack;
+
+    private int uniform_instanced_decalTopTint;
+    private int uniform_instanced_decalLeftTint;
+    private int uniform_instanced_decalRightTint;
+    private int uniform_instanced_decalBottomTint;
+    private int uniform_instanced_decalFrontTint;
+    private int uniform_instanced_decalBackTint;
+
     private Texture2D blankSurfaceTexture;
     private Texture2D studSurfaceTexture;
     private Texture2D inletSurfaceTexture;
@@ -162,6 +176,20 @@ public class WorkspaceRendererViewport : RendererViewport
             uniform_instanced_universalNormalTexture = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "universalNormalTexture");
             uniform_instanced_glueNormalTexture = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "glueNormalTexture");
 
+            uniform_instanced_decalTop = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalTop");
+            uniform_instanced_decalLeft = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalLeft");
+            uniform_instanced_decalRight = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalRight");
+            uniform_instanced_decalBottom = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalBottom");
+            uniform_instanced_decalFront = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalFront");
+            uniform_instanced_decalBack = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalBack");
+
+            uniform_instanced_decalTopTint = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalTopTint");
+            uniform_instanced_decalLeftTint = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalLeftTint");
+            uniform_instanced_decalRightTint = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalRightTint");
+            uniform_instanced_decalBottomTint = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalBottomTint");
+            uniform_instanced_decalFrontTint = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalFrontTint");
+            uniform_instanced_decalBackTint = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "decalBackTint");
+
             SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.MatrixMvp] = Raylib.GetShaderLocation(SpecularLightingInstancedShader, "mvp");
             SpecularLightingInstancedShader.Locs[(int)ShaderLocationIndex.VertexColor] = Raylib.GetShaderLocationAttrib(SpecularLightingInstancedShader, "vertexColor");
         });
@@ -209,6 +237,13 @@ public class WorkspaceRendererViewport : RendererViewport
         SetIntUniform(uniform_instanced_surfaceBack, (int)specification.BackSurface);
         SetIntUniform(uniform_instanced_useSurfaces, useSurfaces ? 1 : 0);
 
+        SetVector4Uniform(uniform_instanced_decalBackTint, new(specification.BackDecal.DecalTint.ToVector3(), 1 - specification.BackDecal.DecalTransparency));
+        SetVector4Uniform(uniform_instanced_decalBottomTint, new(specification.BottomDecal.DecalTint.ToVector3(), 1 - specification.BottomDecal.DecalTransparency));
+        SetVector4Uniform(uniform_instanced_decalRightTint, new(specification.RightDecal.DecalTint.ToVector3(), 1 - specification.RightDecal.DecalTransparency));
+        SetVector4Uniform(uniform_instanced_decalLeftTint, new(specification.LeftDecal.DecalTint.ToVector3(), 1 - specification.LeftDecal.DecalTransparency));
+        SetVector4Uniform(uniform_instanced_decalFrontTint, new(specification.FrontDecal.DecalTint.ToVector3(), 1 - specification.FrontDecal.DecalTransparency));
+        SetVector4Uniform(uniform_instanced_decalTopTint, new(specification.TopDecal.DecalTint.ToVector3(), 1 - specification.TopDecal.DecalTransparency));
+
         BindSurfaceTexture(uniform_instanced_blankTexture, blankSurfaceTexture, 0);
         BindSurfaceTexture(uniform_instanced_studTexture, studSurfaceTexture, 1);
         BindSurfaceTexture(uniform_instanced_inletTexture, inletSurfaceTexture, 2);
@@ -218,8 +253,16 @@ public class WorkspaceRendererViewport : RendererViewport
         BindSurfaceTexture(uniform_instanced_inletNormalTexture, inletSurfaceNormalTexture, 6);
         BindSurfaceTexture(uniform_instanced_universalNormalTexture, universalSurfaceNormalTexture, 7);
         BindSurfaceTexture(uniform_instanced_glueNormalTexture, glueSurfaceNormalTexture, 8);
-        SetIntUniform(uniform_instanced_shadowmap, 9);
-        Rlgl.ActiveTextureSlot(9);
+
+        BindSurfaceTexture(uniform_instanced_decalBack, specification.BackDecal.DecalTexture, 9);
+        BindSurfaceTexture(uniform_instanced_decalFront, specification.FrontDecal.DecalTexture, 10);
+        BindSurfaceTexture(uniform_instanced_decalTop, specification.TopDecal.DecalTexture, 11);
+        BindSurfaceTexture(uniform_instanced_decalBottom, specification.BottomDecal.DecalTexture, 12);
+        BindSurfaceTexture(uniform_instanced_decalLeft, specification.LeftDecal.DecalTexture, 13);
+        BindSurfaceTexture(uniform_instanced_decalRight, specification.RightDecal.DecalTexture, 14);
+
+        SetIntUniform(uniform_instanced_shadowmap, 15);
+        Rlgl.ActiveTextureSlot(15);
         Rlgl.EnableTexture(ShadowMap.Depth.Id);
         Rlgl.ActiveTextureSlot(0);
     }
@@ -228,6 +271,11 @@ public class WorkspaceRendererViewport : RendererViewport
     {
         if (location != -1)
             Raylib.SetShaderValue(SpecularLightingInstancedShader, location, &value, ShaderUniformDataType.Int);
+    }
+    private unsafe void SetVector4Uniform(int location, Vector4 value)
+    {
+        if (location != -1)
+            Raylib.SetShaderValue(SpecularLightingInstancedShader, location, &value, ShaderUniformDataType.Vec4);
     }
     private void BindSurfaceTexture(int location, Texture2D texture, int textureUnit)
     {
@@ -691,6 +739,12 @@ public class WorkspaceRendererViewport : RendererViewport
             Humanoid humanoid = GameRenderer.GameManager.GameRegistry.Construct<Humanoid>();
             Model model = GameRenderer.GameManager.GameRegistry.Construct<Model>();
 
+            Decal decal = GameRenderer.GameManager.GameRegistry.Construct<Decal>();
+
+            decal.Name = "face";
+            decal.Parent = head;
+            decal.Content = "rbxasset://textures/smile.png";
+
             humanoidRootPart.Name = "HumanoidRootPart";
             humanoidRootPart.Transparency = 1;
             humanoidRootPart.CanCollide = true;
@@ -998,6 +1052,56 @@ public class WorkspaceRendererViewport : RendererViewport
             partSpecification.BottomSurface = concretePart.BottomSurface;
             partSpecification.FrontSurface = concretePart.FrontSurface;
             partSpecification.BackSurface = concretePart.BackSurface;
+
+            Decal? instance = null;
+
+            if (concretePart.lastDecalTextureBackInstance != null && concretePart.lastDecalTextureBackInstance.TryGetTarget(out instance))
+            {
+                if (concretePart.lastDecalTextureBackLoaded != null)
+                    partSpecification.BackDecal.DecalTexture = concretePart.lastDecalTextureBackLoaded.Texture2D;
+                partSpecification.BackDecal.DecalTransparency = instance.Transparency;
+                partSpecification.BackDecal.DecalTint = instance.Color3;
+            }
+
+            if (concretePart.lastDecalTextureFrontInstance != null && concretePart.lastDecalTextureFrontInstance.TryGetTarget(out instance))
+            {
+                if (concretePart.lastDecalTextureFrontLoaded != null)
+                    partSpecification.FrontDecal.DecalTexture = concretePart.lastDecalTextureFrontLoaded.Texture2D;
+                partSpecification.FrontDecal.DecalTransparency = instance.Transparency;
+                partSpecification.FrontDecal.DecalTint = instance.Color3;
+            }
+
+            if (concretePart.lastDecalTextureLeftInstance != null && concretePart.lastDecalTextureLeftInstance.TryGetTarget(out instance))
+            {
+                if (concretePart.lastDecalTextureLeftLoaded != null)
+                    partSpecification.LeftDecal.DecalTexture = concretePart.lastDecalTextureLeftLoaded.Texture2D;
+                partSpecification.LeftDecal.DecalTransparency = instance.Transparency;
+                partSpecification.LeftDecal.DecalTint = instance.Color3;
+            }
+
+            if (concretePart.lastDecalTextureRightInstance != null && concretePart.lastDecalTextureRightInstance.TryGetTarget(out instance))
+            {
+                if (concretePart.lastDecalTextureRightLoaded != null)
+                    partSpecification.RightDecal.DecalTexture = concretePart.lastDecalTextureRightLoaded.Texture2D;
+                partSpecification.RightDecal.DecalTransparency = instance.Transparency;
+                partSpecification.RightDecal.DecalTint = instance.Color3;
+            }
+
+            if (concretePart.lastDecalTextureTopInstance != null && concretePart.lastDecalTextureTopInstance.TryGetTarget(out instance))
+            {
+                if (concretePart.lastDecalTextureTopLoaded != null)
+                    partSpecification.TopDecal.DecalTexture = concretePart.lastDecalTextureTopLoaded.Texture2D;
+                partSpecification.TopDecal.DecalTransparency = instance.Transparency;
+                partSpecification.TopDecal.DecalTint = instance.Color3;
+            }
+
+            if (concretePart.lastDecalTextureBottomInstance != null && concretePart.lastDecalTextureBottomInstance.TryGetTarget(out instance))
+            {
+                if (concretePart.lastDecalTextureBottomLoaded != null)
+                    partSpecification.BottomDecal.DecalTexture = concretePart.lastDecalTextureBottomLoaded.Texture2D;
+                partSpecification.BottomDecal.DecalTransparency = instance.Transparency;
+                partSpecification.BottomDecal.DecalTint = instance.Color3;
+            }
         }
         else
         {
@@ -1036,10 +1140,10 @@ public class WorkspaceRendererViewport : RendererViewport
 
             // colour component, this is basically unused but i couldnt be bothered working a fragment shader without it.
             // let opengl do the depth calculation internally this way
-            target.Texture.Id = Rlgl.LoadTexture((void*)0, width, height, PixelFormat.UncompressedR8G8B8A8, 1);
+            target.Texture.Id = Rlgl.LoadTexture((void*)0, width, height, PixelFormat.UncompressedR8G8B8, 1);
             target.Texture.Width = width;
             target.Texture.Height = height;
-            target.Texture.Format = PixelFormat.UncompressedR8G8B8A8; // encode colour as 4 8 bit floats
+            target.Texture.Format = PixelFormat.UncompressedR8G8B8; // encode colour as 4 8 bit floats
             target.Texture.Mipmaps = 1;
 
             // disable renderbuffer, use a texture instead for depth

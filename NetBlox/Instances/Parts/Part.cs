@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using Jitter2.Collision.Shapes;
 using NetBlox.Instances.Services;
@@ -51,6 +52,29 @@ public class Part : BasePart
     }
     public override string ClassName => nameof(Part);
 
+    private string? lastDecalTextureLeft;
+    private string? lastDecalTextureRight;
+    private string? lastDecalTextureTop;
+    private string? lastDecalTextureBottom;
+    private string? lastDecalTextureFront;
+    private string? lastDecalTextureBack;
+
+    public GCTexture2D? lastDecalTextureLeftLoaded;
+    public GCTexture2D? lastDecalTextureRightLoaded;
+    public GCTexture2D? lastDecalTextureTopLoaded;
+    public GCTexture2D? lastDecalTextureBottomLoaded;
+    public GCTexture2D? lastDecalTextureFrontLoaded;
+    public GCTexture2D? lastDecalTextureBackLoaded;
+    
+    // yes you can do that
+
+    public WeakReference<Decal>? lastDecalTextureLeftInstance;
+    public WeakReference<Decal>? lastDecalTextureRightInstance;
+    public WeakReference<Decal>? lastDecalTextureTopInstance;
+    public WeakReference<Decal>? lastDecalTextureBottomInstance;
+    public WeakReference<Decal>? lastDecalTextureFrontInstance;
+    public WeakReference<Decal>? lastDecalTextureBackInstance;
+
     private PartType currentPartType = PartType.Block;
     private PartType lastPartType = (PartType)999;
 
@@ -75,7 +99,12 @@ public class Part : BasePart
 
         if (args.GameEvent.Id == GameEvent.EVENT_RENDER3D)
         {
-            RenderingEventArgs renderingEventArgs = (RenderingEventArgs)args.EventData!;
+            RenderingEventArgs? renderingEventArgs = args.EventData as RenderingEventArgs;
+
+            if (renderingEventArgs == null)
+                return;
+
+            UpdateDecals();
 
             renderingEventArgs.WritePart(this);
         }
@@ -135,6 +164,115 @@ public class Part : BasePart
             default:
                 throw new NotImplementedException("No cylinders for now");
         }
+    }
+    public void UpdateDecals()
+    {
+        using RentedSpan<Instance?> rentedSpan = GetChildren_Fast();
+
+        Decal? currentDecalLeft = null;
+        Decal? currentDecalRight = null;
+        Decal? currentDecalTop = null;
+        Decal? currentDecalBottom = null;
+        Decal? currentDecalFront = null;
+        Decal? currentDecalBack = null;
+
+        for (int i = 0; i < rentedSpan.Values.Length; i++)
+        {
+            Decal? decal = rentedSpan.Values[i] as Decal;
+
+            if (decal == null)
+                continue;
+
+            if (decal.Face == NormalId.Right)
+                currentDecalRight = decal;
+            else if (decal.Face == NormalId.Left)
+                currentDecalLeft = decal;
+            else if (decal.Face == NormalId.Top)
+                currentDecalTop = decal;
+            else if (decal.Face == NormalId.Bottom)
+                currentDecalBottom = decal;
+            else if (decal.Face == NormalId.Front)
+                currentDecalFront = decal;
+            else if (decal.Face == NormalId.Back)
+                currentDecalBack = decal;
+        }
+
+        void HandleDecalFace(
+            ref GCTexture2D? lastDecalTextureLoaded, ref string? lastDecalTexture, 
+            ref WeakReference<Decal>? lastDecalTextureInstance, NormalId normalId, Decal currentDecal)
+        {
+            lastDecalTextureLoaded = null;
+
+            AssetDownloadTask? assetDownloadTask = GameManager.GameAssetManager.QuickLoad(currentDecal.Content);
+            if (assetDownloadTask == null)
+            {    
+                Trace.TraceWarning("Couldn't load decal!");
+                lastDecalTexture = currentDecal.Content;
+                lastDecalTextureInstance = new WeakReference<Decal>(currentDecal);
+            }
+            else
+            {
+                assetDownloadTask.AddCallbackForSuccess(x =>
+                {
+                    Texture2D texture2D = Raylib.LoadTexture(x.LocalDownloadPath);
+                    GCTexture2D gCTexture2D = new GCTexture2D(texture2D);
+
+                    switch (normalId)
+                    {
+                        case NormalId.Right:
+                            lastDecalTextureRightLoaded = gCTexture2D;
+                            break;
+                        case NormalId.Left:
+                            lastDecalTextureLeftLoaded = gCTexture2D;
+                            break;
+                        case NormalId.Top:
+                            lastDecalTextureTopLoaded = gCTexture2D;
+                            break;
+                        case NormalId.Bottom:
+                            lastDecalTextureBottomLoaded = gCTexture2D;
+                            break;
+                        case NormalId.Front:
+                            lastDecalTextureFrontLoaded = gCTexture2D;
+                            break;
+                        case NormalId.Back:
+                            lastDecalTextureBackLoaded = gCTexture2D;
+                            break;
+                    }
+                });
+                lastDecalTexture = currentDecal.Content;
+                lastDecalTextureInstance = new WeakReference<Decal>(currentDecal);
+            }
+        }
+
+        if (currentDecalRight == null)
+            lastDecalTextureRightLoaded = null;
+        else if (currentDecalRight.Content != lastDecalTextureRight)
+            HandleDecalFace(ref lastDecalTextureRightLoaded, ref lastDecalTextureRight, ref lastDecalTextureRightInstance, NormalId.Right, currentDecalRight);
+
+        if (currentDecalLeft == null)
+            lastDecalTextureLeftLoaded = null;
+        else if (currentDecalLeft.Content != lastDecalTextureLeft)
+            HandleDecalFace(ref lastDecalTextureLeftLoaded, ref lastDecalTextureLeft, ref lastDecalTextureLeftInstance, NormalId.Left, currentDecalLeft);
+
+        if (currentDecalTop == null)
+            lastDecalTextureTopLoaded = null;
+        else if (currentDecalTop.Content != lastDecalTextureTop)
+            HandleDecalFace(ref lastDecalTextureTopLoaded, ref lastDecalTextureTop, ref lastDecalTextureTopInstance, NormalId.Top, currentDecalTop);
+
+        if (currentDecalBottom == null)
+            lastDecalTextureBottomLoaded = null;
+        else if (currentDecalBottom.Content != lastDecalTextureBottom)
+            HandleDecalFace(ref lastDecalTextureBottomLoaded, ref lastDecalTextureBottom, ref lastDecalTextureBottomInstance, NormalId.Bottom, currentDecalBottom);
+
+        if (currentDecalFront == null)
+            lastDecalTextureFrontLoaded = null;
+        else if (currentDecalFront.Content != lastDecalTextureFront)
+            HandleDecalFace(ref lastDecalTextureFrontLoaded, ref lastDecalTextureFront, ref lastDecalTextureFrontInstance, NormalId.Front, currentDecalFront);
+
+        if (currentDecalBack == null)
+            lastDecalTextureBackLoaded = null;
+        else if (currentDecalBack.Content != lastDecalTextureBack)
+            HandleDecalFace(ref lastDecalTextureBackLoaded, ref lastDecalTextureBack, ref lastDecalTextureBackInstance, NormalId.Back, currentDecalBack);
     }
 
     public override bool IsA(string className)

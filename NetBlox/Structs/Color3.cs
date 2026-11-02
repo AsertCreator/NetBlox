@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace NetBlox.Structs;
 
 public record struct Color3
@@ -36,6 +38,17 @@ public record struct Color3
         color3.G = (byte)((argb >> 8) & 0xFF);
         color3.B = (byte)((argb >> 0) & 0xFF);
         return color3;
+    }
+
+    public Vector3 ToVector3()
+    {
+        Vector3 vector3 = default;
+
+        vector3.X = R / 255f;
+        vector3.Y = G / 255f;
+        vector3.Z = B / 255f;
+
+        return vector3;
     }
 
     public static implicit operator Color3(Raylib_cs.Color color) => new Color3(color.R, color.G, color.B);

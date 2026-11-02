@@ -1,3 +1,4 @@
+using NetBlox.Instances;
 using NetBlox.Instances.Parts;
 
 namespace NetBlox.Rendering;
