@@ -414,7 +414,7 @@ public sealed class GameManager
             for (int i = 0; i < allInstances.Length; i++)
             {
                 Instance instance = allInstances[i];
-                if (instance.InitializationStage == InitializationStage.Newborn)
+                if (instance.InitializationStage == InitializationStage.Initializing)
                     instance.CommitStageAlive();
             }
         }

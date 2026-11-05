@@ -478,6 +478,8 @@ public class PlaceParser
 
         List<byte[]> deferredPropChunks = [];
 
+        ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
+
         bool endReached = false;
 
         int[] ReadReferences(BinaryReader br, int count)
@@ -708,6 +710,16 @@ public class PlaceParser
             {
                 return;
             }
+            if (binstance[classId].Count == 0)
+            {
+                return;
+            }
+
+            InstanceBridge.InstanceClassCache classCache = scriptContext.ResolveInstanceClassCacheForType(binstance[classId].First().Value.GetType());
+            InstanceBridge.InstanceClassCacheProperty? propertyCache = classCache.TryGetProperty(propertyName);
+
+            if (propertyCache == null)
+                return;
 
             if (valueType == 1) // String
             {
@@ -848,6 +860,14 @@ public class PlaceParser
                     bpropval[classId][propertyName].Add(matrices[i]);
                 }
             }
+            else if (valueType == 0x12) // Token
+            {
+                int[] tokens = ReadIntArrayWithoutZigzag(br, binstance[classId].Count);
+                for (int i = 0; i < binstance[classId].Count; i++)
+                {
+                    bpropval[classId][propertyName].Add(Enum.ToObject(propertyCache.Property.PropertyType, tokens[i]));
+                }
+            }
             else if (valueType == 0x13) // Reference
             {
                 int[] references = ReadReferences(br, binstance[classId].Count);
@@ -888,8 +908,6 @@ public class PlaceParser
         {
             ProcessPropertyChunk(propchunk);
         }
-
-        ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
 
         foreach (var parenchildrelation in binstanceParentalRelations)
         {

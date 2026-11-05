@@ -16,6 +16,8 @@ public class Workspace : Model
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public float FallenPartsDestroyHeight { get; set; } = -50;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public AutoJointsMode AutoJointsMode { get; set; }
 
     public override string ClassName => nameof(Workspace);
 
@@ -86,10 +88,33 @@ public class Workspace : Model
         }
     }
 
+    /// <summary>
+    /// Makes joints between these parts. Horrifyingly slow, please never call this
+    /// </summary>
+    /// <param name="parts">The parts to be dealt with</param>
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.Plugin)]
-    public void MakeJoints(Instance[] parts)
+    public void MakeJoints(BasePart[] parts)
     {
-        
+        for (int i = 0; i < parts.Length; i++)
+        {
+            GameManager.PhysicsSolver?.SpatialGrid.UpdatePart(parts[i]);
+
+            BasePart[]? neighboring = GameManager.PhysicsSolver?.SpatialGrid.GetImmediatelyNeighboringParts(parts[i]);
+            if (neighboring == null || neighboring.Length == 0)
+                continue;
+            parts[i].MakeJointsWith(neighboring);
+        }
+    }
+
+    public override void CommitStageAlive()
+    {
+        base.CommitStageAlive();
+
+        if (AutoJointsMode == AutoJointsMode.Default || AutoJointsMode == AutoJointsMode.LegacyImplicit)
+        {
+            BasePart[] parts = GetPartDescendants();
+            MakeJoints(parts);
+        }
     }
 
     public override void Destroy()

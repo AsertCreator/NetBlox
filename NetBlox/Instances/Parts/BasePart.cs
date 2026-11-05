@@ -10,6 +10,8 @@ using Raylib_cs;
 
 namespace NetBlox.Instances.Parts;
 
+public record struct SurfaceInfo(SurfaceType Type, Vector3 Center, Vector3 Normal, Vector3 TangentU, Vector3 TangentV, float HalfU, float HalfV);
+
 public class BasePart : PVInstance
 {
     public override string ClassName => nameof(BasePart);
@@ -152,6 +154,8 @@ public class BasePart : PVInstance
     public PhysicsAssembly? PhysicsAssembly;
     public HashSet<ulong> joints = [];
 
+    public HashSet<BasePart> MakeJoints_Jointed = [];
+
     public bool stateAnchored;
     public Vector3 stateSize;
     public Vector3 statePosition;
@@ -195,13 +199,13 @@ public class BasePart : PVInstance
 
             if (OwnPhysicsActor != null && OwnPhysicsActor.RigidBody != null)
             {
-                if (statePosition.Length().WithinError(OwnPhysicsActor.RigidBody.Position.Length(), physicsError))
+                if (!statePosition.Length().WithinError(OwnPhysicsActor.RigidBody.Position.Length(), physicsError))
                     muchChanges = true;
-                if (stateRotation.Length().WithinError(OwnPhysicsActor.RigidBody.Orientation.Length(), physicsError))
+                if (!stateRotation.Length().WithinError(OwnPhysicsActor.RigidBody.Orientation.Length(), physicsError))
                     muchChanges = true;
-                if (stateLinearVelocity.Length().WithinError(OwnPhysicsActor.RigidBody.Velocity.Length(), physicsError))
+                if (!stateLinearVelocity.Length().WithinError(OwnPhysicsActor.RigidBody.Velocity.Length(), physicsError))
                     muchChanges = true;
-                if (stateAngularVelocity.Length().WithinError(OwnPhysicsActor.RigidBody.AngularVelocity.Length(), physicsError))
+                if (!stateAngularVelocity.Length().WithinError(OwnPhysicsActor.RigidBody.AngularVelocity.Length(), physicsError))
                     muchChanges = true;
 
                 statePosition = OwnPhysicsActor.RigidBody.Position;
@@ -219,13 +223,13 @@ public class BasePart : PVInstance
                 Vector3 newangularvelocity = PhysicsAssembly.CombinedRigidBody.AngularVelocity;
                 Quaternion newrotation = PhysicsAssembly.CombinedRigidBody.Orientation * JQuaternion.CreateFromMatrix(shape.Transformation);
 
-                if (statePosition.Length().WithinError(newposition.Length(), physicsError))
+                if (!statePosition.Length().WithinError(newposition.Length(), physicsError))
                     muchChanges = true;
-                if (stateRotation.Length().WithinError(newrotation.Length(), physicsError))
+                if (!stateRotation.Length().WithinError(newrotation.Length(), physicsError))
                     muchChanges = true;
-                if (stateLinearVelocity.Length().WithinError(newlinearvelocity.Length(), physicsError))
+                if (!stateLinearVelocity.Length().WithinError(newlinearvelocity.Length(), physicsError))
                     muchChanges = true;
-                if (stateAngularVelocity.Length().WithinError(newangularvelocity.Length(), physicsError))
+                if (!stateAngularVelocity.Length().WithinError(newangularvelocity.Length(), physicsError))
                     muchChanges = true;
 
                 statePosition = newposition;
@@ -278,6 +282,118 @@ public class BasePart : PVInstance
         throw new NotImplementedException();
     }
 
+    public virtual void MakeJointsWith(BasePart[] baseParts)
+    {
+        for (int i = 0; i < baseParts.Length; i++)
+        {
+            BasePart other = baseParts[i];
+            if (other == this || MakeJoints_Jointed.Contains(other) || other.MakeJoints_Jointed.Contains(this))
+                continue;
+
+            if (other is Part firstPart && this is Part secondPart &&
+                TryForConnection(firstPart, secondPart, SurfaceType.Studs, SurfaceType.Inlet))
+            {
+                Snap snap = GameManager.GameRegistry.Construct<Snap>();
+                snap.Part0 = firstPart;
+                snap.Part1 = secondPart;
+                snap.Parent = firstPart;
+
+                firstPart.MakeJoints_Jointed.Add(secondPart);
+                secondPart.MakeJoints_Jointed.Add(firstPart);
+            }
+        }
+    }
+
+    //  i took it from the webs still slow as
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static bool TryForConnection(Part firstPart, Part secondPart, SurfaceType surfaceTypeFirst, SurfaceType surfaceTypeSecond)
+    {
+        for (int i = 0; i < firstPart.GameManager.PhysicsSolver!.JointSurfaceAxes.Length; i++)
+        {
+            SurfaceInfo surface = GetJointSurface(firstPart, i);
+
+            for (int j = 0; j < firstPart.GameManager.PhysicsSolver!.JointSurfaceAxes.Length; j++)
+            {
+                SurfaceInfo secondSurface = GetJointSurface(secondPart, j);
+                bool surfacesMatch = (surface.Type == surfaceTypeFirst && secondSurface.Type == surfaceTypeSecond) || (surface.Type == surfaceTypeSecond && secondSurface.Type == surfaceTypeFirst);
+
+                if (!surfacesMatch || !AreJointSurfacesTouching(surface, secondSurface, firstPart.GameManager.PhysicsSolver!.JointSurfaceTolerance))
+                    continue;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static SurfaceInfo GetJointSurface(Part part, int faceIndex)
+    {
+        (int normalAxis, float normalSign, int tangentUAxis, int tangentVAxis) = part.GameManager.PhysicsSolver!.JointSurfaceAxes[faceIndex];
+        Vector3 normal = Vector3.Transform(GetAxis(normalAxis) * normalSign, part.QuaternionRotation);
+        Vector3 tangentU = Vector3.Transform(GetAxis(tangentUAxis), part.QuaternionRotation);
+        Vector3 tangentV = Vector3.Transform(GetAxis(tangentVAxis), part.QuaternionRotation);
+        Vector3 size = part.Size;
+
+        SurfaceType surfaceType = faceIndex switch
+        {
+            0 => part.TopSurface, 1 => part.BottomSurface,
+            2 => part.LeftSurface, 3 => part.RightSurface,
+            4 => part.FrontSurface, 5 => part.BackSurface,
+            _ => throw new ArgumentOutOfRangeException(nameof(faceIndex))
+        };
+
+        return new SurfaceInfo(surfaceType,
+            part.Position + normal * (GetAxisComponent(size, normalAxis) / 2),
+            normal, tangentU, tangentV,
+            GetAxisComponent(size, tangentUAxis) / 2,
+            GetAxisComponent(size, tangentVAxis) / 2);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static bool AreJointSurfacesTouching(SurfaceInfo surface, SurfaceInfo secondSurface, float tolerance)
+    {
+        if (Vector3.Dot(surface.Normal, secondSurface.Normal) > -0.9999f)
+            return false;
+
+        Vector3 centerDelta = secondSurface.Center - surface.Center;
+        if (MathF.Abs(Vector3.Dot(centerDelta, surface.Normal)) > tolerance)
+            return false;
+        
+        return OverlapsAlongAxis(tolerance, centerDelta, surface.TangentU, surface.TangentU, surface.TangentV, surface.HalfU, surface.HalfV,
+                   secondSurface.TangentU, secondSurface.TangentV, secondSurface.HalfU, secondSurface.HalfV) &&
+               OverlapsAlongAxis(tolerance, centerDelta, surface.TangentV, surface.TangentU, surface.TangentV, surface.HalfU, surface.HalfV,
+                   secondSurface.TangentU, secondSurface.TangentV, secondSurface.HalfU, secondSurface.HalfV) &&
+               OverlapsAlongAxis(tolerance, centerDelta, secondSurface.TangentU, surface.TangentU, surface.TangentV, surface.HalfU, surface.HalfV,
+                   secondSurface.TangentU, secondSurface.TangentV, secondSurface.HalfU, secondSurface.HalfV) &&
+               OverlapsAlongAxis(tolerance, centerDelta, secondSurface.TangentV, surface.TangentU, surface.TangentV, surface.HalfU, surface.HalfV,
+                   secondSurface.TangentU, secondSurface.TangentV, secondSurface.HalfU, secondSurface.HalfV);
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool OverlapsAlongAxis(float tolerance, Vector3 centerDelta, Vector3 axis,
+        Vector3 firstTangentU, Vector3 firstTangentV, float firstHalfU, float firstHalfV,
+        Vector3 secondTangentU, Vector3 secondTangentV, float secondHalfU, float secondHalfV)
+    {
+        float distance = MathF.Abs(Vector3.Dot(centerDelta, axis));
+        float firstRadius = firstHalfU * MathF.Abs(Vector3.Dot(firstTangentU, axis)) + firstHalfV * MathF.Abs(Vector3.Dot(firstTangentV, axis));
+        float secondRadius = secondHalfU * MathF.Abs(Vector3.Dot(secondTangentU, axis)) + secondHalfV * MathF.Abs(Vector3.Dot(secondTangentV, axis));
+
+        return distance <= firstRadius + secondRadius + tolerance || distance <= firstRadius + secondRadius - tolerance;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector3 GetAxis(int axis) => axis switch
+    {
+        0 => Vector3.UnitX, 1 => Vector3.UnitY, 2 => Vector3.UnitZ,
+        _ => throw new ArgumentOutOfRangeException(nameof(axis))
+    };
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static float GetAxisComponent(Vector3 vector, int axis) => axis switch
+    {
+        0 => vector.X, 1 => vector.Y, 2 => vector.Z,
+        _ => throw new ArgumentOutOfRangeException(nameof(axis))
+    };
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void CalculateBoundingBox(out Vector3 min, out Vector3 max)
     {
@@ -292,14 +408,14 @@ public class BasePart : PVInstance
             Vector3 v3_6 = new Vector3(-Size.X, -Size.Y, Size.Z) / 2;
             Vector3 v3_7 = new Vector3(-Size.X, -Size.Y, -Size.Z) / 2;
 
-            v3_0 = Raymath.Vector3RotateByQuaternion(v3_0, QuaternionRotation);
-            v3_1 = Raymath.Vector3RotateByQuaternion(v3_1, QuaternionRotation);
-            v3_2 = Raymath.Vector3RotateByQuaternion(v3_2, QuaternionRotation);
-            v3_3 = Raymath.Vector3RotateByQuaternion(v3_3, QuaternionRotation);
-            v3_4 = Raymath.Vector3RotateByQuaternion(v3_4, QuaternionRotation);
-            v3_5 = Raymath.Vector3RotateByQuaternion(v3_5, QuaternionRotation);
-            v3_6 = Raymath.Vector3RotateByQuaternion(v3_6, QuaternionRotation);
-            v3_7 = Raymath.Vector3RotateByQuaternion(v3_7, QuaternionRotation);
+            v3_0 = Vector3.Transform(v3_0, QuaternionRotation);
+            v3_1 = Vector3.Transform(v3_1, QuaternionRotation);
+            v3_2 = Vector3.Transform(v3_2, QuaternionRotation);
+            v3_3 = Vector3.Transform(v3_3, QuaternionRotation);
+            v3_4 = Vector3.Transform(v3_4, QuaternionRotation);
+            v3_5 = Vector3.Transform(v3_5, QuaternionRotation);
+            v3_6 = Vector3.Transform(v3_6, QuaternionRotation);
+            v3_7 = Vector3.Transform(v3_7, QuaternionRotation);
 
             // i'm so sorry
 

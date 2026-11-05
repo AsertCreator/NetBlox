@@ -83,7 +83,7 @@ public class PhysicsAssembly
             GameManager.PhysicsSolver.PartActors.Remove(basePart.InstanceID);
         }
         
-        Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+        Vector3 differenceInPosition = Vector3.Transform(
             basePart.statePosition - CombinedRigidBody.Position,
             Quaternion.Inverse(CombinedRigidBody.Orientation));
         Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
@@ -130,7 +130,7 @@ public class PhysicsAssembly
                 GameManager.PhysicsSolver.PartActors.Remove(basePart.InstanceID);
             }
 
-            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+            Vector3 differenceInPosition = Vector3.Transform(
                 basePart.statePosition - CombinedRigidBody.Position,
                 Quaternion.Inverse(CombinedRigidBody.Orientation));
             Quaternion localRotation = Quaternion.Inverse(basePart.stateRotation) * CombinedRigidBody.Orientation;
@@ -198,8 +198,7 @@ public class PhysicsAssembly
             GameManager.PhysicsSolver!.LocalWorld.DynamicTree.Update(shape);
         }
 
-        CombinedRigidBody.Position += Raymath.Vector3RotateByQuaternion(
-            centerOfGeometry, CombinedRigidBody.Orientation);
+        CombinedRigidBody.Position += Vector3.Transform(centerOfGeometry, CombinedRigidBody.Orientation);
 
         CombinedRigidBody.ClearContactCache();
         CombinedRigidBody.SetMassInertia();
@@ -213,7 +212,7 @@ public class PhysicsAssembly
             physicsAssembly.Participants[i].PhysicsAssembly = this;
             physicsAssembly.Participants[i].OwnPhysicsActor = null;
             
-            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+            Vector3 differenceInPosition = Vector3.Transform(
                 physicsAssembly.Participants[i].statePosition - CombinedRigidBody.Position,
                 Quaternion.Inverse(CombinedRigidBody.Orientation));
             Quaternion localRotation = Quaternion.Inverse(physicsAssembly.Participants[i].stateRotation) * CombinedRigidBody.Orientation;

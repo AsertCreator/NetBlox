@@ -22,6 +22,17 @@ public class PhysicsSolver
     public bool EnableNetworkPrediction = true;
     public int SendPhysicsEveryNFrames = 1;
 
+    public float JointSurfaceTolerance = 0.01f;
+    public (int NormalAxis, float NormalSign, int TangentU, int TangentV)[] JointSurfaceAxes =
+    [
+        (1, 1, 0, 2),
+        (1, -1, 0, 2),
+        (0, -1, 1, 2),
+        (0, 1, 1, 2),
+        (2, 1, 0, 1),
+        (2, -1, 0, 1)
+    ];
+
     private int spcounter;
 
     public List<PhysicsAssembly> AllPhysicsAssemblies = [];
@@ -284,7 +295,7 @@ public class PhysicsSolver
         {
             if (!assembly.ShapeMapping.TryGetValue(part, out TransformedShape? shape))
                 return;
-            Vector3 differenceInPosition = Raymath.Vector3RotateByQuaternion(
+            Vector3 differenceInPosition = Vector3.Transform(
                 part.statePosition - assembly.CombinedRigidBody.Position,
                 Quaternion.Inverse(assembly.CombinedRigidBody.Orientation));
             shape.Translation = differenceInPosition;

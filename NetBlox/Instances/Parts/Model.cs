@@ -81,7 +81,7 @@ public class Model : PVInstance
         for (int i = 0; i < instances.Length; i++)
         {
             Vector3 localPositionDifference = instances[i].statePosition - ogPrimaryPosition;
-            localPositionDifference = Raymath.Vector3RotateByQuaternion(localPositionDifference, orientationDifference);
+            localPositionDifference = Vector3.Transform(localPositionDifference, orientationDifference);
             instances[i].Position = coordinateFrame.Position + localPositionDifference;
             instances[i].QuaternionRotation *= orientationDifference;
         }

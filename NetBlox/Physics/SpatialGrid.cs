@@ -117,4 +117,34 @@ public class SpatialGrid
             objectToCells.Remove(basePart);
         }
     }
+    public BasePart[]? GetImmediatelyNeighboringParts(BasePart basePart)
+    {
+        if (!objectToCells.ContainsKey(basePart))
+            return null;
+
+        HashSet<BasePart> baseParts = [];
+        HashSet<Vector3Int> surroundingCells = ObjectPool_HashSetVector3Int_Get();
+
+        surroundingCells.Clear();
+
+        foreach (Vector3Int cell in objectToCells[basePart])
+        {
+            for (int x = -1; x <= 1; x++)
+                for (int y = -1; y <= 1; y++)
+                    for (int z = -1; z <= 1; z++)
+                        surroundingCells.Add(new Vector3Int 
+                            { X = cell.X + x, Y = cell.Y + y, Z = cell.Z + z });
+        }
+
+        foreach (Vector3Int cell in surroundingCells)
+        {
+            if (cellToObjects.ContainsKey(cell))
+                baseParts.UnionWith(cellToObjects[cell]);
+        }
+
+        baseParts.Remove(basePart);
+
+        ObjectPool_HashSetVector3Int_Return(surroundingCells);
+        return baseParts.ToArray();
+    }
 }

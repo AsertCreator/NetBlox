@@ -106,7 +106,7 @@ public class Humanoid : Instance
                 totalTranslationX *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS);
                 totalTranslationZ *= WalkSpeed * (1f / GameManager.GameRenderer!.PreferredFPS);
 
-                Vector3 primaryForward = Raymath.Vector3RotateByQuaternion(Vector3.UnitX, model.PrimaryPart.QuaternionRotation);
+                Vector3 primaryForward = Vector3.Transform(Vector3.UnitX, model.PrimaryPart.QuaternionRotation);
                 Vector2 idealLookatVector = -Vector2.Normalize(new Vector2(totalTranslationX, totalTranslationZ));
                 float idealAngle = MathF.Atan2(-idealLookatVector.Y, idealLookatVector.X);
                 float currentAngle = MathF.Atan2(-primaryForward.Z, primaryForward.X);
