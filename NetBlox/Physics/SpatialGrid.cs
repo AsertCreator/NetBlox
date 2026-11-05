@@ -11,6 +11,13 @@ public record struct Vector3Int
     public int Y;
     public int Z;
 }
+public record struct QuaternionInt
+{
+    public int X;
+    public int Y;
+    public int Z;
+    public int W;
+}
 
 public class SpatialGrid
 {
@@ -21,6 +28,8 @@ public class SpatialGrid
     private Stack<HashSet<Vector3Int>> objectPool_HashSetVector3Int = [];
     private Dictionary<BasePart, HashSet<Vector3Int>> objectToCells = [];
     private Dictionary<Vector3Int, HashSet<BasePart>> cellToObjects = [];
+
+    private Dictionary<BasePart, (Vector3Int, Vector3Int)> objectsToLastBoundingBoxes = [];
 
     public SpatialGrid(PhysicsSolver physicsSolver)
     {
@@ -41,19 +50,24 @@ public class SpatialGrid
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public void UpdatePart(BasePart basePart)
     {
+        basePart.CalculateBoundingBox(out Vector3 min, out Vector3 max);
+
+        Vector3Int minInt = new Vector3Int { X = (int)MathF.Floor(min.X), Y = (int)MathF.Floor(min.Y), Z = (int)MathF.Floor(min.Z) };
+        Vector3Int maxInt = new Vector3Int { X = (int)MathF.Ceiling(max.X), Y = (int)MathF.Ceiling(max.Y), Z = (int)MathF.Ceiling(max.Z) };
+
+        if (objectsToLastBoundingBoxes.TryGetValue(basePart, out (Vector3Int, Vector3Int) lastbbox) && lastbbox.Item1 == minInt && lastbbox.Item2 == maxInt)
+            return;
+        
+        objectsToLastBoundingBoxes[basePart] = (minInt, maxInt);
+
         HashSet<Vector3Int> previousCells = ObjectPool_HashSetVector3Int_Get();
         HashSet<Vector3Int> currentCells = ObjectPool_HashSetVector3Int_Get();
-
-        basePart.CalculateBoundingBox(out Vector3 min, out Vector3 max);
 
         if (!objectToCells.ContainsKey(basePart))
             objectToCells[basePart] = [];
 
         previousCells.Clear();
         previousCells.UnionWith(objectToCells[basePart]);
-
-        Vector3Int minInt = new Vector3Int { X = (int)MathF.Floor(min.X), Y = (int)MathF.Floor(min.Y), Z = (int)MathF.Floor(min.Z) };
-        Vector3Int maxInt = new Vector3Int { X = (int)MathF.Ceiling(max.X), Y = (int)MathF.Ceiling(max.Y), Z = (int)MathF.Ceiling(max.Z) };
 
         currentCells.Clear();
 

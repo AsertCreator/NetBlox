@@ -101,6 +101,7 @@ public class WorkspaceRendererViewport : RendererViewport
     private Mesh cubeMesh;
     private Mesh sphereMesh;
     private Humanoid? followHumanoid;
+    private Frustum lastFrustum;
 
     public unsafe WorkspaceRendererViewport(GameRenderer gameRenderer) : base(gameRenderer)
     {
@@ -244,27 +245,18 @@ public class WorkspaceRendererViewport : RendererViewport
         SetVector4Uniform(uniform_instanced_decalFrontTint, new(specification.FrontDecal.DecalTint.ToVector3(), 1 - specification.FrontDecal.DecalTransparency));
         SetVector4Uniform(uniform_instanced_decalTopTint, new(specification.TopDecal.DecalTint.ToVector3(), 1 - specification.TopDecal.DecalTransparency));
 
-        BindSurfaceTexture(uniform_instanced_blankTexture, blankSurfaceTexture, 0);
-        BindSurfaceTexture(uniform_instanced_studTexture, studSurfaceTexture, 1);
-        BindSurfaceTexture(uniform_instanced_inletTexture, inletSurfaceTexture, 2);
-        BindSurfaceTexture(uniform_instanced_universalTexture, universalSurfaceTexture, 3);
-        BindSurfaceTexture(uniform_instanced_glueTexture, glueSurfaceTexture, 4);
-        BindSurfaceTexture(uniform_instanced_studNormalTexture, studSurfaceNormalTexture, 5);
-        BindSurfaceTexture(uniform_instanced_inletNormalTexture, inletSurfaceNormalTexture, 6);
-        BindSurfaceTexture(uniform_instanced_universalNormalTexture, universalSurfaceNormalTexture, 7);
-        BindSurfaceTexture(uniform_instanced_glueNormalTexture, glueSurfaceNormalTexture, 8);
-
-        BindSurfaceTexture(uniform_instanced_decalBack, specification.BackDecal.DecalTexture, 9);
-        BindSurfaceTexture(uniform_instanced_decalFront, specification.FrontDecal.DecalTexture, 10);
-        BindSurfaceTexture(uniform_instanced_decalTop, specification.TopDecal.DecalTexture, 11);
-        BindSurfaceTexture(uniform_instanced_decalBottom, specification.BottomDecal.DecalTexture, 12);
-        BindSurfaceTexture(uniform_instanced_decalLeft, specification.LeftDecal.DecalTexture, 13);
-        BindSurfaceTexture(uniform_instanced_decalRight, specification.RightDecal.DecalTexture, 14);
-
-        SetIntUniform(uniform_instanced_shadowmap, 15);
-        Rlgl.ActiveTextureSlot(15);
-        Rlgl.EnableTexture(ShadowMap.Depth.Id);
-        Rlgl.ActiveTextureSlot(0);
+        if (specification.BackDecal.DecalTexture.Id > 0)
+            BindSurfaceTexture(uniform_instanced_decalBack, specification.BackDecal.DecalTexture, 9);
+        if (specification.FrontDecal.DecalTexture.Id > 0)
+            BindSurfaceTexture(uniform_instanced_decalFront, specification.FrontDecal.DecalTexture, 10);
+        if (specification.TopDecal.DecalTexture.Id > 0)
+            BindSurfaceTexture(uniform_instanced_decalTop, specification.TopDecal.DecalTexture, 11);
+        if (specification.BottomDecal.DecalTexture.Id > 0)
+            BindSurfaceTexture(uniform_instanced_decalBottom, specification.BottomDecal.DecalTexture, 12);
+        if (specification.LeftDecal.DecalTexture.Id > 0)
+            BindSurfaceTexture(uniform_instanced_decalLeft, specification.LeftDecal.DecalTexture, 13);
+        if (specification.RightDecal.DecalTexture.Id > 0)
+            BindSurfaceTexture(uniform_instanced_decalRight, specification.RightDecal.DecalTexture, 14);
     }
 
     private unsafe void SetIntUniform(int location, int value)
@@ -389,6 +381,8 @@ public class WorkspaceRendererViewport : RendererViewport
         CoreEditorService? coreEditorService = GameRenderer.GameManager.RootModel.FindService<CoreEditorService>();
         Lighting lighting = GameRenderer.GameManager.RootModel.GetService<Lighting>();
 
+        lastFrustum = Frustum.ExtractFrustum(0.01f, 1000, MainCamera);
+
         if (lighting.RealTimeShadows)
         {
             LightCamera = new Camera3D()
@@ -408,9 +402,6 @@ public class WorkspaceRendererViewport : RendererViewport
             Matrix4x4 matlightVP = Raymath.MatrixMultiply(
                 Raylib.GetCameraViewMatrix(ref LightCamera),
                 Raylib.GetCameraProjectionMatrix(ref LightCamera, shadowMapAspect));
-
-            Raylib.SetShaderValueTexture(SpecularLightingShader, uniform_shadowmap, ShadowMap.Depth);
-            Raylib.SetShaderValueTexture(SpecularLightingInstancedShader, uniform_instanced_shadowmap, ShadowMap.Depth);
 
             Raylib.SetShaderValueMatrix(SpecularLightingShader, uniform_lightVP, matlightVP);
             Raylib.SetShaderValueMatrix(SpecularLightingInstancedShader, uniform_instanced_lightVP, matlightVP);
@@ -456,6 +447,22 @@ public class WorkspaceRendererViewport : RendererViewport
             Raylib.EndTextureMode();
             Raylib.BeginMode3D(MainCamera);
         }
+
+
+        BindSurfaceTexture(uniform_instanced_blankTexture, blankSurfaceTexture, 0);
+        BindSurfaceTexture(uniform_instanced_studTexture, studSurfaceTexture, 1);
+        BindSurfaceTexture(uniform_instanced_inletTexture, inletSurfaceTexture, 2);
+        BindSurfaceTexture(uniform_instanced_universalTexture, universalSurfaceTexture, 3);
+        BindSurfaceTexture(uniform_instanced_glueTexture, glueSurfaceTexture, 4);
+        BindSurfaceTexture(uniform_instanced_studNormalTexture, studSurfaceNormalTexture, 5);
+        BindSurfaceTexture(uniform_instanced_inletNormalTexture, inletSurfaceNormalTexture, 6);
+        BindSurfaceTexture(uniform_instanced_universalNormalTexture, universalSurfaceNormalTexture, 7);
+        BindSurfaceTexture(uniform_instanced_glueNormalTexture, glueSurfaceNormalTexture, 8);
+        
+        SetIntUniform(uniform_instanced_shadowmap, 15);
+        Rlgl.ActiveTextureSlot(15);
+        Rlgl.EnableTexture(ShadowMap.Depth.Id);
+        Rlgl.ActiveTextureSlot(0);
 
         DrawPartRenderBuffer();
         RenderParticles();
@@ -508,19 +515,27 @@ public class WorkspaceRendererViewport : RendererViewport
                     int j = 0;
                     for (int i = 0; i < kvp.Value.Count; i++)
                     {
-                        BasePart basePart = kvp.Value[j];
+                        BasePart basePart = kvp.Value[i];
                         if ((!basePart.CastShadow || basePart.Transparency > 0.75f) && shadowPass)
                             continue;
-                        j++;
+                        if (!shadowPass && basePart.Root.GetService<Lighting>().RealTimeFrustumCulling)
+                        {
+                            basePart.CalculateBoundingBox(out Vector3 min, out Vector3 max);
+                            if (!lastFrustum.IsInFrustum(min, max))
+                                continue;
+                        }
+
                         Matrix4x4 matrix = Matrix4x4.CreateScale(basePart.Size.X, basePart.Size.Y, basePart.Size.Z);
                         matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
                         matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
                         matrix = Matrix4x4.Transpose(matrix);
-                        renderInstances[i].Transform = Raymath.MatrixToFloatV(matrix);
-                        renderInstances[i].Color.X = basePart.Color3.R / 255f;
-                        renderInstances[i].Color.Y = basePart.Color3.G / 255f;
-                        renderInstances[i].Color.Z = basePart.Color3.B / 255f;
-                        renderInstances[i].Color.W = 1 - basePart.Transparency;
+                        renderInstances[j].Transform = Raymath.MatrixToFloatV(matrix);
+                        renderInstances[j].Color.X = basePart.Color3.R / 255f;
+                        renderInstances[j].Color.Y = basePart.Color3.G / 255f;
+                        renderInstances[j].Color.Z = basePart.Color3.B / 255f;
+                        renderInstances[j].Color.W = 1 - basePart.Transparency;
+
+                        j++;
                     }
 
                     RenderUtils.CustomDrawMeshInstanced(cubeMesh, renderInstances.AsSpan()[..j], this, partSpecification, true, shadowPass);
@@ -530,10 +545,15 @@ public class WorkspaceRendererViewport : RendererViewport
                     int j = 0;
                     for (int i = 0; i < kvp.Value.Count; i++)
                     {
-                        BasePart basePart = kvp.Value[j];
+                        BasePart basePart = kvp.Value[i];
                         if ((!basePart.CastShadow || basePart.Transparency > 0.75f) && shadowPass)
                             continue;
-                        j++;
+                        if (!shadowPass && basePart.Root.GetService<Lighting>().RealTimeFrustumCulling)
+                        {
+                            basePart.CalculateBoundingBox(out Vector3 min, out Vector3 max);
+                            if (!lastFrustum.IsInFrustum(min, max))
+                                continue;
+                        }
 
                         Vector3 size = basePart.Size;
                         float minsize = size.X;
@@ -547,11 +567,13 @@ public class WorkspaceRendererViewport : RendererViewport
                         matrix *= Matrix4x4.CreateFromQuaternion(basePart.QuaternionRotation);
                         matrix *= Matrix4x4.CreateTranslation(basePart.Position.X, basePart.Position.Y, basePart.Position.Z);
                         matrix = Matrix4x4.Transpose(matrix);
-                        renderInstances[i].Transform = Raymath.MatrixToFloatV(matrix);
-                        renderInstances[i].Color.X = basePart.Color3.R / 255f;
-                        renderInstances[i].Color.Y = basePart.Color3.G / 255f;
-                        renderInstances[i].Color.Z = basePart.Color3.B / 255f;
-                        renderInstances[i].Color.W = 1 - basePart.Transparency;
+                        renderInstances[j].Transform = Raymath.MatrixToFloatV(matrix);
+                        renderInstances[j].Color.X = basePart.Color3.R / 255f;
+                        renderInstances[j].Color.Y = basePart.Color3.G / 255f;
+                        renderInstances[j].Color.Z = basePart.Color3.B / 255f;
+                        renderInstances[j].Color.W = 1 - basePart.Transparency;
+
+                        j++;
                     }
 
                     RenderUtils.CustomDrawMeshInstanced(sphereMesh, renderInstances.AsSpan()[..j], this, partSpecification, false, shadowPass);
@@ -1043,6 +1065,10 @@ public class WorkspaceRendererViewport : RendererViewport
     {
         PartSpecification partSpecification = default;
 
+        part.CalculateBoundingBox(out Vector3 min, out Vector3 max);
+        if (!lastFrustum.IsInFrustum(min, max) && part.Root.GetService<Lighting>().RealTimeFrustumCulling)
+            return;
+
         if (part is Part concretePart)
         {
             partSpecification.Shape = concretePart.Shape;
@@ -1110,7 +1136,7 @@ public class WorkspaceRendererViewport : RendererViewport
 
         if (part.Transparency <= 0)
         {
-            if (!opaquePartRenderBuffer.TryGetValue(partSpecification, out _))
+            if (!opaquePartRenderBuffer.ContainsKey(partSpecification))
                 opaquePartRenderBuffer[partSpecification] = new();
             
             opaquePartRenderBuffer[partSpecification].Add(part);
@@ -1119,7 +1145,7 @@ public class WorkspaceRendererViewport : RendererViewport
         }
         else if (part.Transparency < 1)
         {
-            if (!transparentPartRenderBuffer.TryGetValue(partSpecification, out _))
+            if (!transparentPartRenderBuffer.ContainsKey(partSpecification))
                 transparentPartRenderBuffer[partSpecification] = new();
             
             transparentPartRenderBuffer[partSpecification].Add(part);

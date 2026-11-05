@@ -98,7 +98,7 @@ public class PhysicsSolver
         GameManager.TryGetEventForId(GameEvent.EVENT_BEFORE_PHYSICS)?.Fire();
 
         lock (this)
-            LocalWorld.Step(1 / (float)fps, false);
+            LocalWorld.Step(1 / (float)fps);
 
         Workspace workspace = GameManager.RootModel.GetService<Workspace>();
         NetworkServer? networkServer = null;
@@ -146,6 +146,9 @@ public class PhysicsSolver
 
         foreach (PhysicsAssembly physicsAssembly in immutable.Values)
         {
+            if (physicsAssembly.CombinedRigidBody.MotionType == MotionType.Static)
+                continue;
+                
             using RentedSpan<BasePart> expireds = new RentedSpan<BasePart>(physicsAssembly.Participants.Count);
             int expiredcount = 0;
 

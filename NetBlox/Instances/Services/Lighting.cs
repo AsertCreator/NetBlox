@@ -13,6 +13,8 @@ public class Lighting : Instance
     public Vector3 SunPosition { get; set; } = new Vector3(-5, 70, -40);
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
     public bool RealTimeShadows { get; set; } = true;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public bool RealTimeFrustumCulling { get; set; } = true;
     
     public override string ClassName => nameof(Lighting);
 
