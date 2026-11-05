@@ -848,6 +848,12 @@ public class PlaceParser
                     bpropval[classId][propertyName].Add(matrices[i]);
                 }
             }
+            else if (valueType == 0x13) // Reference
+            {
+                int[] references = ReadReferences(br, binstance[classId].Count);
+                for (int i = 0; i < binstance[classId].Count; i++)
+                    bpropval[classId][propertyName].Add(references[i]);
+            }
             else if (valueType == 0x14) // Vector3int16
             {
                 for (int i = 0; i < binstance[classId].Count; i++)
@@ -885,6 +891,13 @@ public class PlaceParser
 
         ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
 
+        foreach (var parenchildrelation in binstanceParentalRelations)
+        {
+            if (binstanceGlobal.ContainsKey(parenchildrelation.Key) && binstanceGlobal.ContainsKey(parenchildrelation.Value) &&
+                parenchildrelation.Key != parenchildrelation.Value) // tf roblox
+                binstanceGlobal[parenchildrelation.Key].Parent = binstanceGlobal[parenchildrelation.Value];
+        }
+
         foreach (var bpropvalByClass in bpropval)
         {
             if (!binstance.ContainsKey(bpropvalByClass.Key))
@@ -902,15 +915,13 @@ public class PlaceParser
                 PropertyInfo propertyInfo = cacheproperty.Property;
 
                 for (int i = 0; i < property.Value.Count; i++)
-                    propertyInfo.SetValue(instances[i], property.Value[i]);
+                {
+                    if (propertyInfo.PropertyType.IsAssignableTo(typeof(Instance)))
+                        propertyInfo.SetValue(instances[i], binstanceGlobal[(int)property.Value[i]]);
+                    else
+                        propertyInfo.SetValue(instances[i], property.Value[i]);
+                }
             }
-        }
-
-        foreach (var parenchildrelation in binstanceParentalRelations)
-        {
-            if (binstanceGlobal.ContainsKey(parenchildrelation.Key) && binstanceGlobal.ContainsKey(parenchildrelation.Value) &&
-                parenchildrelation.Key != parenchildrelation.Value) // tf roblox
-                binstanceGlobal[parenchildrelation.Key].Parent = binstanceGlobal[parenchildrelation.Value];
         }
     }
     public void LoadPlaceMultiplexed(string path)

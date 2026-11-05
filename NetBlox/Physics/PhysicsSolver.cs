@@ -17,6 +17,7 @@ public class PhysicsSolver
 {
     public World LocalWorld;
     public GameManager GameManager;
+    public SpatialGrid SpatialGrid;
     public bool CanRun = false;
     public bool EnableNetworkPrediction = true;
     public int SendPhysicsEveryNFrames = 1;
@@ -34,6 +35,7 @@ public class PhysicsSolver
         LocalWorld = new World();
         LocalWorld.Gravity = new JVector(0, -36f, 0);
         LocalWorld.DynamicTree.Filter = DynamicTreeFilter;
+        SpatialGrid = new SpatialGrid(this);
     }
 
     private bool DynamicTreeFilter(IDynamicTreeProxy proxyA, IDynamicTreeProxy proxyB)
@@ -264,6 +266,8 @@ public class PhysicsSolver
         LocalWorld.DynamicTree.Update(foundShape);
         rigidBody.ClearContactCache();
         rigidBody.SetMassInertia();
+
+        GameManager.PhysicsSolver?.SpatialGrid.UpdatePart(part);
     }
     public void FinalizeSetPositionForBasePart(BasePart part, Vector3 value)
     {
@@ -290,6 +294,8 @@ public class PhysicsSolver
             assembly.CombinedRigidBody.SetMassInertia();
             assembly.CenterOfMassToCenterOfGeometry();
         }
+
+        GameManager.PhysicsSolver?.SpatialGrid.UpdatePart(part);
     }
     public void FinalizeSetRotationForBasePart(BasePart part, Quaternion value)
     {
@@ -313,6 +319,8 @@ public class PhysicsSolver
             assembly.CombinedRigidBody.ClearContactCache();
             assembly.CombinedRigidBody.SetMassInertia();
         }
+
+        GameManager.PhysicsSolver?.SpatialGrid.UpdatePart(part);
     }
     public void FinalizeSetLinearVelocityForBasePart(BasePart part, Vector3 value)
     {
@@ -378,6 +386,8 @@ public class PhysicsSolver
         }
 
         part.OwnPhysicsActor = null;
+
+        SpatialGrid.RemovePart(part);
     }
 
     public void AddBasePart(BasePart basePart)

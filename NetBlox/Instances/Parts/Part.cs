@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Jitter2.Collision.Shapes;
 using NetBlox.Instances.Services;
 using NetBlox.Rendering;
@@ -273,6 +274,18 @@ public class Part : BasePart
             lastDecalTextureBackLoaded = null;
         else if (currentDecalBack.Content != lastDecalTextureBack)
             HandleDecalFace(ref lastDecalTextureBackLoaded, ref lastDecalTextureBack, ref lastDecalTextureBackInstance, NormalId.Back, currentDecalBack);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override void CalculateBoundingBox(out Vector3 min, out Vector3 max)
+    {
+        if (Shape != PartType.Ball)
+            base.CalculateBoundingBox(out min, out max);
+        else
+        {
+            min = Position - Size / 2;
+            max = Position + Size / 2;
+        }
     }
 
     public override bool IsA(string className)

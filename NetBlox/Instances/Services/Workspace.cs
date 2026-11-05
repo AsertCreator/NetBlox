@@ -86,6 +86,12 @@ public class Workspace : Model
         }
     }
 
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.Plugin)]
+    public void MakeJoints(Instance[] parts)
+    {
+        
+    }
+
     public override void Destroy()
     {
         if (!GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))

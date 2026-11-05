@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Jitter2.Collision.Shapes;
 using Jitter2.LinearMath;
 using NetBlox.Physics;
@@ -234,6 +235,11 @@ public class BasePart : PVInstance
             }
         }
 
+        if (muchChanges)
+        {
+            GameManager.PhysicsSolver?.SpatialGrid.UpdatePart(this);
+        }
+
         return muchChanges;
     }
 
@@ -270,6 +276,52 @@ public class BasePart : PVInstance
     public virtual RigidBodyShape CreateShape()
     {
         throw new NotImplementedException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public virtual void CalculateBoundingBox(out Vector3 min, out Vector3 max)
+    {
+        if (QuaternionRotation != Quaternion.Identity)
+        {
+            Vector3 v3_0 = new Vector3(Size.X, Size.Y, Size.Z) / 2;
+            Vector3 v3_1 = new Vector3(Size.X, Size.Y, -Size.Z) / 2;
+            Vector3 v3_2 = new Vector3(Size.X, -Size.Y, Size.Z) / 2;
+            Vector3 v3_3 = new Vector3(Size.X, -Size.Y, -Size.Z) / 2;
+            Vector3 v3_4 = new Vector3(-Size.X, Size.Y, Size.Z) / 2;
+            Vector3 v3_5 = new Vector3(-Size.X, Size.Y, -Size.Z) / 2;
+            Vector3 v3_6 = new Vector3(-Size.X, -Size.Y, Size.Z) / 2;
+            Vector3 v3_7 = new Vector3(-Size.X, -Size.Y, -Size.Z) / 2;
+
+            v3_0 = Raymath.Vector3RotateByQuaternion(v3_0, QuaternionRotation);
+            v3_1 = Raymath.Vector3RotateByQuaternion(v3_1, QuaternionRotation);
+            v3_2 = Raymath.Vector3RotateByQuaternion(v3_2, QuaternionRotation);
+            v3_3 = Raymath.Vector3RotateByQuaternion(v3_3, QuaternionRotation);
+            v3_4 = Raymath.Vector3RotateByQuaternion(v3_4, QuaternionRotation);
+            v3_5 = Raymath.Vector3RotateByQuaternion(v3_5, QuaternionRotation);
+            v3_6 = Raymath.Vector3RotateByQuaternion(v3_6, QuaternionRotation);
+            v3_7 = Raymath.Vector3RotateByQuaternion(v3_7, QuaternionRotation);
+
+            // i'm so sorry
+
+            Vector3 tempmin = new Vector3(
+                MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(v3_0.X, v3_1.X), v3_2.X), v3_3.X), v3_4.X), v3_5.X), v3_6.X), v3_7.X),
+                MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(v3_0.Y, v3_1.Y), v3_2.Y), v3_3.Y), v3_4.Y), v3_5.Y), v3_6.Y), v3_7.Y),
+                MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(MathF.Min(v3_0.Z, v3_1.Z), v3_2.Z), v3_3.Z), v3_4.Z), v3_5.Z), v3_6.Z), v3_7.Z)
+            );
+            Vector3 tempmax = new Vector3(
+                MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(v3_0.X, v3_1.X), v3_2.X), v3_3.X), v3_4.X), v3_5.X), v3_6.X), v3_7.X),
+                MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(v3_0.Y, v3_1.Y), v3_2.Y), v3_3.Y), v3_4.Y), v3_5.Y), v3_6.Y), v3_7.Y),
+                MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(MathF.Max(v3_0.Z, v3_1.Z), v3_2.Z), v3_3.Z), v3_4.Z), v3_5.Z), v3_6.Z), v3_7.Z)
+            );
+
+            min = tempmin + Position;
+            max = tempmax + Position;
+        }
+        else
+        {
+            min = Position - Size / 2;
+            max = Position + Size / 2;
+        }
     }
 
     public override bool IsA(string className)
