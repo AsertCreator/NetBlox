@@ -111,14 +111,23 @@ public class Instance
     {
         get
         {
-            Instance? parent = Parent;
-            if (parent == null && InstanceID == 1)
-                return true;
-            if (parent == null)
-                return false;
-            return parent.IsPartOfDataModel;
+            if (reevaluateDataModelDescedancy)
+            {
+                Instance? parent = Parent;
+                if (parent == null && InstanceID == 1)
+                    hasDataModelDescedancy = true;
+                else if (parent == null)
+                    hasDataModelDescedancy = false;
+                else
+                    hasDataModelDescedancy = parent.IsPartOfDataModel;
+                reevaluateDataModelDescedancy = false;
+            }
+            return hasDataModelDescedancy;
         }
     }
+
+    private bool reevaluateDataModelDescedancy = true;
+    private bool hasDataModelDescedancy = false;
 
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public bool Archivable { get; set; } = true;
@@ -704,6 +713,7 @@ public class Instance
     }
     public void InvokeAncestryChanged(Instance child, Instance? value)
     {
+        reevaluateDataModelDescedancy = true;
         AncestryChanged.Fire([
             DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, child)),
             value != null ? DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value)) : DynValue.Nil

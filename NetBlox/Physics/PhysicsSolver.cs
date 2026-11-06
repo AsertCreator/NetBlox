@@ -101,6 +101,7 @@ public class PhysicsSolver
             LocalWorld.Step(1 / (float)fps);
 
         Workspace workspace = GameManager.RootModel.GetService<Workspace>();
+        Players? players = GameManager.RootModel.FindService<Players>();
         NetworkServer? networkServer = null;
         if (GameManager.NetworkMode == NetworkMode.Server)
             networkServer = GameManager.RootModel.GetService<NetworkServer>();
@@ -125,7 +126,7 @@ public class PhysicsSolver
                 if (!basePart.Anchored)
                 {
                     bool muchChanges = basePart.UpdateState();
-                    if (networkServer != null && muchChanges && sendPhysics)
+                    if (sendPhysics && networkServer != null && players != null && players.children.Count > 0 && muchChanges)
                         networkServer.AddBroadcastPhysicsUpdate(basePart);
                 }
             }
@@ -159,7 +160,7 @@ public class PhysicsSolver
                     if (!basePart.Anchored)
                     {
                         bool muchChanges = basePart.UpdateState();
-                        if (networkServer != null && muchChanges && sendPhysics)
+                        if (sendPhysics && networkServer != null && players != null && players.children.Count > 0 && muchChanges)
                             networkServer.AddBroadcastPhysicsUpdate(basePart);
                     }
                 }

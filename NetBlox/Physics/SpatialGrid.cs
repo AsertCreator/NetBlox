@@ -25,26 +25,14 @@ public class SpatialGrid
 
     public Vector3Int CellSize = new Vector3Int { X = 3, Y = 3, Z = 3 };
 
-    private Stack<HashSet<Vector3Int>> objectPool_HashSetVector3Int = [];
-    private Dictionary<BasePart, HashSet<Vector3Int>> objectToCells = [];
-    private Dictionary<Vector3Int, HashSet<BasePart>> cellToObjects = [];
+    private Dictionary<BasePart, LinkedList<Vector3Int>> objectToCells = [];
+    private Dictionary<Vector3Int, LinkedList<BasePart>> cellToObjects = [];
 
     private Dictionary<BasePart, (Vector3Int, Vector3Int)> objectsToLastBoundingBoxes = [];
 
     public SpatialGrid(PhysicsSolver physicsSolver)
     {
         PhysicsSolver = physicsSolver;
-    }
-
-    private HashSet<Vector3Int> ObjectPool_HashSetVector3Int_Get()
-    {
-        if (objectPool_HashSetVector3Int.Count > 0)
-            return objectPool_HashSetVector3Int.Pop();
-        return new HashSet<Vector3Int>();
-    }
-    private void ObjectPool_HashSetVector3Int_Return(HashSet<Vector3Int> obj)
-    {
-        objectPool_HashSetVector3Int.Push(obj);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -55,72 +43,60 @@ public class SpatialGrid
         Vector3Int minInt = new Vector3Int { X = (int)MathF.Floor(min.X), Y = (int)MathF.Floor(min.Y), Z = (int)MathF.Floor(min.Z) };
         Vector3Int maxInt = new Vector3Int { X = (int)MathF.Ceiling(max.X), Y = (int)MathF.Ceiling(max.Y), Z = (int)MathF.Ceiling(max.Z) };
 
-        if (objectsToLastBoundingBoxes.TryGetValue(basePart, out (Vector3Int, Vector3Int) lastbbox) && lastbbox.Item1 == minInt && lastbbox.Item2 == maxInt)
+        bool hasPreviousBoundingBox = objectsToLastBoundingBoxes.TryGetValue(basePart, out (Vector3Int, Vector3Int) lastbbox);
+
+        if (hasPreviousBoundingBox && lastbbox.Item1 == minInt && lastbbox.Item2 == maxInt)
             return;
-        
-        objectsToLastBoundingBoxes[basePart] = (minInt, maxInt);
 
-        HashSet<Vector3Int> previousCells = ObjectPool_HashSetVector3Int_Get();
-        HashSet<Vector3Int> currentCells = ObjectPool_HashSetVector3Int_Get();
-
-        if (!objectToCells.ContainsKey(basePart))
-            objectToCells[basePart] = [];
-
-        previousCells.Clear();
-        previousCells.UnionWith(objectToCells[basePart]);
-
-        currentCells.Clear();
-
-        for (int x = minInt.X; x < maxInt.X; x += CellSize.X)
-            for (int y = minInt.Y; y < maxInt.Y; y += CellSize.Y)
-                for (int z = minInt.Z; z < maxInt.Z; z += CellSize.Z)
-                    currentCells.Add(new Vector3Int { X = x, Y = y, Z = z });
-                    
-        HashSet<Vector3Int> goneCells = ObjectPool_HashSetVector3Int_Get();
-        goneCells.Clear();
-        goneCells.UnionWith(previousCells);
-        goneCells.ExceptWith(currentCells);
-
-        HashSet<Vector3Int> newCells = ObjectPool_HashSetVector3Int_Get();
-        newCells.Clear();
-        newCells.UnionWith(currentCells);
-        newCells.ExceptWith(previousCells);
-
-        if (goneCells.Count > 0)
+        if (!objectToCells.TryGetValue(basePart, out LinkedList<Vector3Int>? cellList))
         {
-            objectToCells[basePart].ExceptWith(goneCells);
-            foreach (Vector3Int goneCell in goneCells)
+            cellList = [];
+            objectToCells[basePart] = cellList;
+        }
+
+        LinkedListNode<Vector3Int>? first = cellList.First;
+
+        while (first != null)
+        {
+            LinkedListNode<Vector3Int> current = first;
+            first = first.Next;
+
+            if (current.Value.X < minInt.X || current.Value.X > maxInt.X || 
+                current.Value.Y < minInt.Y || current.Value.Y > maxInt.Y || 
+                current.Value.Z < minInt.Z || current.Value.Z > maxInt.Z)
+                cellList.Remove(current);
+        }
+        
+        for (int x = minInt.X; x < maxInt.X; x++)
+        {
+            for (int y = minInt.Y; y < maxInt.Y; y++)
             {
-                if (cellToObjects.ContainsKey(goneCell))
+                for (int z = minInt.Z; z < maxInt.Z; z++)
                 {
-                    cellToObjects[goneCell].Remove(basePart);
-                    if (cellToObjects[goneCell].Count == 0)
-                        cellToObjects.Remove(goneCell);
+                    if (!hasPreviousBoundingBox || x < lastbbox.Item1.X || x > lastbbox.Item2.X ||
+                        y < lastbbox.Item1.Y || y > lastbbox.Item2.Y ||
+                        z < lastbbox.Item1.Z || z > lastbbox.Item2.Z)
+                    {
+                        Vector3Int cell = new Vector3Int { X = x, Y = y, Z = z };
+                        cellList.AddLast(cell);
+                        if (!cellToObjects.TryGetValue(cell, out LinkedList<BasePart>? partList))
+                        {
+                            partList = [];
+                            cellToObjects[cell] = partList;
+                        }
+                        partList.AddLast(basePart);
+                    }
                 }
             }
         }
 
-        if (newCells.Count > 0)
-        {
-            objectToCells[basePart].UnionWith(newCells);
-            foreach (Vector3Int newCell in newCells)
-            {
-                if (!cellToObjects.ContainsKey(newCell))
-                    cellToObjects[newCell] = [];
-                cellToObjects[newCell].Add(basePart);
-            }
-        }
-
-        ObjectPool_HashSetVector3Int_Return(previousCells);
-        ObjectPool_HashSetVector3Int_Return(currentCells);
-        ObjectPool_HashSetVector3Int_Return(goneCells);
-        ObjectPool_HashSetVector3Int_Return(newCells);
+        objectsToLastBoundingBoxes[basePart] = (minInt, maxInt);
     }
     public void RemovePart(BasePart basePart)
     {
         if (objectToCells.ContainsKey(basePart))
         {
-            HashSet<Vector3Int> allCells = objectToCells[basePart];
+            LinkedList<Vector3Int> allCells = objectToCells[basePart];
             foreach (Vector3Int goneCell in allCells)
             {
                 cellToObjects[goneCell].Remove(basePart);
@@ -137,7 +113,7 @@ public class SpatialGrid
             return null;
 
         HashSet<BasePart> baseParts = [];
-        HashSet<Vector3Int> surroundingCells = ObjectPool_HashSetVector3Int_Get();
+        HashSet<Vector3Int> surroundingCells = new HashSet<Vector3Int>();
 
         surroundingCells.Clear();
 
@@ -158,7 +134,6 @@ public class SpatialGrid
 
         baseParts.Remove(basePart);
 
-        ObjectPool_HashSetVector3Int_Return(surroundingCells);
         return baseParts.ToArray();
     }
 }

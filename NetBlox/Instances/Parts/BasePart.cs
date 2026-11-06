@@ -399,23 +399,17 @@ public class BasePart : PVInstance
     {
         if (QuaternionRotation != Quaternion.Identity)
         {
-            Vector3 v3_0 = new Vector3(Size.X, Size.Y, Size.Z) / 2;
-            Vector3 v3_1 = new Vector3(Size.X, Size.Y, -Size.Z) / 2;
-            Vector3 v3_2 = new Vector3(Size.X, -Size.Y, Size.Z) / 2;
-            Vector3 v3_3 = new Vector3(Size.X, -Size.Y, -Size.Z) / 2;
-            Vector3 v3_4 = new Vector3(-Size.X, Size.Y, Size.Z) / 2;
-            Vector3 v3_5 = new Vector3(-Size.X, Size.Y, -Size.Z) / 2;
-            Vector3 v3_6 = new Vector3(-Size.X, -Size.Y, Size.Z) / 2;
-            Vector3 v3_7 = new Vector3(-Size.X, -Size.Y, -Size.Z) / 2;
+            Quaternion quaternion = QuaternionRotation;
+            Vector3 size = Size;
 
-            v3_0 = Vector3.Transform(v3_0, QuaternionRotation);
-            v3_1 = Vector3.Transform(v3_1, QuaternionRotation);
-            v3_2 = Vector3.Transform(v3_2, QuaternionRotation);
-            v3_3 = Vector3.Transform(v3_3, QuaternionRotation);
-            v3_4 = Vector3.Transform(v3_4, QuaternionRotation);
-            v3_5 = Vector3.Transform(v3_5, QuaternionRotation);
-            v3_6 = Vector3.Transform(v3_6, QuaternionRotation);
-            v3_7 = Vector3.Transform(v3_7, QuaternionRotation);
+            Vector3 v3_0 = Vector3.Transform(new Vector3(size.X, size.Y, size.Z) / 2, quaternion);
+            Vector3 v3_1 = Vector3.Transform(new Vector3(size.X, size.Y, -size.Z) / 2, quaternion);
+            Vector3 v3_2 = Vector3.Transform(new Vector3(size.X, -size.Y, size.Z) / 2, quaternion);
+            Vector3 v3_3 = Vector3.Transform(new Vector3(size.X, -size.Y, -size.Z) / 2, quaternion);
+            Vector3 v3_4 = Vector3.Transform(new Vector3(-size.X, size.Y, size.Z) / 2, quaternion);
+            Vector3 v3_5 = Vector3.Transform(new Vector3(-size.X, size.Y, -size.Z) / 2, quaternion);
+            Vector3 v3_6 = Vector3.Transform(new Vector3(-size.X, -size.Y, size.Z) / 2, quaternion);
+            Vector3 v3_7 = Vector3.Transform(new Vector3(-size.X, -size.Y, -size.Z) / 2, quaternion);
 
             // i'm so sorry
 

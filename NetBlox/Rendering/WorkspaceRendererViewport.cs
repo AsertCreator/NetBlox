@@ -96,6 +96,8 @@ public class WorkspaceRendererViewport : RendererViewport
     private LRUCache<PartSpecification, GCMesh> partRenderBufferMeshCache;
     private Dictionary<PartSpecification, List<BasePart>> opaquePartRenderBuffer = [];
     private Dictionary<PartSpecification, List<BasePart>> transparentPartRenderBuffer = [];
+    private List<KeyValuePair<PartSpecification, List<BasePart>>> opaquePartRenderBuffer_List = [];
+    private List<KeyValuePair<PartSpecification, List<BasePart>>> transparentPartRenderBuffer_List = [];
     private int maxPartRenderBufferDepth = 0;
     private GameSchedulerPerfEntry[] lastperfEntry;
     private PartRenderInstanceInfo[]? renderInstances;
@@ -486,7 +488,9 @@ public class WorkspaceRendererViewport : RendererViewport
             RenderDebugInfo();
 
         opaquePartRenderBuffer.Clear();
+        opaquePartRenderBuffer_List.Clear();
         transparentPartRenderBuffer.Clear();
+        transparentPartRenderBuffer_List.Clear();
         maxPartRenderBufferDepth = 0;
 
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
@@ -498,7 +502,7 @@ public class WorkspaceRendererViewport : RendererViewport
         if (cubeMesh.VaoId == 0)
             cubeMesh = Raylib.GenMeshCube(1, 1, 1);
 
-        void DoRenderABuffer(Dictionary<PartSpecification, List<BasePart>> renderBuffer)
+        void DoRenderABuffer(List<KeyValuePair<PartSpecification, List<BasePart>>> renderBuffer)
         {
             if (renderInstances == null)
                 renderInstances = new PartRenderInstanceInfo[maxPartRenderBufferDepth];
@@ -582,10 +586,10 @@ public class WorkspaceRendererViewport : RendererViewport
             }
         }
 
-        DoRenderABuffer(opaquePartRenderBuffer);
+        DoRenderABuffer(opaquePartRenderBuffer_List);
 
         Rlgl.DisableDepthMask();
-        DoRenderABuffer(transparentPartRenderBuffer);
+        DoRenderABuffer(transparentPartRenderBuffer_List);
         Rlgl.EnableDepthMask();
     }
     public virtual void DoDebugKeys()
@@ -1151,6 +1155,7 @@ public class WorkspaceRendererViewport : RendererViewport
             {
                 list = [];
                 opaquePartRenderBuffer[partSpecification] = list;
+                opaquePartRenderBuffer_List.Add(new(partSpecification, list));
             }
             
             list.Add(part);
@@ -1163,6 +1168,7 @@ public class WorkspaceRendererViewport : RendererViewport
             {
                 list = [];
                 transparentPartRenderBuffer[partSpecification] = list;
+                transparentPartRenderBuffer_List.Add(new(partSpecification, list));
             }
             
             list.Add(part);
