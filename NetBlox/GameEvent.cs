@@ -43,16 +43,17 @@ public sealed class GameEvent
             eventListenerData.Remove(instancesToRemove[i]);
         
         instancesToRemove.Clear();
+        
+        EngineEventArgs args = new EngineEventArgs()
+        {
+            GameEvent = this,
+            EventData = eventData
+        };
 
         for (int i = 0; i < eventListenerData.Count; i++)
         {
             ulong instanceId = eventListenerData[i];
             Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
-            EngineEventArgs args = new EngineEventArgs()
-            {
-                GameEvent = this,
-                EventData = eventData
-            };
 
             if (instance == null)
             {

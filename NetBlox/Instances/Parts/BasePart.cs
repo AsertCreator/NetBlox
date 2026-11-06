@@ -394,7 +394,7 @@ public class BasePart : PVInstance
         _ => throw new ArgumentOutOfRangeException(nameof(axis))
     };
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public virtual void CalculateBoundingBox(out Vector3 min, out Vector3 max)
     {
         if (QuaternionRotation != Quaternion.Identity)

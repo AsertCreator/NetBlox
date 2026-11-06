@@ -31,7 +31,13 @@ public class Instance
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public virtual Instance? Parent
     {
-        get => GameManager.GameRegistry.GetLocalInstanceById(parentid);
+        get
+        {
+            if (parentCache != null && parentCache.InitializationStage < InitializationStage.Destroying && parentCache.InstanceID == parentid)
+                return parentCache;
+            parentCache = GameManager.GameRegistry.GetLocalInstanceById(parentid);
+            return parentCache;
+        }
         set
         {
             if (ParentLocked && !GameManager.GameScheduler.GetCurrentSecurityIdentity()!.RequireSimpleCapability(SimpleSecurityCapabilityLevel.DestroyServices))
@@ -105,11 +111,12 @@ public class Instance
     {
         get
         {
-            if (Parent == null && this is DataModel)
+            Instance? parent = Parent;
+            if (parent == null && InstanceID == 1)
                 return true;
-            if (Parent == null)
+            if (parent == null)
                 return false;
-            return Parent.IsPartOfDataModel;
+            return parent.IsPartOfDataModel;
         }
     }
 
@@ -153,6 +160,7 @@ public class Instance
     public LuaEvent AncestryChanged { get; set; } = new();
 
     private Dictionary<string, ulong> fastNameLookup = [];
+    private Instance? parentCache;
 
     public bool ParentLocked;
     public int ViewportIndex;
@@ -170,7 +178,7 @@ public class Instance
         {
             if (Parent == null)
                 return null;
-            if (Parent == Root)
+            if (parentid == 1)
                 return this;
             return Parent.ParentService;
         }

@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Raylib_cs;
 
 namespace NetBlox.Rendering;
@@ -18,6 +19,7 @@ public struct Frustum
     public RealPlane plane_top;
     public RealPlane plane_bottom;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static RealPlane CreatePlane(Vector3 normal, Vector3 point)
     {
         normal = Vector3.Normalize(normal);
@@ -28,6 +30,7 @@ public struct Frustum
         };
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static Frustum ExtractFrustum(float nearDistance, float farDistance, Camera3D camera)
     {
         Vector3 forward = Vector3.Normalize(camera.Target - camera.Position);
@@ -55,6 +58,7 @@ public struct Frustum
             plane_bottom = CreatePlane(Vector3.Cross(right, bottomRay), camera.Position)
         };
     }
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public bool IsInFrustum(Vector3 min, Vector3 max)
     {
         Vector3 positiveVertex = default;

@@ -276,7 +276,7 @@ public class Part : BasePart
             HandleDecalFace(ref lastDecalTextureBackLoaded, ref lastDecalTextureBack, ref lastDecalTextureBackInstance, NormalId.Back, currentDecalBack);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public override void CalculateBoundingBox(out Vector3 min, out Vector3 max)
     {
         if (Shape != PartType.Ball)

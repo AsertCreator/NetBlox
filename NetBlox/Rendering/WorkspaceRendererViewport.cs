@@ -41,6 +41,7 @@ public class WorkspaceRendererViewport : RendererViewport
     public List<ParticleStream> ParticleStreams = [];
 
     public int SpeedMultiplier = 1;
+    public bool DisableGizmos = false;
 
     private int uniform_viewPosition;
     private int uniform_lightPosition;
@@ -944,6 +945,10 @@ public class WorkspaceRendererViewport : RendererViewport
             CoreEditorService coreEditorService = GameRenderer.Root.GetService<CoreEditorService>();
             coreEditorService.ToggleEditorMode();
         }
+        else if (Raylib.IsKeyPressed(KeyboardKey.Seven))
+        {
+            DisableGizmos = !DisableGizmos;
+        }
         else if (Raylib.IsKeyPressed(KeyboardKey.Nine))
         {
             Part part = GameRenderer.GameManager.GameRegistry.Construct<Part>();
@@ -993,6 +998,9 @@ public class WorkspaceRendererViewport : RendererViewport
     }
     public virtual void DrawGizmos(bool in3d)
     {
+        if (DisableGizmos)
+            return;
+
         NetworkServer? networkServer = GameRenderer.Root.FindService<NetworkServer>();
 
         if (networkServer != null)
@@ -1065,9 +1073,12 @@ public class WorkspaceRendererViewport : RendererViewport
     {
         PartSpecification partSpecification = default;
 
-        part.CalculateBoundingBox(out Vector3 min, out Vector3 max);
-        if (!lastFrustum.IsInFrustum(min, max) && part.Root.GetService<Lighting>().RealTimeFrustumCulling)
-            return;
+        if (part.Root.GetService<Lighting>().RealTimeFrustumCulling)
+        {
+            part.CalculateBoundingBox(out Vector3 min, out Vector3 max);
+            if (!lastFrustum.IsInFrustum(min, max))
+                return;
+        }
 
         if (part is Part concretePart)
         {
@@ -1136,21 +1147,27 @@ public class WorkspaceRendererViewport : RendererViewport
 
         if (part.Transparency <= 0)
         {
-            if (!opaquePartRenderBuffer.ContainsKey(partSpecification))
-                opaquePartRenderBuffer[partSpecification] = new();
+            if (!opaquePartRenderBuffer.TryGetValue(partSpecification, out List<BasePart>? list))
+            {
+                list = [];
+                opaquePartRenderBuffer[partSpecification] = list;
+            }
             
-            opaquePartRenderBuffer[partSpecification].Add(part);
-            if (opaquePartRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
-                maxPartRenderBufferDepth = opaquePartRenderBuffer[partSpecification].Count;
+            list.Add(part);
+            if (list.Count > maxPartRenderBufferDepth)
+                maxPartRenderBufferDepth = list.Count;
         }
         else if (part.Transparency < 1)
         {
-            if (!transparentPartRenderBuffer.ContainsKey(partSpecification))
-                transparentPartRenderBuffer[partSpecification] = new();
+            if (!transparentPartRenderBuffer.TryGetValue(partSpecification, out List<BasePart>? list))
+            {
+                list = [];
+                transparentPartRenderBuffer[partSpecification] = list;
+            }
             
-            transparentPartRenderBuffer[partSpecification].Add(part);
-            if (transparentPartRenderBuffer[partSpecification].Count > maxPartRenderBufferDepth)
-                maxPartRenderBufferDepth = transparentPartRenderBuffer[partSpecification].Count;
+            list.Add(part);
+            if (list.Count > maxPartRenderBufferDepth)
+                maxPartRenderBufferDepth = list.Count;
         }
         // so if the transparency is 1 it doesnt get put into the render buffer at all
     }
