@@ -37,6 +37,7 @@ public class PhysicsAssembly
 
         GameManager.PhysicsSolver.PhysicsAssemblyMap[CombinedRigidBody] = this;
 
+        /*
         if (first.OwnPhysicsActor != null)
         {
             if (first.OwnPhysicsActor.RigidBody != null)
@@ -62,6 +63,70 @@ public class PhysicsAssembly
         first.PhysicsAssembly = this;
 
         Participants.Add(first);
+        */
+
+        TryFastMassiveWeldPath(first);
+    }
+
+    private void TryFastMassiveWeldPath(BasePart from)
+    {
+        Debug.Assert(GameManager.PhysicsSolver != null);
+
+        HashSet<JointInstance> foundJoints = new HashSet<JointInstance>();
+        List<JointInstance> foundJoints_list = new List<JointInstance>();
+
+        HashSet<BasePart> foundBaseParts = new HashSet<BasePart>();
+        List<BasePart> foundBaseParts_list = new List<BasePart>();
+
+        void WalkPart(BasePart? basePart)
+        {
+            if (basePart == null)
+                return;
+            if (foundBaseParts.Contains(basePart))
+                return;
+            foundBaseParts.Add(basePart);
+            foundBaseParts_list.Add(basePart);
+
+            foreach (InstanceID jointId in basePart.joints)
+            {
+                JointInstance? jointInstance = GameManager.GameRegistry.GetLocalInstanceById(jointId) as JointInstance;
+                if (jointInstance == null)
+                    continue;
+                if (!jointInstance.IsA("Weld") && !jointInstance.IsA("Glue") && !jointInstance.IsA("Snap"))
+                    continue;
+                
+                BasePart? otherPart = jointInstance.Part0;
+                if (otherPart == basePart)
+                    otherPart = jointInstance.Part1;
+
+                if (otherPart == null)
+                    continue;
+                
+                if (foundJoints.Add(jointInstance))
+                    foundJoints_list.Add(jointInstance);
+
+                WalkPart(otherPart);
+            }
+        }
+
+        WalkPart(from);
+
+        BasePart[] baseParts = foundBaseParts_list.ToArray();
+
+        foreach (JointInstance joint in foundJoints_list)
+        {
+            if (joint is Weld weld)
+                weld.SetWeldCreated(true);
+            else if (joint is Glue glue)
+                glue.SetWeldCreated(true);
+            else if (joint is Snap snap)
+                snap.SetWeldCreated(true);
+        }
+
+        CombinedRigidBody.Position = default;
+        CombinedRigidBody.Orientation = Quaternion.Identity;
+
+        AttachNewParts(baseParts.AsSpan());
     }
 
     public unsafe void AttachNewPart(BasePart basePart)

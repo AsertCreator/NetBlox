@@ -77,6 +77,11 @@ public class Snap : JointInstance
         }
     }
 
+    public void SetWeldCreated(bool weldCreated)
+    {
+        this.weldCreated = weldCreated;
+    }
+
     public override void CommitStageInitialize()
     {
         base.CommitStageInitialize();

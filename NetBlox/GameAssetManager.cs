@@ -134,7 +134,7 @@ public sealed class GameAssetManager
         if (GameManager.WindowReady)
         {
             cachedImages[filePath] = Raylib.LoadTexture(filePath);
-            Raylib.SetTextureFilter(cachedImages[filePath], TextureFilter.Anisotropic4X);
+            Raylib.SetTextureFilter(cachedImages[filePath], TextureFilter.Bilinear);
             return cachedImages[filePath];
         }
         return default;

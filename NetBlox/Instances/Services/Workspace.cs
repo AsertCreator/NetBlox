@@ -102,7 +102,8 @@ public class Workspace : Model
             BasePart[]? neighboring = GameManager.PhysicsSolver?.SpatialGrid.GetImmediatelyNeighboringParts(parts[i]);
             if (neighboring == null || neighboring.Length == 0)
                 continue;
-            parts[i].MakeJointsWith(neighboring);
+
+            parts[i].MakeJointsWith(neighboring.ToArray());
         }
     }
 

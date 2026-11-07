@@ -76,6 +76,11 @@ public class Glue : JointInstance
         }
     }
 
+    public void SetWeldCreated(bool weldCreated)
+    {
+        this.weldCreated = weldCreated;
+    }
+
     public override void CommitStageInitialize()
     {
         base.CommitStageInitialize();

@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace NetBlox.Structs;
 
-public record struct Color3
+public struct Color3
 {
     public byte R;
     public byte G;
@@ -15,6 +17,7 @@ public record struct Color3
         B = b;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static Color3 FromBGRA(uint bgra)
     {
         Color3 color3 = default;
@@ -23,6 +26,7 @@ public record struct Color3
         color3.R = (byte)((bgra >> 16) & 0xFF);
         return color3;
     }
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static uint ToBGRA(Color3 color)
     {
         uint bgra = 0;
@@ -31,6 +35,7 @@ public record struct Color3
         bgra |= (uint)(color.R << 16);
         return bgra;
     }
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static Color3 FromARGBuint8(uint argb)
     {
         Color3 color3 = default;
@@ -40,6 +45,7 @@ public record struct Color3
         return color3;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public Vector3 ToVector3()
     {
         Vector3 vector3 = default;
@@ -49,6 +55,30 @@ public record struct Color3
         vector3.Z = B / 255f;
 
         return vector3;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static bool operator ==(Color3 a, Color3 b)
+    {
+        return ToBGRA(a) == ToBGRA(b);
+    }
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static bool operator !=(Color3 a, Color3 b)
+    {
+        return ToBGRA(a) != ToBGRA(b);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override bool Equals([NotNullWhen(true)] object? obj)
+    {
+        if (obj == null || obj is not Color3 color3)
+            return false;
+        return this == color3;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public override int GetHashCode()
+    {
+        return unchecked((int)ToBGRA(this));
     }
 
     public static implicit operator Color3(Raylib_cs.Color color) => new Color3(color.R, color.G, color.B);

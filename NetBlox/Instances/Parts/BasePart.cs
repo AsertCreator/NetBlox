@@ -255,7 +255,6 @@ public class BasePart : PVInstance
         {
             PhysicsAssembly = new PhysicsAssembly(GameManager, this);
             OwnPhysicsActor = null;
-            PhysicsAssembly.AttachNewPart(other);
 
             GameManager.PhysicsSolver!.AllPhysicsAssemblies.Add(PhysicsAssembly);
         }
@@ -284,22 +283,34 @@ public class BasePart : PVInstance
 
     public virtual void MakeJointsWith(BasePart[] baseParts)
     {
-        for (int i = 0; i < baseParts.Length; i++)
+        if (this is Part secondPart)
         {
-            BasePart other = baseParts[i];
-            if (other == this || MakeJoints_Jointed.Contains(other) || other.MakeJoints_Jointed.Contains(this))
-                continue;
-
-            if (other is Part firstPart && this is Part secondPart &&
-                TryForConnection(firstPart, secondPart, SurfaceType.Studs, SurfaceType.Inlet))
+            for (int i = 0; i < baseParts.Length; i++)
             {
-                Snap snap = GameManager.GameRegistry.Construct<Snap>();
-                snap.Part0 = firstPart;
-                snap.Part1 = secondPart;
-                snap.Parent = firstPart;
+                BasePart other = baseParts[i];
+                if (other == this || MakeJoints_Jointed.Contains(other) || other.MakeJoints_Jointed.Contains(this))
+                    continue;
 
-                firstPart.MakeJoints_Jointed.Add(secondPart);
-                secondPart.MakeJoints_Jointed.Add(firstPart);
+                if (other is Part firstPart)
+                {
+                    JointInstance? joint;
+
+                    if (TryForConnection(firstPart, secondPart, SurfaceType.Studs, SurfaceType.Inlet))
+                        joint = GameManager.GameRegistry.Construct<Snap>();
+                    else if (TryForConnectionOneSurface(firstPart, secondPart, SurfaceType.Glue))
+                        joint = GameManager.GameRegistry.Construct<Glue>();
+                    else if (TryForConnectionOneSurface(firstPart, secondPart, SurfaceType.Weld))
+                        joint = GameManager.GameRegistry.Construct<Weld>();
+                    else
+                        continue;
+
+                    joint.Part0 = firstPart;
+                    joint.Part1 = secondPart;
+                    joint.Parent = firstPart;
+
+                    firstPart.MakeJoints_Jointed.Add(secondPart);
+                    secondPart.MakeJoints_Jointed.Add(firstPart);
+                }
             }
         }
     }
@@ -317,6 +328,27 @@ public class BasePart : PVInstance
             {
                 SurfaceInfo secondSurface = GetJointSurface(secondPart, j);
                 bool surfacesMatch = (surface.Type == surfaceTypeFirst && secondSurface.Type == surfaceTypeSecond) || (surface.Type == surfaceTypeSecond && secondSurface.Type == surfaceTypeFirst);
+
+                if (!surfacesMatch || !AreJointSurfacesTouching(surface, secondSurface, firstPart.GameManager.PhysicsSolver!.JointSurfaceTolerance))
+                    continue;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static bool TryForConnectionOneSurface(Part firstPart, Part secondPart, SurfaceType surfaceTypeFirst)
+    {
+        for (int i = 0; i < firstPart.GameManager.PhysicsSolver!.JointSurfaceAxes.Length; i++)
+        {
+            SurfaceInfo surface = GetJointSurface(firstPart, i);
+
+            for (int j = 0; j < firstPart.GameManager.PhysicsSolver!.JointSurfaceAxes.Length; j++)
+            {
+                SurfaceInfo secondSurface = GetJointSurface(secondPart, j);
+                bool surfacesMatch = (surface.Type == surfaceTypeFirst) || (secondSurface.Type == surfaceTypeFirst);
 
                 if (!surfacesMatch || !AreJointSurfacesTouching(surface, secondSurface, firstPart.GameManager.PhysicsSolver!.JointSurfaceTolerance))
                     continue;
