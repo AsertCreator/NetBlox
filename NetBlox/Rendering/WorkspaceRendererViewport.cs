@@ -83,6 +83,7 @@ public class WorkspaceRendererViewport : RendererViewport
     private int uniform_instanced_decalFrontTint;
     private int uniform_instanced_decalBackTint;
 
+    private Texture2D transparentTexture;
     private Texture2D blankSurfaceTexture;
     private Texture2D studSurfaceTexture;
     private Texture2D inletSurfaceTexture;
@@ -205,6 +206,9 @@ public class WorkspaceRendererViewport : RendererViewport
             ShadowMapShader.Locs[(int)ShaderLocationIndex.VertexInstanceTransform] = Raylib.GetShaderLocationAttrib(ShadowMapShader, "instanceTransform");
         });
 
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/transparent.png")
+            ?.AddCallbackForSuccess(x => transparentTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
+
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/blank.png")
             ?.AddCallbackForSuccess(x => blankSurfaceTexture = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
 
@@ -250,16 +254,33 @@ public class WorkspaceRendererViewport : RendererViewport
 
         if (specification.BackDecal.DecalTexture.Id > 0)
             BindSurfaceTexture(uniform_instanced_decalBack, specification.BackDecal.DecalTexture, 9);
+        else
+            BindSurfaceTexture(uniform_instanced_decalBack, transparentTexture, 9);
+
         if (specification.FrontDecal.DecalTexture.Id > 0)
             BindSurfaceTexture(uniform_instanced_decalFront, specification.FrontDecal.DecalTexture, 10);
+        else
+            BindSurfaceTexture(uniform_instanced_decalFront, transparentTexture, 10);
+
         if (specification.TopDecal.DecalTexture.Id > 0)
             BindSurfaceTexture(uniform_instanced_decalTop, specification.TopDecal.DecalTexture, 11);
+        else
+            BindSurfaceTexture(uniform_instanced_decalTop, transparentTexture, 11);
+
         if (specification.BottomDecal.DecalTexture.Id > 0)
             BindSurfaceTexture(uniform_instanced_decalBottom, specification.BottomDecal.DecalTexture, 12);
+        else
+            BindSurfaceTexture(uniform_instanced_decalBottom, transparentTexture, 12);
+
         if (specification.LeftDecal.DecalTexture.Id > 0)
             BindSurfaceTexture(uniform_instanced_decalLeft, specification.LeftDecal.DecalTexture, 13);
+        else
+            BindSurfaceTexture(uniform_instanced_decalLeft, transparentTexture, 13);
+
         if (specification.RightDecal.DecalTexture.Id > 0)
             BindSurfaceTexture(uniform_instanced_decalRight, specification.RightDecal.DecalTexture, 14);
+        else
+            BindSurfaceTexture(uniform_instanced_decalRight, transparentTexture, 14);
     }
 
     private unsafe void SetIntUniform(int location, int value)
@@ -275,9 +296,6 @@ public class WorkspaceRendererViewport : RendererViewport
     private void BindSurfaceTexture(int location, Texture2D texture, int textureUnit)
     {
         SetIntUniform(location, textureUnit);
-
-        if (texture.Id == 0)
-            texture = blankSurfaceTexture;
 
         Rlgl.ActiveTextureSlot(textureUnit);
         if (texture.Id != 0)

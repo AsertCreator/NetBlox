@@ -23,6 +23,8 @@ uniform int useSurfaces;
 
 out vec2 fragTexCoord;
 flat out int fragSurfaceType;
+flat out int fragDecalType;
+out vec2 faceSize;
 out vec4 fragColor;
 out vec3 fragNormal;
 out vec3 fragPosition;
@@ -36,20 +38,23 @@ void main()
         length(instanceTransform[1].xyz),
         length(instanceTransform[2].xyz)
     );
-    vec2 faceSize = instanceSize.xy;
+    faceSize = instanceSize.xy;
 
     // chatgpt told me to do this
 
     if (abs(vertexNormal.x) > 0.5) {
         fragSurfaceType = vertexNormal.x > 0.0 ? surfaceRight : surfaceLeft;
+        fragDecalType = vertexNormal.x > 0.0 ? 4 : 3;
         faceSize = instanceSize.zy;
     }
     else if (abs(vertexNormal.y) > 0.5) {
         fragSurfaceType = vertexNormal.y > 0.0 ? surfaceTop : surfaceBottom;
+        fragDecalType = vertexNormal.y > 0.0 ? 1 : 2;
         faceSize = instanceSize.xz;
     }
     else {
         fragSurfaceType = vertexNormal.z > 0.0 ? surfaceFront : surfaceBack;
+        fragDecalType = vertexNormal.z > 0.0 ? 5 : 6;
     }
 
     if (useSurfaces == 0) {

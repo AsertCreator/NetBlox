@@ -4,11 +4,13 @@
 
 in vec2 fragTexCoord;
 flat in int fragSurfaceType;
+flat in int fragDecalType;
 in vec4 fragColor;
 in vec3 fragNormal;
 in vec3 fragPosition;
 in vec3 fragTangent;
 in vec4 fragLightSpacePosition;
+in vec2 faceSize;
 
 uniform sampler2D blankTexture;
 uniform sampler2D studTexture;
@@ -63,6 +65,21 @@ vec4 surfaceColor() {
         return texture(universalTexture, fragTexCoord);
     return texture(blankTexture, fragTexCoord);
 }
+vec4 decalColor() {
+    if (fragDecalType == 1)
+        return texture(decalTop, fragTexCoord / faceSize * 2);
+    else if (fragDecalType == 2)
+        return texture(decalBottom, fragTexCoord / faceSize * 2);
+    else if (fragDecalType == 3)
+        return texture(decalLeft, fragTexCoord / faceSize * 2);
+    else if (fragDecalType == 4)
+        return texture(decalRight, fragTexCoord / faceSize * 2);
+    else if (fragDecalType == 5)
+        return texture(decalFront, fragTexCoord / faceSize * 2);
+    else if (fragDecalType == 6)
+        return texture(decalBack, fragTexCoord / faceSize * 2);
+    return vec4(0);
+}
 vec4 surfaceNormalColor() {
     if (fragSurfaceType == 1 || fragSurfaceType == 2)
         return texture(glueNormalTexture, fragTexCoord);
@@ -107,7 +124,9 @@ vec3 specularColor() {
     return specular;
 }
 vec4 regularColor() {
-    return surfaceColor() * fragColor;
+    vec4 result = surfaceColor() * fragColor;
+    vec4 decal = decalColor();
+    return mix(result, decal, decal.w);
 }
 vec4 diffuseColor() {
     vec3 norm = normalize(fragNormal);
