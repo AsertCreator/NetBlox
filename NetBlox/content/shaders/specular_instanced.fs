@@ -151,5 +151,8 @@ vec4 shadowColor() {
 
 void main()
 {
-    finalColor = shadowColor();
+    vec4 color = shadowColor();
+    float alpha = color.w;
+    vec3 gammaCorrected = pow(color.xyz, vec3(1.0 / 1.0));
+    finalColor = vec4(gammaCorrected, alpha);
 }

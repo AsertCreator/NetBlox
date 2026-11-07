@@ -122,17 +122,17 @@ public class WorkspaceRendererViewport : RendererViewport
 
         partRenderBufferMeshCache = new LRUCache<PartSpecification, GCMesh>(4096); // idk if this is a good value
 
-        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_up.png")
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/moodycloud_up.png")
             ?.AddCallbackForSuccess(x => SkyboxTop = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
-        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_dn.png")
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/moodycloud_dn.png")
             ?.AddCallbackForSuccess(x => SkyboxBottom = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
-        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_lf.png")
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/moodycloud_lf.png")
             ?.AddCallbackForSuccess(x => SkyboxLeft = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
-        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_rt.png")
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/moodycloud_rt.png")
             ?.AddCallbackForSuccess(x => SkyboxRight = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
-        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_ft.png")
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/moodycloud_ft.png")
             ?.AddCallbackForSuccess(x => SkyboxFront = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
-        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/bluecloud_bk.png")
+        gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://skybox/moodycloud_bk.png")
             ?.AddCallbackForSuccess(x => SkyboxBack = gameRenderer.GameManager.GameAssetManager.LoadTextureFromPath(x.LocalDownloadPath!));
 
         gameRenderer.GameManager.GameAssetManager.QuickLoad("rbxasset://textures/particleFire.png")
@@ -740,6 +740,11 @@ public class WorkspaceRendererViewport : RendererViewport
         if (Raylib.IsKeyPressed(KeyboardKey.O))
         {
             Raylib.CameraMoveToTarget(ref MainCamera, -1f / GameRenderer.PreferredFPS);
+        }
+        if (Raylib.IsKeyPressed(KeyboardKey.RightBracket))
+        {
+            Lighting lighting = GameRenderer.Root.GetService<Lighting>();
+            lighting.SunPosition = MainCamera.Position - MainCamera.Target;
         }
         if (Raylib.IsKeyPressed(KeyboardKey.M))
         {

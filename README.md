@@ -78,3 +78,7 @@ For open-source licenses of software that Generation 1 depends on, check branche
 ### Sound effects
 
 Explosion sound by JohanDeecke ([profile on FreeSound](https://freesound.org/people/JohanDeecke/))
+
+### Skyboxes
+
+The default skybox by Spiney ([profile on OpenGameArt](https://opengameart.org/users/spiney))
