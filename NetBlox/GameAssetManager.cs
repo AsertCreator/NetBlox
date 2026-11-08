@@ -104,7 +104,7 @@ public sealed class GameAssetManager
             Image image = Raylib.LoadImageFromMemory(type, rentedSpan.GetArray());
 
             cachedImages[imageStream] = Raylib.LoadTextureFromImage(image);
-            Raylib.SetTextureFilter(cachedImages[imageStream], TextureFilter.Anisotropic4X);
+            Raylib.SetTextureFilter(cachedImages[imageStream], TextureFilter.Bilinear);
 
             Raylib.UnloadImage(image);
 

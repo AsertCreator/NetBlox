@@ -11,6 +11,7 @@ using NetBlox.Instances;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime.Bridges;
 using NetBlox.Structs;
+using ZstdNet;
 
 namespace NetBlox;
 
@@ -567,6 +568,22 @@ public class PlaceParser
 
             return values;
         }
+        Color3[] ReadColor3uint8Array(BinaryReader br, int count)
+        {
+            byte[] buffer = br.ReadBytes(count * 3);
+            Span<byte> work = stackalloc byte[3];
+            var values = new Color3[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                for (int byteIndex = 0; byteIndex < 3; byteIndex++)
+                    work[byteIndex] = buffer[byteIndex * count + i];
+
+                values[i] = new Color3(work[0], work[1], work[2]);
+            }
+
+            return values;
+        }
         float DecodeRotatedFloat(ReadOnlySpan<byte> bytes)
         {
             uint rotated = BinaryPrimitives.ReadUInt32BigEndian(bytes);
@@ -615,8 +632,10 @@ public class PlaceParser
             else if (chunkName == 0x52545353) // SSTR
             {
                 int version = br.ReadInt32();
+                
                 if (version != 0)
-                    ThrowNotSupportedException();
+                    // ThrowNotSupportedException();
+                    return;
                 
                 uint length = br.ReadUInt32();
 
@@ -770,7 +789,7 @@ public class PlaceParser
                     bpropval[classId][propertyName].Add(new UDim2(scalex, offsetx, scaley, offsety));
                 }
             }
-            else if (valueType == 8) // Faces
+            else if (valueType == 9) // Faces
             {
                 for (int i = 0; i < binstance[classId].Count; i++)
                     bpropval[classId][propertyName].Add((Faces)br.ReadByte());
@@ -881,6 +900,14 @@ public class PlaceParser
                     bpropval[classId][propertyName].Add(new Vector3(br.ReadInt16(), br.ReadInt16(), br.ReadInt16()));
                 }
             }
+            else if (valueType == 0x1A) // Color3uint8
+            {
+                Color3[] colors = ReadColor3uint8Array(br, binstance[classId].Count);
+                for (int i = 0; i < binstance[classId].Count; i++)
+                {
+                    bpropval[classId][propertyName].Add(colors[i]);
+                }
+            }
         }
 
         while (!endReached)
@@ -898,7 +925,17 @@ public class PlaceParser
                 byte[] compressedpayload = superReader.ReadBytes((int)compressedLength);
                 byte[] uncompressedpayload = new byte[uncompressedLength];
 
-                LZ4Codec.Decode(compressedpayload, uncompressedpayload);
+                if (BitConverter.ToUInt32(compressedpayload[0..4]) == 0xFD2FB528) // this is actually zstd not lz4
+                {
+                    using MemoryStream memoryStream = new MemoryStream(compressedpayload);
+                    using DecompressionStream decompressionStream = new DecompressionStream(memoryStream);
+
+                    decompressionStream.ReadExactly(uncompressedpayload);
+                }
+                else
+                {
+                    LZ4Codec.Decode(compressedpayload, uncompressedpayload);
+                }
 
                 ProcessChunk(chunkName, uncompressedpayload);
             }
@@ -935,7 +972,11 @@ public class PlaceParser
                 for (int i = 0; i < property.Value.Count; i++)
                 {
                     if (propertyInfo.PropertyType.IsAssignableTo(typeof(Instance)))
-                        propertyInfo.SetValue(instances[i], binstanceGlobal[(int)property.Value[i]]);
+                    {
+                        int instid = (int)property.Value[i];
+                        if (instid != -1)
+                            propertyInfo.SetValue(instances[i], binstanceGlobal[(int)property.Value[i]]);
+                    }
                     else
                         propertyInfo.SetValue(instances[i], property.Value[i]);
                 }

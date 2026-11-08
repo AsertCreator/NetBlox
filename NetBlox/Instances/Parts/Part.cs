@@ -216,6 +216,7 @@ public class Part : BasePart
                 assetDownloadTask.AddCallbackForSuccess(x =>
                 {
                     Texture2D texture2D = Raylib.LoadTexture(x.LocalDownloadPath);
+                    Raylib.SetTextureFilter(texture2D, TextureFilter.Bilinear);
                     GCTexture2D gCTexture2D = new GCTexture2D(texture2D);
 
                     switch (normalId)

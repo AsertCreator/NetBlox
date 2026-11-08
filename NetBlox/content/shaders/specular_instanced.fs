@@ -105,7 +105,12 @@ vec3 specularColor() {
     vec3 viewDir = normalize(viewPosition - fragPosition);
     vec3 halfwayDir = normalize(lightDir + viewDir);
 
-    vec3 normalSample = surfaceNormalColor().rgb;
+    vec4 normalColor = surfaceNormalColor();
+    vec4 decal = decalColor();
+
+    normalColor = mix(normalColor, texture(studNormalTexture, vec2(0)), decal.w);
+
+    vec3 normalSample = normalColor.rgb;
     vec3 tangentNormal = normalSample * 2.0 - 1.0;
     tangentNormal.y = -tangentNormal.y;
     tangentNormal = normalize(tangentNormal);

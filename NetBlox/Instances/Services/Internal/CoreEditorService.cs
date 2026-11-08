@@ -31,6 +31,7 @@ public class CoreEditorService : Instance
         gameManager.GameAssetManager.QuickLoad("rbxasset://textures/instanceIcons.png")?.AddCallbackForSuccess(x =>
         {
             InstanceClassAtlas = Raylib.LoadTexture(x.LocalDownloadPath);
+            Raylib.SetTextureFilter(InstanceClassAtlas, TextureFilter.Bilinear);
         });
     }
 
