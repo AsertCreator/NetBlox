@@ -65,15 +65,29 @@ and i like working with it more than with the first one.
 The NetBlox Project is licensed under MIT license, check LICENSE file in the repository 
 root.
 
+### Places
+- CrossroadsButBetter.rbxlx and CrossroadsOg.rbxl. 2006-2007. @david.baszucki, @erik.cassel and @Shedletsky on Roblox. Minor modifications
+  by asertcreator to make the former load and work correctly on NetBlox.
+- EngineTesting.rbxlx. 2026. asertcreator.
+- Welcoming.rbxlx. 2024. asertcreator.
+- RobloxHeadqurters.rbxl. 2006-2007. @Shedletsky on Roblox.
+
 ### Software dependencies
 - NetBlox. Copyright (c) 2024-2026, The NetBlox Project's contributors. 
-- Raylib. Copyright (c) 2013-2026, Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))
+- Raylib<sup>*</sup>. Copyright (c) 2013-2026, Ramon Santamaria (check [license](https://github.com/raysan5/raylib/blob/master/LICENSE))
 - Raylib-cs. Copyright (c) 2018-2026, ChrisDill (check [license](https://github.com/ChrisDill/Raylib-cs/blob/master/LICENSE))
 - MoonSharp. Copyright (c) 2014-2016, Marco Mastropaolo (check [license](https://github.com/moonsharp-devs/moonsharp/blob/master/LICENSE))
 - JitterPhysics2. Copyright (c) 2023-2026, Thorben Linneweber and contributors (check [license](https://github.com/notgiven688/jitterphysics2/blob/master/LICENSE))
 - LRU Cache. Copyright (c) 2023, Atul Mishra (https://medium.com/@atulmishra.bhumca09/basic-lru-cache-implementation-in-c-17d4a5f0d4ba)
+- ZstdNet. Copyright (c) 2016-2026, SKB Kontur (check [license](https://github.com/skbkontur/ZstdNet/blob/master/LICENSE))
+- zstd<sup>*</sup>. Copyright (c) 2016-2026, Meta Platforms (check [license](https://github.com/meta/zstd/blob/dev/LICENSE))
+- K4os.Compression.LZ4. Copyright (c) 2017-2026. Milosz Krajewski (check [license](https://github.com/MiloszKrajewski/K4os.Compression.LZ4/blob/master/LICENSE))
 
 For open-source licenses of software that Generation 1 depends on, check branches that start with "gen1/"
+
+<small><i><sup>*</sup>this is an indirect dependency</i></small>
+
+### Textures
 
 ### Sound effects
 
