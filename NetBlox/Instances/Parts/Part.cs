@@ -241,6 +241,10 @@ public class Part : BasePart
                             break;
                     }
                 });
+                assetDownloadTask.AddCallbackForFailure(x =>
+                {
+                    Trace.TraceWarning("Couldn't load decal; error=" + x.Error);
+                });
                 lastDecalTexture = currentDecal.Content;
                 lastDecalTextureInstance = new WeakReference<Decal>(currentDecal);
             }
