@@ -33,7 +33,7 @@ public class CompoundConnection : IDisposable
         everReceivedMessages = false;
         firstMessageTimoutTimer = new Timer(_ =>
         {
-            if (!everReceivedMessages)
+            if (!everReceivedMessages && !Debugger.IsAttached)
             {
                 Trace.TraceError("'Kay time's up!");
                 OnFirstMessageTimeout?.Invoke(this, new());
@@ -47,7 +47,7 @@ public class CompoundConnection : IDisposable
         everReceivedMessages = false;
         firstMessageTimoutTimer = new Timer(_ =>
         {
-            if (!everReceivedMessages)
+            if (!everReceivedMessages && !Debugger.IsAttached)
             {
                 Trace.TraceError("'Kay time's up!");
                 OnFirstMessageTimeout?.Invoke(this, new());

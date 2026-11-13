@@ -20,23 +20,6 @@ public class CoreGui : BasePlayerGui
         RegisterForEventId(GameEvent.EVENT_RENDERGUI_LEVEL3);
     }
 
-    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
-    public void AddCoreScriptLocal(string path, Instance parent)
-    {
-        AssetDownloadTask? assetDownloadTask = GameManager.GameAssetManager.QuickLoad("rbxasset://scripts/" + path + ".lua");
-        if (assetDownloadTask == null)
-            throw new Exception("Couldn't start CoreScript asset download task");
-        assetDownloadTask.AddCallbackForSuccess(x =>
-        {
-            string localFilePath = x.LocalDownloadPath!;
-
-            CoreScript coreScript = GameManager.GameRegistry.Construct<CoreScript>();
-            coreScript.Name = path;
-            coreScript.Source = File.ReadAllText(localFilePath);
-            coreScript.Parent = parent;
-        });
-    }
-
     public override void CommitStageInitialize()
     {
         base.CommitStageInitialize();
@@ -89,6 +72,42 @@ public class CoreGui : BasePlayerGui
             GameSchedulerTask? task = context.StartSourceScriptWithCurrentIdentity("ServerScript", File.ReadAllText(filePath));
             if (task != null)
                 task.Identity = SecurityIdentity.SI_StarterScript;
+        }
+    }
+
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public void LoadModules()
+    {
+        Folder? modulesFolder = FindFirstChild("Modules") as Folder;
+
+        if (modulesFolder != null)
+        {
+            Trace.TraceWarning("Modules are probably already loaded, skipping...");
+            return;
+        }
+
+        string modulesDirectoryPath = Path.Combine(GameManager.GameAssetManager.ContentDirectory, "scripts/Modules");
+        DirectoryInfo modulesDirectory = new DirectoryInfo(modulesDirectoryPath);
+
+        if (!modulesDirectory.Exists)
+        {
+            Trace.TraceWarning("Modules are missing in the scripts subdirectory of the content directory, skipping...");
+            return;
+        }
+
+        modulesFolder = GameManager.GameRegistry.Construct<Folder>();
+        modulesFolder.Parent = this;
+        modulesFolder.Name = "Modules";
+
+        foreach (FileInfo scriptFileInfo in modulesDirectory.GetFiles())
+        {
+            if (scriptFileInfo.Name.EndsWith(".lua"))
+            {
+                ModuleScript moduleScript = GameManager.GameRegistry.Construct<ModuleScript>();
+                moduleScript.Name = scriptFileInfo.Name.Substring(0, scriptFileInfo.Name.Length - 4);
+                moduleScript.Source = File.ReadAllText(scriptFileInfo.FullName);
+                moduleScript.Parent = modulesFolder;
+            }
         }
     }
 

@@ -25,7 +25,13 @@ public sealed class GameRenderer
 
     public int PreferredFPS = 60;
     public int DpiAwareCellSize = 1;
+    public float DeltaTime = float.PositiveInfinity;
+
+    public float FPS => 1 / (DeltaTime / 1000f);
+
+    private bool FirstFrame = true;
     private Stopwatch RenderStopwatch = new();
+    private Stopwatch DeltaTimeStopwatch = new();
     private List<RendererViewport> rendererViewports = [];
     private int rendererViewportIndex = 0;
 
@@ -77,6 +83,11 @@ public sealed class GameRenderer
         RendererTask = GameManager.GameScheduler.Schedule("GameRenderer", GameScheduler.SchedulerPhase.Rendering, thisJob =>
         {
             RenderStopwatch.Restart();
+            if (!FirstFrame)
+                DeltaTime = (float)DeltaTimeStopwatch.Elapsed.TotalMilliseconds;
+            DeltaTimeStopwatch.Restart();
+
+            FirstFrame = false;
 
             if (!Raylib.WindowShouldClose())
             {

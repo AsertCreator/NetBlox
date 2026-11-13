@@ -7,6 +7,7 @@ using Script = MoonSharp.Interpreter.Script;
 using System.Text;
 using NetBlox.Runtime.Bridges;
 using NetBlox.Testing;
+using NetBlox.Structs;
 
 namespace NetBlox.Instances.Services;
 
@@ -28,6 +29,29 @@ public class ScriptContext : Instance
     {
         Name = "Script Context";
     }
+    
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
+    public void AddCoreScriptLocal(string path, Instance parent)
+    {
+        AssetDownloadTask? assetDownloadTask = GameManager.GameAssetManager.QuickLoad("rbxasset://scripts/" + path + ".lua");
+        if (assetDownloadTask == null)
+            throw new Exception("Couldn't start CoreScript asset download task");
+
+        assetDownloadTask.AddCallbackForSuccess(x =>
+        {
+            string localFilePath = x.LocalDownloadPath!;
+
+            CoreScript coreScript = GameManager.GameRegistry.Construct<CoreScript>();
+            coreScript.Name = path;
+            coreScript.Source = File.ReadAllText(localFilePath);
+            coreScript.Parent = parent;
+        });
+        assetDownloadTask.AddCallbackForFailure(x =>
+        {
+            Trace.TraceError("Couldn't load CoreScript: " + x.ContentId + ", error: " + x.Error);
+        });
+    }
+
     public Table AllocateTableInRegistry(string id, out bool newTable)
     {
         SecurityIdentity identity = GameManager.GameScheduler.GetCurrentSecurityIdentity()!;
@@ -190,6 +214,7 @@ public class ScriptContext : Instance
         BrickColorBridge.Setup(GameManager);
         InstanceBridge.Setup(GameManager);
         EnumValueBridge.Setup(GameManager);
+        CoordinateFrameBridge.Setup(GameManager);
 
         luaState.Globals.Frozen = true;
 

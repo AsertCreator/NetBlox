@@ -49,6 +49,7 @@ public static class InstanceBridge
         public Dictionary<string, InstanceClassCacheMethod> Methods;
         public Dictionary<string, InstanceClassCacheProperty> Properties;
         public InstanceClassCacheProperty[] ReplicationOrderedProperties;
+        public ServiceAccessibleToAttribute? ServiceAccessibleToAttribute;
         public bool CanBeReplicated;
         public bool CanChildrenBeReplicated;
         public bool IsService;
@@ -72,6 +73,8 @@ public static class InstanceBridge
                 CanChildrenBeReplicated = false;
             CanChildrenBeReplicated = CanChildrenBeReplicated || type.GetCustomAttribute<ReplicateChildrenAttribute>() != null;
             CanBeReplicated = type.GetCustomAttribute<NotReplicatedAttribute>() == null;
+
+            ServiceAccessibleToAttribute = type.GetCustomAttribute<ServiceAccessibleToAttribute>();
 
             if (TargetType.Name != "Instance")
                 ParentType = type.BaseType;

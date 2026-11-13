@@ -4,6 +4,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Services.Internal;
 
 [Service]
+[ServiceAccessibleTo(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
 public class CoreHttpService : Instance
 {
     public HttpClient? HttpClient;

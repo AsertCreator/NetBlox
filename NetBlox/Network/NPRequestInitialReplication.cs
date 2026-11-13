@@ -1,3 +1,5 @@
+using NetBlox.Runtime;
+
 namespace NetBlox.Network;
 
 public sealed class NPRequestInitialReplication : NetworkPacketHandler
@@ -28,7 +30,7 @@ public sealed class NPRequestInitialReplication : NetworkPacketHandler
 
         int replicationFlags = br.ReadInt32();
 
-        gm.GameScheduler.Schedule("Initial Replication Preparation", GameScheduler.SchedulerPhase.Network, _ =>
+        GameSchedulerTask gameSchedulerTask = gm.GameScheduler.Schedule("Initial Replication Preparation", GameScheduler.SchedulerPhase.Network, _ =>
         {
             NetworkServer networkServer = gm.RootModel.GetService<NetworkServer>();
             ReplicationAgent agent = networkServer.ReplicationAgent;
@@ -50,6 +52,8 @@ public sealed class NPRequestInitialReplication : NetworkPacketHandler
 
             return SchedulerTaskResult.CompletedSuccess;
         });
+
+        gameSchedulerTask.Identity = SecurityIdentity.SI_EngineNetworker;
     }
     public override void HandleClientboundPacket(NetworkPacket networkPacket, GameManager gm, CompoundConnection connection)
     {

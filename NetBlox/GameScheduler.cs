@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using NetBlox.Runtime;
 
 namespace NetBlox;
@@ -27,6 +28,8 @@ public sealed class GameScheduler
     private string? securityOverrideExplanation;
     private object currentSchedulerTaskLock = new object();
     private Thread schedulerThread = Thread.CurrentThread;
+
+    private bool IsWindows = OperatingSystem.IsWindows();
 
     private List<GameSchedulerTask> immediateExecutionBuffer = new List<GameSchedulerTask>();
 
@@ -217,11 +220,31 @@ public sealed class GameScheduler
 
             if (ranNoTasks)
             {
-                long microseconds = (long)closestWaitingTime - (long)GameManager.CurrentGlobalTimestamp() - 100;
-                if (microseconds > 0)
+                long microseconds = (long)closestWaitingTime - (long)GameManager.CurrentGlobalTimestamp() - 30;
+
+                if (IsWindows)
                 {
-                    LastIdleMicrosecondsElapsed = (int)microseconds;
-                    Thread.Sleep((int)(microseconds / 1000));
+                    if (microseconds > 0)
+                    {
+                        LastIdleMicrosecondsElapsed = (int)microseconds;
+                        Thread.Sleep((int)(microseconds / 1000));
+                    }
+                }
+                else
+                {
+                    // otherwise we can use nanosleep
+                    if (microseconds > 0)
+                    {
+                        LastIdleMicrosecondsElapsed = (int)microseconds;
+                        Timespec req = new Timespec
+                        {
+                            tv_sec = (nint)(microseconds / 1_000_000L),
+                            tv_nsec = (nint)(microseconds % 1_000_000L)
+                        };
+                        Timespec rem = default;
+
+                        NativeMethods.nanosleep(ref req, ref rem);
+                    }
                 }
             }
         }

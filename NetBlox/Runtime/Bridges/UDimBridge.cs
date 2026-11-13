@@ -122,13 +122,17 @@ public static class UDimBridge
             udimmeta["__metatable"] = "Locked";
             udimmeta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
             {
-                if (args.Count == 2)
+                if (args.Count == 0)
+                {
+                    return DynValue.NewUserData(PushUserData(gameManager, default));
+                }
+                else if (args.Count == 2)
                 {
                     float scale = (float)args[0].CheckType("UDim.new", DataType.Number).Number;
                     float offset = (float)args[1].CheckType("UDim.new", DataType.Number).Number;
                     return DynValue.NewUserData(PushUserData(gameManager, new UDim(scale, offset)));
                 }
-                throw new ScriptRuntimeException("UDim.new requires 2 number arguments");
+                throw new ScriptRuntimeException("UDim.new requires 0 or 2 number arguments");
             });
             udimmodule.Frozen = false;
             udimmodule.MetaTable = udimmeta;

@@ -114,14 +114,18 @@ public static class Color3Bridge
             Color3meta["__metatable"] = "Locked";
             Color3meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
             {
-                if (args.Count == 3)
+                if (args.Count == 0)
+                {
+                    return DynValue.NewUserData(PushUserData(gameManager, default));
+                }
+                else if (args.Count == 3)
                 {
                     byte r = (byte)(args[0].CheckType("Color3.new", DataType.Number).Number * 255);
                     byte g = (byte)(args[1].CheckType("Color3.new", DataType.Number).Number * 255);
                     byte b = (byte)(args[2].CheckType("Color3.new", DataType.Number).Number * 255);
                     return DynValue.NewUserData(PushUserData(gameManager, new Color3(r, g, b)));
                 }
-                throw new ScriptRuntimeException("Color3.new requires 3 number arguments");
+                throw new ScriptRuntimeException("Color3.new requires 0 or 3 number arguments");
             });
             Color3module.Frozen = false;
             Color3module.MetaTable = Color3meta;

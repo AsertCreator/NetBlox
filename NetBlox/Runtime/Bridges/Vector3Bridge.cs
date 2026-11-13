@@ -152,14 +152,18 @@ public static class Vector3Bridge
             vector3meta["__metatable"] = "Locked";
             vector3meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
             {
-                if (args.Count == 3)
+                if (args.Count == 0)
+                {
+                    return DynValue.NewUserData(PushUserData(gameManager, default));
+                }
+                else if (args.Count == 3)
                 {
                     float x = (float)args[0].CheckType("Vector3.new", DataType.Number).Number;
                     float y = (float)args[1].CheckType("Vector3.new", DataType.Number).Number;
                     float z = (float)args[2].CheckType("Vector3.new", DataType.Number).Number;
                     return DynValue.NewUserData(PushUserData(gameManager, new Vector3(x, y, z)));
                 }
-                throw new ScriptRuntimeException("Vector3.new requires 3 number arguments");
+                throw new ScriptRuntimeException("Vector3.new requires 0 or 3 number arguments");
             });
             vector3module.Frozen = false;
             vector3module.MetaTable = vector3meta;

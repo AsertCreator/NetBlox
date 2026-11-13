@@ -4,6 +4,7 @@ using NetBlox.Runtime;
 namespace NetBlox.Instances.Services.Internal;
 
 [Service]
+[ServiceAccessibleTo(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
 public class CoreAuthenticationService : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]

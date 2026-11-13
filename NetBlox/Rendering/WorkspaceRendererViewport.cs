@@ -333,7 +333,7 @@ public class WorkspaceRendererViewport : RendererViewport
     public virtual string ConstructDebugString()
     {
         string value = "NetBlox" + 
-            ", fps: " + Raylib.GetFPS() + 
+            ", fps: " + GameRenderer.FPS.ToString("F3", CultureInfo.InvariantCulture) + 
             ", actor count: " + (GameRenderer.GameManager.PhysicsSolver != null ? GameRenderer.GameManager.PhysicsSolver.GetActorCount() : 0) + 
             ", instance count: " + GameRenderer.GameManager.GameRegistry.GetInstanceCount() + 
             ", part render buffer category count: " + (opaquePartRenderBuffer.Count + transparentPartRenderBuffer.Count);

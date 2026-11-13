@@ -167,6 +167,8 @@ public class Instance
     public LuaEvent DescendantRemoved { get; set; } = new();
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public LuaEvent AncestryChanged { get; set; } = new();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent Destroying { get; set; } = new();
 
     private Dictionary<string, ulong> fastNameLookup = [];
     private Instance? parentCache;
@@ -386,7 +388,7 @@ public class Instance
     }
 
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public Instance? FindFirstChild(string name)
+    public virtual Instance? FindFirstChild(string name)
     {
         for (int i = 0; i < children.Count; i++)
         {
@@ -399,7 +401,7 @@ public class Instance
         return null;
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public Instance? FindFirstChildOfClass(string className)
+    public virtual Instance? FindFirstChildOfClass(string className)
     {
         for (int i = 0; i < children.Count; i++)
         {
@@ -412,7 +414,7 @@ public class Instance
         return null;
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
-    public Instance? FindFirstChildWhichIsA(string className)
+    public virtual Instance? FindFirstChildWhichIsA(string className)
     {
         for (int i = 0; i < children.Count; i++)
         {
@@ -556,6 +558,9 @@ public class Instance
             gameEvent.UnregisterInstance(this);
         }
 
+        if (Destroying.HasConnections || Destroying.HasWaiters)
+            Destroying.Fire([]);
+
         Parent = null;
         ParentLocked = true;
 
@@ -691,36 +696,50 @@ public class Instance
 
     public void InvokeChildAdded(Instance value)
     {
-        ChildAdded.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+        if (ChildAdded.HasConnections || ChildAdded.HasWaiters)
+            ChildAdded.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
     }
     public void InvokeChildRemoved(Instance value)
     {
-        ChildRemoved.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+        if (ChildRemoved.HasConnections || ChildRemoved.HasWaiters)
+            ChildRemoved.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
     }
     public void InvokeDescendantAdded(Instance value)
     {
-        DescendantAdded.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+        if (DescendantAdded.HasConnections || DescendantAdded.HasWaiters)
+            DescendantAdded.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
         if (Parent == null)
             return;
+            
         Parent.InvokeDescendantAdded(value);
     }
     public void InvokeDescendantRemoved(Instance value)
     {
-        DescendantRemoved.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
+        if (DescendantRemoved.HasConnections || DescendantRemoved.HasWaiters)
+            DescendantRemoved.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value))]);
         if (Parent == null)
             return;
+
         Parent.InvokeDescendantRemoved(value);
     }
     public void InvokeAncestryChanged(Instance child, Instance? value)
     {
         reevaluateDataModelDescedancy = true;
-        AncestryChanged.Fire([
-            DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, child)),
-            value != null ? DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value)) : DynValue.Nil
-        ]);
-        Instance[] children = GetChildren();
-        for (int i = 0; i < children.Length; i++)
-            children[i].InvokeAncestryChanged(child, value);
+
+        if (AncestryChanged.HasConnections || AncestryChanged.HasWaiters)
+        {
+            AncestryChanged.Fire([
+                DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, child)),
+                value != null ? DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, value)) : DynValue.Nil
+            ]);
+        }
+
+        if (AliveChildrenCount > 0)
+        {
+            Instance[] children = GetChildren();
+            for (int i = 0; i < children.Length; i++)
+                children[i].InvokeAncestryChanged(child, value);
+        }
     }
 
     /// <summary>

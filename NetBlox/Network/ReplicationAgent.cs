@@ -151,8 +151,6 @@ public class ReplicationAgent
                     throw new NetworkException("Cannot create an instance of type " + className + ", aborting...");    
             }
 
-            instance.Parent = GameManager.GameRegistry.GetLocalInstanceById(parentId);
-
             InstanceBridge.InstanceClassCache cache = context.ResolveInstanceClassCacheForType(instance.GetType());
 
             void ReadReplicatedProperties(InstanceBridge.InstanceClassCache levelCache)
@@ -177,6 +175,8 @@ public class ReplicationAgent
             }
 
             ReadReplicatedProperties(cache);
+
+            instance.Parent = GameManager.GameRegistry.GetLocalInstanceById(parentId);
 
             int childrenCount = br.ReadInt32();
 
@@ -311,6 +311,9 @@ public class ReplicationAgent
             foreach (KeyValuePair<string, object?> pair in changeValue)
             {
                 InstanceBridge.InstanceClassCacheProperty property = cache.TryGetProperty(pair.Key)!;
+
+                if (property.Name == "Parent")
+                    continue;
 
                 bw.Write(property.NetworkOrdinal!.Value);
                 NetworkMarshal.MarshalClrToNetwork(GameManager, bw, property.PropertyType, pair.Value);

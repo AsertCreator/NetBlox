@@ -118,6 +118,7 @@ public class SecurityIdentity
         Name = "EngineRenderer",
         AllCapabilities = [
             new SimpleSecurityCapability() { MyLevel = SimpleSecurityCapabilityLevel.LocalUser },
+            new SimpleSecurityCapability() { MyLevel = SimpleSecurityCapabilityLevel.RobloxScript },
             new SimpleSecurityCapability() { MyLevel = SimpleSecurityCapabilityLevel.RobloxEngine },
         ]  
     };

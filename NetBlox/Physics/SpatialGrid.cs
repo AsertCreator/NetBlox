@@ -23,7 +23,7 @@ public class SpatialGrid
 {
     public readonly PhysicsSolver PhysicsSolver;
 
-    public Vector3Int CellSize = new Vector3Int { X = 3, Y = 3, Z = 3 };
+    public Vector3Int CellSize = new Vector3Int { X = 6, Y = 6, Z = 6 };
 
     private Dictionary<BasePart, LinkedList<Vector3Int>> objectToCells = [];
     private Dictionary<Vector3Int, LinkedList<BasePart>> cellToObjects = [];
@@ -109,22 +109,36 @@ public class SpatialGrid
     }
     public BasePart[]? GetImmediatelyNeighboringParts(BasePart basePart)
     {
-        if (!objectToCells.ContainsKey(basePart))
+        if (!objectToCells.TryGetValue(basePart, out LinkedList<Vector3Int>? allCells))
             return null;
 
         HashSet<BasePart> baseParts = [];
-        HashSet<Vector3Int> surroundingCells = new HashSet<Vector3Int>();
+        List<Vector3Int> surroundingCells = new List<Vector3Int>(allCells.Count + (int)Math.Pow(allCells.Count, 1 / 3f) * 7);
 
-        surroundingCells.Clear();
+        surroundingCells.AddRange(allCells);
 
-        foreach (Vector3Int cell in objectToCells[basePart])
-        {
-            for (int x = -1; x <= 1; x++)
-                for (int y = -1; y <= 1; y++)
-                    for (int z = -1; z <= 1; z++)
-                        surroundingCells.Add(new Vector3Int 
-                            { X = cell.X + x, Y = cell.Y + y, Z = cell.Z + z });
-        }
+        (Vector3Int min, Vector3Int max) =  objectsToLastBoundingBoxes[basePart];
+
+        for (int x = min.X - 1; x <= max.X + 1; x++)
+            for (int z = min.Z - 1; z <= max.Z + 1; z++)
+            {
+                surroundingCells.Add(new Vector3Int { X = x, Y = min.Y - 1, Z = z });
+                surroundingCells.Add(new Vector3Int { X = x, Y = max.Y + 1, Z = z });
+            }
+
+        for (int x = min.X - 1; x <= max.X + 1; x++)
+            for (int y = min.Y; y <= max.Y; y++)
+            {
+                surroundingCells.Add(new Vector3Int { X = x, Y = y, Z = min.Z - 1 });
+                surroundingCells.Add(new Vector3Int { X = x, Y = y, Z = max.Z + 1 });
+            }
+
+        for (int z = min.Z; z <= max.Z; z++)
+            for (int y = min.Y; y <= max.Y; y++)
+            {
+                surroundingCells.Add(new Vector3Int { X = min.X - 1, Y = y, Z = z });
+                surroundingCells.Add(new Vector3Int { X = max.X + 1, Y = y, Z = z });
+            }
 
         foreach (Vector3Int cell in surroundingCells)
         {

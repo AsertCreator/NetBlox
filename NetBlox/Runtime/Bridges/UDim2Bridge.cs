@@ -127,7 +127,11 @@ public static class UDim2Bridge
             udim2meta["__metatable"] = "Locked";
             udim2meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
             {
-                if (args.Count == 2)
+                if (args.Count == 0)
+                {
+                    return DynValue.NewUserData(PushUserData(gameManager, default));
+                }
+                else if (args.Count == 2)
                 {
                     UserData x = args[0].CheckType("UDim2.new", DataType.UserData).UserData;
                     UserData y = args[1].CheckType("UDim2.new", DataType.UserData).UserData;
@@ -143,7 +147,7 @@ public static class UDim2Bridge
                     float yo = (float)args[3].CheckType("UDim2.new", DataType.Number).Number;
                     return DynValue.NewUserData(PushUserData(gameManager, new UDim2(xs, xo, ys, yo)));
                 }
-                throw new ScriptRuntimeException("UDim2.new requires 2 UDim arguments or 4 number arguments");
+                throw new ScriptRuntimeException("UDim2.new requires 0 or 2 UDim arguments or 4 number arguments");
             });
             udim2module.Frozen = false;
             udim2module.MetaTable = udim2meta;

@@ -98,12 +98,14 @@ public class Workspace : Model
         for (int i = 0; i < parts.Length; i++)
         {
             GameManager.PhysicsSolver?.SpatialGrid.UpdatePart(parts[i]);
-
+        }
+        for (int i = 0; i < parts.Length; i++)
+        {
             BasePart[]? neighboring = GameManager.PhysicsSolver?.SpatialGrid.GetImmediatelyNeighboringParts(parts[i]);
             if (neighboring == null || neighboring.Length == 0)
                 continue;
 
-            parts[i].MakeJointsWith(neighboring.ToArray());
+            parts[i].MakeJointsWith(neighboring);
         }
     }
 

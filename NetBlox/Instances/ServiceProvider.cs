@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using NetBlox.Instances.Services;
 using NetBlox.Runtime;
+using NetBlox.Runtime.Bridges;
 
 namespace NetBlox.Instances;
 
@@ -12,18 +13,77 @@ public class ServiceProvider : Instance
     {
     }
 
+    public bool IsServiceAccessibleInThisIdentity(Instance instance)
+    {
+        ScriptContext scriptContext = GetService<ScriptContext>();
+        InstanceBridge.InstanceClassCache classCache = scriptContext.ResolveInstanceClassCacheForType(instance.GetType());
+        if (classCache.ServiceAccessibleToAttribute != null)
+        {
+            // we will gatekeep the service
+            if (!GameManager.GameScheduler.GetCurrentSecurityIdentity().RequireSimpleCapability(classCache.ServiceAccessibleToAttribute.RequiredLevel))
+                return false;
+        }
+        return true;
+    }
+
+    public override Instance[] GetChildren()
+    {
+        List<Instance> betterInstanceList = new List<Instance>();
+        betterInstanceList.AddRange(base.GetChildren());
+        
+        for (int i = 0; i < betterInstanceList.Count; i++)
+        {
+            if (!IsServiceAccessibleInThisIdentity(betterInstanceList[i]))
+                betterInstanceList.RemoveAt(i--);
+        }
+
+        return betterInstanceList.ToArray();
+    }
+
+    public override Instance? FindFirstChild(string name)
+    {
+        Instance? instance = base.FindFirstChild(name);
+        if (instance == null)
+            return null;
+        if (!IsServiceAccessibleInThisIdentity(instance))
+            return null;
+        return instance;
+    }
+    public override Instance? FindFirstChildOfClass(string className)
+    {
+        Instance? instance = base.FindFirstChildOfClass(className);
+        if (instance == null)
+            return null;
+        if (!IsServiceAccessibleInThisIdentity(instance))
+            return null;
+        return instance;
+    }
+    public override Instance? FindFirstChildWhichIsA(string className)
+    {
+        Instance? instance = base.FindFirstChildWhichIsA(className);
+        if (instance == null)
+            return null;
+        if (!IsServiceAccessibleInThisIdentity(instance))
+            return null;
+        return instance;
+    }
+
     [LuaAlias(Name = "service")]
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public Instance? GetService(string name)
     {
         Instance? service = FindService(name);
         if (service != null)
+        {
+            if (!IsServiceAccessibleInThisIdentity(service))
+                return null;
             return service;
+        }
         
         service = GameManager.GameRegistry.TryCreateNewDomesticInstanceOfClass(name);
         if (service == null)
-            return null; // i just realized how much of an idiot i am
-            // throw new InvalidProgramException("GameManager.GameRegistry.TryCreateNewDomesticInstanceOfClass somehow failed");
+            return null;
+            
         service.Parent = this;
         service.ParentLocked = true;
 
@@ -33,6 +93,10 @@ public class ServiceProvider : Instance
             service.CommitStageAlive();
 
         Trace.TraceInformation("Created " + name + " service");
+
+        if (!IsServiceAccessibleInThisIdentity(service))
+            return null;
+
         return service;
     }
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
@@ -40,14 +104,24 @@ public class ServiceProvider : Instance
     {
         Instance? possibleCandidate = FindFirstChild_Fast(name);
         if (possibleCandidate != null)
+        {
+            if (!IsServiceAccessibleInThisIdentity(possibleCandidate))
+                return null;
             return possibleCandidate;
+        }
 
         for (int i = 0; i < children.Count; i++)
         {
             Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(children[i]);
+
             if (instance != null && instance.ClassName == name)
+            {
+                if (!IsServiceAccessibleInThisIdentity(instance))
+                    return null;
                 return instance;
+            }
         }
+
         return null;
     }
     private string ResolveServiceNameForFastLookup<T>()

@@ -85,6 +85,10 @@ public static class LuaMarshal
         {
             return DynValue.NewUserData(BrickColorBridge.PushUserData(ctx.GameManager, (BrickColor)value));
         }
+        else if (clrType == cachedCoordinateFrameType)
+        {
+            return DynValue.NewUserData(CoordinateFrameBridge.PushUserData(ctx.GameManager, (CoordinateFrame)value));
+        }
         else if (clrType == cachedLuaEventType)
         {
             return DynValue.NewUserData(RBXScriptSignalBridge.PushUserData(ctx.GameManager, (LuaEvent)value));
@@ -256,6 +260,13 @@ public static class LuaMarshal
                 throw new ArgumentException(funcName + "'s argument takes BrickColor, but not BrickColor was given");
             return descriptor.Value;
         }
+        else if (clrType == cachedCoordinateFrameType)
+        {
+            UserData userdata = value.CheckType(funcName, DataType.UserData, flags: TypeValidationFlags.None).UserData;
+            if (userdata.Descriptor is not CoordinateFrameBridge.CoordinateFrameDescriptor descriptor)
+                throw new ArgumentException(funcName + "'s argument takes CFrame, but not CFrame was given");
+            return descriptor.Value;
+        }
         else if (clrType == cachedLuaEventType)
         {
             UserData userdata = value.CheckType(funcName, DataType.UserData, flags: TypeValidationFlags.None).UserData;
@@ -374,6 +385,23 @@ public static class LuaMarshal
                         vector3.Z = br.ReadSingle();
                         return DynValue.NewUserData(Vector3Bridge.PushUserData(scriptContext.GameManager, vector3));
                     }
+                    else if (b == 9)
+                    {
+                        CoordinateFrame cframe = default;
+                        cframe.Position.X = br.ReadSingle();
+                        cframe.Position.Y = br.ReadSingle();
+                        cframe.Position.Z = br.ReadSingle();
+                        cframe.Orientation.M11 = br.ReadSingle();
+                        cframe.Orientation.M12 = br.ReadSingle();
+                        cframe.Orientation.M13 = br.ReadSingle();
+                        cframe.Orientation.M21 = br.ReadSingle();
+                        cframe.Orientation.M22 = br.ReadSingle();
+                        cframe.Orientation.M23 = br.ReadSingle();
+                        cframe.Orientation.M31 = br.ReadSingle();
+                        cframe.Orientation.M32 = br.ReadSingle();
+                        cframe.Orientation.M33 = br.ReadSingle();
+                        return DynValue.NewUserData(CoordinateFrameBridge.PushUserData(scriptContext.GameManager, cframe));
+                    }
                     break;
             }
             return DynValue.Nil;
@@ -460,9 +488,25 @@ public static class LuaMarshal
                         bw.Write(vector3.Value.Y);
                         bw.Write(vector3.Value.Z);
                     }
+                    else if (userDataDescriptor is CoordinateFrameBridge.CoordinateFrameDescriptor cframe)
+                    {
+                        bw.Write((byte)9);
+                        bw.Write(cframe.Value.Position.X);
+                        bw.Write(cframe.Value.Position.Y);
+                        bw.Write(cframe.Value.Position.Z);
+                        bw.Write(cframe.Value.Orientation.M11);
+                        bw.Write(cframe.Value.Orientation.M12);
+                        bw.Write(cframe.Value.Orientation.M13);
+                        bw.Write(cframe.Value.Orientation.M21);
+                        bw.Write(cframe.Value.Orientation.M22);
+                        bw.Write(cframe.Value.Orientation.M23);
+                        bw.Write(cframe.Value.Orientation.M31);
+                        bw.Write(cframe.Value.Orientation.M32);
+                        bw.Write(cframe.Value.Orientation.M33);
+                    }
                     else
                     {
-                        bw.Write((byte)9); // this means that there's nothing to serialize
+                        bw.Write((byte)10); // this means that there's nothing to serialize
                     }
                     break;
             }
@@ -492,6 +536,7 @@ public static class LuaMarshal
     private static readonly Type cachedUDim2Type = typeof(UDim2);
     private static readonly Type cachedColor3Type = typeof(Color3);
     private static readonly Type cachedBrickColorType = typeof(BrickColor);
+    private static readonly Type cachedCoordinateFrameType = typeof(CoordinateFrame);
     private static readonly Type cachedLuaEventType = typeof(LuaEvent);
     private static readonly Type cachedLuaYieldType = typeof(LuaYield);
     private static readonly Type cachedLuaEventConnectionType = typeof(LuaEventConnection);

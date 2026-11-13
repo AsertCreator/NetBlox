@@ -8,6 +8,7 @@ using NetBlox.Rendering;
 namespace NetBlox.Instances.Services.Internal;
 
 [Service]
+[ServiceAccessibleTo(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
 public class CoreEditorService : Instance
 {
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]

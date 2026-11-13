@@ -2,7 +2,7 @@ local CoreGui = game:GetService("CoreGui")
 local CoreHttpService = game:GetService("CoreHttpService");
 local CoreFileService = game:GetService("CoreFileService");
 
-local MainGuiScreenGui = Instance.new("ScreenGui");
+local MainGuiScreenGui = CoreGui.RobloxGui;
 local MainGuiFrame = Instance.new("Frame");
 
 MainGuiFrame.Name = "MainGuiFrame";
@@ -12,9 +12,6 @@ MainGuiFrame.BackgroundTransparency = 0;
 MainGuiFrame.BorderSizePixel = 0;
 MainGuiFrame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.26);
 MainGuiFrame.Parent = MainGuiScreenGui;
-
-MainGuiScreenGui.Name = "MainGuiScreenGui";
-MainGuiScreenGui.Parent = CoreGui;
 
 function CreateBasicView(name)
     local View = Instance.new("Frame");

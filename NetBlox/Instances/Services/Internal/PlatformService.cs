@@ -9,6 +9,7 @@ namespace NetBlox.Instances.Services.Internal;
 
 [Service]
 [NotReplicated]
+[ServiceAccessibleTo(RequiredLevel = SimpleSecurityCapabilityLevel.RobloxScript)]
 public class PlatformService : Instance
 {
     public override string ClassName => nameof(PlatformService);

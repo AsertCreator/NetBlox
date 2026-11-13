@@ -145,13 +145,17 @@ public static class Vector2Bridge
             vector2meta["__metatable"] = "Locked";
             vector2meta["new"] = DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
             {
-                if (args.Count == 2)
+                if (args.Count == 0)
+                {
+                    return DynValue.NewUserData(PushUserData(gameManager, default));
+                }
+                else if (args.Count == 2)
                 {
                     float x = (float)args[0].CheckType("Vector2.new", DataType.Number).Number;
                     float y = (float)args[1].CheckType("Vector2.new", DataType.Number).Number;
                     return DynValue.NewUserData(PushUserData(gameManager, new Vector2(x, y)));
                 }
-                throw new ScriptRuntimeException("Vector2.new requires 2 number arguments");
+                throw new ScriptRuntimeException("Vector2.new requires 0 or 2 number arguments");
             });
             vector2module.Frozen = false;
             vector2module.MetaTable = vector2meta;

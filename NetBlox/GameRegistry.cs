@@ -100,9 +100,8 @@ public sealed class GameRegistry
         if (predicate == null)
             return _trueInstances.Values.ToArray();
         List<Instance> instances = [];
-        for (int i = 0; i < _trueInstances.Count; i++)
+        foreach (KeyValuePair<ulong, Instance> kvp in _trueInstances)
         {
-            KeyValuePair<ulong, Instance> kvp = _trueInstances.ElementAt(i);
             Instance instance = kvp.Value;
             if (predicate(instance))
                 instances.Add(instance);
