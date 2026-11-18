@@ -15,10 +15,11 @@ public class JointInstance : Instance
     {
         get
         {
-            if (cachedPart0 != null && cachedPart0.TryGetTarget(out BasePart? target))
+            if (cachedPart0 != null && cachedPart0.TryGetTarget(out BasePart? target) &&
+                target.InitializationStage < InitializationStage.Destroying && target.InstanceID == part0)
                 return target;
             BasePart? bp = GameManager.GameRegistry.GetLocalInstanceById(part0) as BasePart;
-            if (bp == null)
+            if (bp == null || bp.InitializationStage >= InitializationStage.Destroying)
                 return null;
             if (cachedPart0 != null)
                 cachedPart0.SetTarget(bp);
@@ -30,15 +31,16 @@ public class JointInstance : Instance
         {
             if (value != null && part0 != value.InstanceID)
             {
-                BasePart? oldpart = Part0;
+                BasePart? oldpart = GameManager.GameRegistry.GetLocalInstanceById(part0) as BasePart;
                 oldpart?.joints.Remove(InstanceID);
             }
 
             if (value == null)
             {
-                BasePart? oldpart = Part0;
+                BasePart? oldpart = GameManager.GameRegistry.GetLocalInstanceById(part0) as BasePart;
                 oldpart?.joints.Remove(InstanceID);
                 part0 = 0;
+                cachedPart0 = null;
             }
             else
             {
@@ -56,10 +58,11 @@ public class JointInstance : Instance
     {
         get
         {
-            if (cachedPart1 != null && cachedPart1.TryGetTarget(out BasePart? target))
+            if (cachedPart1 != null && cachedPart1.TryGetTarget(out BasePart? target) &&
+                target.InitializationStage < InitializationStage.Destroying && target.InstanceID == part1)
                 return target;
             BasePart? bp = GameManager.GameRegistry.GetLocalInstanceById(part1) as BasePart;
-            if (bp == null)
+            if (bp == null || bp.InitializationStage >= InitializationStage.Destroying)
                 return null;
             if (cachedPart1 != null)
                 cachedPart1.SetTarget(bp);
@@ -71,15 +74,16 @@ public class JointInstance : Instance
         {
             if (value != null && part1 != value.InstanceID)
             {
-                BasePart? oldpart = Part1;
+                BasePart? oldpart = GameManager.GameRegistry.GetLocalInstanceById(part1) as BasePart;
                 oldpart?.joints.Remove(InstanceID);
             }
 
             if (value == null)
             {
-                BasePart? oldpart = Part1;
+                BasePart? oldpart = GameManager.GameRegistry.GetLocalInstanceById(part1) as BasePart;
                 oldpart?.joints.Remove(InstanceID);
                 part1 = 0;
+                cachedPart1 = null;
             }
             else
             {

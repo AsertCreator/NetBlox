@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using NetBlox.Instances.Parts;
 using NetBlox.Runtime;
 using Raylib_cs;
 
@@ -13,7 +14,7 @@ public class Weld : JointInstance
     protected InstanceID lastpart0;
     protected InstanceID lastpart1;
 
-    private bool weldCreated;
+    public bool weldCreated;
 
     public override string ClassName => nameof(Weld);
 
@@ -35,13 +36,20 @@ public class Weld : JointInstance
         }
 
         Part0.JoinAssembliesWith(Part1);
+        lastpart0 = Part0.InstanceID;
+        lastpart1 = Part1.InstanceID;
         weldCreated = true;
         GameManager.PhysicsSolver?.FinalizeSetAnchoredForBasePart(Part0, Part0.Anchored);
     }
     private void DestroyWeld()
     {
-        if (Part0 != null && Part1 != null)
-            Part0.BreakAssembliesWith(Part1);
+        BasePart? oldPart0 = GameManager.GameRegistry.GetLocalInstanceById(lastpart0) as BasePart;
+        BasePart? oldPart1 = GameManager.GameRegistry.GetLocalInstanceById(lastpart1) as BasePart;
+        if (oldPart0 != null && oldPart1 != null)
+            oldPart0.BreakAssembliesWith(oldPart1, this);
+        weldCreated = false;
+        lastpart0 = 0;
+        lastpart1 = 0;
     }
 
     public override void OnRegisteredEvent(EngineEventArgs args)
@@ -57,7 +65,7 @@ public class Weld : JointInstance
                 Rlgl.EnableDepthTest();
             }
         }
-        else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS && IsPartOfDataModel)
+        else if (args.GameEvent.Id == GameEvent.EVENT_BEFORE_PHYSICS)
         {
             UpdateWeld();
         }
@@ -65,21 +73,39 @@ public class Weld : JointInstance
 
     public void UpdateWeld()
     {
-        if (!weldCreated)
-        {
-            if (Part0 != null && Part1 != null)
-                CreateWeld();
-        }
-        else
-        {
-            if (Part0 == null || Part1 == null)
-                DestroyWeld();
-        }
+        BasePart? part0 = Part0;
+        BasePart? part1 = Part1;
+
+        if (part0 == null || part1 == null)
+            return;
+
+        if (weldCreated && (!IsPartOfDataModel || lastpart0 != part0.InstanceID || lastpart1 != part1.InstanceID))
+            DestroyWeld();
+        if (!weldCreated && IsPartOfDataModel)
+            CreateWeld();
     }
 
     public void SetWeldCreated(bool weldCreated)
     {
         this.weldCreated = weldCreated;
+
+        if (weldCreated)
+        {
+            if (Part0 != null)
+                lastpart0 = Part0.InstanceID;
+            else
+                lastpart0 = 0;
+
+            if (Part1 != null)
+                lastpart1 = Part1.InstanceID;
+            else
+                lastpart1 = 0;
+        }
+        else
+        {
+            lastpart0 = 0;
+            lastpart1 = 0;
+        }
     }
 
     public override void CommitStageInitialize()

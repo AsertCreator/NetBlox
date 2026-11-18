@@ -1099,11 +1099,13 @@ public class WorkspaceRendererViewport : RendererViewport
     public void WritePart(BasePart part)
     {
         PartSpecification partSpecification = default;
+        Lighting lighting = part.Root.GetService<Lighting>();
 
-        if (part.Root.GetService<Lighting>().RealTimeFrustumCulling)
+        if (lighting.RealTimeFrustumCulling)
         {
             part.CalculateBoundingBox(out Vector3 min, out Vector3 max);
-            if (!lastFrustum.IsInFrustum(min, max))
+            if (!lastFrustum.IsInFrustum(min, max) &&
+                (!lighting.RealTimeShadows || !part.CastShadow || part.Transparency > 0.75f))
                 return;
         }
 

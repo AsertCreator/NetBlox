@@ -269,12 +269,12 @@ public class BasePart : PVInstance
             PhysicsAssembly.MergeWith(other.PhysicsAssembly);
         }
     }
-    public void BreakAssembliesWith(BasePart other)
+    public void BreakAssembliesWith(BasePart other, JointInstance disconnectedJoint)
     {
         if (PhysicsAssembly == null || PhysicsAssembly != other.PhysicsAssembly)
             return;
 
-        PhysicsAssembly.BreakBetween(this, other);
+        PhysicsAssembly.BreakBetween(this, other, disconnectedJoint);
     }
     public virtual RigidBodyShape CreateShape()
     {
