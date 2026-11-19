@@ -169,4 +169,13 @@ public sealed class GameRegistry
         _constructorCache[className] = constructor;
         return constructor;
     }
+
+    public void SpeedThroughInitialization(Instance instance)
+    {
+        newborns.Remove(instance);
+        if (instance.InitializationStage == InitializationStage.Newborn)
+            instance.CommitStageInitialize();
+        if (instance.InitializationStage == InitializationStage.Initializing)
+            instance.CommitStageAlive();
+    }
 }

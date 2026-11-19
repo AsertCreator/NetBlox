@@ -110,6 +110,9 @@ public static class EnumValueBridge
             AddEnum<TextYAlignment>();
             AddEnum<NormalId>();
             AddEnum<Axis>();
+            AddEnum<KeyCode>();
+            AddEnum<UserInputState>();
+            AddEnum<UserInputType>();
 
             Enummodule.Frozen = false;
             Enummodule.MetaTable = Enummeta;

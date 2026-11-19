@@ -97,8 +97,12 @@ public class WorkspaceRendererViewport : RendererViewport
     private LRUCache<PartSpecification, GCMesh> partRenderBufferMeshCache;
     private Dictionary<PartSpecification, List<BasePart>> opaquePartRenderBuffer = [];
     private Dictionary<PartSpecification, List<BasePart>> transparentPartRenderBuffer = [];
+    private Dictionary<PartSpecification, List<BasePart>> opaquePartShadowRenderBuffer = [];
+    private Dictionary<PartSpecification, List<BasePart>> transparentPartShadowRenderBuffer = [];
     private List<KeyValuePair<PartSpecification, List<BasePart>>> opaquePartRenderBuffer_List = [];
     private List<KeyValuePair<PartSpecification, List<BasePart>>> transparentPartRenderBuffer_List = [];
+    private List<KeyValuePair<PartSpecification, List<BasePart>>> opaquePartShadowRenderBuffer_List = [];
+    private List<KeyValuePair<PartSpecification, List<BasePart>>> transparentPartShadowRenderBuffer_List = [];
     private int maxPartRenderBufferDepth = 0;
     private GameSchedulerPerfEntry[] lastperfEntry;
     private PartRenderInstanceInfo[]? renderInstances;
@@ -106,6 +110,8 @@ public class WorkspaceRendererViewport : RendererViewport
     private Mesh sphereMesh;
     private Humanoid? followHumanoid;
     private Frustum lastFrustum;
+    private Frustum shadowFrustum;
+    private bool shadowPhase;
 
     public unsafe WorkspaceRendererViewport(GameRenderer gameRenderer) : base(gameRenderer)
     {
@@ -436,6 +442,10 @@ public class WorkspaceRendererViewport : RendererViewport
         else
             DoDebugKeys();
 
+        UserInputService? userInputService = GameRenderer.Root.FindService<UserInputService>();
+        if (userInputService != null)
+            userInputService.HandleInput();
+
         Raylib.SetShaderValue(SpecularLightingShader, uniform_viewPosition, MainCamera.Position, ShaderUniformDataType.Vec3);
         Raylib.SetShaderValue(SpecularLightingShader, uniform_lightPosition, 
             GameRenderer.GameManager.RootModel.GetService<Lighting>().SunPosition, ShaderUniformDataType.Vec3);
@@ -452,6 +462,15 @@ public class WorkspaceRendererViewport : RendererViewport
         Rlgl.DrawRenderBatchActive();
         Rlgl.EnableDepthTest();
 
+        if (lighting.RealTimeShadows)
+        {
+            shadowFrustum = Frustum.ExtractFrustum(0.01f, 1000, LightCamera);
+
+            shadowPhase = true;
+            GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDER3D)?.Fire(RenderingEventArgs);
+        }
+
+        shadowPhase = false;
         GameRenderer.GameManager.TryGetEventForId(GameEvent.EVENT_RENDER3D)?.Fire(RenderingEventArgs);
 
         if (lighting.RealTimeShadows)
@@ -507,8 +526,12 @@ public class WorkspaceRendererViewport : RendererViewport
 
         opaquePartRenderBuffer.Clear();
         opaquePartRenderBuffer_List.Clear();
+        opaquePartShadowRenderBuffer.Clear();
+        opaquePartShadowRenderBuffer_List.Clear();
         transparentPartRenderBuffer.Clear();
         transparentPartRenderBuffer_List.Clear();
+        transparentPartShadowRenderBuffer.Clear();
+        transparentPartShadowRenderBuffer_List.Clear();
         maxPartRenderBufferDepth = 0;
 
         // Raylib.DrawTexture(ShadowMap.Texture, 0, 0, Color.White);
@@ -604,10 +627,16 @@ public class WorkspaceRendererViewport : RendererViewport
             }
         }
 
-        DoRenderABuffer(opaquePartRenderBuffer_List);
+        if (shadowPass)
+            DoRenderABuffer(opaquePartShadowRenderBuffer_List);
+        else
+            DoRenderABuffer(opaquePartRenderBuffer_List);
 
         Rlgl.DisableDepthMask();
-        DoRenderABuffer(transparentPartRenderBuffer_List);
+        if (shadowPass)
+            DoRenderABuffer(transparentPartShadowRenderBuffer_List);
+        else
+            DoRenderABuffer(transparentPartRenderBuffer_List);
         Rlgl.EnableDepthMask();
     }
     public virtual void DoDebugKeys()
@@ -1104,9 +1133,17 @@ public class WorkspaceRendererViewport : RendererViewport
         if (lighting.RealTimeFrustumCulling)
         {
             part.CalculateBoundingBox(out Vector3 min, out Vector3 max);
-            if (!lastFrustum.IsInFrustum(min, max) &&
-                (!lighting.RealTimeShadows || !part.CastShadow || part.Transparency > 0.75f))
-                return;
+
+            if (shadowPhase)
+            {
+                if (!shadowFrustum.IsInFrustum(min, max))
+                    return;
+            }
+            else
+            {
+                if (!lastFrustum.IsInFrustum(min, max))
+                    return;
+            }
         }
 
         if (part is Part concretePart)
@@ -1174,13 +1211,26 @@ public class WorkspaceRendererViewport : RendererViewport
             throw new NotImplementedException("Unsupported part type");
         }
 
+        Dictionary<PartSpecification, List<BasePart>> opaquePartRenderBufferOfChoice = opaquePartRenderBuffer;
+        List<KeyValuePair<PartSpecification, List<BasePart>>> opaquePartRenderBufferListOfChoice = opaquePartRenderBuffer_List;
+        Dictionary<PartSpecification, List<BasePart>> transparentPartRenderBufferOfChoice = transparentPartRenderBuffer;
+        List<KeyValuePair<PartSpecification, List<BasePart>>> transparentPartRenderBufferListOfChoice = transparentPartRenderBuffer_List;
+
+        if (shadowPhase)
+        {
+            opaquePartRenderBufferOfChoice = opaquePartShadowRenderBuffer;
+            opaquePartRenderBufferListOfChoice = opaquePartShadowRenderBuffer_List;
+            transparentPartRenderBufferOfChoice = transparentPartShadowRenderBuffer;
+            transparentPartRenderBufferListOfChoice = transparentPartShadowRenderBuffer_List;
+        }
+
         if (part.Transparency <= 0)
         {
-            if (!opaquePartRenderBuffer.TryGetValue(partSpecification, out List<BasePart>? list))
+            if (!opaquePartRenderBufferOfChoice.TryGetValue(partSpecification, out List<BasePart>? list))
             {
                 list = [];
-                opaquePartRenderBuffer[partSpecification] = list;
-                opaquePartRenderBuffer_List.Add(new(partSpecification, list));
+                opaquePartRenderBufferOfChoice[partSpecification] = list;
+                opaquePartRenderBufferListOfChoice.Add(new(partSpecification, list));
             }
             
             list.Add(part);
@@ -1189,11 +1239,11 @@ public class WorkspaceRendererViewport : RendererViewport
         }
         else if (part.Transparency < 1)
         {
-            if (!transparentPartRenderBuffer.TryGetValue(partSpecification, out List<BasePart>? list))
+            if (!transparentPartRenderBufferOfChoice.TryGetValue(partSpecification, out List<BasePart>? list))
             {
                 list = [];
-                transparentPartRenderBuffer[partSpecification] = list;
-                transparentPartRenderBuffer_List.Add(new(partSpecification, list));
+                transparentPartRenderBufferOfChoice[partSpecification] = list;
+                transparentPartRenderBufferListOfChoice.Add(new(partSpecification, list));
             }
             
             list.Add(part);
