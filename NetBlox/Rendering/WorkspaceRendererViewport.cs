@@ -1134,12 +1134,7 @@ public class WorkspaceRendererViewport : RendererViewport
         {
             part.CalculateBoundingBox(out Vector3 min, out Vector3 max);
 
-            if (shadowPhase)
-            {
-                if (!shadowFrustum.IsInFrustum(min, max))
-                    return;
-            }
-            else
+            if (!shadowPhase)
             {
                 if (!lastFrustum.IsInFrustum(min, max))
                     return;

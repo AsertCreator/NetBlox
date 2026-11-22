@@ -96,13 +96,14 @@ public class Instance
                     if (agent != null)
                         agent.DeltaReparentInstance(this);
                 }
+
+                InvokeAncestryChanged(this, value);
+                
                 if (IsPartOfDataModel && !InitializationSettings.HasEverBeenAPartOfReplicatableDataModel && Replicatable)
                 {
                     InitializationSettings.HasEverBeenAPartOfReplicatableDataModel = true;
                     ReplicationAgentIfServer?.DeltaAddNewInstance(this);
                 }
-
-                InvokeAncestryChanged(this, value);
             }
         }
     }

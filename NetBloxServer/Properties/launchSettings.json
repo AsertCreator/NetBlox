@@ -4,6 +4,10 @@
       "commandName": "Project",
       "commandLineArgs": "-Verbose -Port 44500 -Graphics -PlaceUrl rbxasset://places/CrossroadsButBetter.rbxlx -DisableUserScripts"
     },
+    "NetBloxServer (headless)": {
+      "commandName": "Project",
+      "commandLineArgs": "-Verbose -Port 44500 -PlaceUrl rbxasset://places/CrossroadsButBetter.rbxlx -DisableUserScripts"
+    },
     "NetBloxServer (Welcoming.rbxlx)": {
       "commandName": "Project",
       "commandLineArgs": "-Verbose -Port 44500 -Graphics -PlaceUrl rbxasset://places/Welcoming.rbxlx"

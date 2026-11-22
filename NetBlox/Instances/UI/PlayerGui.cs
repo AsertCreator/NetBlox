@@ -9,7 +9,8 @@ public class PlayerGui : BasePlayerGui
 
     public PlayerGui(ulong id, GameManager gameManager) : base(id, gameManager)
     {
-        RegisterForEventId(GameEvent.EVENT_RENDERGUI_LEVEL0);
+        if (GameManager.NetworkMode == Network.NetworkMode.Client)
+            RegisterForEventId(GameEvent.EVENT_RENDERGUI_LEVEL0);
     }
 
     public override void OnRegisteredEvent(EngineEventArgs args)

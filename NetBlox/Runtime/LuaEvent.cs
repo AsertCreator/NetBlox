@@ -72,18 +72,21 @@ public class LuaEvent
             BaseScript? attacher = eventConnection.Attacher;
             DynValue function = eventConnection.Handler;
 
-            ScriptSchedulerTask task = (ScriptSchedulerTask)gameManager.GameScheduler.Schedule(new ScriptSchedulerTask(attacher, function)
+            ScriptSchedulerTask task = new ScriptSchedulerTask(attacher, function)
             {
                 DebugName = $"Event Handler - {attacher?.ToString() ?? "<>"} - {function}",
                 GameScheduler = gameManager.GameScheduler,
                 Delegate = _ => SchedulerTaskResult.NotCompleted
-            });
+            };
 
             if (!cached.ContainsKey(eventConnection.Identity))
                 cached[eventConnection.Identity] = DecodeFor(gameManager, eventConnection.Identity);
 
             task.Identity = eventConnection.Identity;
             task.AsyncFunctionArguments = cached[eventConnection.Identity];
+
+            lock (gameManager.GameScheduler)
+                gameManager.GameScheduler.SchedulerTasks.Add(task);
         }
 
         if (awaitingTasks.Count > 0)
@@ -125,18 +128,21 @@ public class LuaEvent
             BaseScript? attacher = eventConnection.Attacher;
             DynValue function = eventConnection.Handler;
 
-            ScriptSchedulerTask task = (ScriptSchedulerTask)gameManager.GameScheduler.Schedule(new ScriptSchedulerTask(attacher, function)
+            ScriptSchedulerTask task = new ScriptSchedulerTask(attacher, function)
             {
                 DebugName = $"Event Handler - {attacher?.ToString() ?? "<>"} - {function}",
                 GameScheduler = gameManager.GameScheduler,
                 Delegate = _ => SchedulerTaskResult.NotCompleted
-            });
+            };
 
             if (!cached.ContainsKey(eventConnection.Identity))
                 cached[eventConnection.Identity] = DecodeFor(gameManager, eventConnection.Identity);
 
             task.Identity = eventConnection.Identity;
             task.AsyncFunctionArguments = cached[eventConnection.Identity];
+
+            lock (gameManager.GameScheduler)
+                gameManager.GameScheduler.SchedulerTasks.Add(task);
         }
 
         if (awaitingTasks.Count > 0)
@@ -167,15 +173,18 @@ public class LuaEvent
             BaseScript? attacher = eventConnection.Attacher;
             DynValue function = eventConnection.Handler;
 
-            ScriptSchedulerTask task = (ScriptSchedulerTask)gameManager.GameScheduler.Schedule(new ScriptSchedulerTask(attacher, function)
+            ScriptSchedulerTask task = new ScriptSchedulerTask(attacher, function)
             {
                 DebugName = $"Event Handler - {attacher?.ToString() ?? "<>"} - {function}",
                 GameScheduler = gameManager.GameScheduler,
                 Delegate = _ => SchedulerTaskResult.NotCompleted
-            });
+            };
 
             task.Identity = eventConnection.Identity;
             task.AsyncFunctionArguments = tuple; // literally how did i not notice that
+
+            lock (gameManager.GameScheduler)
+                gameManager.GameScheduler.SchedulerTasks.Add(task);
         }
 
         if (awaitingTasks.Count > 0)

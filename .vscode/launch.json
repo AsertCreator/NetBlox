@@ -55,6 +55,16 @@
             "projectPath": "${workspaceFolder}/NetBloxServer/NetBloxServer.csproj",
         },
         {
+            "name": "C#: NetBloxServer Debug (headless)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/NetBloxServer/bin/Debug/net10.0/NetBloxServer.dll",
+            "cwd": "${workspaceFolder}/NetBloxServer/bin/Debug/net10.0",
+            "launchSettingsFilePath": "${workspaceFolder}/NetBloxServer/Properties/launchSettings.json",
+            "launchSettingsProfile": "NetBloxServer (headless)",
+            "preLaunchTask": "dotnet: build"
+        },
+        {
             "name": "C#: NetBloxServer Debug (test: -Script)",
             "type": "coreclr",
             "request": "launch",
@@ -119,6 +129,10 @@
         {
             "name": "Both Server and Client",
             "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxServer Debug"]
+        },
+        {
+            "name": "Both Server (headless) and Client",
+            "configurations": ["C#: NetBloxClient Debug", "C#: NetBloxServer Debug (headless)"]
         },
         {
             "name": "Both Server (-Script) and Client",

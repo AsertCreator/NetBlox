@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
+using NetBlox.Runtime;
 using NetBlox.Runtime.Bridges;
 
 namespace NetBlox.Network;
@@ -216,6 +217,15 @@ public class ReplicationAgent
         item.ParentId = instance.parentid;
 
         deltaBufferNewInstances[instance.InstanceID] = item;
+
+        using RentedSpan<Instance?> rentedchildren = instance.GetChildren_Fast();
+
+        for (int i = 0; i < rentedchildren.Values.Length; i++)
+        {
+            Instance? child = rentedchildren.Values[i];
+            if (child != null)
+                DeltaAddNewInstance(child);
+        }
     }
     public void DeltaRemoveInstance(Instance instance)
     {
@@ -312,17 +322,55 @@ public class ReplicationAgent
             {
                 InstanceBridge.InstanceClassCacheProperty property = cache.TryGetProperty(pair.Key)!;
 
-                if (property.Name == "Parent")
-                    continue;
-
-                bw.Write(property.NetworkOrdinal!.Value);
-                NetworkMarshal.MarshalClrToNetwork(GameManager, bw, property.PropertyType, pair.Value);
+                if (property.Name == "Parent" || !property.NetworkOrdinal.HasValue)
+                {
+                    bw.Write(-1);
+                }
+                else
+                {
+                    bw.Write(GetTrueNetworkOrdinal(cache, property));
+                    NetworkMarshal.MarshalClrToNetwork(GameManager, bw, property.PropertyType, pair.Value);
+                }
             }
         }
 
         ForceFlushDeltaBuffer();
 
         return ms.ToArray();
+    }
+    public static int GetTrueNetworkOrdinal(InstanceBridge.InstanceClassCache cache, InstanceBridge.InstanceClassCacheProperty property)
+    {
+        int ordinalOffset = 0;
+        InstanceBridge.InstanceClassCache? currentCache = cache;
+
+        while (currentCache != null)
+        {
+            int propertyOrdinal = Array.IndexOf(currentCache.ReplicationOrderedProperties, property);
+            if (propertyOrdinal >= 0)
+                return ordinalOffset + propertyOrdinal;
+
+            ordinalOffset += currentCache.ReplicationOrderedProperties.Length;
+            currentCache = currentCache.RetrieveParentCache();
+        }
+
+        throw new InvalidOperationException($"Couldn't retrieve true network ordinal for a property");
+    }
+    public static InstanceBridge.InstanceClassCacheProperty GetPropertyByTrueNetworkOrdinal(InstanceBridge.InstanceClassCache cache, int networkOrdinal)
+    {
+        if (networkOrdinal < 0)
+            throw new ArgumentException("Wrong true network ordinal");
+
+        InstanceBridge.InstanceClassCache? currentCache = cache;
+        while (currentCache != null)
+        {
+            if (networkOrdinal < currentCache.ReplicationOrderedProperties.Length)
+                return currentCache.ReplicationOrderedProperties[networkOrdinal];
+
+            networkOrdinal -= currentCache.ReplicationOrderedProperties.Length;
+            currentCache = currentCache.RetrieveParentCache();
+        }
+
+        throw new InvalidOperationException($"Couldn't retrieve a property for the true network ordinal");
     }
     public void ForceFlushDeltaBuffer()
     {
@@ -433,7 +481,10 @@ public class ReplicationAgent
                 for (int j = 0; j < propertyChangeCount; j++)
                 {
                     int networkOrdinal = br.ReadInt32();
-                    InstanceBridge.InstanceClassCacheProperty property = cache.ReplicationOrderedProperties[networkOrdinal];
+                    if (networkOrdinal == -1)
+                        continue;
+                        
+                    InstanceBridge.InstanceClassCacheProperty property = GetPropertyByTrueNetworkOrdinal(cache, networkOrdinal);
                     object? newValue = NetworkMarshal.MarshalNetworkToClr(GameManager, br, property.PropertyType);
 
                     property.Property.SetValue(instance, newValue);
