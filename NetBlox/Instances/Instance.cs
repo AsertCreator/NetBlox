@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using MoonSharp.Interpreter;
 using NetBlox.Instances.Services;
@@ -19,7 +20,7 @@ namespace NetBlox.Instances;
 /// </summary>
 
 [ExplorerIconIndex(0)]
-public class Instance
+public class Instance : INotifyPropertyChanged
 {
     public struct InstanceInitializationSettings
     {
@@ -108,6 +109,7 @@ public class Instance
         }
     }
 
+    [PropertyChanged.DoNotNotify]
     public bool IsPartOfDataModel
     {
         get
@@ -170,6 +172,8 @@ public class Instance
     public LuaEvent AncestryChanged { get; set; } = new();
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public LuaEvent Destroying { get; set; } = new();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent Changed { get; set; } = new();
 
     private Dictionary<string, ulong> fastNameLookup = [];
     private Instance? parentCache;
@@ -182,8 +186,11 @@ public class Instance
     public readonly GameManager GameManager;
 
     public event EventHandler<string>? OnNativeChildRenamedOrAdded;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
+    [PropertyChanged.DoNotNotify]
     public DataModel Root => GameManager.RootModel;
+    [PropertyChanged.DoNotNotify]
     public Instance? ParentService
     {
         get
@@ -196,6 +203,7 @@ public class Instance
         }
     }
 
+    [PropertyChanged.DoNotNotify]
     public virtual int AliveChildrenCount
     {
         get
@@ -214,7 +222,9 @@ public class Instance
         }
     }
 
+    [PropertyChanged.DoNotNotify]
     public ReplicationAgent? ReplicationAgent => ReplicationAgentIfClient ?? ReplicationAgentIfServer;
+    [PropertyChanged.DoNotNotify]
     public ReplicationAgent? ReplicationAgentIfClient
     {
         get
@@ -229,6 +239,7 @@ public class Instance
             return null;
         }
     }
+    [PropertyChanged.DoNotNotify]
     public ReplicationAgent? ReplicationAgentIfServer
     {
         get
@@ -243,6 +254,7 @@ public class Instance
             return null;
         }
     }
+    [PropertyChanged.DoNotNotify]
     public bool Replicatable
     {
         get
@@ -259,11 +271,13 @@ public class Instance
         }
     }
 
+    [PropertyChanged.DoNotNotify]
     public Instance[] EvalutedChildren => GetChildren();
 
     public GlobalTimestamp ShouldBeDestroyedBy = GlobalTimestamp.MaxValue;
 
     public ulong parentid = 0;
+    public readonly Dictionary<string, LuaEvent> perPropertyChangedEvents = [];
     public readonly List<ulong> children = [];
     public readonly List<GameEvent> registeredEvents = [];
 
@@ -654,6 +668,15 @@ public class Instance
         }
     }
 
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public virtual LuaEvent GetPropertyChangedSignal(string propertyName)
+    {
+        if (perPropertyChangedEvents.TryGetValue(propertyName, out LuaEvent? luaEvent))
+            return luaEvent;
+        perPropertyChangedEvents[propertyName] = new LuaEvent();
+        return perPropertyChangedEvents[propertyName];
+    }
+
     //
     //  Below are methods and properties marked by Roblox as deprecated
     //
@@ -799,6 +822,24 @@ public class Instance
             OnBeforeRendering();
         if (args.GameEvent.Id == GameEvent.EVENT_AFTER_RENDER)
             OnAfterRendering();
+    }
+
+    public void OnPropertyChanged(string propertyName, object before, object after)
+    {
+        if (Root == null)
+            return;
+
+        if (Changed.HasConnections || Changed.HasWaiters)
+            Changed.Fire([DynValue.NewString(propertyName)]);
+        if (perPropertyChangedEvents.TryGetValue(propertyName, out LuaEvent? luaEvent))
+        {
+            if (luaEvent.HasConnections || luaEvent.HasWaiters)
+                luaEvent.Fire([DynValue.NewString(propertyName)]);
+        }
+
+        ReplicationAgent? replicationAgent = ReplicationAgentIfServer;
+        if (replicationAgent != null)
+            replicationAgent.DeltaAddReplicatablePropertyChange(this, propertyName, after);
     }
 
     public override string ToString()
