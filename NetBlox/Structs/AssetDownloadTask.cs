@@ -243,7 +243,7 @@ public class AssetDownloadTask
         Error = "Unknown ContentId protocol; cannot resolve";
         CallAllFailureCallbacks();
     }
-    private string GetMasterCacheDirectory()
+    public static string GetMasterCacheDirectory()
     {
         string masterCacheDirectoryKey = "netblox-" + Version.VersionString;
         string masterCacheDirectoryKeyHash = HashingUtils.Sha256(masterCacheDirectoryKey);

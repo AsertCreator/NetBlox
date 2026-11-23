@@ -4,6 +4,7 @@ global using InstanceID = ulong;
 using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
+using MoonSharp.VsCodeDebugger;
 using NetBlox.Instances;
 using NetBlox.Instances.Parts;
 using NetBlox.Instances.Scripts;
@@ -42,6 +43,8 @@ public sealed class GameManager
     public List<string> UnpairedConsoleArguments = [];
 
     public PriorityQueue<InstanceID, GlobalTimestamp> DestructionTimetable;
+
+    public MoonSharpVsCodeDebugServer? LuaDebugServer;
 
     private Dictionary<string, GameEvent> allGameEvents = [];
     private Dictionary<string, Action> allVerbs = [];
@@ -435,6 +438,14 @@ public sealed class GameManager
         try
         {
             CurrentPhase = InitializationStage.Initializing;
+
+            if (UnpairedConsoleArguments.Contains("EnableLuaDebugging"))
+            {
+                int chosenPort = NetworkMode == NetworkMode.Client ? 41912 : 41913;
+
+                LuaDebugServer = new MoonSharpVsCodeDebugServer(chosenPort);
+                LuaDebugServer.Start();
+            }
 
             Instance[] allInstances = GameRegistry.SelectInstances(null);
             for (int i = 0; i < allInstances.Length; i++)

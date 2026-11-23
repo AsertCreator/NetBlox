@@ -17,6 +17,7 @@ public sealed class GameRenderer
     public FontSpecification DefaultFontSpecification;
     public FontSpecification DefaultFontSpecification1_5em;
     public FontRegistry FontRegistry;
+    public CameraHandlingEventArgs CameraHandlingEventArgs;
 
     public bool IsDesktop = true;
     public bool DebugFlag = true;
@@ -64,6 +65,7 @@ public sealed class GameRenderer
         DefaultFontSpecification1_5em.Size = DefaultFontSpecification.Size * 1.5f;
 
         FontRegistry = new FontRegistry(this);
+        CameraHandlingEventArgs = new CameraHandlingEventArgs();
 
         if (GameManager.NetworkMode == Network.NetworkMode.Server)
         {
@@ -91,7 +93,8 @@ public sealed class GameRenderer
 
             if (!Raylib.WindowShouldClose())
             {
-                GameManager.TryGetEventForId(GameEvent.EVENT_BEFORE_RENDER)?.Fire();
+                CameraHandlingEventArgs.CameraHandled = false;
+                GameManager.TryGetEventForId(GameEvent.EVENT_BEFORE_RENDER)?.Fire(CameraHandlingEventArgs);
 
                 if (Raylib.IsKeyPressed(KeyboardKey.F9))
                 {

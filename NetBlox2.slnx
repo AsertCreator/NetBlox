@@ -6,4 +6,5 @@
   <Project Path="NetBloxClient/NetBloxClient.csproj" />
   <Project Path="NetBloxServer/NetBloxServer.csproj" />
   <Project Path="moonsharp/src/MoonSharp.Interpreter/MoonSharp.Interpreter.csproj" />
+  <Project Path="moonsharp/src/MoonSharp.VsCodeDebugger/MoonSharp.VsCodeDebugger.csproj" />
 </Solution>

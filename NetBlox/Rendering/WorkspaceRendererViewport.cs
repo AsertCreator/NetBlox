@@ -437,10 +437,10 @@ public class WorkspaceRendererViewport : RendererViewport
         if (coreEditorService != null)
         {
             if (!coreEditorService.KeyboardFocused)
-                DoDebugKeys();
+                DoDebugKeys(GameRenderer.CameraHandlingEventArgs.CameraHandled);
         }
         else
-            DoDebugKeys();
+            DoDebugKeys(GameRenderer.CameraHandlingEventArgs.CameraHandled);
 
         UserInputService? userInputService = GameRenderer.Root.FindService<UserInputService>();
         if (userInputService != null)
@@ -639,49 +639,52 @@ public class WorkspaceRendererViewport : RendererViewport
             DoRenderABuffer(transparentPartRenderBuffer_List);
         Rlgl.EnableDepthMask();
     }
-    public virtual void DoDebugKeys()
+    public virtual void DoDebugKeys(bool ignoreCamera)
     {
-        if (Raylib.IsMouseButtonPressed(MouseButton.Right))
-            Raylib.DisableCursor();
-
-        if (Raylib.IsMouseButtonDown(MouseButton.Right) || followHumanoid != null)
+        if (!ignoreCamera)
         {
-            Vector3 position = MainCamera.Position;
-            Vector3 target = MainCamera.Target;
+            if (Raylib.IsMouseButtonPressed(MouseButton.Right))
+                Raylib.DisableCursor();
 
-            // an already slow update loop, slowified even more.
-            for (int i = 0; i < SpeedMultiplier; i++)
+            if (Raylib.IsMouseButtonDown(MouseButton.Right) || followHumanoid != null)
             {
-                Raylib.UpdateCamera(ref MainCamera, followHumanoid == null ? CameraMode.FirstPerson : CameraMode.ThirdPerson);
-                Raylib.UpdateCamera(ref MainCamera, followHumanoid == null ? CameraMode.FirstPerson : CameraMode.ThirdPerson);
-            }
+                Vector3 position = MainCamera.Position;
+                Vector3 target = MainCamera.Target;
 
-            if (followHumanoid != null)
-            {
-                Vector3 difference = MainCamera.Position - MainCamera.Target;
-                Model? model = followHumanoid.Parent as Model;
-                if (model != null)
+                // an already slow update loop, slowified even more.
+                for (int i = 0; i < SpeedMultiplier; i++)
                 {
-                    BasePart? head = model.FindFirstChild_Fast("Head") as BasePart;
-                    if (head != null)
+                    Raylib.UpdateCamera(ref MainCamera, followHumanoid == null ? CameraMode.FirstPerson : CameraMode.ThirdPerson);
+                    Raylib.UpdateCamera(ref MainCamera, followHumanoid == null ? CameraMode.FirstPerson : CameraMode.ThirdPerson);
+                }
+
+                if (followHumanoid != null)
+                {
+                    Vector3 difference = MainCamera.Position - MainCamera.Target;
+                    Model? model = followHumanoid.Parent as Model;
+                    if (model != null)
                     {
-                        MainCamera.Target = head.Position;
-                        MainCamera.Position = difference + MainCamera.Target;
+                        BasePart? head = model.FindFirstChild_Fast("Head") as BasePart;
+                        if (head != null)
+                        {
+                            MainCamera.Target = head.Position;
+                            MainCamera.Position = difference + MainCamera.Target;
+                        }
+                    }
+                }
+
+                if (MainCamera.Position != position || MainCamera.Target != target)
+                {
+                    NetworkClient? networkClient = GameRenderer.Root.FindService<NetworkClient>();
+                    if (networkClient != null && networkClient.IsConnected)
+                    {
+                        NetworkPacket packet = NPClientCameraUpdate.Create(MainCamera.Position, MainCamera.Target);
+                        networkClient.CurrentServerConnection?.SendPacketUnreliable(packet);
                     }
                 }
             }
-
-            if (MainCamera.Position != position || MainCamera.Target != target)
-            {
-                NetworkClient? networkClient = GameRenderer.Root.FindService<NetworkClient>();
-                if (networkClient != null && networkClient.IsConnected)
-                {
-                    NetworkPacket packet = NPClientCameraUpdate.Create(MainCamera.Position, MainCamera.Target);
-                    networkClient.CurrentServerConnection?.SendPacketUnreliable(packet);
-                }
-            }
         }
-
+        
         if (Raylib.IsKeyPressed(KeyboardKey.L))
         {
             GameRenderer.GameManager.PhysicsSolver!.CanRun = !GameRenderer.GameManager.PhysicsSolver!.CanRun;

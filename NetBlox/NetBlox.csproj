@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../moonsharp/src/MoonSharp.Interpreter/MoonSharp.Interpreter.csproj" />
+    <ProjectReference Include="../moonsharp/src/MoonSharp.VsCodeDebugger/MoonSharp.VsCodeDebugger.csproj" />
     <ProjectReference Include="../NetBlox.API/NetBlox.API.csproj" />
   </ItemGroup>
 

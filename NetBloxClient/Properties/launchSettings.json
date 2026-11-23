@@ -8,6 +8,14 @@
       "commandName": "Project",
       "commandLineArgs": "-Pause -Server 127.0.0.1 -Port 44500"
     },
+    "NetBloxClient (Lua debugging)": {
+      "commandName": "Project",
+      "commandLineArgs": "-EnableLuaDebugging -Pause -Server 127.0.0.1 -Port 44500 -DisableUserScripts"
+    },
+    "NetBloxClient with scripts (Lua debugging)": {
+      "commandName": "Project",
+      "commandLineArgs": "-EnableLuaDebugging -Pause -Server 127.0.0.1 -Port 44500"
+    },
     "NetBloxClient (in-app)": {
       "commandName": "Project",
       "commandLineArgs": "-App"

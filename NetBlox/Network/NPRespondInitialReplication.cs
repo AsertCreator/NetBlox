@@ -1,3 +1,4 @@
+using NetBlox.Instances;
 using NetBlox.Instances.Services;
 
 namespace NetBlox.Network;
@@ -59,6 +60,10 @@ public sealed class NPRespondInitialReplication : NetworkPacketHandler
             
             Players players = gm.RootModel.GetService<Players>();
             players.SetLocalPlayer(localPlayer);
+
+            Camera camera = gm.GameRegistry.Construct<Camera>();
+            camera.CameraType = Structs.CameraType.Follow;
+            camera.Parent = gm.RootModel.GetService<Workspace>();
 
             return SchedulerTaskResult.CompletedSuccess; 
         });

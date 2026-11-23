@@ -839,7 +839,7 @@ public class Instance : INotifyPropertyChanged
 
     public void OnPropertyChanged(string propertyName, object before, object after)
     {
-        if (Root == null)
+        if (Root == null || InitializationStage < InitializationStage.Initializing)
             return;
 
         if (Changed.HasConnections || Changed.HasWaiters)

@@ -17,7 +17,18 @@ public class Player : Instance
     public Model? Character
     { 
         get => GameManager.GameRegistry.GetLocalInstanceById(characterId) as Model;
-        set => characterId = value != null ? value.InstanceID : 0;
+        set
+        {
+            ulong newCharacterId = value != null ? value.InstanceID : 0;
+            if (newCharacterId != characterId)
+            {
+                if (characterId != 0)
+                    CharacterRemoving.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, characterId))]);
+                characterId = newCharacterId;
+                if (newCharacterId != 0)
+                    CharacterAdded.Fire([DynValue.NewUserData(InstanceBridge.PushUserData(GameManager, newCharacterId))]);
+            }
+        }
     }
     public override Instance? Parent 
     {
@@ -43,6 +54,10 @@ public class Player : Instance
     public string DisplayName { get; set; } = "";
     [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
     public long UserId => userId;
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent CharacterAdded { get; set; } = new LuaEvent();
+    [ScriptCallable(RequiredLevel = SimpleSecurityCapabilityLevel.LocalUser)]
+    public LuaEvent CharacterRemoving { get; set; } = new LuaEvent();
 
     public override string ClassName => nameof(Player);
 

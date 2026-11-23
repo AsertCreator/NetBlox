@@ -88,6 +88,8 @@ public static class BrickColorBridge
                 return DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
                 {
                     DynValue dynValue = args[1];
+                    if (dynValue.Type != DataType.UserData)
+                        return DynValue.False;
                     if (dynValue.UserData.Object is not BrickColorDescriptor other)
                         return DynValue.False;
                     if (other.Value.Index == Value.Index)

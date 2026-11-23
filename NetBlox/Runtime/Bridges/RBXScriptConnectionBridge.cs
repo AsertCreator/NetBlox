@@ -69,6 +69,8 @@ public static class RBXScriptConnectionBridge
                 return DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
                 {
                     DynValue dynValue = args[1];
+                    if (dynValue.Type != DataType.UserData)
+                        return DynValue.False;
                     if (dynValue.UserData.Object is not RBXScriptConnectionDescriptor rssd)
                         return DynValue.False;
                     if (rssd.Value == Value)

@@ -53,6 +53,8 @@ public static class EnumValueBridge
                 return DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
                 {
                     DynValue dynValue = args[1];
+                    if (dynValue.Type != DataType.UserData)
+                        return DynValue.False;
                     if (dynValue.UserData.Object is not EnumValueDescriptor other)
                         return DynValue.False;
                     if (other.Value.Value == Value.Value && other.Value.EnumType == Value.EnumType)

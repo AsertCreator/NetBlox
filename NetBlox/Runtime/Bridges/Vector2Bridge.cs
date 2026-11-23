@@ -119,6 +119,8 @@ public static class Vector2Bridge
                 return DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
                 {
                     DynValue dynValue = args[1];
+                    if (dynValue.Type != DataType.UserData)
+                        return DynValue.False;
                     if (dynValue.UserData.Object is not Vector2Descriptor other)
                         return DynValue.False;
                     if (other.Value == Value)

@@ -12,7 +12,7 @@ public class ClientRendererViewport : WorkspaceRendererViewport
     {
         base.RenderFrame();
     }
-    public override void DoDebugKeys()
+    public override void DoDebugKeys(bool _)
     {
         // NOP
     }

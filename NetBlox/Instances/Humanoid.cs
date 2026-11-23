@@ -235,6 +235,17 @@ public class Humanoid : Instance
 
         Rlgl.DisableDepthTest();
     }
+    public Vector3? GetHeadPosition()
+    {
+        if (Parent == null)
+            return null;
+
+        BasePart? basePart = Parent!.FindFirstChild_Fast("Head") as BasePart;
+        if (basePart == null)
+            return null;
+        
+        return basePart.Position;
+    }
 
     public override bool IsA(string className)
     {

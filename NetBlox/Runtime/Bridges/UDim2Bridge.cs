@@ -101,6 +101,8 @@ public static class UDim2Bridge
                 return DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
                 {
                     DynValue dynValue = args[1];
+                    if (dynValue.Type != DataType.UserData)
+                        return DynValue.False;
                     if (dynValue.UserData.Object is not UDim2Descriptor udimd)
                         return DynValue.False;
                     if (udimd.Value == Value)

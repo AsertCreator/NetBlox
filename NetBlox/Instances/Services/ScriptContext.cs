@@ -8,6 +8,9 @@ using System.Text;
 using NetBlox.Runtime.Bridges;
 using NetBlox.Testing;
 using NetBlox.Structs;
+using MoonSharp.VsCodeDebugger;
+using MoonSharp.Interpreter.Debugging;
+using System.Runtime.Serialization;
 
 namespace NetBlox.Instances.Services;
 
@@ -57,6 +60,10 @@ public class ScriptContext : Instance
         SecurityIdentity identity = GameManager.GameScheduler.GetCurrentSecurityIdentity()!;
         Debug.Assert(identity != null);
 
+        return AllocateTableInRegistryForIdentity(identity, id, out newTable);
+    }
+    public Table AllocateTableInRegistryForIdentity(SecurityIdentity identity, string id, out bool newTable)
+    {
         newTable = false;
         
         if (!Registry.ContainsKey(identity))
@@ -81,8 +88,8 @@ public class ScriptContext : Instance
 
         luaState.Globals.Frozen = false;
 
-        luaState.Globals["_G"] = DynValue.NewTable(luaState);
-        luaState.Globals["shared"] = DynValue.NewTable(luaState);
+        luaState.Globals["_G"] = AllocateTableInRegistryForIdentity(securityIdentity, "_G", out _);
+        luaState.Globals["shared"] = AllocateTableInRegistryForIdentity(securityIdentity, "shared", out _);
         luaState.Globals["getgenv"] = DynValue.Nil;
         luaState.Globals["setgenv"] = DynValue.Nil;
 
@@ -218,8 +225,30 @@ public class ScriptContext : Instance
 
         luaState.Globals.Frozen = true;
 
+        if (GameManager.UnpairedConsoleArguments.Contains("EnableLuaDebugging") && GameManager.LuaDebugServer != null)
+        {
+            GameManager.LuaDebugServer.AttachToScript(luaState, "NetBlox - Lua for " + securityIdentity.Name, FindSourceCodeFileFor);
+        }
+
         return luaState;
     }
+
+    private string FindSourceCodeFileFor(SourceCode sourceCode)
+    {
+        if (sourceCode.Name == "ServerStarterScript")
+            return Environment.CurrentDirectory + "/content/scripts/ServerStarterScript.lua";
+        else if (sourceCode.Name == "StarterScript")
+            return Environment.CurrentDirectory + "/content/scripts/StarterScript.lua";
+        else if (sourceCode.Name.StartsWith("CoreGui.RobloxGui.CoreScripts/"))
+            return Environment.CurrentDirectory + "/content/scripts/CoreScripts/" + sourceCode.Name.Substring(sourceCode.Name.IndexOf('/') + 1) + ".lua";
+        else if (sourceCode.Name.StartsWith("CoreGui.Modules."))
+            return Environment.CurrentDirectory + "/content/scripts/Modules/" + sourceCode.Name.Substring(sourceCode.Name.LastIndexOf('.') + 1) + ".lua";
+
+        Trace.TraceWarning("Lua debugging - couldn't find original source code for a script " + sourceCode.Name);
+
+        return "";
+    }
+
     public InstanceBridge.InstanceClassCache ResolveInstanceClassCacheForType(Type type)
     {
         if (InstanceClassCache.TryGetValue(type, out InstanceBridge.InstanceClassCache? cache))

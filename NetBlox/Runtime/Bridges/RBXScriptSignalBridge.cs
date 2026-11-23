@@ -82,6 +82,8 @@ public static class RBXScriptSignalBridge
                 return DynValue.NewCallback(delegate (ScriptExecutionContext executionContext, CallbackArguments args)
                 {
                     DynValue dynValue = args[1];
+                    if (dynValue.Type != DataType.UserData)
+                        return DynValue.False;
                     if (dynValue.UserData.Object is not RBXScriptSignalDescriptor rssd)
                         return DynValue.False;
                     if (rssd.Value == Value)
