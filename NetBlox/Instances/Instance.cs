@@ -66,10 +66,22 @@ public class Instance : INotifyPropertyChanged
                     }
                 }
 
-                myParent?.children.Remove(InstanceID);
-                myParent?.OnChildRemoved(this);
-                value?.children.Add(InstanceID);
-                value?.OnChildAdded(this);
+                if (myParent != null)
+                {
+                    lock (myParent.childrenLock)
+                    {
+                        myParent.children.Remove(InstanceID);
+                        myParent.OnChildRemoved(this);
+                    }
+                }
+                if (value != null)
+                {
+                    lock (value.childrenLock)
+                    {
+                        value?.children.Add(InstanceID);
+                        value?.OnChildAdded(this);
+                    }
+                }
 
                 if (myParent != null)
                 {
@@ -177,6 +189,7 @@ public class Instance : INotifyPropertyChanged
 
     private Dictionary<string, ulong> fastNameLookup = [];
     private Instance? parentCache;
+    private object childrenLock = new();
 
     public bool ParentLocked;
     public int ViewportIndex;

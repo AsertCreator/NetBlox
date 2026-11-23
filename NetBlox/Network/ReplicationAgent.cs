@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
@@ -11,7 +12,7 @@ public class ReplicationAgent
     public readonly GameManager GameManager;
     public bool InitialReplicationReceived { get; private set; }
 
-    public Queue<byte[]> PendingDeltaReplicationFrames = [];
+    public ConcurrentQueue<byte[]> PendingDeltaReplicationFrames = [];
 
     private struct DeltaReplicationInstanceCreationItem
     {
@@ -385,113 +386,117 @@ public class ReplicationAgent
         if (GameManager.ShuttingDown)
             return SchedulerTaskResult.CompletedSuccess;
 
-        if (GameManager.NetworkMode == NetworkMode.Client)
+        try
         {
-            byte[]? frame = null;
-
-            lock (PendingDeltaReplicationFrames)
+            if (GameManager.NetworkMode == NetworkMode.Client)
             {
+                byte[]? frame = null;
+
                 if (PendingDeltaReplicationFrames.Count == 0)
-                {
-                    int networkFps = 60;
-                    if (GameManager.GameRenderer != null)
-                        networkFps = GameManager.GameRenderer.PreferredFPS;
-                    task.WaitingTimeTarget = GameManager.TimestampInTheFuture(TimeSpan.FromMilliseconds(1000f / networkFps));
                     return SchedulerTaskResult.NotCompleted;
-                }
 
-                frame = PendingDeltaReplicationFrames.Dequeue();
-            }
+                PendingDeltaReplicationFrames.TryDequeue(out frame);
 
-            ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
+                if (frame == null)
+                    return SchedulerTaskResult.NotCompleted;
 
-            using MemoryStream ms = new MemoryStream(frame);
-            using BinaryReader br = new BinaryReader(ms);
+                ScriptContext scriptContext = GameManager.RootModel.GetService<ScriptContext>();
 
-            int deltaBufferNewInstancesCount = br.ReadInt32();
+                using MemoryStream ms = new MemoryStream(frame);
+                using BinaryReader br = new BinaryReader(ms);
 
-            for (int i = 0; i < deltaBufferNewInstancesCount; i++)
-            {
-                ulong instanceId = br.ReadUInt64();
-                ulong parentId = br.ReadUInt64();
-                string className = br.ReadString();
+                int deltaBufferNewInstancesCount = br.ReadInt32();
 
-                Instance? newparent = GameManager.GameRegistry.GetLocalInstanceById(parentId);
-                Instance? instance = GameManager.GameRegistry.TryCreateNewForeignInstanceOfClass(className, instanceId);
-                instance?.Parent = newparent;
-
-                if (instance == null)
-                    continue;
-
-                InstanceBridge.InstanceClassCache? cache = scriptContext.ResolveInstanceClassCacheForType(instance.GetType());
-
-                do
+                for (int i = 0; i < deltaBufferNewInstancesCount; i++)
                 {
-                    for (int j = 0; j < cache.ReplicationOrderedProperties.Length; j++)
-                    {
-                        InstanceBridge.InstanceClassCacheProperty property = cache.ReplicationOrderedProperties[j];
-                        object? value = NetworkMarshal.MarshalNetworkToClr(GameManager, br, property.PropertyType);
+                    ulong instanceId = br.ReadUInt64();
+                    ulong parentId = br.ReadUInt64();
+                    string className = br.ReadString();
 
-                        property.Property.SetValue(instance, value);
-                    }
+                    Instance? newparent = GameManager.GameRegistry.GetLocalInstanceById(parentId);
+                    Instance? instance = GameManager.GameRegistry.TryCreateNewForeignInstanceOfClass(className, instanceId);
+                    instance?.Parent = newparent;
 
-                    cache = cache.RetrieveParentCache();
-                }
-                while (cache != null);
-            }
-
-            int deltaBufferReparentedInstancesCount = br.ReadInt32();
-
-            for (int i = 0; i < deltaBufferReparentedInstancesCount; i++)
-            {
-                ulong instanceId = br.ReadUInt64();
-                ulong parentId = br.ReadUInt64();
-
-                Instance? newparent = GameManager.GameRegistry.GetLocalInstanceById(parentId);
-                Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
-                instance?.Parent = newparent;
-            }
-
-            int deltaBufferRemovedInstancesCount = br.ReadInt32();
-
-            for (int i = 0; i < deltaBufferRemovedInstancesCount; i++)
-            {
-                ulong instanceId = br.ReadUInt64();
-                Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
-                
-                instance?.Destroy();
-            }
-
-            int deltaBufferPropertyChangesCount = br.ReadInt32();
-
-            for (int i = 0; i < deltaBufferPropertyChangesCount; i++)
-            {
-                if (!br.ReadBoolean())
-                    continue;
-
-                ulong instanceId = br.ReadUInt64();
-                Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
-                int propertyChangeCount = br.ReadInt32();
-
-                if (instance == null)
-                    continue;
-
-                InstanceBridge.InstanceClassCache cache = scriptContext.ResolveInstanceClassCacheForType(instance!.GetType());
-
-                for (int j = 0; j < propertyChangeCount; j++)
-                {
-                    int networkOrdinal = br.ReadInt32();
-                    if (networkOrdinal == -1)
+                    if (instance == null)
                         continue;
-                        
-                    InstanceBridge.InstanceClassCacheProperty property = GetPropertyByTrueNetworkOrdinal(cache, networkOrdinal);
-                    object? newValue = NetworkMarshal.MarshalNetworkToClr(GameManager, br, property.PropertyType);
 
-                    property.Property.SetValue(instance, newValue);
+                    InstanceBridge.InstanceClassCache? cache = scriptContext.ResolveInstanceClassCacheForType(instance.GetType());
+
+                    do
+                    {
+                        for (int j = 0; j < cache.ReplicationOrderedProperties.Length; j++)
+                        {
+                            InstanceBridge.InstanceClassCacheProperty property = cache.ReplicationOrderedProperties[j];
+                            object? value = NetworkMarshal.MarshalNetworkToClr(GameManager, br, property.PropertyType);
+
+                            property.Property.SetValue(instance, value);
+                        }
+
+                        cache = cache.RetrieveParentCache();
+                    }
+                    while (cache != null);
+                }
+
+                int deltaBufferReparentedInstancesCount = br.ReadInt32();
+
+                for (int i = 0; i < deltaBufferReparentedInstancesCount; i++)
+                {
+                    ulong instanceId = br.ReadUInt64();
+                    ulong parentId = br.ReadUInt64();
+
+                    Instance? newparent = GameManager.GameRegistry.GetLocalInstanceById(parentId);
+                    Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
+                    instance?.Parent = newparent;
+                }
+
+                int deltaBufferRemovedInstancesCount = br.ReadInt32();
+
+                for (int i = 0; i < deltaBufferRemovedInstancesCount; i++)
+                {
+                    ulong instanceId = br.ReadUInt64();
+                    Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
+                    
+                    instance?.Destroy();
+                }
+
+                int deltaBufferPropertyChangesCount = br.ReadInt32();
+
+                for (int i = 0; i < deltaBufferPropertyChangesCount; i++)
+                {
+                    if (!br.ReadBoolean())
+                        continue;
+
+                    ulong instanceId = br.ReadUInt64();
+                    Instance? instance = GameManager.GameRegistry.GetLocalInstanceById(instanceId);
+                    int propertyChangeCount = br.ReadInt32();
+
+                    if (instance == null)
+                        continue;
+
+                    InstanceBridge.InstanceClassCache cache = scriptContext.ResolveInstanceClassCacheForType(instance!.GetType());
+
+                    for (int j = 0; j < propertyChangeCount; j++)
+                    {
+                        int networkOrdinal = br.ReadInt32();
+                        if (networkOrdinal == -1)
+                            continue;
+                            
+                        InstanceBridge.InstanceClassCacheProperty property = GetPropertyByTrueNetworkOrdinal(cache, networkOrdinal);
+                        object? newValue = NetworkMarshal.MarshalNetworkToClr(GameManager, br, property.PropertyType);
+
+                        property.Property.SetValue(instance, newValue);
+                    }
                 }
             }
-        }
 
-        return SchedulerTaskResult.NotCompleted;
+            return SchedulerTaskResult.NotCompleted;
+        }
+        finally
+        {
+            int networkFps = 60;
+            if (GameManager.GameRenderer != null)
+                networkFps = GameManager.GameRenderer.PreferredFPS;
+            task.WaitingTimeTarget = GameManager.TimestampInTheFuture(TimeSpan.FromMilliseconds(1000f / networkFps));
+        }
     }
 }

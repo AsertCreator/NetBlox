@@ -43,7 +43,6 @@ public sealed class NPRespondDeltaReplication : NetworkPacketHandler
         NetworkClient networkClient = gm.RootModel.GetService<NetworkClient>();
         ReplicationAgent replicationAgent = networkClient.ReplicationAgent;
 
-        lock (replicationAgent.PendingDeltaReplicationFrames)
-            replicationAgent.PendingDeltaReplicationFrames.Enqueue(payload);
+        replicationAgent.PendingDeltaReplicationFrames.Enqueue(payload);
     }
 }

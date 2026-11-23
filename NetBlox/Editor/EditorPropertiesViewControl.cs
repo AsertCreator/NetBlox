@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Numerics;
 using NetBlox.Instances;
 using NetBlox.Instances.Services;
@@ -43,28 +44,75 @@ public class EditorPropertiesViewControl : EditorControl
             Raylib.DrawTextEx(
                 font, property.Name, new Vector2(fontSpecification.Size, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.Gray);
 
+        if (property == currentEditedProperty)
+        {
+            Raylib.DrawRectangleLines(
+                (int)propertyEditPosition.X, (int)propertyEditPosition.Y, (int)propertyEditSize.X, (int)propertyEditSize.Y, Color.SkyBlue);
+        }
+
         if (property.PropertyType == typeof(string))
         {
             RenderPropertyEditorString(property, font, fontSpecification, instance);
-
-            if (property == currentEditedProperty)
-            {
-                Raylib.DrawRectangleLines(
-                    (int)propertyEditPosition.X, (int)propertyEditPosition.Y, (int)propertyEditSize.X, (int)propertyEditSize.Y, Color.SkyBlue);
-            }
-
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(sbyte))
+        {
+            RenderPropertyEditorNumber<sbyte>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(short))
+        {
+            RenderPropertyEditorNumber<short>(property, font, fontSpecification, instance);
             lockFocus = true;
         }
         else if (property.PropertyType == typeof(int))
         {
-            // RenderPropertyEditorNumber(property, font, fontSpecification, instance);
-
-            if (property == currentEditedProperty)
-            {
-                Raylib.DrawRectangleLines(
-                    (int)propertyEditPosition.X, (int)propertyEditPosition.Y, (int)propertyEditSize.X, (int)propertyEditSize.Y, Color.SkyBlue);
-            }
-
+            RenderPropertyEditorNumber<int>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(long))
+        {
+            RenderPropertyEditorNumber<long>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(byte))
+        {
+            RenderPropertyEditorNumber<byte>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(ushort))
+        {
+            RenderPropertyEditorNumber<ushort>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(uint))
+        {
+            RenderPropertyEditorNumber<uint>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(ulong))
+        {
+            RenderPropertyEditorNumber<ulong>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(float))
+        {
+            RenderPropertyEditorNumber<float>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType == typeof(double))
+        {
+            RenderPropertyEditorNumber<double>(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType.IsAssignableTo(typeof(Instance)))
+        {
+            RenderPropertyEditorInstance(property, font, fontSpecification, instance);
+            lockFocus = true;
+        }
+        else if (property.PropertyType.IsEnum)
+        {
+            RenderPropertyEditorEnum(property, font, fontSpecification, instance);
             lockFocus = true;
         }
         else if (property.PropertyType == typeof(bool))
@@ -197,6 +245,195 @@ public class EditorPropertiesViewControl : EditorControl
         else
         {
             Raylib.DrawTextEx(font, value,
+                new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.Gray);
+        }
+    }
+
+    private void RenderPropertyEditorInstance(
+        InstanceBridge.InstanceClassCacheProperty property, Font font, FontSpecification fontSpecification, Instance instance)
+    {
+        CoreEditorService service = instance.Root.GetService<CoreEditorService>();
+        Instance? value = property.Property.GetValue(instance) as Instance;
+
+        if (!property.IsReadOnly)
+        {   
+            if (property == currentEditedProperty && service.KeyboardFocused)
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape) || Raylib.IsKeyPressed(KeyboardKey.Enter))
+                {
+                    currentEditedProperty = null;
+                    service.KeyboardFocused = false;
+                }
+
+                Raylib.DrawTextEx(font, "Select your instance in the Explorer",
+                    new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.White);
+            }
+            else
+            {
+                Raylib.DrawTextEx(font, value != null ? value.GetFullName() : "",
+                    new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.White);
+            }
+        }
+        else
+        {
+            Raylib.DrawTextEx(font, value != null ? value.GetFullName() : "",
+                new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.Gray);
+        }
+    }
+
+
+    private void RenderPropertyEditorEnum(
+        InstanceBridge.InstanceClassCacheProperty property, Font font, FontSpecification fontSpecification, Instance instance)
+    {
+        CoreEditorService service = instance.Root.GetService<CoreEditorService>();
+        Enum value = (Enum)property.Property.GetValue(instance)!;
+
+        string valueName = value.ToString();
+
+        if (!property.IsReadOnly)
+        {   
+            if (property == currentEditedProperty && service.KeyboardFocused)
+            {
+                if (stringEditorCursorBegin == -1)
+                    stringEditorCursorBegin = valueName.Length;
+                if (stringEditorCurrentValue == null)
+                    stringEditorCurrentValue = valueName;
+
+                float x = Raylib.MeasureTextEx(font, stringEditorCurrentValue.Substring(0, stringEditorCursorBegin), fontSpecification.Size, 0).X;
+                Vector2 position = new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset + new Vector2(x, 0);
+
+                Raylib.DrawRectangle((int)position.X, (int)position.Y, (int)2, (int)fontSpecification.Size, Color.White);
+
+                if (Raylib.IsKeyPressed(KeyboardKey.Left))
+                {
+                    stringEditorCursorBegin--;
+                    if (stringEditorCursorBegin < 0)
+                        stringEditorCursorBegin = 0;
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.Right))
+                {
+                    stringEditorCursorBegin++;
+                    if (stringEditorCursorBegin > stringEditorCurrentValue.Length)
+                        stringEditorCursorBegin = stringEditorCurrentValue.Length;
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.Backspace))
+                {
+                    if (stringEditorCursorBegin > 0)
+                    {
+                        stringEditorCurrentValue = 
+                            stringEditorCurrentValue.Substring(0, stringEditorCursorBegin - 1) + stringEditorCurrentValue.Substring(stringEditorCursorBegin);
+                        stringEditorCursorBegin--;
+                    }
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.Escape) || Raylib.IsKeyPressed(KeyboardKey.Enter))
+                {
+                    currentEditedProperty = null;
+                    stringEditorCurrentValue = stringEditorCurrentValue.Replace("\\n", "\n");
+
+                    if (Enum.TryParse(property.PropertyType, stringEditorCurrentValue, out object? newvalue))
+                        property.Property.SetValue(instance, newvalue);
+
+                    stringEditorCurrentValue = null;
+                    service.KeyboardFocused = false;
+                }
+
+                char ch = (char)Raylib.GetCharPressed();
+                while (ch > 0)
+                {
+                    stringEditorCurrentValue = stringEditorCurrentValue!.Substring(0, stringEditorCursorBegin) + ch + stringEditorCurrentValue.Substring(stringEditorCursorBegin);
+                    stringEditorCursorBegin++;
+                    ch = (char)Raylib.GetCharPressed();
+                }
+
+                Raylib.DrawTextEx(font, stringEditorCurrentValue,
+                    new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.White);
+            }
+            else
+            {
+                Raylib.DrawTextEx(font, valueName,
+                    new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.White);
+            }
+        }
+        else
+        {
+            Raylib.DrawTextEx(font, valueName,
+                new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.Gray);
+        }
+    }
+
+    private void RenderPropertyEditorNumber<T>(
+        InstanceBridge.InstanceClassCacheProperty property, Font font, FontSpecification fontSpecification, Instance instance) where T : INumber<T>
+    {
+        CoreEditorService service = instance.Root.GetService<CoreEditorService>();
+        T value = (T)property.Property.GetValue(instance)!;
+
+        string valueString = value.ToString(null, CultureInfo.InvariantCulture);
+
+        if (!property.IsReadOnly)
+        {   
+            if (property == currentEditedProperty && service.KeyboardFocused)
+            {
+                if (stringEditorCursorBegin == -1)
+                    stringEditorCursorBegin = valueString.Length;
+                if (stringEditorCurrentValue == null)
+                    stringEditorCurrentValue = valueString;
+
+                float x = Raylib.MeasureTextEx(font, stringEditorCurrentValue.Substring(0, stringEditorCursorBegin), fontSpecification.Size, 0).X;
+                Vector2 position = new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset + new Vector2(x, 0);
+
+                Raylib.DrawRectangle((int)position.X, (int)position.Y, (int)2, (int)fontSpecification.Size, Color.White);
+
+                if (Raylib.IsKeyPressed(KeyboardKey.Left))
+                {
+                    stringEditorCursorBegin--;
+                    if (stringEditorCursorBegin < 0)
+                        stringEditorCursorBegin = 0;
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.Right))
+                {
+                    stringEditorCursorBegin++;
+                    if (stringEditorCursorBegin > stringEditorCurrentValue.Length)
+                        stringEditorCursorBegin = stringEditorCurrentValue.Length;
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.Backspace))
+                {
+                    if (stringEditorCursorBegin > 0)
+                    {
+                        stringEditorCurrentValue = 
+                            stringEditorCurrentValue.Substring(0, stringEditorCursorBegin - 1) + stringEditorCurrentValue.Substring(stringEditorCursorBegin);
+                        stringEditorCursorBegin--;
+                    }
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.Escape) || Raylib.IsKeyPressed(KeyboardKey.Enter))
+                {
+                    currentEditedProperty = null;
+                    stringEditorCurrentValue = stringEditorCurrentValue.Replace("\\n", "\n");
+                    if (T.TryParse(stringEditorCurrentValue, CultureInfo.InvariantCulture, out T? newvalue))
+                        property.Property.SetValue(instance, newvalue);
+                    stringEditorCurrentValue = null;
+                    service.KeyboardFocused = false;
+                }
+
+                char ch = (char)Raylib.GetCharPressed();
+                while (ch > 0)
+                {
+                    stringEditorCurrentValue = stringEditorCurrentValue!.Substring(0, stringEditorCursorBegin) + ch + stringEditorCurrentValue.Substring(stringEditorCursorBegin);
+                    stringEditorCursorBegin++;
+                    ch = (char)Raylib.GetCharPressed();
+                }
+
+                Raylib.DrawTextEx(font, stringEditorCurrentValue,
+                    new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.White);
+            }
+            else
+            {
+                Raylib.DrawTextEx(font, valueString,
+                    new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.White);
+            }
+        }
+        else
+        {
+            Raylib.DrawTextEx(font, valueString,
                 new Vector2(2 + absoluteSize.X / 2, currentHeight) + absoluteOffset, fontSpecification.Size, 0, Color.Gray);
         }
     }
